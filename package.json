@@ -26,6 +26,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "knip": "knip"
     "prepare": "husky"
   },
   "dependencies": {
@@ -60,12 +61,15 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.16",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9.23.0",
     "eslint-config-next": "^16.1.1",
     "eslint-plugin-drizzle": "^0.2.3",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
+    "knip": "^5.80.2",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",

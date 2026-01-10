@@ -232,7 +232,7 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 ### 2. Static Analysis & Quality Gates
 
 - **Strict TypeScript**: `strict: true`, enforce `no-explicit-any`
-- **Dead Code Elimination**: Knip (detect unused dependencies)
+- **Dead Code Elimination**: Knip (`bun run knip` detects unused dependencies, files, and exports)
 - **Commit Discipline**: Conventional Commits via Commitlint
 - **Database Safety**: `eslint-plugin-drizzle` (catch ORM errors at lint time)
 
