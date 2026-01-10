@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "next.config.*",
+    "src/app/**/{page,layout,route,loading,not-found,error}.tsx"
+  ],
+  "project": ["tsconfig.json"],
+  "ignore": [".next/**", "node_modules/**", "dist/**", "coverage/**", "e2e/**"],
+  "rules": {
+    "dependencies": "warn",
+    "devDependencies": "warn"
+  }
+}
