@@ -27,6 +27,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "knip": "knip"
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.2",
@@ -49,6 +50,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
     "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.0.15",
@@ -64,8 +67,10 @@
     "eslint": "^9.23.0",
     "eslint-config-next": "^16.1.1",
     "eslint-plugin-drizzle": "^0.2.3",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "knip": "^5.80.2",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
@@ -77,5 +82,14 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.40.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,mjs,cjs,json,md,css}": [
+      "prettier --write"
+    ]
   }
 }
