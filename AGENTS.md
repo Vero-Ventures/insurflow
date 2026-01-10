@@ -4,10 +4,37 @@
 
 InsurFlow is an AI-integrated InsurTech SaaS platform for life insurance advisors. It modernizes financial needs analysis workflows by replacing archaic spreadsheets with a cutting-edge web application featuring complex financial calculators, interactive dashboards, and GenAI-powered document generation.
 
-- Next.js 16 App Router app in `src/app` with server helpers in `src/server`
-- Drizzle ORM for database access with PostgreSQL (Neon in production)
-- Authentication via Better Auth
-- Global styles in `src/styles/globals.css`; static assets in `public`
+This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern architecture, with v1.0 serving only as a functional specification and logic reference.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router) with React 19
+- **Language**: TypeScript (Strict Mode)
+- **Database**: PostgreSQL (Neon in production) via Drizzle ORM
+- **Authentication**: Better Auth with Better Auth UI (`@daveyplate/better-auth-ui`)
+- **UI Components**: shadcn/ui, Tailwind CSS v4, Recharts
+- **Notifications**: Sonner (toast notifications)
+- **Services** (planned): Stripe (Payments), UploadThing (File Storage), OpenAI/Gemini (AI features)
+- **Runtime**: Bun
+- **DevOps**: GitHub, Vercel (CI/CD)
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── auth/[path]/        # Auth pages (sign-in, sign-up, etc.)
+│   ├── api/auth/[...all]/  # Better Auth API routes
+│   ├── layout.tsx          # Root layout with providers
+│   ├── page.tsx            # Home page
+│   └── providers.tsx       # Client-side providers (AuthUIProvider)
+├── components/ui/          # shadcn/ui components
+├── lib/                    # Utility functions (cn, etc.)
+├── server/
+│   ├── better-auth/        # Auth configuration
+│   └── db/                 # Drizzle ORM schema and client
+└── styles/globals.css      # Global styles with CSS variables
+```
 
 ## Key Modules
 
@@ -40,6 +67,24 @@ InsurFlow is an AI-integrated InsurTech SaaS platform for life insurance advisor
 - ESLint (`eslint.config.js`) + TypeScript enforce modern React rules
 - PascalCase for React components, camelCase for vars/functions, kebab-case for route segments under `src/app`
 - Keep server-only utilities inside `src/server` to avoid client bundling
+
+## Authentication
+
+Authentication uses Better Auth with Better Auth UI for pre-built components:
+
+- **Auth routes**: `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/magic-link`, `/auth/sign-out`
+- **Components**: `<SignedIn>`, `<SignedOut>`, `<UserButton>` from `@daveyplate/better-auth-ui`
+- **Provider**: `AuthUIProvider` wraps the app in `src/app/providers.tsx`
+- **Config**: `src/server/better-auth/config.ts` - email/password enabled, GitHub OAuth optional
+
+## UI Components
+
+- **shadcn/ui** for component primitives; add new components with `bunx shadcn@latest add <component>`
+- **Recharts** for financial data visualization
+- **Tailwind CSS v4** for styling with `prettier-plugin-tailwindcss` for class sorting
+- **Sonner** for toast notifications (required by Better Auth UI)
+
+Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib/utils.ts` merges Tailwind classes.
 
 ## Testing Guidance
 
@@ -92,12 +137,6 @@ InsurFlow is an AI-integrated InsurTech SaaS platform for life insurance advisor
   2. Commit configuration/setup changes
   3. Commit new components/modules
   4. Commit integration changes to existing code
-
-## UI Components
-
-- Shadcn/ui for component primitives; add new components with `npx shadcn@latest add <component>`
-- Recharts for financial data visualization
-- Tailwind CSS for styling with `prettier-plugin-tailwindcss` for class sorting
 
 ## Definition of Done
 
