@@ -29,8 +29,9 @@ resource "vercel_project" "insurflow" {
   }
 
   # Vercel Authentication for preview deployments
+  # Requires Vercel account login to view preview deployments
   vercel_authentication = {
-    deployment_type = "preview"
+    deployment_type = "standard_protection"
   }
 
   # Auto-assign custom domains on production
