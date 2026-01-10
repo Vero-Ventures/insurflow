@@ -1,0 +1,21 @@
+#!/bin/sh
+
+echo "Running pre-push checks..."
+
+# Full lint and type check
+echo "→ Running ESLint and TypeScript..."
+bun run check || exit 1
+
+# Unit tests
+echo "→ Running unit tests..."
+bun run test:run || exit 1
+
+# E2E tests
+echo "→ Running E2E tests..."
+bun run test:e2e || exit 1
+
+# Production build
+echo "→ Verifying production build..."
+bun run build || exit 1
+
+echo "All pre-push checks passed!"

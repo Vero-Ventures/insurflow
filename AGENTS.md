@@ -151,8 +151,9 @@ Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib
   - Format: `type(scope): description` (e.g., `feat(auth): add password reset flow`)
   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
 - **Git Hooks** (via Husky):
-  - `pre-commit`: Runs lint-staged (ESLint + Prettier on staged files)
+  - `pre-commit`: Runs lint-staged (ESLint + Prettier on staged files only) - fast, non-blocking
   - `commit-msg`: Validates commit message format via Commitlint
+  - `pre-push`: Comprehensive gate before pushing - runs full lint, type check, unit tests, E2E tests, and production build
 - Squash formatting-only changes into the related feature commit
 - PRs should link issues, summarize changes, list verification commands, and include UI captures for user-facing work
 - **Incremental Commits**: When working on multi-step tasks, create small, focused commits along the way to encapsulate each logical change. This keeps the git history clean and makes code review easier. For example, when adding a new feature:
