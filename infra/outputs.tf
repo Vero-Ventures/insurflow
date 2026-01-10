@@ -14,5 +14,5 @@ output "project_name" {
 
 output "domains" {
   description = "Project domains"
-  value       = vercel_project.insurflow.id
+  value       = vercel_project.insurflow.domains
 }

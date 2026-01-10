@@ -41,6 +41,11 @@ variable "database_url" {
   description = "PostgreSQL connection string (Neon)"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = can(regex("^postgres(ql)?://", var.database_url))
+    error_message = "DATABASE_URL must be a valid PostgreSQL connection string starting with 'postgresql://' or 'postgres://'"
+  }
 }
 
 # =============================================================================
@@ -51,6 +56,11 @@ variable "better_auth_secret" {
   description = "Secret key for Better Auth session encryption"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.better_auth_secret) >= 32
+    error_message = "BETTER_AUTH_SECRET must be at least 32 characters for security. Generate with: openssl rand -base64 32"
+  }
 }
 
 variable "better_auth_url" {

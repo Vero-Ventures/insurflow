@@ -95,16 +95,20 @@ resource "vercel_project_environment_variable" "github_client_secret_prod" {
 }
 
 # =============================================================================
-# Environment Variables - Preview (uses same values, can override later)
+# Environment Variables - Preview
+# =============================================================================
+# WARNING: Preview environments currently share the production database.
+# This means preview deployments can read/write production data.
+# For isolation, configure Neon Database Branching or a separate preview DB.
 # =============================================================================
 
 resource "vercel_project_environment_variable" "database_url_preview" {
   project_id = vercel_project.insurflow.id
   key        = "DATABASE_URL"
-  value      = var.database_url # Can use separate preview DB later
+  value      = var.database_url
   target     = ["preview"]
   sensitive  = true
-  comment    = "Neon PostgreSQL connection string for previews"
+  comment    = "Neon PostgreSQL - WARNING: shares production data until separate preview DB configured"
 }
 
 resource "vercel_project_environment_variable" "better_auth_secret_preview" {
@@ -116,10 +120,7 @@ resource "vercel_project_environment_variable" "better_auth_secret_preview" {
   comment    = "Better Auth session encryption key"
 }
 
-resource "vercel_project_environment_variable" "better_auth_url_preview" {
-  project_id = vercel_project.insurflow.id
-  key        = "BETTER_AUTH_URL"
-  value      = var.better_auth_url # Will be overwritten by Vercel's VERCEL_URL
-  target     = ["preview"]
-  comment    = "Better Auth base URL (preview)"
-}
+# NOTE: BETTER_AUTH_URL is NOT set for preview environments.
+# Preview deployments should derive their base URL dynamically from
+# Vercel's VERCEL_URL environment variable at runtime.
+# The app's env.js should fall back to VERCEL_URL when BETTER_AUTH_URL is not set.
