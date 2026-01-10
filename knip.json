@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
-    "next.config.*",
+    "next.config.js",
     "src/app/**/{page,layout,route,loading,not-found,error}.tsx"
   ],
   "project": ["tsconfig.json"],
