@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Public_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
@@ -13,16 +13,20 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
+const publicSans = Public_Sans({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-public-sans",
 });
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
+    <html
+      lang="en"
+      className={`${publicSans.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <Providers>{children}</Providers>
         <Toaster />
