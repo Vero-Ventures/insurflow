@@ -1,0 +1,54 @@
+#!/bin/sh
+
+echo "Running pre-push checks..."
+
+# Check if branch is behind main or dev
+git fetch origin main dev 2>/dev/null
+
+current_branch=$(git branch --show-current)
+behind_main=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo "0")
+behind_dev=$(git rev-list --count HEAD..origin/dev 2>/dev/null || echo "0")
+
+if [ "$behind_main" -gt 0 ]; then
+  echo ""
+  echo "⚠️  Your branch is $behind_main commit(s) behind origin/main"
+  echo "   To sync with main, run:"
+  echo ""
+  echo "     git fetch origin main && git rebase origin/main"
+  echo ""
+  echo "   Or if you prefer merge:"
+  echo ""
+  echo "     git fetch origin main && git merge origin/main"
+  echo ""
+fi
+
+if [ "$behind_dev" -gt 0 ] && [ "$current_branch" != "main" ]; then
+  echo ""
+  echo "⚠️  Your branch is $behind_dev commit(s) behind origin/dev"
+  echo "   To sync with dev, run:"
+  echo ""
+  echo "     git fetch origin dev && git rebase origin/dev"
+  echo ""
+  echo "   Or if you prefer merge:"
+  echo ""
+  echo "     git fetch origin dev && git merge origin/dev"
+  echo ""
+fi
+
+# Full lint and type check
+echo "→ Running ESLint and TypeScript..."
+bun run check || exit 1
+
+# Unit tests
+echo "→ Running unit tests..."
+bun run test:run || exit 1
+
+# E2E tests
+echo "→ Running E2E tests..."
+bun run test:e2e || exit 1
+
+# Production build
+echo "→ Verifying production build..."
+bun run build || exit 1
+
+echo "All pre-push checks passed!"
