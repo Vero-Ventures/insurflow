@@ -12,7 +12,5 @@ output "project_name" {
   value       = vercel_project.insurflow.name
 }
 
-output "domains" {
-  description = "Project domains"
-  value       = vercel_project.insurflow.domains
-}
+# Note: Domains are managed separately via vercel_project_domain resources
+# or automatically assigned by Vercel (e.g., project-name.vercel.app)

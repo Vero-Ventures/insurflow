@@ -40,8 +40,8 @@ resource "vercel_project" "insurflow" {
   # Enable directory listing for debugging (disable in production)
   directory_listing = false
 
-  # Skew protection - keeps old deployments accessible for 24 hours
-  skew_protection = "24 hours"
+  # Skew protection - keeps old deployments accessible for 1 day
+  skew_protection = "1 day"
 }
 
 # =============================================================================
