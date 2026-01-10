@@ -1,0 +1,29 @@
+# =============================================================================
+# Terraform Variables for InsurFlow
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in the values
+# NEVER commit terraform.tfvars to version control
+# =============================================================================
+
+# Vercel Configuration
+# Get your API token from: https://vercel.com/account/tokens
+# vercel_api_token = "your-vercel-api-token"
+# vercel_team_id   = "your-team-id-or-slug"
+
+# GitHub Repository
+github_repo       = "Vero-Ventures/insurflow"
+production_branch = "main"
+
+# Database (Neon PostgreSQL)
+# Get connection string from Neon dashboard
+# database_url = "postgresql://user:pass@host/db?sslmode=require"
+
+# Better Auth Configuration
+# Generate a secure secret: openssl rand -base64 32
+# better_auth_secret = "your-32-char-secret"
+# better_auth_url    = "https://insurflow.vercel.app"
+
+# GitHub OAuth (optional)
+# Create OAuth App: https://github.com/settings/developers
+# github_client_id     = ""
+# github_client_secret = ""

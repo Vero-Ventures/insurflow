@@ -34,6 +34,17 @@ src/
 │   ├── better-auth/        # Auth configuration
 │   └── db/                 # Drizzle ORM schema and client
 └── styles/globals.css      # Global styles with CSS variables
+
+infra/                      # Terraform infrastructure as code
+├── main.tf                 # Vercel project and environment variables
+├── provider.tf             # Vercel provider configuration
+├── variables.tf            # Input variables
+├── outputs.tf              # Output values
+└── terraform.tfvars.example # Example variable values
+
+.github/workflows/          # GitHub Actions
+├── codeql.yml              # CodeQL security analysis
+└── security.yml            # Trivy vulnerability scanning
 ```
 
 ## Key Modules
@@ -124,6 +135,40 @@ Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib
 - `DATABASE_URL` should point to local Docker instance for development, Neon for production
 - Restart dev server after schema or environment changes
 - Do not commit local database artifacts
+
+## Deployment (Vercel + Terraform)
+
+Infrastructure is managed via Terraform in the `infra/` directory.
+
+### Initial Setup
+
+1. **Create Vercel API Token**: https://vercel.com/account/tokens
+2. **Set environment variables**:
+   ```bash
+   export VERCEL_API_TOKEN="your-token"
+   export VERCEL_TEAM="your-team-slug"  # optional
+   ```
+3. **Initialize Terraform**:
+   ```bash
+   cd infra
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your values (DATABASE_URL, BETTER_AUTH_SECRET, etc.)
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+### Deployment Flow
+
+- **Production**: Push to `main` branch triggers production deployment
+- **Preview**: Every PR gets a unique preview URL with Vercel Authentication enabled
+- **Environment Variables**: Managed via Terraform, sensitive values encrypted
+
+### Security Scanning
+
+- **Trivy**: Scans for vulnerabilities in dependencies and IaC misconfigurations
+- **CodeQL**: Static analysis for JavaScript/TypeScript security issues
+- **Dependency Review**: Blocks PRs introducing high-severity vulnerabilities
 
 ## Domain-Specific Concepts
 
