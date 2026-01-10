@@ -87,6 +87,11 @@ InsurFlow is an AI-integrated InsurTech SaaS platform for life insurance advisor
 - Commit subjects: imperative, present tense, under 72 chars (e.g., `Add income replacement calculator`)
 - Squash formatting-only changes into the related feature commit
 - PRs should link issues, summarize changes, list verification commands, and include UI captures for user-facing work
+- **Incremental Commits**: When working on multi-step tasks, create small, focused commits along the way to encapsulate each logical change. This keeps the git history clean and makes code review easier. For example, when adding a new feature:
+  1. Commit dependency additions separately
+  2. Commit configuration/setup changes
+  3. Commit new components/modules
+  4. Commit integration changes to existing code
 
 ## UI Components
 
