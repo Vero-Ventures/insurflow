@@ -146,3 +146,68 @@ A task is not complete until:
 2. **Tests Pass**: Relevant unit/integration tests are green
 3. **No Regression**: Existing functionality remains unaffected
 4. **Documentation**: Update AGENTS.md if new patterns or architecture decisions were established
+
+---
+
+## Technology Strategy & Operational Standards
+
+Modern development requires automated guardrails, not just manual vigilance. We automate standards within our DevOps infrastructure to ensure security, reliability, and standardization by default.
+
+### 1. Development Environment & Tooling
+
+- **Runtime & Package Manager**: Bun (superior speed for dependency installation and script execution)
+- **Monorepo Architecture**: Turborepo (planned) - centralize shared configs in `packages/config`
+- **Code Formatting**: Prettier with automated import sorting
+- **Git Hooks**: Husky + lint-staged (prevent unformatted/error-ridden commits)
+
+### 2. Static Analysis & Quality Gates
+
+- **Strict TypeScript**: `strict: true`, enforce `no-explicit-any`
+- **Dead Code Elimination**: Knip (detect unused dependencies)
+- **Commit Discipline**: Conventional Commits via Commitlint
+- **Database Safety**: `eslint-plugin-drizzle` (catch ORM errors at lint time)
+
+### 3. Testing Strategy
+
+- **E2E Testing**: Playwright (handles auth flows, parallel execution)
+- **Unit Testing**: Bun Test (Jest-compatible API, near-instant execution)
+
+### 4. AI & Automation Integration
+
+- **AI Code Reviews**: CodeRabbit, CodiumAI, or Gemini Code Assist
+- **Dependency Management**: Dependabot (auto-merge non-breaking patches if CI passes)
+- **Workflow Automation**: Auto-Author-Assign for PRs
+
+### 5. Security & Deployment (DevSecOps)
+
+- **Main Branch Protection**: Passing CI, code owner approval, no direct pushes
+- **Vulnerability Scanning**: Trivy (scan for CVEs before deployment)
+- **Deployment Gates**: Vercel Deployment Protection (block prod unless Quality Gate passes)
+- **Preview Environments**: Vercel Preview URLs for UAT before merging
+
+### 6. Observability & Analytics
+
+- **Structured Logging**: Axiom (one-click Vercel integration, deep JSON inspection)
+- **Error Tracking**: Sentry (source maps trace errors to specific commits)
+- **Product Analytics**: PostHog (validate user journeys during Customer Discovery)
+
+### 7. AI-Assisted Development Guardrails
+
+- **Supply Chain Security**: Socket.dev (block malicious packages)
+- **Secrets Detection**: GitGuardian/ggshield (verify API keys against services)
+- **Complexity Monitoring**: SonarCloud/SonarLint (flag unmaintainable code)
+- **Visual Regression Testing**: Storybook + Chromatic (detect UI breaks)
+
+### 8. Developer Experience (DX) Standards
+
+- **Zero-Friction Onboarding**: Working local app in 10 mins with setup script
+- **Environment Validation**: T3 Env (`@t3-oss/env-nextjs`) validates env vars at build time
+- **Database Branching**: Neon Database Branching (isolated DB per PR for schema migration testing)
+
+### 9. Structured Logging Strategy
+
+- **Philosophy**: "One Event Per Request" (loggingsucks.com) - reduces noise, adds context
+- **Standard**: Canonical Logging (Wide Events)
+  - Accumulate context (User ID, Endpoint, Status, Error, Duration, Feature Flags) into single JSON object
+  - Emit only when unit of work completes
+- **Implementation**: OpenTelemetry middleware to initialize context span, attach attributes, export on completion
