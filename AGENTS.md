@@ -86,9 +86,12 @@ Authentication uses Better Auth with Better Auth UI for pre-built components:
 
 Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib/utils.ts` merges Tailwind classes.
 
-## Testing Guidance
+## Testing
 
-- **Framework**: Vitest (when configured) for unit and integration tests
+### Unit Testing (Vitest)
+
+- **Framework**: Vitest with React Testing Library
+- **Config**: `vitest.config.ts` with jsdom environment
 - **Structure**: Mirror source structure with `__tests__/` folders (e.g., `src/lib/__tests__/utils.test.ts`)
 - **Patterns**:
   - Use `vi.mock()` for module-level mocking
@@ -97,7 +100,22 @@ Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib
 - **Running Tests**:
   - `bun run test` — watch mode for development
   - `bun run test:run` — single run for CI/verification
+  - `bun run test:coverage` — run with coverage report
 - **Adding Tests**: Create `__tests__/` folder next to source, name test files `*.test.ts`
+
+### E2E Testing (Playwright)
+
+- **Framework**: Playwright with Chromium browser
+- **Config**: `playwright.config.ts` with auto-start dev server
+- **Structure**: All E2E tests in `e2e/` directory (e.g., `e2e/auth.spec.ts`)
+- **Patterns**:
+  - Use Page Object Model for complex flows
+  - Test critical user journeys (auth, main features)
+  - Use `test.describe()` to group related tests
+- **Running Tests**:
+  - `bun run test:e2e` — run all E2E tests headlessly
+  - `bun run test:e2e:ui` — open Playwright UI for debugging
+- **CI Considerations**: E2E tests run with `CI=true` (single worker, retries enabled)
 
 ## Database & Configuration
 
@@ -170,7 +188,7 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 ### 3. Testing Strategy
 
 - **E2E Testing**: Playwright (handles auth flows, parallel execution)
-- **Unit Testing**: Bun Test (Jest-compatible API, near-instant execution)
+- **Unit Testing**: Vitest with React Testing Library (jsdom environment)
 
 ### 4. AI & Automation Integration
 
