@@ -8,18 +8,38 @@ if [ "$current_branch" != "main" ]; then
   behind_main=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo "0")
 
   if [ "$behind_main" -gt 0 ]; then
-    cat << EOF
+    echo ""
+    echo "Branch is $behind_main commit(s) behind main. Syncing..."
 
-Branch out of sync.
+    # Check for uncommitted changes
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      cat << EOF
 
-  Your branch "$current_branch" is $behind_main commit(s) behind main.
+Cannot auto-sync: uncommitted changes detected.
 
-  To sync:   ./scripts/sync-branch.sh
-  To bypass: SKIP_SYNC_CHECK=1 git push
+  Commit or stash your changes, then run: bun run sync
 
 EOF
+      exit 1
+    fi
 
-    [ "${SKIP_SYNC_CHECK:-}" = "1" ] || exit 1
+    # Try to rebase
+    if git rebase origin/main 2>/dev/null; then
+      echo "Synced successfully."
+      echo ""
+    else
+      # Rebase failed - abort and tell user to fix manually
+      git rebase --abort 2>/dev/null
+      cat << EOF
+
+Cannot auto-sync: conflicts detected.
+
+  Run manually:  bun run sync
+  To bypass:     SKIP_SYNC_CHECK=1 git push
+
+EOF
+      exit 1
+    fi
   fi
 fi
 
