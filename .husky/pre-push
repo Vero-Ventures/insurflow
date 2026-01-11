@@ -1,123 +1,43 @@
 #!/bin/sh
 
-echo ""
-echo "Running pre-push checks..."
-echo ""
-
-# =============================================================================
-# BRANCH SYNC CHECK
-# =============================================================================
-
 current_branch=$(git branch --show-current)
 
-# Skip sync check if pushing to main directly (should be rare/protected)
+# Check if behind main (skip if on main)
 if [ "$current_branch" != "main" ]; then
   git fetch origin main 2>/dev/null
-
   behind_main=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo "0")
 
   if [ "$behind_main" -gt 0 ]; then
     cat << EOF
 
-================================================================================
-BRANCH OUT OF SYNC
-================================================================================
+Branch out of sync.
 
-Your branch "$current_branch" is $behind_main commit(s) behind origin/main.
+  Your branch "$current_branch" is $behind_main commit(s) behind main.
 
-Pushing without syncing may cause merge conflicts in your pull request.
-
---------------------------------------------------------------------------------
-OPTIONS
---------------------------------------------------------------------------------
-
-  1. SYNC NOW (Recommended)
-     Cancel this push and run:
-
-       ./scripts/sync-branch.sh
-
-     This will rebase your branch onto main automatically.
-
-  2. SYNC WITH MERGE
-     If you prefer merge commits:
-
-       ./scripts/sync-branch.sh --merge
-
-  3. PUSH ANYWAY
-     Set SKIP_SYNC_CHECK=1 to bypass this check:
-
-       SKIP_SYNC_CHECK=1 git push
-
-     Note: You may need to resolve conflicts in the PR.
-
---------------------------------------------------------------------------------
-WHY THIS MATTERS
---------------------------------------------------------------------------------
-
-  - Keeps your PR mergeable without conflicts
-  - Makes code review easier (reviewers see only your changes)
-  - Ensures your code works with the latest main
-
-================================================================================
+  To sync:   ./scripts/sync-branch.sh
+  To bypass: SKIP_SYNC_CHECK=1 git push
 
 EOF
 
-    # Allow bypass with environment variable
-    if [ "${SKIP_SYNC_CHECK:-}" = "1" ]; then
-      echo "SKIP_SYNC_CHECK=1 detected, continuing with push..."
-      echo ""
-    else
-      exit 1
-    fi
+    [ "${SKIP_SYNC_CHECK:-}" = "1" ] || exit 1
   fi
 fi
 
-# =============================================================================
-# CODE QUALITY CHECKS
-# =============================================================================
-
-echo "--------------------------------------------------------------------------------"
-echo "RUNNING CODE QUALITY CHECKS"
-echo "--------------------------------------------------------------------------------"
+# Run checks
+echo "Running pre-push checks..."
 echo ""
 
-# Full lint and type check
-echo "[1/4] ESLint and TypeScript..."
-if ! bun run check; then
-  echo ""
-  echo "Lint/type check failed. Fix errors before pushing."
-  exit 1
-fi
-echo ""
+echo "[1/4] Lint & types..."
+bun run check || { echo "Fix lint/type errors before pushing."; exit 1; }
 
-# Unit tests
 echo "[2/4] Unit tests..."
-if ! bun run test:run; then
-  echo ""
-  echo "Unit tests failed. Fix failing tests before pushing."
-  exit 1
-fi
-echo ""
+bun run test:run || { echo "Fix failing tests before pushing."; exit 1; }
 
-# E2E tests
 echo "[3/4] E2E tests..."
-if ! bun run test:e2e; then
-  echo ""
-  echo "E2E tests failed. Fix failing tests before pushing."
-  exit 1
-fi
-echo ""
+bun run test:e2e || { echo "Fix failing E2E tests before pushing."; exit 1; }
 
-# Production build
-echo "[4/4] Production build..."
-if ! bun run build; then
-  echo ""
-  echo "Build failed. Fix build errors before pushing."
-  exit 1
-fi
+echo "[4/4] Build..."
+bun run build || { echo "Fix build errors before pushing."; exit 1; }
 
 echo ""
-echo "================================================================================"
-echo "ALL CHECKS PASSED"
-echo "================================================================================"
-echo ""
+echo "All checks passed."
