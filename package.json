@@ -6,6 +6,9 @@
   "scripts": {
     "build": "next build",
     "check": "eslint && tsc --noEmit",
+    "sync": "bash scripts/sync-branch.sh",
+    "sync:check": "bash scripts/sync-branch.sh --check",
+    "sync:merge": "bash scripts/sync-branch.sh --merge",
     "services:start": "bash scripts/dev-services.sh start",
     "services:stop": "bash scripts/dev-services.sh stop",
     "services:status": "bash scripts/dev-services.sh status",
