@@ -6,6 +6,7 @@
   "scripts": {
     "build": "next build",
     "check": "eslint && tsc --noEmit",
+    "verify": "bun run check && bun run test:run && bun run test:e2e && bun run build",
     "sync": "bash scripts/sync-branch.sh",
     "sync:check": "bash scripts/sync-branch.sh --check",
     "sync:merge": "bash scripts/sync-branch.sh --merge",
