@@ -1,1 +1,98 @@
-bunx commitlint --edit $1
+#!/usr/bin/env sh
+
+# Run commitlint silently and capture the exit code
+# Use || true to prevent immediate exit with sh -e
+EXIT_CODE=0
+bunx commitlint --edit "$1" >/dev/null 2>&1 || EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  # Get the commit message for display
+  COMMIT_MSG=$(cat "$1")
+
+  cat << 'EOF'
+
+================================================================================
+COMMIT MESSAGE REJECTED
+================================================================================
+
+This project enforces Conventional Commits to maintain a clean git history
+and enable automated changelogs.
+
+YOUR MESSAGE:
+EOF
+  echo "  \"$COMMIT_MSG\""
+  cat << 'EOF'
+
+--------------------------------------------------------------------------------
+FORMAT
+--------------------------------------------------------------------------------
+
+  <type>(scope): <description>
+
+  [optional body]
+
+  [optional footer]
+
+The scope is optional but recommended for clarity.
+The description should be lowercase and not end with a period.
+
+--------------------------------------------------------------------------------
+TYPES                                       
+--------------------------------------------------------------------------------
+
+  feat      Add a new feature or capability
+  fix       Fix a bug or defect
+  docs      Documentation changes only (README, comments, etc.)
+  style     Code style changes (formatting, semicolons, whitespace)
+  refactor  Code restructuring without changing behavior
+  test      Add or update tests
+  chore     Maintenance tasks (deps, configs, scripts)
+  perf      Performance improvements
+  ci        CI/CD pipeline changes (GitHub Actions, etc.)
+  build     Build system changes (Vite, Webpack, etc.)
+  revert    Revert a previous commit
+
+--------------------------------------------------------------------------------
+EXAMPLES
+--------------------------------------------------------------------------------
+
+  feat(auth): add password reset flow
+  fix(db): resolve connection pool timeout
+  docs: update API endpoint documentation
+  style(ui): fix inconsistent button padding
+  refactor(api): extract validation into middleware
+  test(auth): add unit tests for login service
+  chore(deps): bump next.js to v16
+  perf(queries): add database index for user lookups
+  ci: add e2e tests to pull request workflow
+  build: configure path aliases for imports
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+
+  BAD:   "Fixed the login bug"           -> No type prefix
+  GOOD:  "fix(auth): resolve login redirect loop"
+
+  BAD:   "feat: Added new feature"       -> Uppercase, past tense
+  GOOD:  "feat: add user profile page"
+
+  BAD:   "update stuff"                  -> Vague, no type
+  GOOD:  "refactor(utils): simplify date formatting logic"
+
+  BAD:   "WIP"                           -> Not descriptive
+  GOOD:  "feat(dashboard): add chart skeleton loader"
+
+--------------------------------------------------------------------------------
+REFERENCE
+--------------------------------------------------------------------------------
+
+  Specification:  https://www.conventionalcommits.org
+  Why it matters: Enables automated changelogs, semantic versioning,
+                  and makes git history searchable and meaningful.
+
+================================================================================
+
+EOF
+  exit 1
+fi
