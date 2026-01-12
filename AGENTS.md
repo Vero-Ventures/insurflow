@@ -353,25 +353,22 @@ Infrastructure is managed via Terraform in the `infra/` directory.
 
 ### Branching Strategy
 
-We use a **protected dev + main** workflow:
+We use a **protected main** (trunk-based) workflow:
 
 ```
-feature-branch → PR to dev → merge dev to main (release)
+feature-branch → PR to main
 ```
 
 | Branch            | Purpose              | Protection                            |
 | ----------------- | -------------------- | ------------------------------------- |
 | `main`            | Production releases  | PR required, CI must pass, 1 approval |
-| `dev`             | Integration branch   | PR required, CI must pass, 1 approval |
-| `feat/*`, `fix/*` | Feature/fix branches | None - created from dev               |
+| `feat/*`, `fix/*` | Feature/fix branches | None - created from main              |
 
 **Workflow:**
 
-1. Create feature branch from `dev`: `git checkout -b feat/my-feature`
+1. Create feature branch from `main`: `git checkout -b feat/my-feature`
 2. Make changes, commit with conventional commits
-3. Open PR to `dev`, get approval, CI must pass
-4. Merge to `dev` → auto-deploys to staging/preview
-5. When ready for release: merge `dev` → `main` → auto-deploys to production
+3. Open PR to `main`, get approval, CI must pass → auto-deploys to production
 
 **Branch Naming:**
 
