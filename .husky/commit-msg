@@ -1,1 +1,30 @@
-bunx commitlint --edit $1
+#!/usr/bin/env sh
+
+# Run commitlint silently and capture the exit code
+# Use || true to prevent immediate exit with sh -e
+EXIT_CODE=0
+bunx commitlint --edit "$1" >/dev/null 2>&1 || EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  COMMIT_MSG=$(cat "$1")
+
+  cat << EOF
+
+Commit message rejected.
+
+  Your message:  "$COMMIT_MSG"
+
+  Expected format:  <type>(scope): <description>
+
+  Types:  feat, fix, docs, style, refactor, test, chore, perf, ci, build
+
+  Examples:
+    feat(auth): add password reset flow
+    fix: resolve login redirect loop
+    chore(deps): bump dependencies
+
+  Docs: https://conventionalcommits.org
+
+EOF
+  exit 1
+fi

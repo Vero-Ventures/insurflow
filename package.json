@@ -6,6 +6,10 @@
   "scripts": {
     "build": "next build",
     "check": "eslint && tsc --noEmit",
+    "verify": "bun run check && bun run test:run && bun run test:e2e && bun run build",
+    "sync": "bash scripts/sync-branch.sh",
+    "sync:check": "bash scripts/sync-branch.sh --check",
+    "sync:merge": "bash scripts/sync-branch.sh --merge",
     "services:start": "bash scripts/dev-services.sh start",
     "services:stop": "bash scripts/dev-services.sh stop",
     "services:status": "bash scripts/dev-services.sh status",
@@ -26,6 +30,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "knip": "knip",
     "prepare": "husky"
   },
   "dependencies": {
@@ -64,6 +69,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.16",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9.23.0",
     "eslint-config-next": "^16.1.1",
@@ -71,6 +77,7 @@
     "happy-dom": "^20.1.0",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
+    "knip": "^5.80.2",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",

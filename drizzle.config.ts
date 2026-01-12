@@ -1,12 +1,17 @@
-import { type Config } from "drizzle-kit";
+import "dotenv/config";
+import type { Config } from "drizzle-kit";
 
-import { env } from "@/env";
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set");
+}
 
 export default {
   schema: "./src/server/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: databaseUrl,
   },
   tablesFilter: ["insurflow_*"],
 } satisfies Config;
