@@ -43,6 +43,7 @@ infra/                      # Terraform infrastructure as code
 └── terraform.tfvars.example # Example variable values
 
 .github/workflows/          # GitHub Actions
+├── ci.yml                  # CI pipeline (lint, test, build)
 ├── codeql.yml              # CodeQL security analysis
 └── security.yml            # Trivy vulnerability scanning
 ```
@@ -67,10 +68,14 @@ infra/                      # Terraform infrastructure as code
 - `bun run dev` — start Docker services, push schema, and run HMR dev server
 - `bun run build` — create the production bundle and run type checks
 - `bun run preview` — serve the built app for smoke testing
-- `bun run check` — run ESLint and TypeScript without emitting output; **run this after finishing edits to verify no lint/type errors**
+- `bun run check` — run ESLint and TypeScript without emitting output
+- `bun run verify` — full verification: lint, typecheck, unit tests, e2e tests, build
 - `bun run db:generate` / `bun run db:migrate` — generate Drizzle migrations & apply them
 - `bun run db:push` — push schema changes directly to database (dev only)
 - `bun run db:studio` — open Drizzle Studio for local data inspection
+- `bun run sync` — sync current branch with main (rebase)
+- `bun run sync:check` — check if branch is behind main
+- `bun run sync:merge` — sync with main using merge instead of rebase
 
 ## Code Style & Conventions
 
@@ -129,6 +134,24 @@ Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib
 - **CI Considerations**: E2E tests run with `CI=true` (single worker, retries enabled)
 
 ## Database & Configuration
+
+### Schema Management
+
+Drizzle ORM uses two different workflows:
+
+| Command                      | Purpose                             | When to Use                                             |
+| ---------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| `db:push`                    | Directly syncs schema to DB         | **Local dev only** - fast iteration, no migration files |
+| `db:generate` + `db:migrate` | Creates and applies migration files | **Production** - trackable, reversible changes          |
+
+**Workflow:**
+
+1. **Local development**: Use `db:push` for quick iteration
+2. **Before PR**: Run `db:generate` to create migration files if schema changed
+3. **CI tests**: Uses `db:push` (ephemeral database, no data to migrate)
+4. **Production**: Vercel runs `db:migrate` during deployment
+
+### Configuration
 
 - Use Drizzle schema at `src/server/db/schema.ts`; rerun `bun run db:generate` after edits
 - Local Postgres defaults come from `docker-compose.yml` (port 5432)
@@ -192,20 +215,91 @@ Infrastructure is managed via Terraform in the `infra/` directory.
 
 ## Git & Collaboration
 
-- **Conventional Commits**: All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format, enforced by Commitlint
-  - Format: `type(scope): description` (e.g., `feat(auth): add password reset flow`)
-  - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
-- **Git Hooks** (via Husky):
-  - `pre-commit`: Runs lint-staged (ESLint + Prettier on staged files only) - fast, non-blocking
-  - `commit-msg`: Validates commit message format via Commitlint
-  - `pre-push`: Comprehensive gate before pushing - runs full lint, type check, unit tests, E2E tests, and production build
-- Squash formatting-only changes into the related feature commit
-- PRs should link issues, summarize changes, list verification commands, and include UI captures for user-facing work
-- **Incremental Commits**: When working on multi-step tasks, create small, focused commits along the way to encapsulate each logical change. This keeps the git history clean and makes code review easier. For example, when adding a new feature:
-  1. Commit dependency additions separately
-  2. Commit configuration/setup changes
-  3. Commit new components/modules
-  4. Commit integration changes to existing code
+### Branching Strategy
+
+We use a **protected dev + main** workflow:
+
+```
+feature-branch → PR to dev → merge dev to main (release)
+```
+
+| Branch            | Purpose              | Protection                            |
+| ----------------- | -------------------- | ------------------------------------- |
+| `main`            | Production releases  | PR required, CI must pass, 1 approval |
+| `dev`             | Integration branch   | PR required, CI must pass, 1 approval |
+| `feat/*`, `fix/*` | Feature/fix branches | None - created from dev               |
+
+**Workflow:**
+
+1. Create feature branch from `dev`: `git checkout -b feat/my-feature`
+2. Make changes, commit with conventional commits
+3. Open PR to `dev`, get approval, CI must pass
+4. Merge to `dev` → auto-deploys to staging/preview
+5. When ready for release: merge `dev` → `main` → auto-deploys to production
+
+**Branch Naming:**
+
+- `feat/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation updates
+- `refactor/description` - Code refactoring
+
+### Conventional Commits
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format, enforced by Commitlint:
+
+- Format: `type(scope): description` (e.g., `feat(auth): add password reset flow`)
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
+- The scope is optional but recommended
+
+### Git Hooks (Husky)
+
+| Hook         | When                  | What it Does                                              |
+| ------------ | --------------------- | --------------------------------------------------------- |
+| `pre-commit` | Before commit created | Runs lint-staged (ESLint + Prettier on staged files)      |
+| `commit-msg` | After message entered | Validates conventional commit format                      |
+| `pre-push`   | Before push to remote | Auto-syncs with main if behind, runs lint/typecheck/tests |
+
+**Pre-push auto-sync:**
+
+- If your branch is behind main, the hook automatically rebases
+- If there are conflicts, it aborts and tells you to run `bun run sync` manually
+- If the branch was previously pushed, it reminds you to `git push --force-with-lease`
+
+### CI Pipeline (GitHub Actions)
+
+The CI workflow (`.github/workflows/ci.yml`) runs on all PRs and pushes to main/dev:
+
+| Job         | What it Checks                 |
+| ----------- | ------------------------------ |
+| `lint`      | ESLint + TypeScript            |
+| `test-unit` | Vitest unit tests              |
+| `test-e2e`  | Playwright E2E tests           |
+| `build`     | Production build succeeds      |
+| `ci-pass`   | Gate job - all above must pass |
+
+**Branch Protection Requirements:**
+
+- CI must pass (`ci-pass` job)
+- At least 1 approval required
+- Branch must be up-to-date with base
+
+### PR Guidelines
+
+- Link related issues
+- Summarize changes clearly
+- Include verification commands
+- Add UI screenshots for user-facing changes
+- Squash formatting-only changes into related commits
+
+### Incremental Commits
+
+When working on multi-step tasks, create small, focused commits:
+
+1. Commit dependency additions separately
+2. Commit configuration/setup changes
+3. Commit new components/modules
+4. Commit integration changes to existing code
 
 ## Definition of Done
 
@@ -232,7 +326,7 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 ### 2. Static Analysis & Quality Gates
 
 - **Strict TypeScript**: `strict: true`, enforce `no-explicit-any`
-- **Dead Code Elimination**: Knip (detect unused dependencies)
+- **Dead Code Elimination**: Knip (`bun run knip` detects unused dependencies, files, and exports)
 - **Commit Discipline**: Conventional Commits via Commitlint
 - **Database Safety**: `eslint-plugin-drizzle` (catch ORM errors at lint time)
 

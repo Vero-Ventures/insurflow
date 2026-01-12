@@ -1,10 +1,10 @@
-# The Vercel provider is configured via environment variables:
-# - VERCEL_API_TOKEN: API token from https://vercel.com/account/tokens
-# - VERCEL_TEAM: Team slug or ID (optional, for team-based deployments)
+# The Vercel provider can be configured via:
+# 1. terraform.tfvars (vercel_api_token variable)
+# 2. Environment variable (VERCEL_API_TOKEN) - used as fallback
 #
-# Environment variables are the recommended approach for security.
-# Do not hardcode tokens in Terraform files.
+# If both are set, the variable takes precedence.
 
 provider "vercel" {
-  # Configuration is read from environment variables
+  api_token = var.vercel_api_token
+  team      = var.vercel_team_id
 }
