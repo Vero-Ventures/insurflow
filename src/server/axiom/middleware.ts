@@ -40,7 +40,9 @@ export async function axiomMiddleware(
   const duration = Date.now() - startTime;
 
   // Emit single log event with available context
+  // Note: statusCode reflects middleware response, not final handler response
   await logger.info("Request passed through middleware", {
+    statusCode: response.status,
     duration,
   });
 
