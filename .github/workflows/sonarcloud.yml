@@ -36,12 +36,25 @@ jobs:
         env:
           SKIP_ENV_VALIDATION: true
 
+      - name: Debug coverage output
+        run: |
+          echo "=== Coverage directory contents ==="
+          ls -la coverage/ 2>/dev/null || echo "Coverage directory does not exist"
+          echo "=== Looking for lcov.info ==="
+          find . -name "lcov.info" -type f 2>/dev/null || echo "No lcov.info found"
+
       - name: Verify coverage file exists
         run: |
           if [ ! -f coverage/lcov.info ]; then
             echo "Error: coverage/lcov.info not found"
-            ls -la coverage/ || echo "Coverage directory does not exist"
+            echo "Coverage directory contents:"
+            ls -la coverage/ 2>/dev/null || echo "Coverage directory does not exist"
             exit 1
+          else
+            echo "Coverage file found:"
+            ls -la coverage/lcov.info
+            echo "=== Coverage file preview (first 50 lines) ==="
+            head -50 coverage/lcov.info
           fi
 
       - name: SonarCloud Scan
@@ -51,8 +64,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=Vero-Ventures_insurflow
+            -Dsonar.organization=vero-ventures
 
       - name: Check Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@72f24ebf1f81eda168a979ce14b8203273b7c3ad # master

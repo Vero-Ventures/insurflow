@@ -13,6 +13,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
+      reportsDirectory: path.resolve(__dirname, "./coverage"),
       exclude: [
         "node_modules/",
         "e2e/",
