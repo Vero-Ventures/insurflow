@@ -8,6 +8,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sonarcloud:
     name: SonarCloud Scan
@@ -36,26 +40,14 @@ jobs:
         env:
           SKIP_ENV_VALIDATION: true
 
-      - name: Debug coverage output
-        run: |
-          echo "=== Coverage directory contents ==="
-          ls -la coverage/ 2>/dev/null || echo "Coverage directory does not exist"
-          echo "=== Looking for lcov.info ==="
-          find . -name "lcov.info" -type f 2>/dev/null || echo "No lcov.info found"
-
       - name: Verify coverage file exists
         run: |
           if [ ! -f coverage/lcov.info ]; then
             echo "Error: coverage/lcov.info not found"
-            echo "Coverage directory contents:"
             ls -la coverage/ 2>/dev/null || echo "Coverage directory does not exist"
             exit 1
-          else
-            echo "Coverage file found:"
-            ls -la coverage/lcov.info
-            echo "=== Coverage file preview (first 50 lines) ==="
-            head -50 coverage/lcov.info
           fi
+          echo "Coverage file found: $(wc -l < coverage/lcov.info) lines"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@eb211723266fe8e83102bac7361f0a05c3ac1d1b # master
