@@ -36,7 +36,8 @@ export async function axiomMiddleware(
 
   // Note: In Next.js middleware, we cannot await the actual request processing to complete
   // The response object here is the immediate middleware response, not the final handler response
-  // For accurate duration and status tracking, use instrumentation or route handlers with logging
+  // Duration represents middleware processing time only, not full request handling time
+  // For accurate end-to-end duration and status tracking, use instrumentation or route handlers with logging
   const duration = Date.now() - startTime;
 
   // Emit single log event with available context
