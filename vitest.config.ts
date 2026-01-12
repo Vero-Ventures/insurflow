@@ -12,7 +12,7 @@ export default defineConfig({
     exclude: ["node_modules", "e2e/**"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html", "lcov"], // ← Ensure "lcov" is here
+      reporter: ["text", "json", "html", "lcov"],
       exclude: [
         "node_modules/",
         "e2e/",
@@ -20,6 +20,11 @@ export default defineConfig({
         "**/*.d.ts",
         "src/components/ui/**",
       ],
+    },
+    server: {
+      deps: {
+        inline: ["html-encoding-sniffer"],
+      },
     },
   },
   resolve: {
