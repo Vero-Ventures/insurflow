@@ -1,51 +1,55 @@
 #!/bin/sh
 
-current_branch=$(git branch --show-current)
+# Allow bypassing sync check
+if [ "$SKIP_SYNC_CHECK" = "1" ]; then
+  echo "Skipping sync check (SKIP_SYNC_CHECK=1)"
+else
+  current_branch=$(git branch --show-current)
 
-# Check if behind main (skip if on main)
-if [ "$current_branch" != "main" ]; then
-  git fetch origin main 2>/dev/null
-  behind_main=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo "0")
+  # Check if behind main (skip if on main)
+  if [ "$current_branch" != "main" ]; then
+    git fetch origin main 2>/dev/null
+    behind_main=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo "0")
 
-  if [ "$behind_main" -gt 0 ]; then
-    echo ""
-    echo "Branch is $behind_main commit(s) behind main. Syncing..."
+    if [ "$behind_main" -gt 0 ]; then
+      echo ""
+      echo "Branch is $behind_main commit(s) behind main. Syncing..."
 
-    # Check for uncommitted changes
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-      cat << EOF
+      # Check for uncommitted changes
+      if ! git diff --quiet || ! git diff --cached --quiet; then
+        cat << EOF
 
 Cannot auto-sync: uncommitted changes detected.
 
   Commit or stash your changes, then run: bun run sync
 
 EOF
-      exit 1
-    fi
+        exit 1
+      fi
 
-    # Check if branch exists on remote (will need force push after rebase)
-    needs_force=false
-    if git rev-parse --verify origin/"$current_branch" >/dev/null 2>&1; then
-      needs_force=true
-    fi
+      # Check if branch exists on remote (will need force push after rebase)
+      needs_force=false
+      if git rev-parse --verify origin/"$current_branch" >/dev/null 2>&1; then
+        needs_force=true
+      fi
 
-    # Try to rebase
-    if git rebase origin/main; then
-      echo ""
-      echo "Synced successfully."
-      
-      if [ "$needs_force" = true ]; then
-        cat << EOF
+      # Try to rebase
+      if git rebase origin/main; then
+        echo ""
+        echo "Synced successfully."
+        
+        if [ "$needs_force" = true ]; then
+          cat << EOF
 
 Run: git push --force-with-lease
 
 EOF
-        exit 1
-      fi
-      echo ""
-    else
-      git rebase --abort 2>/dev/null
-      cat << EOF
+          exit 0
+        fi
+        echo ""
+      else
+        git rebase --abort 2>/dev/null
+        cat << EOF
 
 Cannot auto-sync: conflicts detected.
 
@@ -53,7 +57,8 @@ Cannot auto-sync: conflicts detected.
   To bypass:     SKIP_SYNC_CHECK=1 git push
 
 EOF
-      exit 1
+        exit 1
+      fi
     fi
   fi
 fi
