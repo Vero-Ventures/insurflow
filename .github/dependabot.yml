@@ -8,7 +8,7 @@ updates:
       day: "monday"
     groups:
       # Group minor/patch updates to reduce PR noise
-      dependencies:
+      minor-and-patch:
         patterns:
           - "*"
         update-types:
@@ -24,5 +24,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     commit-message:
       prefix: "ci(deps)"
+    open-pull-requests-limit: 10
