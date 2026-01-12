@@ -27,3 +27,29 @@ production_branch = "main"
 # Create OAuth App: https://github.com/settings/developers
 # github_client_id     = ""
 # github_client_secret = ""
+
+# =============================================================================
+# Observability & Analytics (optional but recommended)
+# =============================================================================
+
+# Axiom (Structured Logging)
+# Sign up at: https://app.axiom.co
+# Get token from: https://app.axiom.co/settings/tokens
+# axiom_token   = ""
+# axiom_dataset = "insurflow"
+# axiom_org_id  = ""
+
+# Sentry (Error Tracking)
+# Sign up at: https://sentry.io
+# Get DSN from: https://sentry.io/settings/projects/
+# sentry_dsn                = ""
+# next_public_sentry_dsn    = ""
+# sentry_auth_token         = ""  # For source map uploads
+# sentry_org                = ""
+# sentry_project            = ""
+
+# PostHog (Product Analytics)
+# Sign up at: https://posthog.com
+# Get key from: https://app.posthog.com/project/settings
+# next_public_posthog_key  = ""
+# next_public_posthog_host = "https://app.posthog.com"
