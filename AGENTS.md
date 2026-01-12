@@ -358,7 +358,8 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 
 - **Supply Chain Security**: Socket.dev (block malicious packages)
 - **Secrets Detection**: GitGuardian/ggshield (verify API keys against services)
-- **Complexity Monitoring**: SonarCloud/SonarLint (flag unmaintainable code)
+- **Code Quality & Security**: SonarCloud (code smells, bugs, vulnerabilities, technical debt)
+- **Complexity Monitoring**: SonarCloud (flag unmaintainable code, cyclomatic complexity)
 - **Visual Regression Testing**: Storybook + Chromatic (detect UI breaks)
 
 ### 8. Developer Experience (DX) Standards
