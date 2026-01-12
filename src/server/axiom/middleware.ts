@@ -31,20 +31,21 @@ export async function axiomMiddleware(
   // Get response (let other middleware and handlers run)
   const response = NextResponse.next();
 
-  // Calculate duration
+  // Add request ID to response headers for tracing
+  response.headers.set("x-request-id", requestId);
+
+  // Note: In Next.js middleware, we cannot await the actual request processing to complete
+  // The response object here is the immediate middleware response, not the final handler response
+  // For accurate duration and status tracking, use instrumentation or route handlers with logging
   const duration = Date.now() - startTime;
 
-  // Emit single log event with complete context
-  await logger.info("Request completed", {
-    statusCode: response.status,
+  // Emit single log event with available context
+  await logger.info("Request passed through middleware", {
     duration,
   });
 
   // Flush logs
   await logger.flush();
-
-  // Add request ID to response headers for tracing
-  response.headers.set("x-request-id", requestId);
 
   return response;
 }
