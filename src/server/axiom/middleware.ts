@@ -1,12 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { createLogger } from "@/server/axiom";
 
 /**
- * Generate a unique request ID
+ * Generate a unique request ID using cryptographically secure random values
  */
 function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `req_${randomUUID()}`;
 }
 
 /**
