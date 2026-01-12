@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { authClient } from "@/server/better-auth/client";
+import { PostHogProvider } from "@/components/posthog-provider";
 
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function Providers({ children }: { children: ReactNode }) {
         }}
         Link={Link}
       >
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </AuthUIProvider>
     </ThemeProvider>
   );

@@ -80,3 +80,73 @@ variable "github_client_secret" {
   sensitive   = true
   default     = ""
 }
+
+# =============================================================================
+# Observability & Analytics
+# =============================================================================
+
+# Axiom (Structured Logging)
+variable "axiom_token" {
+  description = "Axiom API token from https://app.axiom.co/settings/tokens"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "axiom_dataset" {
+  description = "Axiom dataset name"
+  type        = string
+  default     = "insurflow"
+}
+
+variable "axiom_org_id" {
+  description = "Axiom organization ID (optional)"
+  type        = string
+  default     = ""
+}
+
+# Sentry (Error Tracking)
+variable "sentry_dsn" {
+  description = "Sentry DSN for server-side error tracking"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "next_public_sentry_dsn" {
+  description = "Sentry DSN for client-side error tracking"
+  type        = string
+  default     = ""
+}
+
+variable "sentry_auth_token" {
+  description = "Sentry auth token for source map uploads (optional)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "sentry_org" {
+  description = "Sentry organization slug"
+  type        = string
+  default     = ""
+}
+
+variable "sentry_project" {
+  description = "Sentry project slug"
+  type        = string
+  default     = ""
+}
+
+# PostHog (Product Analytics)
+variable "next_public_posthog_key" {
+  description = "PostHog project API key from https://app.posthog.com/project/settings"
+  type        = string
+  default     = ""
+}
+
+variable "next_public_posthog_host" {
+  description = "PostHog instance URL"
+  type        = string
+  default     = "https://app.posthog.com"
+}

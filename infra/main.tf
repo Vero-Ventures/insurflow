@@ -94,6 +94,102 @@ resource "vercel_project_environment_variable" "github_client_secret_prod" {
   comment    = "GitHub OAuth Client Secret"
 }
 
+# Axiom (Structured Logging)
+resource "vercel_project_environment_variable" "axiom_token_prod" {
+  count      = var.axiom_token != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "AXIOM_TOKEN"
+  value      = var.axiom_token
+  target     = ["production", "preview"]
+  sensitive  = true
+  comment    = "Axiom API token for structured logging"
+}
+
+resource "vercel_project_environment_variable" "axiom_dataset_prod" {
+  count      = var.axiom_dataset != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "AXIOM_DATASET"
+  value      = var.axiom_dataset
+  target     = ["production", "preview"]
+  comment    = "Axiom dataset name"
+}
+
+resource "vercel_project_environment_variable" "axiom_org_id_prod" {
+  count      = var.axiom_org_id != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "AXIOM_ORG_ID"
+  value      = var.axiom_org_id
+  target     = ["production", "preview"]
+  comment    = "Axiom organization ID"
+}
+
+# Sentry (Error Tracking)
+resource "vercel_project_environment_variable" "sentry_dsn_prod" {
+  count      = var.sentry_dsn != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "SENTRY_DSN"
+  value      = var.sentry_dsn
+  target     = ["production", "preview"]
+  sensitive  = true
+  comment    = "Sentry DSN for server-side error tracking"
+}
+
+resource "vercel_project_environment_variable" "next_public_sentry_dsn_prod" {
+  count      = var.next_public_sentry_dsn != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_SENTRY_DSN"
+  value      = var.next_public_sentry_dsn
+  target     = ["production", "preview"]
+  comment    = "Sentry DSN for client-side error tracking"
+}
+
+resource "vercel_project_environment_variable" "sentry_auth_token_prod" {
+  count      = var.sentry_auth_token != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "SENTRY_AUTH_TOKEN"
+  value      = var.sentry_auth_token
+  target     = ["production", "preview"]
+  sensitive  = true
+  comment    = "Sentry auth token for source map uploads"
+}
+
+resource "vercel_project_environment_variable" "sentry_org_prod" {
+  count      = var.sentry_org != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "SENTRY_ORG"
+  value      = var.sentry_org
+  target     = ["production", "preview"]
+  comment    = "Sentry organization slug"
+}
+
+resource "vercel_project_environment_variable" "sentry_project_prod" {
+  count      = var.sentry_project != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "SENTRY_PROJECT"
+  value      = var.sentry_project
+  target     = ["production", "preview"]
+  comment    = "Sentry project slug"
+}
+
+# PostHog (Product Analytics)
+resource "vercel_project_environment_variable" "next_public_posthog_key_prod" {
+  count      = var.next_public_posthog_key != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_KEY"
+  value      = var.next_public_posthog_key
+  target     = ["production", "preview"]
+  comment    = "PostHog project API key for product analytics"
+}
+
+resource "vercel_project_environment_variable" "next_public_posthog_host_prod" {
+  count      = var.next_public_posthog_host != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_HOST"
+  value      = var.next_public_posthog_host
+  target     = ["production", "preview"]
+  comment    = "PostHog instance URL"
+}
+
 # =============================================================================
 # Environment Variables - Preview
 # =============================================================================
