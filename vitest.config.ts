@@ -12,13 +12,13 @@ export default defineConfig({
     exclude: ["node_modules", "e2e/**"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"], // ← Ensure "lcov" is here
       exclude: [
         "node_modules/",
         "e2e/",
         "**/*.config.*",
         "**/*.d.ts",
-        "src/components/ui/**", // shadcn components are external
+        "src/components/ui/**",
       ],
     },
   },
