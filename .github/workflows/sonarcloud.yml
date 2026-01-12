@@ -36,6 +36,14 @@ jobs:
         env:
           SKIP_ENV_VALIDATION: true
 
+      - name: Verify coverage file exists
+        run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "Error: coverage/lcov.info not found"
+            ls -la coverage/ || echo "Coverage directory does not exist"
+            exit 1
+          fi
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@eb211723266fe8e83102bac7361f0a05c3ac1d1b # master
         env:
