@@ -113,45 +113,92 @@ Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib
 
 ## Observability & Analytics
 
-### Structured Logging (Axiom)
+### Structured Logging & Tracing (OpenTelemetry + Grafana Cloud)
 
-InsurFlow uses Axiom for structured logging, following the **Canonical Logging** (Wide Events) pattern from [loggingsucks.com](https://loggingsucks.com).
+InsurFlow uses OpenTelemetry for structured logging and distributed tracing, following the **Canonical Logging** (Wide Events) pattern from [loggingsucks.com](https://loggingsucks.com). Telemetry is exported to Grafana Cloud for visualization and analysis.
 
 **Philosophy**: "One Event Per Request" - accumulate context throughout the request lifecycle and emit a single wide event when complete. This reduces noise and adds comprehensive context.
 
-**Usage**:
+**Architecture**:
+
+- **OpenTelemetry SDK**: Traces and logs
+- **AsyncLocalStorage**: Request context propagation
+- **OTLP Export**: Grafana Cloud (Tempo for traces, Loki for logs)
+- **Automatic User Context**: Better Auth session integration
+
+**Usage - API Routes**:
 
 ```typescript
-import { createLogger } from "~/server/axiom";
+import { withTracing } from "@/server/tracing";
 
-// Create logger with initial context
-const logger = createLogger({
-  userId: "user_123",
-  endpoint: "/api/users",
+// Wrap your API route handler
+export const GET = withTracing(async (request, ctx) => {
+  // Add custom attributes to the canonical log event
+  ctx.addAttribute("customField", "value");
+
+  // Your handler logic
+  const users = await db.users.findMany();
+  ctx.addAttribute("userCount", users.length);
+
+  return Response.json(users);
 });
 
-// Add context throughout request
-logger.addContext({ operation: "fetchUser" });
-
-// Emit log with complete context
-await logger.info("User fetched successfully", {
-  statusCode: 200,
-  duration: 45,
+// For public routes without user extraction
+export const GET = withTracingPublic(async (request, ctx) => {
+  return Response.json({ status: "healthy" });
 });
+```
 
-// Always flush at end of request
-await logger.flush();
+**Usage - Manual Logging**:
+
+```typescript
+import { log, addRequestAttribute } from "@/server/tracing";
+
+// Log with current request context (if within withTracing)
+log.info("Processing payment", { amount: 100 });
+log.warn("Rate limit approaching", { remaining: 5 });
+log.error("Payment failed", new Error("Insufficient funds"));
+
+// Add attributes to the canonical log event
+addRequestAttribute("paymentId", "pay_123");
 ```
 
 **Log Levels**: `debug`, `info`, `warn`, `error`, `fatal`
 
 **Configuration**:
 
-- `AXIOM_TOKEN`: API token from https://app.axiom.co/settings/tokens
-- `AXIOM_DATASET`: Dataset name (default: "insurflow")
-- `AXIOM_ORG_ID`: Organization ID (optional)
+- `OTEL_SERVICE_NAME`: Service identifier (default: "insurflow")
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: Grafana Cloud OTLP endpoint
+- `GRAFANA_CLOUD_INSTANCE_ID`: Your Grafana Cloud instance ID
+- `GRAFANA_CLOUD_API_TOKEN`: API token with publish permissions
+- `OTEL_TRACES_SAMPLER_ARG`: Sampling rate (0.0-1.0, default: 1.0 dev, 0.2 prod)
 
-**Fallback**: If Axiom is not configured, logs are written to console in JSON format.
+**Grafana Cloud Setup**:
+
+1. Create account at https://grafana.com/products/cloud/
+2. Go to My Account → Grafana Cloud Portal → Your Stack → Details
+3. Find OpenTelemetry section and click Configure
+4. Copy endpoint and generate API token
+5. Set environment variables in `.env`
+
+**Fallback**: If Grafana Cloud is not configured, logs are written to console in JSON format.
+
+**Canonical Log Event Structure**:
+
+````json
+{
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "duration_ms": 145,
+  "request_id": "req_abc123",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "user_id": "user_456",
+  "method": "GET",
+  "endpoint": "/api/users",
+  "status_code": 200,
+  "level": "info",
+  "message": "Request completed"
+}
 
 ### Error Tracking (Sentry)
 
@@ -185,7 +232,7 @@ Sentry.addBreadcrumb({
   message: "User logged in",
   level: "info",
 });
-```
+````
 
 **Configuration**:
 
