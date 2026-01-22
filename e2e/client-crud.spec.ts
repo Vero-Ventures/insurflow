@@ -61,40 +61,132 @@ test.describe("Client CRUD API", () => {
     }
   });
 
-  test("POST /api/clients - should create a new client", async ({
-    request,
-  }) => {
-    const response = await request.post("http://localhost:3000/api/clients", {
-      headers: {
-        Cookie: authCookie,
-      },
-      data: {
-        firstName: "John",
-        lastName: "Doe",
-        dateOfBirth: "1980-01-15",
-        sex: "M",
-        province: "ON",
-        smoker: false,
-        healthRating: "standard",
-        hasSpouse: true,
-        spouseAge: 35,
-        clientIncome: "75000.00",
-        spouseIncome: "50000.00",
-        incomeReplacementPercent: "70",
-        replacementDurationYears: 10,
-        existingLifeInsuranceCoverage: "100000.00",
-        status: "draft",
-      },
+  // Sequential tests that depend on shared state
+  test.describe.serial("Sequential CRUD Operations", () => {
+    test("POST /api/clients - should create a new client", async ({
+      request,
+    }) => {
+      const response = await request.post("http://localhost:3000/api/clients", {
+        headers: {
+          Cookie: authCookie,
+        },
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          dateOfBirth: "1980-01-15",
+          sex: "M",
+          province: "ON",
+          smoker: false,
+          healthRating: "standard",
+          hasSpouse: true,
+          spouseAge: 35,
+          clientIncome: "75000.00",
+          spouseIncome: "50000.00",
+          incomeReplacementPercent: "70",
+          replacementDurationYears: 10,
+          existingLifeInsuranceCoverage: "100000.00",
+          status: "draft",
+        },
+      });
+
+      expect(response.status()).toBe(201);
+      const body = await response.json();
+      expect(body.client).toBeDefined();
+      expect(body.client.firstName).toBe("John");
+      expect(body.client.lastName).toBe("Doe");
+      clientId = body.client.id;
     });
 
-    expect(response.status()).toBe(201);
-    const body = await response.json();
-    expect(body.client).toBeDefined();
-    expect(body.client.firstName).toBe("John");
-    expect(body.client.lastName).toBe("Doe");
-    clientId = body.client.id;
+    test("GET /api/clients - should list all clients for authenticated user", async ({
+      request,
+    }) => {
+      const response = await request.get("http://localhost:3000/api/clients", {
+        headers: {
+          Cookie: authCookie,
+        },
+      });
+
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.clients).toBeDefined();
+      expect(Array.isArray(body.clients)).toBe(true);
+      expect(body.clients.length).toBeGreaterThan(0);
+    });
+
+    test("GET /api/clients/[id] - should get a specific client", async ({
+      request,
+    }) => {
+      const response = await request.get(
+        `http://localhost:3000/api/clients/${clientId}`,
+        {
+          headers: {
+            Cookie: authCookie,
+          },
+        },
+      );
+
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.client).toBeDefined();
+      expect(body.client.id).toBe(clientId);
+      expect(body.client.firstName).toBe("John");
+    });
+
+    test("PATCH /api/clients/[id] - should update a client", async ({
+      request,
+    }) => {
+      const response = await request.patch(
+        `http://localhost:3000/api/clients/${clientId}`,
+        {
+          headers: {
+            Cookie: authCookie,
+          },
+          data: {
+            firstName: "Jonathan",
+            clientIncome: "80000.00",
+            status: "active",
+          },
+        },
+      );
+
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.client).toBeDefined();
+      expect(body.client.firstName).toBe("Jonathan");
+      expect(body.client.clientIncome).toBe("80000.00");
+      expect(body.client.status).toBe("active");
+    });
+
+    test("DELETE /api/clients/[id] - should soft delete a client", async ({
+      request,
+    }) => {
+      const response = await request.delete(
+        `http://localhost:3000/api/clients/${clientId}`,
+        {
+          headers: {
+            Cookie: authCookie,
+          },
+        },
+      );
+
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.message).toBe("Client deleted successfully");
+
+      // Verify client is no longer accessible
+      const getResponse = await request.get(
+        `http://localhost:3000/api/clients/${clientId}`,
+        {
+          headers: {
+            Cookie: authCookie,
+          },
+        },
+      );
+      expect(getResponse.status()).toBe(404);
+    });
   });
 
+  // Independent tests that can run in parallel
   test("POST /api/clients - should fail without authentication", async ({
     request,
   }) => {
@@ -135,22 +227,6 @@ test.describe("Client CRUD API", () => {
     expect(body.details).toBeDefined();
   });
 
-  test("GET /api/clients - should list all clients for authenticated user", async ({
-    request,
-  }) => {
-    const response = await request.get("http://localhost:3000/api/clients", {
-      headers: {
-        Cookie: authCookie,
-      },
-    });
-
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-    expect(body.clients).toBeDefined();
-    expect(Array.isArray(body.clients)).toBe(true);
-    expect(body.clients.length).toBeGreaterThan(0);
-  });
-
   test("GET /api/clients - should fail without authentication", async ({
     request,
   }) => {
@@ -159,25 +235,6 @@ test.describe("Client CRUD API", () => {
     expect(response.status()).toBe(401);
     const body = await response.json();
     expect(body.error).toBe("Unauthorized");
-  });
-
-  test("GET /api/clients/[id] - should get a specific client", async ({
-    request,
-  }) => {
-    const response = await request.get(
-      `http://localhost:3000/api/clients/${clientId}`,
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-      },
-    );
-
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-    expect(body.client).toBeDefined();
-    expect(body.client.id).toBe(clientId);
-    expect(body.client.firstName).toBe("John");
   });
 
   test("GET /api/clients/[id] - should return 404 for non-existent client", async ({
@@ -198,36 +255,29 @@ test.describe("Client CRUD API", () => {
     expect(body.error).toBe("Client not found");
   });
 
-  test("PATCH /api/clients/[id] - should update a client", async ({
+  test("PATCH /api/clients/[id] - should fail with invalid data", async ({
     request,
   }) => {
-    const response = await request.patch(
-      `http://localhost:3000/api/clients/${clientId}`,
+    // Create a client first
+    const createResponse = await request.post(
+      "http://localhost:3000/api/clients",
       {
         headers: {
           Cookie: authCookie,
         },
         data: {
-          firstName: "Jonathan",
-          clientIncome: "80000.00",
-          status: "active",
+          firstName: "Test",
+          lastName: "Validation",
+          dateOfBirth: "1985-03-10",
+          sex: "F",
+          province: "AB",
         },
       },
     );
+    const { client } = await createResponse.json();
 
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-    expect(body.client).toBeDefined();
-    expect(body.client.firstName).toBe("Jonathan");
-    expect(body.client.clientIncome).toBe("80000.00");
-    expect(body.client.status).toBe("active");
-  });
-
-  test("PATCH /api/clients/[id] - should fail with invalid data", async ({
-    request,
-  }) => {
     const response = await request.patch(
-      `http://localhost:3000/api/clients/${clientId}`,
+      `http://localhost:3000/api/clients/${client.id}`,
       {
         headers: {
           Cookie: authCookie,
@@ -246,8 +296,26 @@ test.describe("Client CRUD API", () => {
   test("PATCH /api/clients/[id] - should fail without authentication", async ({
     request,
   }) => {
+    // Create a client first
+    const createResponse = await request.post(
+      "http://localhost:3000/api/clients",
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+        data: {
+          firstName: "Test",
+          lastName: "Auth",
+          dateOfBirth: "1985-03-10",
+          sex: "M",
+          province: "BC",
+        },
+      },
+    );
+    const { client } = await createResponse.json();
+
     const response = await request.patch(
-      `http://localhost:3000/api/clients/${clientId}`,
+      `http://localhost:3000/api/clients/${client.id}`,
       {
         data: {
           firstName: "Hacker",
@@ -256,34 +324,6 @@ test.describe("Client CRUD API", () => {
     );
 
     expect(response.status()).toBe(401);
-  });
-
-  test("DELETE /api/clients/[id] - should soft delete a client", async ({
-    request,
-  }) => {
-    const response = await request.delete(
-      `http://localhost:3000/api/clients/${clientId}`,
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-      },
-    );
-
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-    expect(body.message).toBe("Client deleted successfully");
-
-    // Verify client is no longer accessible
-    const getResponse = await request.get(
-      `http://localhost:3000/api/clients/${clientId}`,
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-      },
-    );
-    expect(getResponse.status()).toBe(404);
   });
 
   test("DELETE /api/clients/[id] - should fail without authentication", async ({
