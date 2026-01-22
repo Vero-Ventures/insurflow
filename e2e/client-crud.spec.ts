@@ -1,0 +1,290 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("Client CRUD API", () => {
+  let authCookie: string;
+  let clientId: string;
+
+  test.beforeAll(async ({ request }) => {
+    // Create a test user and authenticate
+    const email = `test-${Date.now()}@example.com`;
+    const password = "TestPassword123!";
+
+    // Sign up
+    await request.post("http://localhost:3000/api/auth/sign-up", {
+      data: {
+        email,
+        password,
+        name: "Test User",
+      },
+    });
+
+    // Sign in to get session cookie
+    const signInResponse = await request.post(
+      "http://localhost:3000/api/auth/sign-in/email",
+      {
+        data: {
+          email,
+          password,
+        },
+      },
+    );
+
+    const cookies = signInResponse.headers()["set-cookie"];
+    if (cookies) {
+      authCookie = cookies;
+    }
+  });
+
+  test("POST /api/clients - should create a new client", async ({
+    request,
+  }) => {
+    const response = await request.post("http://localhost:3000/api/clients", {
+      headers: {
+        Cookie: authCookie,
+      },
+      data: {
+        firstName: "John",
+        lastName: "Doe",
+        dateOfBirth: "1980-01-15",
+        sex: "M",
+        province: "ON",
+        smoker: false,
+        healthRating: "standard",
+        hasSpouse: true,
+        spouseAge: 35,
+        clientIncome: "75000.00",
+        spouseIncome: "50000.00",
+        incomeReplacementPercent: "70",
+        replacementDurationYears: 10,
+        existingLifeInsuranceCoverage: "100000.00",
+        status: "draft",
+      },
+    });
+
+    expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body.client).toBeDefined();
+    expect(body.client.firstName).toBe("John");
+    expect(body.client.lastName).toBe("Doe");
+    clientId = body.client.id;
+  });
+
+  test("POST /api/clients - should fail without authentication", async ({
+    request,
+  }) => {
+    const response = await request.post("http://localhost:3000/api/clients", {
+      data: {
+        firstName: "Jane",
+        lastName: "Smith",
+        dateOfBirth: "1990-05-20",
+        sex: "F",
+        province: "BC",
+      },
+    });
+
+    expect(response.status()).toBe(401);
+    const body = await response.json();
+    expect(body.error).toBe("Unauthorized");
+  });
+
+  test("POST /api/clients - should fail with invalid data", async ({
+    request,
+  }) => {
+    const response = await request.post("http://localhost:3000/api/clients", {
+      headers: {
+        Cookie: authCookie,
+      },
+      data: {
+        firstName: "", // Invalid: empty string
+        lastName: "Doe",
+        dateOfBirth: "invalid-date", // Invalid format
+        sex: "M",
+        province: "ON",
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Validation failed");
+    expect(body.details).toBeDefined();
+  });
+
+  test("GET /api/clients - should list all clients for authenticated user", async ({
+    request,
+  }) => {
+    const response = await request.get("http://localhost:3000/api/clients", {
+      headers: {
+        Cookie: authCookie,
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.clients).toBeDefined();
+    expect(Array.isArray(body.clients)).toBe(true);
+    expect(body.clients.length).toBeGreaterThan(0);
+  });
+
+  test("GET /api/clients - should fail without authentication", async ({
+    request,
+  }) => {
+    const response = await request.get("http://localhost:3000/api/clients");
+
+    expect(response.status()).toBe(401);
+    const body = await response.json();
+    expect(body.error).toBe("Unauthorized");
+  });
+
+  test("GET /api/clients/[id] - should get a specific client", async ({
+    request,
+  }) => {
+    const response = await request.get(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+      },
+    );
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.client).toBeDefined();
+    expect(body.client.id).toBe(clientId);
+    expect(body.client.firstName).toBe("John");
+  });
+
+  test("GET /api/clients/[id] - should return 404 for non-existent client", async ({
+    request,
+  }) => {
+    const fakeId = "00000000-0000-0000-0000-000000000000";
+    const response = await request.get(
+      `http://localhost:3000/api/clients/${fakeId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+      },
+    );
+
+    expect(response.status()).toBe(404);
+    const body = await response.json();
+    expect(body.error).toBe("Client not found");
+  });
+
+  test("PATCH /api/clients/[id] - should update a client", async ({
+    request,
+  }) => {
+    const response = await request.patch(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+        data: {
+          firstName: "Jonathan",
+          clientIncome: "80000.00",
+          status: "active",
+        },
+      },
+    );
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.client).toBeDefined();
+    expect(body.client.firstName).toBe("Jonathan");
+    expect(body.client.clientIncome).toBe("80000.00");
+    expect(body.client.status).toBe("active");
+  });
+
+  test("PATCH /api/clients/[id] - should fail with invalid data", async ({
+    request,
+  }) => {
+    const response = await request.patch(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+        data: {
+          dateOfBirth: "invalid-date",
+        },
+      },
+    );
+
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Validation failed");
+  });
+
+  test("PATCH /api/clients/[id] - should fail without authentication", async ({
+    request,
+  }) => {
+    const response = await request.patch(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        data: {
+          firstName: "Hacker",
+        },
+      },
+    );
+
+    expect(response.status()).toBe(401);
+  });
+
+  test("DELETE /api/clients/[id] - should soft delete a client", async ({
+    request,
+  }) => {
+    const response = await request.delete(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+      },
+    );
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.message).toBe("Client deleted successfully");
+
+    // Verify client is no longer accessible
+    const getResponse = await request.get(
+      `http://localhost:3000/api/clients/${clientId}`,
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+      },
+    );
+    expect(getResponse.status()).toBe(404);
+  });
+
+  test("DELETE /api/clients/[id] - should fail without authentication", async ({
+    request,
+  }) => {
+    // Create a new client first
+    const createResponse = await request.post(
+      "http://localhost:3000/api/clients",
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+        data: {
+          firstName: "Test",
+          lastName: "Delete",
+          dateOfBirth: "1985-03-10",
+          sex: "F",
+          province: "AB",
+        },
+      },
+    );
+    const { client } = await createResponse.json();
+
+    const response = await request.delete(
+      `http://localhost:3000/api/clients/${client.id}`,
+    );
+
+    expect(response.status()).toBe(401);
+  });
+});
