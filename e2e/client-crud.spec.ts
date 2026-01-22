@@ -1,11 +1,9 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
-// Test credentials - not a real password, only used in E2E tests
-const TEST_PASSWORD = "TestPassword123!";
-
 test.describe("Client CRUD API", () => {
   let authCookie: string;
   let clientId: string;
+  let testPassword: string;
 
   // Helper function to create a test client
   async function createTestClient(
@@ -27,9 +25,12 @@ test.describe("Client CRUD API", () => {
   }
 
   test.beforeAll(async ({ request }) => {
+    // Generate a random password for this test run
+    testPassword = `Test${Math.random().toString(36).substring(2)}${Date.now()}!`;
+
     // Create a test user and authenticate
     const email = `test-${Date.now()}@example.com`;
-    const password = TEST_PASSWORD;
+    const password = testPassword;
 
     try {
       // Sign up using Better Auth endpoint
