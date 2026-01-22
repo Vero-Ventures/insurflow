@@ -9,29 +9,45 @@ test.describe("Client CRUD API", () => {
     const email = `test-${Date.now()}@example.com`;
     const password = "TestPassword123!";
 
-    // Sign up
-    await request.post("http://localhost:3000/api/auth/sign-up", {
-      data: {
-        email,
-        password,
-        name: "Test User",
-      },
-    });
-
-    // Sign in to get session cookie
-    const signInResponse = await request.post(
-      "http://localhost:3000/api/auth/sign-in/email",
-      {
-        data: {
-          email,
-          password,
+    try {
+      // Sign up
+      const signUpResponse = await request.post(
+        "http://localhost:3000/api/auth/sign-up",
+        {
+          data: {
+            email,
+            password,
+            name: "Test User",
+          },
         },
-      },
-    );
+      );
 
-    const cookies = signInResponse.headers()["set-cookie"];
-    if (cookies) {
-      authCookie = cookies;
+      if (!signUpResponse.ok()) {
+        console.error("Sign up failed:", await signUpResponse.text());
+      }
+
+      // Sign in to get session cookie
+      const signInResponse = await request.post(
+        "http://localhost:3000/api/auth/sign-in/email",
+        {
+          data: {
+            email,
+            password,
+          },
+        },
+      );
+
+      if (!signInResponse.ok()) {
+        console.error("Sign in failed:", await signInResponse.text());
+      }
+
+      const cookies = signInResponse.headers()["set-cookie"];
+      if (cookies) {
+        authCookie = cookies;
+      }
+    } catch (error) {
+      console.error("Authentication setup failed:", error);
+      throw error;
     }
   });
 
