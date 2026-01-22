@@ -10,10 +10,13 @@ test.describe("Client CRUD API", () => {
     const password = "TestPassword123!";
 
     try {
-      // Sign up
+      // Sign up using Better Auth endpoint
       const signUpResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-up",
+        "http://localhost:3000/api/auth/sign-up/email",
         {
+          headers: {
+            "Content-Type": "application/json",
+          },
           data: {
             email,
             password,
@@ -23,13 +26,18 @@ test.describe("Client CRUD API", () => {
       );
 
       if (!signUpResponse.ok()) {
-        console.error("Sign up failed:", await signUpResponse.text());
+        const errorText = await signUpResponse.text();
+        console.error("Sign up failed:", errorText);
+        throw new Error(`Sign up failed: ${errorText}`);
       }
 
-      // Sign in to get session cookie
+      // Sign in to get session cookie using Better Auth endpoint
       const signInResponse = await request.post(
         "http://localhost:3000/api/auth/sign-in/email",
         {
+          headers: {
+            "Content-Type": "application/json",
+          },
           data: {
             email,
             password,
