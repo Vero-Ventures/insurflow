@@ -28,8 +28,8 @@ test.describe("Client CRUD API", () => {
     // Generate a random password for this test run
     testPassword = `Test${Math.random().toString(36).substring(2)}${Date.now()}!`;
 
-    // Create a test user and authenticate
-    const email = `test-${Date.now()}@example.com`;
+    // Create a test user with unique email (include random string to avoid collisions)
+    const email = `test-${Date.now()}-${Math.random().toString(36).substring(2, 8)}@example.com`;
     const password = testPassword;
 
     try {
