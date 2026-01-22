@@ -26,7 +26,8 @@ export default defineConfig({
     // { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
-    command: "bun run dev",
+    command:
+      "bash scripts/dev-services.sh start && drizzle-kit push && next dev --turbo",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
