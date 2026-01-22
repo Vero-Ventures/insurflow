@@ -55,6 +55,37 @@ export const clientStatusEnum = pgEnum("client_status", [
   "archived",
 ]);
 
+/** Asset type classification */
+export const assetTypeEnum = pgEnum("asset_type", [
+  "rrsp",
+  "tfsa",
+  "non_registered",
+  "rrif",
+  "lira",
+  "lif",
+  "real_estate",
+  "life_insurance",
+  "business_interest",
+  "pension",
+  "stock_options",
+  "cryptocurrency",
+  "collectibles",
+  "other",
+]);
+
+/** Debt type classification */
+export const debtTypeEnum = pgEnum("debt_type", [
+  "mortgage",
+  "heloc",
+  "car_loan",
+  "student_loan",
+  "personal_loan",
+  "credit_card",
+  "line_of_credit",
+  "business_loan",
+  "other",
+]);
+
 // ============================================================================
 // AUTH TABLES (Better Auth)
 // ============================================================================
@@ -234,6 +265,99 @@ export const posts = createTable(
 );
 
 // ============================================================================
+// ASSET ENTITY (Issue #53)
+// ============================================================================
+
+/**
+ * Asset entity for tracking client assets.
+ *
+ * MVP-lite version with fields required for total/liquid asset calculations.
+ * Can be extended later with cost basis, growth rate, beneficiary allocations, etc.
+ */
+export const asset = pgTable(
+  "asset",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    // Ownership - links asset to the client
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    // Asset details
+    name: text("name").notNull(),
+    type: assetTypeEnum("type").notNull(),
+
+    /** Current market value in CAD */
+    currentValue: decimal("current_value", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0"),
+
+    /** Whether this asset can be easily liquidated */
+    isLiquid: boolean("is_liquid").notNull().default(false),
+
+    // Timestamps
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("asset_client_id_idx").on(t.clientId),
+    index("asset_type_idx").on(t.type),
+  ],
+);
+
+// ============================================================================
+// DEBT ENTITY (Issue #54)
+// ============================================================================
+
+/**
+ * Debt entity for tracking client liabilities.
+ *
+ * MVP-lite version with fields required for debt payoff calculations.
+ * Can be extended later with interest rate, payment schedule, insurable value, etc.
+ */
+export const debt = pgTable(
+  "debt",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    // Ownership - links debt to the client
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    // Debt details
+    name: text("name").notNull(),
+    type: debtTypeEnum("type").notNull(),
+
+    /** Current outstanding balance in CAD */
+    currentBalance: decimal("current_balance", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0"),
+
+    // Timestamps
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("debt_client_id_idx").on(t.clientId),
+    index("debt_type_idx").on(t.type),
+  ],
+);
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -251,6 +375,16 @@ export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, { fields: [session.userId], references: [user.id] }),
 }));
 
-export const clientRelations = relations(client, ({ one }) => ({
+export const clientRelations = relations(client, ({ one, many }) => ({
   user: one(user, { fields: [client.userId], references: [user.id] }),
+  assets: many(asset),
+  debts: many(debt),
+}));
+
+export const assetRelations = relations(asset, ({ one }) => ({
+  client: one(client, { fields: [asset.clientId], references: [client.id] }),
+}));
+
+export const debtRelations = relations(debt, ({ one }) => ({
+  client: one(client, { fields: [debt.clientId], references: [client.id] }),
 }));
