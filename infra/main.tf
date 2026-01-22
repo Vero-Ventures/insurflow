@@ -13,7 +13,7 @@ resource "vercel_project" "insurflow" {
   }
 
   # Build configuration for Bun
-  build_command   = "bun run build"
+  build_command   = "bun run build:full"
   install_command = "bun install"
 
   # Root directory (monorepo support - leave null for root)

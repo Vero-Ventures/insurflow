@@ -8,6 +8,13 @@
       "when": 1769047987331,
       "tag": "0000_oval_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769056256644,
+      "tag": "0001_flaky_ricochet",
+      "breakpoints": true
     }
   ]
 }

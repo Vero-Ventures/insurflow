@@ -73,15 +73,15 @@ jobs:
           docker compose up -d postgres
           sleep 3
 
-      - name: Push database schema
-        run: bun run db:push
+      - name: Apply database migrations
+        run: bun run db:migrate
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/insurflow
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/insurflow
 
       - name: Run E2E tests
         run: bun run test:e2e
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/insurflow
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/insurflow
           BETTER_AUTH_SECRET: test-secret-for-ci-minimum-32-chars
           BETTER_AUTH_URL: http://localhost:3000
 
