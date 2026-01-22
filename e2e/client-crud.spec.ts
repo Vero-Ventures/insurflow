@@ -1,13 +1,35 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
+
+// Test credentials - not a real password, only used in E2E tests
+const TEST_PASSWORD = "TestPassword123!";
 
 test.describe("Client CRUD API", () => {
   let authCookie: string;
   let clientId: string;
 
+  // Helper function to create a test client
+  async function createTestClient(
+    request: APIRequestContext,
+    data: {
+      firstName: string;
+      lastName: string;
+      dateOfBirth: string;
+      sex: "M" | "F";
+      province: string;
+    },
+  ) {
+    return request.post("http://localhost:3000/api/clients", {
+      headers: {
+        Cookie: authCookie,
+      },
+      data,
+    });
+  }
+
   test.beforeAll(async ({ request }) => {
     // Create a test user and authenticate
     const email = `test-${Date.now()}@example.com`;
-    const password = "TestPassword123!";
+    const password = TEST_PASSWORD;
 
     try {
       // Sign up using Better Auth endpoint
@@ -259,21 +281,13 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a client first
-    const createResponse = await request.post(
-      "http://localhost:3000/api/clients",
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-        data: {
-          firstName: "Test",
-          lastName: "Validation",
-          dateOfBirth: "1985-03-10",
-          sex: "F",
-          province: "AB",
-        },
-      },
-    );
+    const createResponse = await createTestClient(request, {
+      firstName: "Test",
+      lastName: "Validation",
+      dateOfBirth: "1985-03-10",
+      sex: "F",
+      province: "AB",
+    });
     const { client } = await createResponse.json();
 
     const response = await request.patch(
@@ -297,21 +311,13 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a client first
-    const createResponse = await request.post(
-      "http://localhost:3000/api/clients",
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-        data: {
-          firstName: "Test",
-          lastName: "Auth",
-          dateOfBirth: "1985-03-10",
-          sex: "M",
-          province: "BC",
-        },
-      },
-    );
+    const createResponse = await createTestClient(request, {
+      firstName: "Test",
+      lastName: "Auth",
+      dateOfBirth: "1985-03-10",
+      sex: "M",
+      province: "BC",
+    });
     const { client } = await createResponse.json();
 
     const response = await request.patch(
@@ -330,21 +336,13 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a new client first
-    const createResponse = await request.post(
-      "http://localhost:3000/api/clients",
-      {
-        headers: {
-          Cookie: authCookie,
-        },
-        data: {
-          firstName: "Test",
-          lastName: "Delete",
-          dateOfBirth: "1985-03-10",
-          sex: "F",
-          province: "AB",
-        },
-      },
-    );
+    const createResponse = await createTestClient(request, {
+      firstName: "Test",
+      lastName: "Delete",
+      dateOfBirth: "1985-03-10",
+      sex: "F",
+      province: "AB",
+    });
     const { client } = await createResponse.json();
 
     const response = await request.delete(
