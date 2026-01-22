@@ -16,6 +16,7 @@ test.describe("Client CRUD API", () => {
         {
           headers: {
             "Content-Type": "application/json",
+            Origin: "http://localhost:3000",
           },
           data: {
             email,
@@ -37,6 +38,7 @@ test.describe("Client CRUD API", () => {
         {
           headers: {
             "Content-Type": "application/json",
+            Origin: "http://localhost:3000",
           },
           data: {
             email,
