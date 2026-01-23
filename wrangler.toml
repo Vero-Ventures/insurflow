@@ -2,6 +2,3 @@ name = "insurflow"
 compatibility_date = "2025-01-22"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
-
-[build]
-command = "npm install -g bun && bun install && bun run build:full:cloudflare"
