@@ -1,16 +1,20 @@
 # =============================================================================
-# Terraform Variables for InsurFlow
+# Terraform Variables for InsurFlow (Cloudflare Pages)
 # =============================================================================
 # Copy this file to terraform.tfvars and fill in the values
 # NEVER commit terraform.tfvars to version control
 # =============================================================================
 
-# Vercel Configuration
-# Get your API token from: https://vercel.com/account/tokens
-# vercel_api_token = "your-vercel-api-token"
-# vercel_team_id   = "your-team-id-or-slug"
+# Cloudflare Configuration
+# Get your API token from: https://dash.cloudflare.com/profile/api-tokens
+# Required permissions: Account.Cloudflare Pages (Edit)
+# cloudflare_api_token  = "your-cloudflare-api-token"
 
-# GitHub Repository
+# Get your Account ID from: Cloudflare Dashboard → any domain → Overview → right sidebar
+cloudflare_account_id = "your-account-id"
+
+# Project Configuration
+project_name      = "insurflow"
 github_repo       = "Vero-Ventures/insurflow"
 production_branch = "main"
 
@@ -21,7 +25,7 @@ production_branch = "main"
 # Better Auth Configuration
 # Generate a secure secret: openssl rand -base64 32
 # better_auth_secret = "your-32-char-secret"
-# better_auth_url    = "https://insurflow.vercel.app"
+# better_auth_url    = "https://insurflow.pages.dev"
 
 # GitHub OAuth (optional)
 # Create OAuth App: https://github.com/settings/developers
