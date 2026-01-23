@@ -154,11 +154,11 @@ resource "cloudflare_pages_project" "insurflow" {
     }
   }
 
-  # Build configuration for Next.js with Bun
+  # Build configuration for Next.js with Bun and @cloudflare/next-on-pages
   # Install bun first since Cloudflare doesn't have it pre-installed
   build_config = {
-    build_command   = "npm install -g bun && bun install && bun run build:full"
-    destination_dir = ".next"
+    build_command   = "npm install -g bun && bun install && bun run build:full:cloudflare"
+    destination_dir = ".vercel/output/static"
     root_dir        = ""
   }
 
