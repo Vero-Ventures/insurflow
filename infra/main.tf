@@ -1,222 +1,191 @@
 # =============================================================================
-# InsurFlow Vercel Project
+# InsurFlow Cloudflare Pages Project
 # =============================================================================
 
-resource "vercel_project" "insurflow" {
-  name      = "insurflow"
-  framework = "nextjs"
-
-  git_repository = {
-    type              = "github"
-    repo              = var.github_repo
-    production_branch = var.production_branch
+# Build environment variables map using locals for cleaner conditional logic
+locals {
+  # Base environment variables (required)
+  base_env_vars = {
+    # CI flag to skip husky install
+    CI = {
+      type  = "plain_text"
+      value = "true"
+    }
+    NODE_ENV = {
+      type  = "plain_text"
+      value = "production"
+    }
+    DATABASE_URL = {
+      type  = "secret_text"
+      value = var.database_url
+    }
+    BETTER_AUTH_SECRET = {
+      type  = "secret_text"
+      value = var.better_auth_secret
+    }
   }
 
-  # Build configuration for Bun
-  build_command   = "bun run build:full"
-  install_command = "bun install"
-
-  # Root directory (monorepo support - leave null for root)
-  root_directory = null
-
-  # Serverless function region (US East - closest to Neon default)
-  serverless_function_region = "iad1"
-
-  # Enable PR comments for preview deployments
-  git_comments = {
-    on_commit       = true
-    on_pull_request = true
+  # Production-only: BETTER_AUTH_URL
+  production_auth_url = {
+    BETTER_AUTH_URL = {
+      type  = "plain_text"
+      value = var.better_auth_url
+    }
   }
 
-  # Vercel Authentication for preview deployments
-  # Requires Vercel account login to view preview deployments
-  vercel_authentication = {
-    deployment_type = "standard_protection"
+  # GitHub OAuth (optional)
+  github_oauth_env_vars = var.github_client_id != "" ? {
+    BETTER_AUTH_GITHUB_CLIENT_ID = {
+      type  = "plain_text"
+      value = var.github_client_id
+    }
+    BETTER_AUTH_GITHUB_CLIENT_SECRET = {
+      type  = "secret_text"
+      value = var.github_client_secret
+    }
+  } : {}
+
+  # Axiom (optional)
+  axiom_env_vars = var.axiom_token != "" ? merge(
+    {
+      AXIOM_TOKEN = {
+        type  = "secret_text"
+        value = var.axiom_token
+      }
+      AXIOM_DATASET = {
+        type  = "plain_text"
+        value = var.axiom_dataset
+      }
+    },
+    var.axiom_org_id != "" ? {
+      AXIOM_ORG_ID = {
+        type  = "plain_text"
+        value = var.axiom_org_id
+      }
+    } : {}
+  ) : {}
+
+  # Sentry (optional)
+  sentry_env_vars = merge(
+    var.sentry_dsn != "" ? {
+      SENTRY_DSN = {
+        type  = "secret_text"
+        value = var.sentry_dsn
+      }
+    } : {},
+    var.next_public_sentry_dsn != "" ? {
+      NEXT_PUBLIC_SENTRY_DSN = {
+        type  = "plain_text"
+        value = var.next_public_sentry_dsn
+      }
+    } : {},
+    var.sentry_auth_token != "" ? {
+      SENTRY_AUTH_TOKEN = {
+        type  = "secret_text"
+        value = var.sentry_auth_token
+      }
+    } : {},
+    var.sentry_org != "" ? {
+      SENTRY_ORG = {
+        type  = "plain_text"
+        value = var.sentry_org
+      }
+    } : {},
+    var.sentry_project != "" ? {
+      SENTRY_PROJECT = {
+        type  = "plain_text"
+        value = var.sentry_project
+      }
+    } : {}
+  )
+
+  # PostHog (optional)
+  posthog_env_vars = var.next_public_posthog_key != "" ? {
+    NEXT_PUBLIC_POSTHOG_KEY = {
+      type  = "plain_text"
+      value = var.next_public_posthog_key
+    }
+    NEXT_PUBLIC_POSTHOG_HOST = {
+      type  = "plain_text"
+      value = var.next_public_posthog_host
+    }
+  } : {}
+
+  # Combined environment variables
+  production_env_vars = merge(
+    local.base_env_vars,
+    local.production_auth_url,
+    local.github_oauth_env_vars,
+    local.axiom_env_vars,
+    local.sentry_env_vars,
+    local.posthog_env_vars
+  )
+
+  # Preview env vars (same as production, minus BETTER_AUTH_URL - uses CF_PAGES_URL)
+  preview_env_vars = merge(
+    local.base_env_vars,
+    local.github_oauth_env_vars,
+    local.axiom_env_vars,
+    local.sentry_env_vars,
+    local.posthog_env_vars
+  )
+}
+
+# =============================================================================
+# Cloudflare Pages Project
+# =============================================================================
+
+resource "cloudflare_pages_project" "insurflow" {
+  account_id        = var.cloudflare_account_id
+  name              = var.project_name
+  production_branch = var.production_branch
+
+  # GitHub repository integration
+  source = {
+    type = "github"
+    config = {
+      owner                          = split("/", var.github_repo)[0]
+      repo_name                      = split("/", var.github_repo)[1]
+      production_branch              = var.production_branch
+      pr_comments_enabled            = true
+      deployments_enabled            = true
+      production_deployments_enabled = true
+      preview_deployment_setting     = "all"
+    }
   }
 
-  # Auto-assign custom domains on production
-  auto_assign_custom_domains = true
+  # Build configuration for Next.js with Bun
+  # Install bun first since Cloudflare doesn't have it pre-installed
+  build_config = {
+    build_command   = "npm install -g bun && bun install && bun run build:full"
+    destination_dir = ".next"
+    root_dir        = ""
+  }
 
-  # Enable directory listing for debugging (disable in production)
-  directory_listing = false
+  # Deployment configurations
+  deployment_configs = {
+    # ==========================================================================
+    # Production Environment
+    # ==========================================================================
+    production = {
+      compatibility_date  = "2025-01-22"
+      compatibility_flags = ["nodejs_compat"]
+      env_vars            = local.production_env_vars
+    }
 
-  # Skew protection - only available on Pro/Enterprise plans
-  # skew_protection = "1 day"
+    # ==========================================================================
+    # Preview Environment
+    # WARNING: Preview environments currently share the production database.
+    # This means preview deployments can read/write production data.
+    # For isolation, configure Neon Database Branching or a separate preview DB.
+    # ==========================================================================
+    preview = {
+      compatibility_date  = "2025-01-22"
+      compatibility_flags = ["nodejs_compat"]
+      env_vars            = local.preview_env_vars
+      # NOTE: BETTER_AUTH_URL is NOT set for preview environments.
+      # Preview deployments derive their base URL dynamically from
+      # Cloudflare's CF_PAGES_URL environment variable at runtime.
+    }
+  }
 }
-
-# =============================================================================
-# Environment Variables - Production
-# =============================================================================
-
-resource "vercel_project_environment_variable" "database_url_prod" {
-  project_id = vercel_project.insurflow.id
-  key        = "DATABASE_URL"
-  value      = var.database_url
-  target     = ["production"]
-  sensitive  = true
-  comment    = "Neon PostgreSQL connection string"
-}
-
-resource "vercel_project_environment_variable" "better_auth_secret_prod" {
-  project_id = vercel_project.insurflow.id
-  key        = "BETTER_AUTH_SECRET"
-  value      = var.better_auth_secret
-  target     = ["production"]
-  sensitive  = true
-  comment    = "Better Auth session encryption key"
-}
-
-resource "vercel_project_environment_variable" "better_auth_url_prod" {
-  project_id = vercel_project.insurflow.id
-  key        = "BETTER_AUTH_URL"
-  value      = var.better_auth_url
-  target     = ["production"]
-  comment    = "Better Auth base URL"
-}
-
-# GitHub OAuth (optional)
-resource "vercel_project_environment_variable" "github_client_id_prod" {
-  count      = var.github_client_id != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "GITHUB_CLIENT_ID"
-  value      = var.github_client_id
-  target     = ["production"]
-  comment    = "GitHub OAuth Client ID"
-}
-
-resource "vercel_project_environment_variable" "github_client_secret_prod" {
-  count      = var.github_client_secret != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "GITHUB_CLIENT_SECRET"
-  value      = var.github_client_secret
-  target     = ["production"]
-  sensitive  = true
-  comment    = "GitHub OAuth Client Secret"
-}
-
-# Axiom (Structured Logging)
-resource "vercel_project_environment_variable" "axiom_token_prod" {
-  count      = var.axiom_token != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "AXIOM_TOKEN"
-  value      = var.axiom_token
-  target     = ["production", "preview"]
-  sensitive  = true
-  comment    = "Axiom API token for structured logging"
-}
-
-resource "vercel_project_environment_variable" "axiom_dataset_prod" {
-  count      = var.axiom_dataset != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "AXIOM_DATASET"
-  value      = var.axiom_dataset
-  target     = ["production", "preview"]
-  comment    = "Axiom dataset name"
-}
-
-resource "vercel_project_environment_variable" "axiom_org_id_prod" {
-  count      = var.axiom_org_id != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "AXIOM_ORG_ID"
-  value      = var.axiom_org_id
-  target     = ["production", "preview"]
-  comment    = "Axiom organization ID"
-}
-
-# Sentry (Error Tracking)
-resource "vercel_project_environment_variable" "sentry_dsn_prod" {
-  count      = var.sentry_dsn != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "SENTRY_DSN"
-  value      = var.sentry_dsn
-  target     = ["production", "preview"]
-  sensitive  = true
-  comment    = "Sentry DSN for server-side error tracking"
-}
-
-resource "vercel_project_environment_variable" "next_public_sentry_dsn_prod" {
-  count      = var.next_public_sentry_dsn != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "NEXT_PUBLIC_SENTRY_DSN"
-  value      = var.next_public_sentry_dsn
-  target     = ["production", "preview"]
-  comment    = "Sentry DSN for client-side error tracking"
-}
-
-resource "vercel_project_environment_variable" "sentry_auth_token_prod" {
-  count      = var.sentry_auth_token != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "SENTRY_AUTH_TOKEN"
-  value      = var.sentry_auth_token
-  target     = ["production", "preview"]
-  sensitive  = true
-  comment    = "Sentry auth token for source map uploads"
-}
-
-resource "vercel_project_environment_variable" "sentry_org_prod" {
-  count      = var.sentry_org != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "SENTRY_ORG"
-  value      = var.sentry_org
-  target     = ["production", "preview"]
-  comment    = "Sentry organization slug"
-}
-
-resource "vercel_project_environment_variable" "sentry_project_prod" {
-  count      = var.sentry_project != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "SENTRY_PROJECT"
-  value      = var.sentry_project
-  target     = ["production", "preview"]
-  comment    = "Sentry project slug"
-}
-
-# PostHog (Product Analytics)
-resource "vercel_project_environment_variable" "next_public_posthog_key_prod" {
-  count      = var.next_public_posthog_key != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "NEXT_PUBLIC_POSTHOG_KEY"
-  value      = var.next_public_posthog_key
-  target     = ["production", "preview"]
-  comment    = "PostHog project API key for product analytics"
-}
-
-resource "vercel_project_environment_variable" "next_public_posthog_host_prod" {
-  count      = var.next_public_posthog_host != "" ? 1 : 0
-  project_id = vercel_project.insurflow.id
-  key        = "NEXT_PUBLIC_POSTHOG_HOST"
-  value      = var.next_public_posthog_host
-  target     = ["production", "preview"]
-  comment    = "PostHog instance URL"
-}
-
-# =============================================================================
-# Environment Variables - Preview
-# =============================================================================
-# WARNING: Preview environments currently share the production database.
-# This means preview deployments can read/write production data.
-# For isolation, configure Neon Database Branching or a separate preview DB.
-# =============================================================================
-
-resource "vercel_project_environment_variable" "database_url_preview" {
-  project_id = vercel_project.insurflow.id
-  key        = "DATABASE_URL"
-  value      = var.database_url
-  target     = ["preview"]
-  sensitive  = true
-  comment    = "Neon PostgreSQL - WARNING: shares production data until separate preview DB configured"
-}
-
-resource "vercel_project_environment_variable" "better_auth_secret_preview" {
-  project_id = vercel_project.insurflow.id
-  key        = "BETTER_AUTH_SECRET"
-  value      = var.better_auth_secret
-  target     = ["preview"]
-  sensitive  = true
-  comment    = "Better Auth session encryption key"
-}
-
-# NOTE: BETTER_AUTH_URL is NOT set for preview environments.
-# Preview deployments should derive their base URL dynamically from
-# Vercel's VERCEL_URL environment variable at runtime.
-# The app's env.js should fall back to VERCEL_URL when BETTER_AUTH_URL is not set.

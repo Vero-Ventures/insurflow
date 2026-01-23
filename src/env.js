@@ -3,13 +3,18 @@ import { z } from "zod";
 
 /**
  * Derive the Better Auth URL from environment variables.
- * Priority: BETTER_AUTH_URL > VERCEL_URL > localhost fallback
+ * Priority: BETTER_AUTH_URL > CF_PAGES_URL > VERCEL_URL > localhost fallback
  * This allows preview deployments to work without explicit BETTER_AUTH_URL.
  */
 function getBetterAuthUrl() {
   if (process.env.BETTER_AUTH_URL) {
     return process.env.BETTER_AUTH_URL;
   }
+  // Cloudflare Pages provides CF_PAGES_URL for preview deployments
+  if (process.env.CF_PAGES_URL) {
+    return process.env.CF_PAGES_URL;
+  }
+  // Vercel fallback (kept for compatibility)
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }

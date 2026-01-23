@@ -2,15 +2,22 @@
 # Outputs
 # =============================================================================
 
-output "project_id" {
-  description = "Vercel Project ID"
-  value       = vercel_project.insurflow.id
-}
-
 output "project_name" {
-  description = "Vercel Project Name"
-  value       = vercel_project.insurflow.name
+  description = "Cloudflare Pages Project Name"
+  value       = cloudflare_pages_project.insurflow.name
 }
 
-# Note: Domains are managed separately via vercel_project_domain resources
-# or automatically assigned by Vercel (e.g., project-name.vercel.app)
+output "project_subdomain" {
+  description = "Cloudflare Pages subdomain (e.g., insurflow.pages.dev)"
+  value       = "${cloudflare_pages_project.insurflow.name}.pages.dev"
+}
+
+output "production_url" {
+  description = "Production deployment URL"
+  value       = "https://${cloudflare_pages_project.insurflow.name}.pages.dev"
+}
+
+output "account_id" {
+  description = "Cloudflare Account ID"
+  value       = var.cloudflare_account_id
+}
