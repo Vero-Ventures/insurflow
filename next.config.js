@@ -4,12 +4,19 @@
  */
 import "./src/env.js";
 import { withSentryConfig } from "@sentry/nextjs";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Initialize OpenNext for local development with Cloudflare bindings
+// This allows getCloudflareContext() to work during `next dev`
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev();
+}
 
 /** @type {import("next").NextConfig} */
 const config = {
+  // Required for OpenNext Cloudflare deployment
+  // See: https://opennext.js.org/cloudflare/get-started
   webpack: (config) => {
-    // Enable automatic instrumentation of Vercel Cron Monitors
-    config.automaticVercelMonitors = true;
     return config;
   },
 };

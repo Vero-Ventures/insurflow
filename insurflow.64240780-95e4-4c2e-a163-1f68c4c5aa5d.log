@@ -1,0 +1,130 @@
+2026-01-23T18:11:10.497359Z	Cloning repository...
+2026-01-23T18:11:11.323773Z	From https://github.com/Vero-Ventures/insurflow
+2026-01-23T18:11:11.324211Z	 * branch            df804b48f372cb6c6e9b63736e1d3d8f4b775f6e -> FETCH_HEAD
+2026-01-23T18:11:11.324349Z	
+2026-01-23T18:11:11.351283Z	HEAD is now at df804b4 fix: use @cloudflare/next-on-pages for Cloudflare deployment
+2026-01-23T18:11:11.351674Z	
+2026-01-23T18:11:11.42204Z	
+2026-01-23T18:11:11.42251Z	Using v2 root directory strategy
+2026-01-23T18:11:11.444951Z	Success: Finished cloning repository files
+2026-01-23T18:11:13.139631Z	Checking for configuration in a Wrangler configuration file (BETA)
+2026-01-23T18:11:13.140402Z	
+2026-01-23T18:11:13.141191Z	Found wrangler.toml file. Reading build configuration...
+2026-01-23T18:11:13.146045Z	pages_build_output_dir: .vercel/output/static
+2026-01-23T18:11:13.14625Z	Build environment variables: (none found)
+2026-01-23T18:11:14.25242Z	Successfully read wrangler.toml file.
+2026-01-23T18:11:14.317678Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+2026-01-23T18:11:14.31833Z	Installing project dependencies: npm install --progress=false
+2026-01-23T18:12:10.538761Z	npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2026-01-23T18:12:10.576508Z	npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2026-01-23T18:12:26.81981Z	
+2026-01-23T18:12:26.820189Z	> insurflow@0.1.0 prepare
+2026-01-23T18:12:26.820307Z	> node -e "if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }"
+2026-01-23T18:12:26.820377Z	
+2026-01-23T18:12:26.872021Z	
+2026-01-23T18:12:26.872486Z	added 1071 packages, and audited 1072 packages in 1m
+2026-01-23T18:12:26.872917Z	
+2026-01-23T18:12:26.873306Z	260 packages are looking for funding
+2026-01-23T18:12:26.873616Z	  run `npm fund` for details
+2026-01-23T18:12:26.89802Z	
+2026-01-23T18:12:26.898437Z	6 moderate severity vulnerabilities
+2026-01-23T18:12:26.898748Z	
+2026-01-23T18:12:26.898868Z	To address issues that do not require attention, run:
+2026-01-23T18:12:26.898961Z	  npm audit fix
+2026-01-23T18:12:26.89907Z	
+2026-01-23T18:12:26.899191Z	To address all issues (including breaking changes), run:
+2026-01-23T18:12:26.899315Z	  npm audit fix --force
+2026-01-23T18:12:26.89947Z	
+2026-01-23T18:12:26.899596Z	Run `npm audit` for details.
+2026-01-23T18:12:26.932963Z	Executing user command: npm install -g bun && bun install && bun run build:full
+2026-01-23T18:12:31.558583Z	
+2026-01-23T18:12:31.558828Z	added 5 packages in 4s
+2026-01-23T18:12:31.569241Z	Reshimming asdf nodejs...
+2026-01-23T18:12:34.313003Z	bun install v1.2.15 (df017990)
+2026-01-23T18:12:35.593304Z	Saved lockfile
+2026-01-23T18:12:35.594274Z	
+2026-01-23T18:12:35.595792Z	$ node -e "if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }"
+2026-01-23T18:12:35.795299Z	
+2026-01-23T18:12:35.795605Z	+ @playwright/test@1.57.0
+2026-01-23T18:12:35.795718Z	+ @vitest/coverage-v8@4.0.17
+2026-01-23T18:12:35.795785Z	+ happy-dom@20.3.4
+2026-01-23T18:12:35.796089Z	+ vitest@4.0.17
+2026-01-23T18:12:35.796283Z	+ posthog-js@1.333.0
+2026-01-23T18:12:35.796411Z	+ zod@4.3.5
+2026-01-23T18:12:35.79652Z	
+2026-01-23T18:12:35.796625Z	105 packages installed [1485.00ms]
+2026-01-23T18:12:35.796732Z	Removed: 1
+2026-01-23T18:12:35.985746Z	$ drizzle-kit migrate && next build
+2026-01-23T18:12:36.33456Z	No config path provided, using default 'drizzle.config.ts'
+2026-01-23T18:12:36.334863Z	Reading config file '/opt/buildhome/repo/drizzle.config.ts'
+2026-01-23T18:12:36.684248Z	Using 'postgres' driver for database querying
+2026-01-23T18:12:38.127766Z	[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[⣽] applying migrations...[2K[1G[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...{
+2026-01-23T18:12:38.128078Z	  severity_local: 'NOTICE',
+2026-01-23T18:12:38.128237Z	  severity: 'NOTICE',
+2026-01-23T18:12:38.12837Z	  code: '42P06',
+2026-01-23T18:12:38.128492Z	  message: 'schema "drizzle" already exists, skipping',
+2026-01-23T18:12:38.128599Z	  file: 'schemacmds.c',
+2026-01-23T18:12:38.128719Z	  line: '132',
+2026-01-23T18:12:38.12882Z	  routine: 'CreateSchemaCommand'
+2026-01-23T18:12:38.128975Z	}
+2026-01-23T18:12:38.192577Z	[2K[1G[⡿] applying migrations...{
+2026-01-23T18:12:38.192763Z	  severity_local: 'NOTICE',
+2026-01-23T18:12:38.192889Z	  severity: 'NOTICE',
+2026-01-23T18:12:38.193048Z	  code: '42P07',
+2026-01-23T18:12:38.19326Z	  message: 'relation "__drizzle_migrations" already exists, skipping',
+2026-01-23T18:12:38.193388Z	  file: 'parse_utilcmd.c',
+2026-01-23T18:12:38.193481Z	  line: '207',
+2026-01-23T18:12:38.193599Z	  routine: 'transformCreateStmt'
+2026-01-23T18:12:38.193691Z	}
+2026-01-23T18:12:39.813374Z	[2K[1G[⢿] applying migrations...[2K[1G[✓] migrations applied successfully!⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+2026-01-23T18:12:39.81757Z	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+2026-01-23T18:12:39.817745Z	This information is used to shape Next.js' roadmap and prioritize features.
+2026-01-23T18:12:39.81803Z	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+2026-01-23T18:12:39.818197Z	https://nextjs.org/telemetry
+2026-01-23T18:12:39.818276Z	
+2026-01-23T18:12:39.837834Z	▲ Next.js 16.1.4 (Turbopack)
+2026-01-23T18:12:39.838168Z	- Experiments (use with caution):
+2026-01-23T18:12:39.838571Z	  · clientTraceMetadata
+2026-01-23T18:12:39.838822Z	
+2026-01-23T18:12:39.90451Z	  Creating an optimized production build ...
+2026-01-23T18:12:52.360142Z	✓ Compiled successfully in 11.6s
+2026-01-23T18:12:52.362746Z	  Running next.config.js provided runAfterProductionCompile ...
+2026-01-23T18:12:52.579179Z	[@sentry/nextjs - After Production Compile] Info: Sending telemetry data on issues and performance to Sentry. To disable telemetry, set `options.telemetry` to `false`.
+2026-01-23T18:12:52.60677Z	[@sentry/nextjs - After Production Compile] Warning: No auth token provided. Will not create release. Please set the `authToken` option. You can find information on how to generate a Sentry auth token here: https://docs.sentry.io/api/auth/
+2026-01-23T18:12:52.699097Z	[@sentry/nextjs - After Production Compile] Warning: No auth token provided. Will not upload source maps. Please set the `authToken` option. You can find information on how to generate a Sentry auth token here: https://docs.sentry.io/api/auth/
+2026-01-23T18:12:52.699345Z	✓ Completed runAfterProductionCompile in 263ms
+2026-01-23T18:12:52.700727Z	  Running TypeScript ...
+2026-01-23T18:12:58.45233Z	  Collecting page data using 3 workers ...
+2026-01-23T18:12:59.365445Z	  Generating static pages using 3 workers (0/15) ...
+2026-01-23T18:13:00.073579Z	  Generating static pages using 3 workers (3/15) 
+2026-01-23T18:13:00.073877Z	  Generating static pages using 3 workers (7/15) 
+2026-01-23T18:13:00.15112Z	  Generating static pages using 3 workers (11/15) 
+2026-01-23T18:13:00.151335Z	✓ Generating static pages using 3 workers (15/15) in 785.8ms
+2026-01-23T18:13:00.157955Z	  Finalizing page optimization ...
+2026-01-23T18:13:00.163408Z	
+2026-01-23T18:13:00.165877Z	Route (app)
+2026-01-23T18:13:00.16601Z	┌ ○ /
+2026-01-23T18:13:00.166297Z	├ ○ /_not-found
+2026-01-23T18:13:00.166376Z	├ ƒ /api/auth/[...all]
+2026-01-23T18:13:00.166435Z	└ ● /auth/[path]
+2026-01-23T18:13:00.166493Z	  ├ /auth/callback
+2026-01-23T18:13:00.166547Z	  ├ /auth/email-otp
+2026-01-23T18:13:00.1666Z	  ├ /auth/email-verification
+2026-01-23T18:13:00.166652Z	  └ [+9 more paths]
+2026-01-23T18:13:00.166715Z	
+2026-01-23T18:13:00.166777Z	
+2026-01-23T18:13:00.16689Z	○  (Static)   prerendered as static content
+2026-01-23T18:13:00.166958Z	●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+2026-01-23T18:13:00.167014Z	ƒ  (Dynamic)  server-rendered on demand
+2026-01-23T18:13:00.167069Z	
+2026-01-23T18:13:00.246888Z	Finished
+2026-01-23T18:13:01.164844Z	Checking for configuration in a Wrangler configuration file (BETA)
+2026-01-23T18:13:01.165475Z	
+2026-01-23T18:13:01.165915Z	Found wrangler.toml file. Reading build configuration...
+2026-01-23T18:13:01.171156Z	pages_build_output_dir: .vercel/output/static
+2026-01-23T18:13:01.171292Z	Build environment variables: (none found)
+2026-01-23T18:13:02.28149Z	Successfully read wrangler.toml file.
+2026-01-23T18:13:02.282459Z	Note: No functions dir at /functions found. Skipping.
+2026-01-23T18:13:02.282641Z	Validating asset output directory
+2026-01-23T18:13:02.282815Z	Error: Output directory ".vercel/output/static" not found.
+2026-01-23T18:13:03.560309Z	Failed: build output directory not found

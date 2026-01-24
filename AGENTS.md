@@ -17,7 +17,7 @@ This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern
 - **Observability**: Axiom (Structured Logging), Sentry (Error Tracking), PostHog (Product Analytics)
 - **Services** (planned): Stripe (Payments), UploadThing (File Storage), OpenAI/Gemini (AI features)
 - **Runtime**: Bun
-- **DevOps**: GitHub, Vercel (CI/CD)
+- **DevOps**: GitHub Actions, Cloudflare Workers (CI/CD)
 
 ## Project Structure
 
@@ -44,15 +44,18 @@ sentry.client.config.ts     # Sentry client-side configuration
 sentry.server.config.ts     # Sentry server-side configuration
 sentry.edge.config.ts       # Sentry edge runtime configuration
 
-infra/                      # Terraform infrastructure as code
-├── main.tf                 # Vercel project and environment variables
-├── provider.tf             # Vercel provider configuration
-├── variables.tf            # Input variables
+infra/                      # Infrastructure documentation
+├── main.tf                 # Cloudflare Workers setup reference
+├── provider.tf             # Cloudflare provider configuration
+├── variables.tf            # Input variables reference
 ├── outputs.tf              # Output values
 └── terraform.tfvars.example # Example variable values
 
 .github/workflows/          # GitHub Actions
 ├── ci.yml                  # CI pipeline (lint, test, build)
+├── deploy-production.yml   # Production deployment to Cloudflare Workers
+├── deploy-preview.yml      # Preview deployment with Neon branching
+├── cleanup-preview.yml     # Cleanup preview resources on PR close
 ├── codeql.yml              # CodeQL security analysis
 └── security.yml            # Trivy vulnerability scanning
 ```
@@ -76,7 +79,10 @@ infra/                      # Terraform infrastructure as code
 
 - `bun run dev` — start Docker services, push schema, and run HMR dev server
 - `bun run build` — create the production bundle and run type checks
+- `bun run build:cloudflare` — build for Cloudflare Workers using OpenNext
 - `bun run preview` — serve the built app for smoke testing
+- `bun run preview:cloudflare` — build and preview Cloudflare Workers locally
+- `bun run deploy:cloudflare` — build and deploy to Cloudflare Workers
 - `bun run check` — run ESLint and TypeScript without emitting output
 - `bun run verify` — full verification: lint, typecheck, unit tests, e2e tests, build
 - `bun run db:generate` / `bun run db:migrate` — generate Drizzle migrations & apply them
@@ -284,8 +290,8 @@ Drizzle ORM uses two different workflows:
 
 1. **Local development**: Use `db:push` for quick iteration
 2. **Before PR**: Run `db:generate` to create migration files if schema changed
-3. **CI tests**: Uses `db:push` (ephemeral database, no data to migrate)
-4. **Production**: Vercel runs `db:migrate` during deployment
+3. **CI tests**: Uses `db:migrate` (ephemeral database)
+4. **Production**: GitHub Actions runs `db:migrate` before deployment
 
 ### Configuration
 
@@ -295,33 +301,76 @@ Drizzle ORM uses two different workflows:
 - Restart dev server after schema or environment changes
 - Do not commit local database artifacts
 
-## Deployment (Vercel + Terraform)
+## Deployment (Cloudflare Workers + GitHub Actions)
 
-Infrastructure is managed via Terraform in the `infra/` directory.
+InsurFlow deploys to Cloudflare Workers using the `@opennextjs/cloudflare` adapter, which provides full Node.js compatibility via the `nodejs_compat` flag.
 
-### Initial Setup
+### Architecture
 
-1. **Create Vercel API Token**: https://vercel.com/account/tokens
-2. **Set environment variables**:
-   ```bash
-   export VERCEL_API_TOKEN="your-token"
-   export VERCEL_TEAM="your-team-slug"  # optional
-   ```
-3. **Initialize Terraform**:
-   ```bash
-   cd infra
-   cp terraform.tfvars.example terraform.tfvars
-   # Edit terraform.tfvars with your values (DATABASE_URL, BETTER_AUTH_SECRET, etc.)
-   terraform init
-   terraform plan
-   terraform apply
-   ```
+| Environment | Worker Name                | URL                                          | Database                     |
+| ----------- | -------------------------- | -------------------------------------------- | ---------------------------- |
+| Production  | `insurflow`                | https://insurflow.workers.dev                | Neon main branch             |
+| Preview     | `insurflow-preview-pr-{N}` | https://insurflow-preview-pr-{N}.workers.dev | Neon `preview/pr-{N}` branch |
 
-### Deployment Flow
+### Deployment Workflows
 
-- **Production**: Push to `main` branch triggers production deployment
-- **Preview**: Every PR gets a unique preview URL with Vercel Authentication enabled
-- **Environment Variables**: Managed via Terraform, sensitive values encrypted
+**Production** (`.github/workflows/deploy-production.yml`):
+
+- Triggered on push to `main` branch
+- Runs database migrations
+- Builds with OpenNext (`bun run build:cloudflare`)
+- Deploys via wrangler with secrets
+
+**Preview** (`.github/workflows/deploy-preview.yml`):
+
+- Triggered on PR opened/updated
+- Creates isolated Neon database branch
+- Runs migrations on the branch
+- Deploys as separate Worker with unique name
+- Comments on PR with preview URL and Neon branch link
+
+**Cleanup** (`.github/workflows/cleanup-preview.yml`):
+
+- Triggered when PR is closed
+- Deletes the preview Worker
+- Deletes the Neon database branch
+
+### GitHub Secrets Required
+
+Configure in: Settings → Secrets and variables → Actions → Secrets
+
+| Secret                  | Description                                       |
+| ----------------------- | ------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Cloudflare API token with Workers edit permission |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID                             |
+| `DATABASE_URL`          | Production Neon connection string                 |
+| `BETTER_AUTH_SECRET`    | Session encryption key (min 32 chars)             |
+| `NEON_API_KEY`          | Neon API key for database branching               |
+| `AXIOM_TOKEN`           | (Optional) Axiom logging token                    |
+| `SENTRY_DSN`            | (Optional) Sentry error tracking DSN              |
+
+### GitHub Variables Required
+
+Configure in: Settings → Secrets and variables → Actions → Variables
+
+| Variable                   | Description                     |
+| -------------------------- | ------------------------------- |
+| `NEON_PROJECT_ID`          | Neon project ID                 |
+| `BETTER_AUTH_URL`          | `https://insurflow.workers.dev` |
+| `AXIOM_DATASET`            | (Optional) Axiom dataset name   |
+| `NEXT_PUBLIC_SENTRY_DSN`   | (Optional) Client Sentry DSN    |
+| `NEXT_PUBLIC_POSTHOG_KEY`  | (Optional) PostHog API key      |
+| `NEXT_PUBLIC_POSTHOG_HOST` | (Optional) PostHog host URL     |
+
+### Local Development with Cloudflare
+
+```bash
+# Preview locally (builds and runs Workers runtime)
+bun run preview:cloudflare
+
+# Deploy manually (requires wrangler auth)
+bun run deploy:cloudflare
+```
 
 ### Security Scanning
 
@@ -478,12 +527,12 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 
 - **Main Branch Protection**: Passing CI, code owner approval, no direct pushes
 - **Vulnerability Scanning**: Trivy (scan for CVEs before deployment)
-- **Deployment Gates**: Vercel Deployment Protection (block prod unless Quality Gate passes)
-- **Preview Environments**: Vercel Preview URLs for UAT before merging
+- **Deployment Gates**: Cloudflare Workers deployment requires CI pass
+- **Preview Environments**: Isolated Workers per PR with dedicated database branches
 
 ### 6. Observability & Analytics
 
-- **Structured Logging**: Axiom (one-click Vercel integration, deep JSON inspection)
+- **Structured Logging**: Axiom (deep JSON inspection, wide event logging)
 - **Error Tracking**: Sentry (source maps trace errors to specific commits)
 - **Product Analytics**: PostHog (validate user journeys during Customer Discovery)
 
