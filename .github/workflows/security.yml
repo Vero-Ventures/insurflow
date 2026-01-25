@@ -26,18 +26,31 @@ jobs:
         with:
           scan-type: "fs"
           scan-ref: "."
-          format: "sarif"
-          output: "trivy-fs-results.sarif"
+          format: "table"
           severity: "CRITICAL,HIGH"
           # Skip dev dependencies for faster scans
           skip-dirs: "node_modules"
+          # Exit with error if vulnerabilities found
+          exit-code: "1"
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Run Trivy and save SARIF (for artifacts)
+        uses: aquasecurity/trivy-action@master
         if: always()
         with:
-          sarif_file: "trivy-fs-results.sarif"
-          category: "trivy-filesystem"
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-fs-results.sarif"
+          severity: "CRITICAL,HIGH"
+          skip-dirs: "node_modules"
+
+      - name: Upload Trivy results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-fs-results
+          path: trivy-fs-results.sarif
+          retention-days: 30
 
   trivy-config:
     name: Trivy Config Scan
@@ -55,18 +68,31 @@ jobs:
         with:
           scan-type: "config"
           scan-ref: "."
-          format: "sarif"
-          output: "trivy-config-results.sarif"
+          format: "table"
           severity: "CRITICAL,HIGH,MEDIUM"
           # Scan Terraform configs
           skip-dirs: "node_modules"
+          # Exit with error if misconfigurations found
+          exit-code: "1"
 
-      - name: Upload Trivy config results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Run Trivy config and save SARIF (for artifacts)
+        uses: aquasecurity/trivy-action@master
         if: always()
         with:
-          sarif_file: "trivy-config-results.sarif"
-          category: "trivy-config"
+          scan-type: "config"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-config-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          skip-dirs: "node_modules"
+
+      - name: Upload Trivy config results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-config-results
+          path: trivy-config-results.sarif
+          retention-days: 30
 
   dependency-review:
     name: Dependency Review
@@ -84,5 +110,7 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
+          # Comment on PR with findings instead of using Security tab
+          comment-summary-in-pr: always
           # Deny specific licenses if needed
           # deny-licenses: GPL-3.0, AGPL-3.0

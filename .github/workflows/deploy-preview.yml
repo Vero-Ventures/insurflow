@@ -26,7 +26,7 @@ jobs:
         id: neon-branch
         uses: neondatabase/create-branch-action@v5
         with:
-          project_id: ${{ vars.NEON_PROJECT_ID }}
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.pull_request.number }}
           api_key: ${{ secrets.NEON_API_KEY }}
           username: neondb_owner
@@ -86,7 +86,7 @@ jobs:
         with:
           script: |
             const workerUrl = `https://${process.env.WORKER_NAME}.workers.dev`;
-            const neonBranchUrl = `https://console.neon.tech/app/projects/${{ vars.NEON_PROJECT_ID }}/branches`;
+            const neonBranchUrl = `https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches`;
 
             const body = `## Preview Deployment Ready
 
