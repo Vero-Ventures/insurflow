@@ -51,10 +51,6 @@ jobs:
           BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
-          NEXT_PUBLIC_POSTHOG_KEY: ${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
-          NEXT_PUBLIC_POSTHOG_HOST: ${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
         run: bun run build:cloudflare
 
       - name: Deploy Preview Worker
@@ -64,10 +60,6 @@ jobs:
           BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
-          NEXT_PUBLIC_POSTHOG_KEY: ${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
-          NEXT_PUBLIC_POSTHOG_HOST: ${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
         run: |
           npx wrangler deploy \
             --name "${{ env.WORKER_NAME }}" \
@@ -75,11 +67,7 @@ jobs:
             --var "BETTER_AUTH_SECRET:$BETTER_AUTH_SECRET" \
             --var "BETTER_AUTH_URL:$BETTER_AUTH_URL" \
             --var "AXIOM_TOKEN:$AXIOM_TOKEN" \
-            --var "AXIOM_DATASET:$AXIOM_DATASET" \
-            --var "SENTRY_DSN:$SENTRY_DSN" \
-            --var "NEXT_PUBLIC_SENTRY_DSN:$NEXT_PUBLIC_SENTRY_DSN" \
-            --var "NEXT_PUBLIC_POSTHOG_KEY:$NEXT_PUBLIC_POSTHOG_KEY" \
-            --var "NEXT_PUBLIC_POSTHOG_HOST:$NEXT_PUBLIC_POSTHOG_HOST"
+            --var "AXIOM_DATASET:$AXIOM_DATASET"
 
       - name: Comment on PR
         uses: actions/github-script@v7

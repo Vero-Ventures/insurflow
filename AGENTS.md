@@ -14,7 +14,7 @@ This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern
 - **Authentication**: Better Auth with Better Auth UI (`@daveyplate/better-auth-ui`)
 - **UI Components**: shadcn/ui, Tailwind CSS v4, Recharts
 - **Notifications**: Sonner (toast notifications)
-- **Observability**: Axiom (Structured Logging), Sentry (Error Tracking), PostHog (Product Analytics)
+- **Observability**: Axiom (Structured Logging)
 - **Services** (planned): Stripe (Payments), UploadThing (File Storage), OpenAI/Gemini (AI features)
 - **Runtime**: Bun
 - **DevOps**: GitHub Actions, Cloudflare Workers (CI/CD)
@@ -26,23 +26,18 @@ src/
 ├── app/                    # Next.js App Router pages
 │   ├── auth/[path]/        # Auth pages (sign-in, sign-up, etc.)
 │   ├── api/auth/[...all]/  # Better Auth API routes
-│   ├── global-error.tsx    # Global error boundary with Sentry
+│   ├── global-error.tsx    # Global error boundary
 │   ├── layout.tsx          # Root layout with providers
 │   ├── page.tsx            # Home page
-│   └── providers.tsx       # Client-side providers (Auth, PostHog)
+│   └── providers.tsx       # Client-side providers (Auth, Theme)
 ├── components/
-│   ├── posthog-provider.tsx # PostHog initialization and page tracking
 │   └── ui/                 # shadcn/ui components
-├── lib/                    # Utility functions (cn, posthog, etc.)
+├── lib/                    # Utility functions (cn, etc.)
 ├── server/
 │   ├── axiom/              # Structured logging (Canonical Logging pattern)
 │   ├── better-auth/        # Auth configuration
 │   └── db/                 # Drizzle ORM schema and client
 └── styles/globals.css      # Global styles with CSS variables
-
-sentry.client.config.ts     # Sentry client-side configuration
-sentry.server.config.ts     # Sentry server-side configuration
-sentry.edge.config.ts       # Sentry edge runtime configuration
 
 infra/                      # Infrastructure documentation
 ├── main.tf                 # Cloudflare Workers setup reference
@@ -159,91 +154,6 @@ await logger.flush();
 
 **Fallback**: If Axiom is not configured, logs are written to console in JSON format.
 
-### Error Tracking (Sentry)
-
-Sentry captures runtime errors, performance issues, and user feedback across all environments.
-
-**Features**:
-
-- Automatic error capture with source maps
-- Performance monitoring (traces and profiles)
-- Session replay (10% of sessions, 100% with errors)
-- Global error boundary at `src/app/global-error.tsx`
-
-**Usage**:
-
-```typescript
-import * as Sentry from "@sentry/nextjs";
-
-// Capture exceptions
-try {
-  // risky operation
-} catch (error) {
-  Sentry.captureException(error);
-}
-
-// Add user context
-Sentry.setUser({ id: "user_123", email: "user@example.com" });
-
-// Add breadcrumbs
-Sentry.addBreadcrumb({
-  category: "auth",
-  message: "User logged in",
-  level: "info",
-});
-```
-
-**Configuration**:
-
-- `SENTRY_DSN`: Server-side DSN
-- `NEXT_PUBLIC_SENTRY_DSN`: Client-side DSN
-- `SENTRY_AUTH_TOKEN`: For uploading source maps (optional)
-- `SENTRY_ORG` / `SENTRY_PROJECT`: For source map uploads
-
-**Sampling Rates**:
-
-- Production: 10% traces, 10% profiles, 10% session replays
-- Development: 100% for all (disabled locally)
-
-### Product Analytics (PostHog)
-
-PostHog tracks user behavior, feature usage, and product metrics for data-driven decisions.
-
-**Features**:
-
-- Automatic page view tracking
-- Custom event tracking
-- User identification
-- Feature flags (future)
-
-**Usage**:
-
-```typescript
-import { trackEvent, identifyUser, resetUser } from "~/lib/posthog";
-
-// Track custom events
-trackEvent("feature_used", {
-  feature: "income_calculator",
-  result: "success",
-});
-
-// Identify users (on login)
-identifyUser("user_123", {
-  email: "user@example.com",
-  plan: "pro",
-});
-
-// Reset identity (on logout)
-resetUser();
-```
-
-**Configuration**:
-
-- `NEXT_PUBLIC_POSTHOG_KEY`: Project API key from https://app.posthog.com/project/settings
-- `NEXT_PUBLIC_POSTHOG_HOST`: PostHog instance URL (default: "https://app.posthog.com")
-
-**Privacy**: PostHog is configured with `person_profiles: "identified_only"` to respect user privacy.
-
 ## Testing
 
 ### Unit Testing (Vitest)
@@ -347,20 +257,16 @@ Configure in: Settings → Secrets and variables → Actions → Secrets
 | `BETTER_AUTH_SECRET`    | Session encryption key (min 32 chars)             |
 | `NEON_API_KEY`          | Neon API key for database branching               |
 | `AXIOM_TOKEN`           | (Optional) Axiom logging token                    |
-| `SENTRY_DSN`            | (Optional) Sentry error tracking DSN              |
 
 ### GitHub Variables Required
 
 Configure in: Settings → Secrets and variables → Actions → Variables
 
-| Variable                   | Description                     |
-| -------------------------- | ------------------------------- |
-| `NEON_PROJECT_ID`          | Neon project ID                 |
-| `BETTER_AUTH_URL`          | `https://insurflow.workers.dev` |
-| `AXIOM_DATASET`            | (Optional) Axiom dataset name   |
-| `NEXT_PUBLIC_SENTRY_DSN`   | (Optional) Client Sentry DSN    |
-| `NEXT_PUBLIC_POSTHOG_KEY`  | (Optional) PostHog API key      |
-| `NEXT_PUBLIC_POSTHOG_HOST` | (Optional) PostHog host URL     |
+| Variable          | Description                     |
+| ----------------- | ------------------------------- |
+| `NEON_PROJECT_ID` | Neon project ID                 |
+| `BETTER_AUTH_URL` | `https://insurflow.workers.dev` |
+| `AXIOM_DATASET`   | (Optional) Axiom dataset name   |
 
 ### Local Development with Cloudflare
 
@@ -533,8 +439,6 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 ### 6. Observability & Analytics
 
 - **Structured Logging**: Axiom (deep JSON inspection, wide event logging)
-- **Error Tracking**: Sentry (source maps trace errors to specific commits)
-- **Product Analytics**: PostHog (validate user journeys during Customer Discovery)
 
 ### 7. AI-Assisted Development Guardrails
 
