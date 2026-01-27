@@ -4,7 +4,7 @@ import { type Metadata } from "next";
 import { Public_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
-import { AppNavigationMenu } from "@/components/NavigationMenu";
+import { AppNavigationMenu } from "@/components/navigation-menu";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
