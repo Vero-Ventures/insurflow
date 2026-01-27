@@ -1,5 +1,5 @@
 import { getSession } from "@/server/better-auth/server";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -73,6 +73,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const db = getDb();
+
     // Fetch all non-deleted clients for the current user
     const clients = await db.query.client.findMany({
       where: and(eq(client.userId, session.user.id), isNull(client.deletedAt)),
@@ -120,6 +122,7 @@ export async function POST(request: Request) {
     }
 
     const data = validationResult.data;
+    const db = getDb();
 
     // Create client with ownership
     const [newClient] = await db

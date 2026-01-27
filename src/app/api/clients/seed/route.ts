@@ -1,5 +1,5 @@
 import { getSession } from "@/server/better-auth/server";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { NextResponse } from "next/server";
 import { testClientsData } from "@/lib/test-data/clients";
@@ -23,6 +23,8 @@ export async function POST() {
       ...c,
       userId: user.id,
     }));
+
+    const db = getDb();
 
     // Insert clients
     const inserted = await db

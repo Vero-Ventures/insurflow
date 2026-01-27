@@ -3,31 +3,31 @@
  * Run with: bun run scripts/seed-clients.ts
  */
 
-import { db } from "../src/server/db";
-import { client } from "../src/server/db/schema";
+import { desc } from "drizzle-orm";
+import { getDb } from "../src/server/db";
+import { client, user } from "../src/server/db/schema";
 import { testClientsData } from "../src/lib/test-data/clients";
 
 async function seedClients() {
   try {
-    console.log("🌱 Seeding test clients...");
+    console.log("Seeding test clients...");
+
+    const db = getDb();
 
     // Get the most recently created user (likely the one you're logged in as)
     const users = await db.query.user.findMany({
-      orderBy: (users, { desc }) => [desc(users.createdAt)],
+      orderBy: [desc(user.createdAt)],
       limit: 1,
     });
 
     if (users.length === 0) {
-      console.error(
-        "❌ No users found in database. Please create a user first.",
-      );
+      console.error("No users found in database. Please create a user first.");
       process.exit(1);
     }
 
-    const userId = users[0]!.id;
-    console.log(
-      `📝 Using most recent user: ${users[0]!.email} (ID: ${userId})`,
-    );
+    const firstUser = users[0]!;
+    const userId = firstUser.id;
+    console.log(`Using most recent user: ${firstUser.email} (ID: ${userId})`);
 
     // Update all clients with the actual user ID
     const clientsToInsert = testClientsData.map((c) => ({
@@ -41,12 +41,12 @@ async function seedClients() {
       .values(clientsToInsert)
       .returning();
 
-    console.log(`✅ Successfully created ${inserted.length} test clients:`);
-    inserted.forEach((c) => {
+    console.log(`Successfully created ${inserted.length} test clients:`);
+    for (const c of inserted) {
       console.log(`   - ${c.firstName} ${c.lastName} (${c.province})`);
-    });
+    }
   } catch (error) {
-    console.error("❌ Error seeding clients:", error);
+    console.error("Error seeding clients:", error);
     process.exit(1);
   }
 }

@@ -1,5 +1,5 @@
 import { getSession } from "@/server/better-auth/server";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -104,6 +104,8 @@ export async function GET(
     const uuidError = validateUUID(id);
     if (uuidError) return uuidError;
 
+    const db = getDb();
+
     // Fetch client with ownership verification
     const foundClient = await db.query.client.findFirst({
       where: and(
@@ -174,6 +176,8 @@ export async function PATCH(
       );
     }
 
+    const db = getDb();
+
     // Update client with ownership and deletion check in WHERE clause
     const [updatedClient] = await db
       .update(client)
@@ -223,6 +227,8 @@ export async function DELETE(
     // Validate UUID format
     const uuidError = validateUUID(id);
     if (uuidError) return uuidError;
+
+    const db = getDb();
 
     // Soft delete with ownership and deletion check in WHERE clause
     const [deletedClient] = await db
