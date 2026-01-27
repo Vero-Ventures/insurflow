@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
@@ -57,8 +57,8 @@ function formatDate(dateString: string): string {
 function LoadingSkeleton() {
   return (
     <div className="space-y-3">
-      {[...new Array(5)].map((_, i) => (
-        <div key={`skeleton-${i}`} className="flex space-x-4">
+      {Array.from({ length: 5 }, (_, i) => (
+        <div key={`skeleton-row-${i}`} className="flex space-x-4">
           <Skeleton className="h-12 w-full" />
         </div>
       ))}
@@ -106,14 +106,32 @@ function EmptyState({
   );
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     async function fetchClients() {
@@ -129,7 +147,6 @@ export default function ClientsPage() {
 
         const data = await response.json();
         setClients(data.clients || []);
-        setFilteredClients(data.clients || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
@@ -140,23 +157,29 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredClients(clients);
-      return;
+  // Filter clients using memoized derived state
+  const filteredClients = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) {
+      return clients;
     }
 
-    const query = searchQuery.toLowerCase();
-    const filtered = clients.filter((client) => {
+    const query = debouncedSearchQuery.toLowerCase();
+    return clients.filter((client) => {
       const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
       return fullName.includes(query);
     });
-
-    setFilteredClients(filtered);
-  }, [searchQuery, clients]);
+  }, [debouncedSearchQuery, clients]);
 
   const handleRowClick = (clientId: string) => {
     router.push(`/clients/${clientId}`);
+  };
+
+  const getBadgeVariant = (
+    status: "draft" | "active" | "archived",
+  ): "default" | "secondary" | "outline" => {
+    if (status === "active") return "default";
+    if (status === "draft") return "secondary";
+    return "outline";
   };
 
   const handleSeedClients = async () => {
@@ -178,7 +201,6 @@ export default function ClientsPage() {
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
         setClients(refreshData.clients || []);
-        setFilteredClients(refreshData.clients || []);
       }
     } catch (err) {
       toast.error(
@@ -193,7 +215,7 @@ export default function ClientsPage() {
     <>
       <SignedOut>
         <div className="flex min-h-screen items-center justify-center">
-          <Card className="w-100">
+          <Card className="w-96">
             <CardHeader>
               <CardTitle>Authentication Required</CardTitle>
             </CardHeader>
@@ -225,7 +247,7 @@ export default function ClientsPage() {
             <CardHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Client List</CardTitle>
-                <div className="w-full sm:w-75">
+                <div className="w-full sm:w-72">
                   <Input
                     type="search"
                     placeholder="Search clients by name..."
@@ -294,15 +316,7 @@ export default function ClientsPage() {
                             N/A
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                client.status === "active"
-                                  ? "default"
-                                  : client.status === "draft"
-                                    ? "secondary"
-                                    : "outline"
-                              }
-                            >
+                            <Badge variant={getBadgeVariant(client.status)}>
                               {client.status}
                             </Badge>
                           </TableCell>
