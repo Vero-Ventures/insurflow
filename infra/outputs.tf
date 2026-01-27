@@ -1,23 +1,22 @@
 # =============================================================================
-# Outputs
+# Outputs Reference
 # =============================================================================
-
-output "project_name" {
-  description = "Cloudflare Pages Project Name"
-  value       = cloudflare_pages_project.insurflow.name
-}
-
-output "project_subdomain" {
-  description = "Cloudflare Pages subdomain (e.g., insurflow.pages.dev)"
-  value       = "${cloudflare_pages_project.insurflow.name}.pages.dev"
-}
+#
+# These outputs document the expected deployment URLs for InsurFlow.
+# Since deployments are managed via GitHub Actions, these are reference values only.
+# =============================================================================
 
 output "production_url" {
   description = "Production deployment URL"
-  value       = "https://${cloudflare_pages_project.insurflow.name}.pages.dev"
+  value       = "https://${var.project_name}.workers.dev"
 }
 
-output "account_id" {
-  description = "Cloudflare Account ID"
-  value       = var.cloudflare_account_id
+output "preview_url_pattern" {
+  description = "Preview deployment URL pattern"
+  value       = "https://${var.project_name}-preview-pr-{number}.workers.dev"
+}
+
+output "project_name" {
+  description = "Cloudflare Workers project name"
+  value       = var.project_name
 }
