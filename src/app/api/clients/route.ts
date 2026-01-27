@@ -42,14 +42,23 @@ const HEALTH_RATINGS = [
 function isValidDate(dateStr: string): boolean {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return false;
-  // Ensure the parsed date matches the input (catches invalid dates like 2024-02-31)
+
+  // Parse the input date components
   const [year, month, day] = dateStr.split("-").map(Number);
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month! - 1 &&
-    date.getDate() === day &&
-    date <= new Date()
-  );
+
+  // Use UTC methods to avoid timezone issues
+  const isValidDateStructure =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month! - 1 &&
+    date.getUTCDate() === day;
+
+  // Check if date is not in the future (compare start of days)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const inputDate = new Date(date);
+  inputDate.setHours(0, 0, 0, 0);
+
+  return isValidDateStructure && inputDate <= today;
 }
 
 /**
