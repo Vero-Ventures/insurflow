@@ -57,12 +57,7 @@ export function useClientForm(
 
     setFormData((prev: FormState) => ({
       ...prev,
-      [name]:
-        type === "checkbox"
-          ? value === "true"
-          : type === "number"
-            ? value
-            : value,
+      [name]: type === "checkbox" ? value === "true" : value,
     }));
 
     // Clear error for this field when user starts typing
