@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Client = {
   id: string;
@@ -64,7 +66,17 @@ function LoadingSkeleton() {
   );
 }
 
-function EmptyState({ message }: { readonly message: string }) {
+function EmptyState({
+  message,
+  showSeedButton,
+  onSeed,
+  isSeeding,
+}: {
+  readonly message: string;
+  readonly showSeedButton?: boolean;
+  readonly onSeed?: () => void;
+  readonly isSeeding?: boolean;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="bg-muted mb-4 rounded-full p-4">
@@ -84,7 +96,12 @@ function EmptyState({ message }: { readonly message: string }) {
         </svg>
       </div>
       <h3 className="mb-2 text-lg font-semibold">No Clients Found</h3>
-      <p className="text-muted-foreground max-w-sm">{message}</p>
+      <p className="text-muted-foreground mb-4 max-w-sm">{message}</p>
+      {showSeedButton && (
+        <Button onClick={onSeed} disabled={isSeeding}>
+          {isSeeding ? "Seeding..." : "Seed Test Clients"}
+        </Button>
+      )}
     </div>
   );
 }
@@ -96,6 +113,7 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
     async function fetchClients() {
@@ -139,6 +157,36 @@ export default function ClientsPage() {
 
   const handleRowClick = (clientId: string) => {
     router.push(`/clients/${clientId}`);
+  };
+
+  const handleSeedClients = async () => {
+    try {
+      setIsSeeding(true);
+      const response = await fetch("/api/clients/seed", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to seed clients");
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+
+      // Refresh the client list
+      const refreshResponse = await fetch("/api/clients");
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        setClients(refreshData.clients || []);
+        setFilteredClients(refreshData.clients || []);
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to seed clients",
+      );
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   return (
@@ -206,6 +254,9 @@ export default function ClientsPage() {
                       ? `No clients match "${searchQuery}". Try a different search term.`
                       : "Get started by creating your first client profile."
                   }
+                  showSeedButton={!searchQuery && clients.length === 0}
+                  onSeed={handleSeedClients}
+                  isSeeding={isSeeding}
                 />
               )}
 
