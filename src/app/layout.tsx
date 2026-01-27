@@ -3,6 +3,8 @@ import "@/styles/globals.css";
 import { type Metadata } from "next";
 import { Public_Sans } from "next/font/google";
 
+import { Toaster } from "@/components/ui/sonner";
+import { AppNavigationMenu } from "@/components/navigation-menu";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -28,6 +30,11 @@ export default function RootLayout({
     >
       <body>
         <Providers>{children}</Providers>
+        <Providers>
+          <AppNavigationMenu />
+          {children}
+        </Providers>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,130 +1,30 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import type { Client } from "@/types/client";
+import { useDebounce } from "@/lib/hooks/use-debounce";
+import { ClientsTableSkeleton } from "@/components/clients/clients-table-skeleton";
+import { ClientsEmptyState } from "@/components/clients/clients-empty-state";
+import { ClientsTableHeader } from "@/components/clients/clients-table-header";
+import { ClientsTable } from "@/components/clients/clients-table";
+import { CreateClientDialog } from "@/components/clients/create/clients-create-client";
 
-type Client = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  province: string;
-  updatedAt: string;
-  status: "draft" | "active" | "archived";
+// Optimistic client type for showing pending creations
+type OptimisticClient = Client & {
+  optimistic?: boolean;
 };
-
-function calculateAge(dateOfBirth: string): number {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--;
-  }
-
-  return age;
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }, (_, i) => (
-        <div key={`skeleton-row-${i}`} className="flex space-x-4">
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EmptyState({
-  message,
-  showSeedButton,
-  onSeed,
-  isSeeding,
-}: {
-  readonly message: string;
-  readonly showSeedButton?: boolean;
-  readonly onSeed?: () => void;
-  readonly isSeeding?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="bg-muted mb-4 rounded-full p-4">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-muted-foreground h-12 w-12"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      </div>
-      <h3 className="mb-2 text-lg font-semibold">No Clients Found</h3>
-      <p className="text-muted-foreground mb-4 max-w-sm">{message}</p>
-      {showSeedButton && (
-        <Button onClick={onSeed} disabled={isSeeding}>
-          {isSeeding ? "Seeding..." : "Seed Test Clients"}
-        </Button>
-      )}
-    </div>
-  );
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
+  const [optimisticClients, setOptimisticClients] = useState<
+    OptimisticClient[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,30 +57,67 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
+  // Combine real clients with optimistic clients
+  const allClients = useMemo(() => {
+    return [...optimisticClients, ...clients];
+  }, [optimisticClients, clients]);
+
   // Filter clients using memoized derived state
   const filteredClients = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
-      return clients;
+      return allClients;
     }
 
     const query = debouncedSearchQuery.toLowerCase();
-    return clients.filter((client) => {
+    return allClients.filter((client) => {
       const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
       return fullName.includes(query);
     });
-  }, [debouncedSearchQuery, clients]);
+  }, [debouncedSearchQuery, allClients]);
 
   const handleRowClick = (clientId: string) => {
     router.push(`/clients/${clientId}`);
   };
 
-  const getBadgeVariant = (
-    status: "draft" | "active" | "archived",
-  ): "default" | "secondary" | "outline" => {
-    if (status === "active") return "default";
-    if (status === "draft") return "secondary";
-    return "outline";
-  };
+  // Callback to handle optimistic client creation
+  const handleOptimisticCreate = useCallback(
+    (clientData: {
+      firstName: string;
+      lastName: string;
+      dateOfBirth: string;
+      province: string;
+    }) => {
+      const optimisticClient: OptimisticClient = {
+        id: `optimistic-${Date.now()}`,
+        firstName: clientData.firstName,
+        lastName: clientData.lastName,
+        dateOfBirth: clientData.dateOfBirth,
+        province: clientData.province,
+        updatedAt: new Date().toISOString(),
+        status: "draft",
+        optimistic: true,
+      };
+
+      setOptimisticClients((prev) => [optimisticClient, ...prev]);
+
+      return optimisticClient.id;
+    },
+    [],
+  );
+
+  // Callback to remove optimistic client after real one is created
+  const handleOptimisticSuccess = useCallback((optimisticId: string) => {
+    setOptimisticClients((prev) =>
+      prev.filter((client) => client.id !== optimisticId),
+    );
+  }, []);
+
+  // Callback to handle optimistic creation failure
+  const handleOptimisticError = useCallback((optimisticId: string) => {
+    setOptimisticClients((prev) =>
+      prev.filter((client) => client.id !== optimisticId),
+    );
+  }, []);
 
   const handleSeedClients = async () => {
     try {
@@ -235,31 +172,30 @@ export default function ClientsPage() {
       </SignedOut>
 
       <SignedIn>
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
+        <div className="container mx-auto px-4 pt-20">
+          <div className="mb-8 w-full">
             <h1 className="mb-2 text-3xl font-bold">Clients</h1>
             <p className="text-muted-foreground">
               Manage your client portfolio and financial analyses
             </p>
+            <div className="flex w-full justify-end">
+              <CreateClientDialog
+                onOptimisticCreate={handleOptimisticCreate}
+                onOptimisticSuccess={handleOptimisticSuccess}
+                onOptimisticError={handleOptimisticError}
+              />
+            </div>
           </div>
 
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle>Client List</CardTitle>
-                <div className="w-full sm:w-72">
-                  <Input
-                    type="search"
-                    placeholder="Search clients by name..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <ClientsTableHeader
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
             </CardHeader>
             <CardContent>
-              {isLoading && <LoadingSkeleton />}
+              {isLoading && <ClientsTableSkeleton />}
 
               {!isLoading && error && (
                 <div className="border-destructive/50 bg-destructive/10 rounded-lg border p-4">
@@ -270,7 +206,7 @@ export default function ClientsPage() {
               )}
 
               {!isLoading && !error && filteredClients.length === 0 && (
-                <EmptyState
+                <ClientsEmptyState
                   message={
                     searchQuery
                       ? `No clients match "${searchQuery}". Try a different search term.`
@@ -283,48 +219,10 @@ export default function ClientsPage() {
               )}
 
               {!isLoading && !error && filteredClients.length > 0 && (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Age</TableHead>
-                        <TableHead>Province</TableHead>
-                        <TableHead>Last Updated</TableHead>
-                        <TableHead>Insurance Needs</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredClients.map((client) => (
-                        <TableRow
-                          key={client.id}
-                          className="hover:bg-muted/50 cursor-pointer"
-                          onClick={() => handleRowClick(client.id)}
-                        >
-                          <TableCell className="font-medium">
-                            {client.firstName} {client.lastName}
-                          </TableCell>
-                          <TableCell>
-                            {calculateAge(client.dateOfBirth)}
-                          </TableCell>
-                          <TableCell className="uppercase">
-                            {client.province}
-                          </TableCell>
-                          <TableCell>{formatDate(client.updatedAt)}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            N/A
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getBadgeVariant(client.status)}>
-                              {client.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                <ClientsTable
+                  clients={filteredClients}
+                  onRowClick={handleRowClick}
+                />
               )}
             </CardContent>
           </Card>
