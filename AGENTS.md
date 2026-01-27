@@ -25,18 +25,27 @@ This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── auth/[path]/        # Auth pages (sign-in, sign-up, etc.)
-│   ├── api/auth/[...all]/  # Better Auth API routes
+│   ├── clients/            # Client management pages
+│   ├── api/
+│   │   ├── auth/[...all]/  # Better Auth API routes
+│   │   └── clients/        # Client API endpoints
 │   ├── global-error.tsx    # Global error boundary
 │   ├── layout.tsx          # Root layout with providers
 │   ├── page.tsx            # Home page
 │   └── providers.tsx       # Client-side providers (Auth, Theme)
 ├── components/
+│   ├── clients/            # Client-specific components
 │   └── ui/                 # shadcn/ui components
-├── lib/                    # Utility functions (cn, etc.)
+├── lib/
+│   ├── hooks/              # Custom React hooks (useDebounce, etc.)
+│   ├── test-data/          # Test data generators
+│   ├── client-utils.ts     # Client-specific utilities
+│   └── utils.ts            # General utilities (cn, etc.)
 ├── server/
 │   ├── axiom/              # Structured logging (Canonical Logging pattern)
 │   ├── better-auth/        # Auth configuration
 │   └── db/                 # Drizzle ORM schema and client
+├── types/                  # Shared TypeScript type definitions
 └── styles/globals.css      # Global styles with CSS variables
 
 infra/                      # Infrastructure documentation
