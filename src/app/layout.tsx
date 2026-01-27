@@ -29,7 +29,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <Providers>{children}</Providers>
         <Providers>
           <AppNavigationMenu />
           {children}
