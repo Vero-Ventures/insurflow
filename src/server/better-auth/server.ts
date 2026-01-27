@@ -1,7 +1,14 @@
 import { auth } from ".";
 import { headers } from "next/headers";
-import { cache } from "react";
 
-export const getSession = cache(async () =>
-  auth.api.getSession({ headers: await headers() }),
-);
+/**
+ * Get the current user's session from the request headers.
+ *
+ * NOTE: We intentionally do NOT use React's cache() here because it can cause
+ * session data to leak between requests in certain edge runtime environments.
+ * The Better Auth library handles its own session caching appropriately.
+ *
+ * @see https://github.com/Vero-Ventures/insurflow/issues/88
+ */
+export const getSession = async () =>
+  auth.api.getSession({ headers: await headers() });

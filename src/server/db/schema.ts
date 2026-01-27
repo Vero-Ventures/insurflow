@@ -236,6 +236,8 @@ export const client = pgTable(
     index("client_user_id_idx").on(t.userId),
     index("client_status_idx").on(t.status),
     index("client_deleted_at_idx").on(t.deletedAt),
+    // Composite index for the most common query pattern: user's non-deleted clients
+    index("client_user_id_deleted_at_idx").on(t.userId, t.deletedAt),
   ],
 );
 
@@ -309,6 +311,8 @@ export const asset = pgTable(
   (t) => [
     index("asset_client_id_idx").on(t.clientId),
     index("asset_type_idx").on(t.type),
+    // Composite index for client's non-deleted assets
+    index("asset_client_id_deleted_at_idx").on(t.clientId, t.deletedAt),
   ],
 );
 
@@ -354,6 +358,8 @@ export const debt = pgTable(
   (t) => [
     index("debt_client_id_idx").on(t.clientId),
     index("debt_type_idx").on(t.type),
+    // Composite index for client's non-deleted debts
+    index("debt_client_id_deleted_at_idx").on(t.clientId, t.deletedAt),
   ],
 );
 
