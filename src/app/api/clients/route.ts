@@ -2,80 +2,15 @@ import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
+import {
+  decimalString,
+  HEALTH_RATINGS,
+  isValidDate,
+  PROVINCES,
+} from "@/lib/validation/client";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-/**
- * Canadian provinces/territories enum
- */
-const PROVINCES = [
-  "AB",
-  "BC",
-  "MB",
-  "NB",
-  "NL",
-  "NS",
-  "NT",
-  "NU",
-  "ON",
-  "PE",
-  "QC",
-  "SK",
-  "YT",
-] as const;
-
-/**
- * Health rating options
- */
-const HEALTH_RATINGS = [
-  "preferred_plus",
-  "preferred",
-  "standard_plus",
-  "standard",
-  "substandard",
-] as const;
-
-/**
- * Validates a date string is a valid date (not just format) and not in the future
- */
-function isValidDate(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return false;
-
-  // Parse the input date components
-  const [year, month, day] = dateStr.split("-").map(Number);
-
-  // Use UTC methods to avoid timezone issues
-  const isValidDateStructure =
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month! - 1 &&
-    date.getUTCDate() === day;
-
-  // Check if date is not in the future (compare start of days)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const inputDate = new Date(date);
-  inputDate.setHours(0, 0, 0, 0);
-
-  return isValidDateStructure && inputDate <= today;
-}
-
-/**
- * Decimal string validation - matches PostgreSQL decimal format
- * Allows positive numbers with optional 2 decimal places
- */
-const decimalString = (fieldName: string) =>
-  z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, `Invalid ${fieldName} format`)
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !isNaN(num) && num >= 0;
-      },
-      { message: `${fieldName} must be a non-negative number` },
-    );
 
 /**
  * Validation schema for creating a client

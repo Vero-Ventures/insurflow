@@ -2,85 +2,16 @@ import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { asset, client, debt } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
+import {
+  decimalString,
+  HEALTH_RATINGS,
+  isValidDate,
+  PROVINCES,
+  UUID_REGEX,
+} from "@/lib/validation/client";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-/**
- * UUID validation regex
- */
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Canadian provinces/territories enum
- */
-const PROVINCES = [
-  "AB",
-  "BC",
-  "MB",
-  "NB",
-  "NL",
-  "NS",
-  "NT",
-  "NU",
-  "ON",
-  "PE",
-  "QC",
-  "SK",
-  "YT",
-] as const;
-
-/**
- * Health rating options
- */
-const HEALTH_RATINGS = [
-  "preferred_plus",
-  "preferred",
-  "standard_plus",
-  "standard",
-  "substandard",
-] as const;
-
-/**
- * Validates a date string is a valid date (not just format) and not in the future
- */
-function isValidDate(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return false;
-
-  // Parse the input date components
-  const [year, month, day] = dateStr.split("-").map(Number);
-
-  // Use UTC methods to avoid timezone issues
-  const isValidDateStructure =
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month! - 1 &&
-    date.getUTCDate() === day;
-
-  // Check if date is not in the future (compare start of days)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const inputDate = new Date(date);
-  inputDate.setHours(0, 0, 0, 0);
-
-  return isValidDateStructure && inputDate <= today;
-}
-
-/**
- * Decimal string validation - matches PostgreSQL decimal format
- */
-const decimalString = (fieldName: string) =>
-  z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, `Invalid ${fieldName} format`)
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !isNaN(num) && num >= 0;
-      },
-      { message: `${fieldName} must be a non-negative number` },
-    );
 
 /**
  * Validates UUID format and returns 400 response if invalid
@@ -98,6 +29,11 @@ function validateUUID(id: string): NextResponse | null {
 /**
  * Validation schema for updating a client (all fields optional)
  * Uses .strict() to reject unknown fields
+ *
+ * Note: This schema validates that if hasSpouse is set to true,
+ * spouseAge must also be provided in the same request. For updates
+ * where hasSpouse is not being changed, the existing database state
+ * is not re-validated (this is intentional for partial updates).
  */
 const updateClientSchema = z
   .object({
@@ -129,7 +65,20 @@ const updateClientSchema = z
     existingLifeInsuranceCoverage: decimalString("coverage amount").optional(),
     status: z.enum(["draft", "active", "archived"]).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => {
+      // If hasSpouse is being explicitly set to true, spouseAge must be provided
+      if (data.hasSpouse === true && data.spouseAge === undefined) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Spouse age is required when setting hasSpouse to true",
+      path: ["spouseAge"],
+    },
+  );
 
 /**
  * GET /api/clients/[id] - Get a single client by ID
@@ -292,6 +241,9 @@ export async function PATCH(
 
 /**
  * DELETE /api/clients/[id] - Soft delete a client and cascade to child records
+ *
+ * Uses a database transaction to ensure atomicity - either all records
+ * (client, assets, debts) are soft-deleted, or none are.
  */
 export async function DELETE(
   _request: Request,
@@ -323,39 +275,48 @@ export async function DELETE(
     const db = getDb();
     const now = new Date();
 
-    // Soft delete with ownership and deletion check in WHERE clause
-    const [deletedClient] = await db
-      .update(client)
-      .set({
-        deletedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(client.id, id),
-          eq(client.userId, session.user.id),
-          isNull(client.deletedAt),
-        ),
-      )
-      .returning();
+    // Use transaction for atomic cascade soft-delete
+    const deletedClient = await db.transaction(async (tx) => {
+      // Soft delete client with ownership and deletion check in WHERE clause
+      const [deleted] = await tx
+        .update(client)
+        .set({
+          deletedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(client.id, id),
+            eq(client.userId, session.user.id),
+            isNull(client.deletedAt),
+          ),
+        )
+        .returning();
+
+      if (!deleted) {
+        return null;
+      }
+
+      // Cascade soft-delete to child records (assets and debts)
+      // Run these in parallel for better performance
+      await Promise.all([
+        tx
+          .update(asset)
+          .set({ deletedAt: now, updatedAt: now })
+          .where(and(eq(asset.clientId, id), isNull(asset.deletedAt))),
+        tx
+          .update(debt)
+          .set({ deletedAt: now, updatedAt: now })
+          .where(and(eq(debt.clientId, id), isNull(debt.deletedAt))),
+      ]);
+
+      return deleted;
+    });
 
     if (!deletedClient) {
       await logger.info("Client not found for deletion", { statusCode: 404 });
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
-
-    // Cascade soft-delete to child records (assets and debts)
-    // Run these in parallel for better performance
-    await Promise.all([
-      db
-        .update(asset)
-        .set({ deletedAt: now, updatedAt: now })
-        .where(and(eq(asset.clientId, id), isNull(asset.deletedAt))),
-      db
-        .update(debt)
-        .set({ deletedAt: now, updatedAt: now })
-        .where(and(eq(debt.clientId, id), isNull(debt.deletedAt))),
-    ]);
 
     await logger.info("Client and child records deleted successfully", {
       statusCode: 200,
