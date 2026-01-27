@@ -139,6 +139,58 @@ test.describe("Client Create UI", () => {
     ).not.toBeVisible({ timeout: 3000 });
   }
 
+  /**
+   * Helper to fill basic client form fields
+   */
+  async function fillBasicClientForm(
+    page: Page,
+    data: {
+      firstName: string;
+      lastName: string;
+      dateOfBirth: string;
+      sex: "M" | "F";
+      province: string;
+      healthRating: string;
+    },
+  ) {
+    await page.getByLabel(/first name/i).fill(data.firstName);
+    await page.getByLabel(/last name/i).fill(data.lastName);
+    await page.getByLabel(/date of birth/i).fill(data.dateOfBirth);
+    await page.getByLabel(/sex/i).selectOption(data.sex);
+    await page.getByLabel(/province/i).selectOption(data.province);
+    await page.getByLabel(/health rating/i).selectOption(data.healthRating);
+  }
+
+  /**
+   * Helper to click the submit button
+   */
+  async function clickSubmitButton(page: Page) {
+    await page
+      .getByRole("button", { name: /^create client$/i })
+      .last()
+      .click();
+  }
+
+  /**
+   * Helper to wait for success toast
+   */
+  async function waitForSuccessToast(page: Page) {
+    await expect(page.getByText(/client created successfully/i)).toBeVisible({
+      timeout: 10000,
+    });
+  }
+
+  /**
+   * Helper to reload page and verify client appears in table
+   */
+  async function verifyClientInTable(page: Page, clientName: string) {
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Clients", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(clientName)).toBeVisible({ timeout: 5000 });
+  }
+
   test.afterAll(async ({ request }) => {
     // Clean up created clients
     for (const id of createdClientIds) {
@@ -162,44 +214,20 @@ test.describe("Client Create UI", () => {
     await navigateToClientsPage(page);
     await openCreateClientDialog(page);
 
-    // Fill out the form
-    await page.getByLabel(/first name/i).fill("Jane");
-    await page.getByLabel(/last name/i).fill("Doe");
-    await page.getByLabel(/date of birth/i).fill("1985-06-15");
-
-    // Select sex
-    await page.getByLabel(/sex/i).selectOption("F");
-
-    // Select province
-    await page.getByLabel(/province/i).selectOption("BC");
-
-    // Select health rating
-    await page.getByLabel(/health rating/i).selectOption("preferred");
-
-    // Submit the form
-    await page
-      .getByRole("button", { name: /^create client$/i })
-      .last()
-      .click();
-
-    // Wait for success toast
-    await expect(page.getByText(/client created successfully/i)).toBeVisible({
-      timeout: 10000,
+    await fillBasicClientForm(page, {
+      firstName: "Jane",
+      lastName: "Doe",
+      dateOfBirth: "1985-06-15",
+      sex: "F",
+      province: "BC",
+      healthRating: "preferred",
     });
 
+    await clickSubmitButton(page);
+    await waitForSuccessToast(page);
     await captureClientId(clientIdPromise);
     await waitForDialogClose(page);
-
-    // Reload the page to ensure we get the latest data
-    await page.reload();
-
-    // Wait for the page to load again
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Verify the new client appears in the table
-    await expect(page.getByText("Jane Doe")).toBeVisible({ timeout: 5000 });
+    await verifyClientInTable(page, "Jane Doe");
   });
 
   test("should show validation error when hasSpouse is true but spouseAge is missing", async ({
@@ -209,13 +237,14 @@ test.describe("Client Create UI", () => {
     await navigateToClientsPage(page);
     await openCreateClientDialog(page);
 
-    // Fill out required fields
-    await page.getByLabel(/first name/i).fill("John");
-    await page.getByLabel(/last name/i).fill("Smith");
-    await page.getByLabel(/date of birth/i).fill("1990-03-20");
-    await page.getByLabel(/sex/i).selectOption("M");
-    await page.getByLabel(/province/i).selectOption("ON");
-    await page.getByLabel(/health rating/i).selectOption("standard");
+    await fillBasicClientForm(page, {
+      firstName: "John",
+      lastName: "Smith",
+      dateOfBirth: "1990-03-20",
+      sex: "M",
+      province: "ON",
+      healthRating: "standard",
+    });
 
     // Check "has spouse" checkbox
     await page.getByLabel(/client has a spouse/i).check();
@@ -225,11 +254,7 @@ test.describe("Client Create UI", () => {
 
     // Do NOT fill spouse age (leave it empty)
 
-    // Submit the form
-    await page
-      .getByRole("button", { name: /^create client$/i })
-      .last()
-      .click();
+    await clickSubmitButton(page);
 
     // Wait for validation error to appear
     await expect(
@@ -254,40 +279,20 @@ test.describe("Client Create UI", () => {
     await navigateToClientsPage(page);
     await openCreateClientDialog(page);
 
-    // Fill out the form
-    await page.getByLabel(/first name/i).fill("Optimistic");
-    await page.getByLabel(/last name/i).fill("Test");
-    await page.getByLabel(/date of birth/i).fill("1995-12-10");
-    await page.getByLabel(/sex/i).selectOption("M");
-    await page.getByLabel(/province/i).selectOption("AB");
-    await page.getByLabel(/health rating/i).selectOption("standard_plus");
-
-    // Submit the form
-    await page
-      .getByRole("button", { name: /^create client$/i })
-      .last()
-      .click();
-
-    // Wait for success toast (indicates real client was created)
-    await expect(page.getByText(/client created successfully/i)).toBeVisible({
-      timeout: 10000,
+    await fillBasicClientForm(page, {
+      firstName: "Optimistic",
+      lastName: "Test",
+      dateOfBirth: "1995-12-10",
+      sex: "M",
+      province: "AB",
+      healthRating: "standard_plus",
     });
 
+    await clickSubmitButton(page);
+    await waitForSuccessToast(page);
     await captureClientId(clientIdPromise);
     await waitForDialogClose(page);
-
-    // Reload the page to get the latest data
-    await page.reload();
-
-    // Wait for page to load
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Verify the client is in the table
-    await expect(page.getByText("Optimistic Test")).toBeVisible({
-      timeout: 5000,
-    });
+    await verifyClientInTable(page, "Optimistic Test");
   });
 
   test("should prevent dialog from closing while submitting", async ({
@@ -298,19 +303,16 @@ test.describe("Client Create UI", () => {
     await navigateToClientsPage(page);
     await openCreateClientDialog(page);
 
-    // Fill out the form
-    await page.getByLabel(/first name/i).fill("Lock");
-    await page.getByLabel(/last name/i).fill("Dialog");
-    await page.getByLabel(/date of birth/i).fill("1988-08-08");
-    await page.getByLabel(/sex/i).selectOption("F");
-    await page.getByLabel(/province/i).selectOption("QC");
-    await page.getByLabel(/health rating/i).selectOption("preferred_plus");
+    await fillBasicClientForm(page, {
+      firstName: "Lock",
+      lastName: "Dialog",
+      dateOfBirth: "1988-08-08",
+      sex: "F",
+      province: "QC",
+      healthRating: "preferred_plus",
+    });
 
-    // Submit the form
-    const submitButton = page
-      .getByRole("button", { name: /^create client$/i })
-      .last();
-    await submitButton.click();
+    await clickSubmitButton(page);
 
     // Immediately check that dialog is still visible (it should be locked during submission)
     await page.waitForTimeout(200); // Small delay to ensure submission started
@@ -318,11 +320,7 @@ test.describe("Client Create UI", () => {
     // Try to press Escape while potentially submitting
     await page.keyboard.press("Escape");
 
-    // Wait for the submission to complete
-    await expect(page.getByText(/client created successfully/i)).toBeVisible({
-      timeout: 10000,
-    });
-
+    await waitForSuccessToast(page);
     await captureClientId(clientIdPromise);
     await waitForDialogClose(page);
   });

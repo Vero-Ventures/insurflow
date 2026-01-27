@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import type { z } from "zod";
 import { clientFormSchema, type FormState } from "./schema";
 
 interface UseClientFormOptions {
@@ -75,6 +76,93 @@ export function useClientForm(
     setIsSubmitting(false);
   };
 
+  // Helper: Convert validation errors to field errors
+  const mapValidationErrors = (
+    zodError: z.ZodError,
+  ): Partial<Record<keyof FormState, string>> => {
+    const fieldErrors: Partial<Record<keyof FormState, string>> = {};
+    zodError.issues.forEach((err) => {
+      const fieldName = err.path[0];
+      if (fieldName && typeof fieldName === "string") {
+        fieldErrors[fieldName as keyof FormState] = err.message;
+      }
+    });
+    return fieldErrors;
+  };
+
+  // Helper: Map server validation errors to form fields
+  const mapServerErrors = (
+    errorDetails: Record<string, { _errors?: string[] }>,
+  ): Partial<Record<keyof FormState, string>> => {
+    const serverErrors: Partial<Record<keyof FormState, string>> = {};
+    Object.keys(errorDetails).forEach((key) => {
+      if (key !== "_errors" && errorDetails[key]?._errors?.[0]) {
+        serverErrors[key as keyof FormState] = errorDetails[key]._errors[0];
+      }
+    });
+    return serverErrors;
+  };
+
+  // Helper: Handle optimistic client creation
+  const createOptimisticClient = (validatedData: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    province: string;
+  }): string | undefined => {
+    if (!options?.onOptimisticCreate) return undefined;
+    return options.onOptimisticCreate(validatedData);
+  };
+
+  // Helper: Handle successful submission
+  const handleSuccess = (optimisticId: string | undefined) => {
+    toast.success("Client created successfully");
+    resetForm();
+    router.refresh();
+
+    if (optimisticId && options?.onOptimisticSuccess) {
+      options.onOptimisticSuccess(optimisticId);
+    }
+
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  // Helper: Handle submission errors
+  const handleError = (error: unknown, optimisticId: string | undefined) => {
+    const message =
+      error instanceof Error ? error.message : "Failed to create client";
+    toast.error(message);
+
+    if (optimisticId && options?.onOptimisticError) {
+      options.onOptimisticError(optimisticId);
+    }
+  };
+
+  // Helper: Handle server validation errors
+  const handleServerValidationErrors = (
+    errorData: { details?: Record<string, { _errors?: string[] }> },
+    optimisticId: string | undefined,
+  ): boolean => {
+    if (!errorData.details || typeof errorData.details !== "object") {
+      return false;
+    }
+
+    const serverErrors = mapServerErrors(errorData.details);
+    if (Object.keys(serverErrors).length > 0) {
+      setErrors(serverErrors);
+      toast.error("Please fix the errors in the form");
+
+      if (optimisticId && options?.onOptimisticError) {
+        options.onOptimisticError(optimisticId);
+      }
+      return true;
+    }
+
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -83,46 +171,23 @@ export function useClientForm(
     const result = clientFormSchema.safeParse(formData);
 
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof FormState, string>> = {};
-      result.error.issues.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as keyof FormState] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
+      setErrors(mapValidationErrors(result.error));
       toast.error("Please fix the errors in the form");
       return;
     }
 
     setIsSubmitting(true);
 
-    // Create optimistic client if callback provided
-    let optimisticId: string | undefined;
-    if (options?.onOptimisticCreate) {
-      optimisticId = options.onOptimisticCreate({
-        firstName: result.data.firstName,
-        lastName: result.data.lastName,
-        dateOfBirth: result.data.dateOfBirth,
-        province: result.data.province,
-      });
-    }
+    const optimisticId = createOptimisticClient(result.data);
 
     try {
       // Prepare payload with defaults for fields not in the form
       const payload = {
-        firstName: result.data.firstName,
-        lastName: result.data.lastName,
-        dateOfBirth: result.data.dateOfBirth,
-        sex: result.data.sex,
-        province: result.data.province,
-        smoker: result.data.smoker,
-        healthRating: result.data.healthRating,
-        hasSpouse: result.data.hasSpouse,
+        ...result.data,
         spouseAge:
           result.data.hasSpouse && result.data.spouseAge
             ? Number(result.data.spouseAge)
             : undefined,
-        // Default values for fields not in the form
         clientIncome: "0",
         incomeReplacementPercent: "70",
         replacementDurationYears: 20,
@@ -132,68 +197,25 @@ export function useClientForm(
 
       const response = await fetch("/api/clients", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
 
-        // If server returned validation errors with field details, map them
-        if (errorData.details && typeof errorData.details === "object") {
-          const serverErrors: Partial<Record<keyof FormState, string>> = {};
-
-          // Zod's format() returns { fieldName: { _errors: ["message"] } }
-          Object.keys(errorData.details).forEach((key) => {
-            if (key !== "_errors" && errorData.details[key]?._errors?.[0]) {
-              serverErrors[key as keyof FormState] =
-                errorData.details[key]._errors[0];
-            }
-          });
-
-          // If we found field-level errors, set them and show toast
-          if (Object.keys(serverErrors).length > 0) {
-            setErrors(serverErrors);
-            toast.error("Please fix the errors in the form");
-
-            // Remove optimistic client on validation error
-            if (optimisticId && options?.onOptimisticError) {
-              options.onOptimisticError(optimisticId);
-            }
-            return;
-          }
+        // Handle server validation errors
+        if (handleServerValidationErrors(errorData, optimisticId)) {
+          return;
         }
 
-        // Otherwise show generic error message
         throw new Error(errorData.error || "Failed to create client");
       }
 
-      await response.json(); // Consume response to complete the request
-
-      toast.success("Client created successfully");
-      resetForm();
-      router.refresh();
-
-      // Remove optimistic client and replace with real one
-      if (optimisticId && options?.onOptimisticSuccess) {
-        options.onOptimisticSuccess(optimisticId);
-      }
-
-      if (onSuccess) {
-        onSuccess();
-      }
+      await response.json();
+      handleSuccess(optimisticId);
     } catch (error) {
-      console.error("Error creating client:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create client",
-      );
-
-      // Remove optimistic client on error
-      if (optimisticId && options?.onOptimisticError) {
-        options.onOptimisticError(optimisticId);
-      }
+      handleError(error, optimisticId);
     } finally {
       setIsSubmitting(false);
     }
