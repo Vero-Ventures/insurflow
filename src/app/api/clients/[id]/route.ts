@@ -6,6 +6,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 /**
+ * UUID validation regex
+ */
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Validates UUID format and returns 400 response if invalid
+ */
+function validateUUID(id: string): NextResponse | null {
+  if (!UUID_REGEX.test(id)) {
+    return NextResponse.json(
+      { error: "Invalid client ID format" },
+      { status: 400 },
+    );
+  }
+  return null;
+}
+
+/**
  * Validation schema for updating a client (all fields optional)
  */
 const updateClientSchema = z.object({
@@ -81,6 +100,10 @@ export async function GET(
 
     const { id } = await params;
 
+    // Validate UUID format
+    const uuidError = validateUUID(id);
+    if (uuidError) return uuidError;
+
     // Fetch client with ownership verification
     const foundClient = await db.query.client.findFirst({
       where: and(
@@ -119,7 +142,17 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = await request.json();
+
+    // Validate UUID format
+    const uuidError = validateUUID(id);
+    if (uuidError) return uuidError;
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
     // Validate request body
     const validationResult = updateClientSchema.safeParse(body);
@@ -141,28 +174,25 @@ export async function PATCH(
       );
     }
 
-    // Verify ownership before updating
-    const existingClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, id),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
-
-    if (!existingClient) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
-
-    // Update client
+    // Update client with ownership and deletion check in WHERE clause
     const [updatedClient] = await db
       .update(client)
       .set({
         ...validationResult.data,
         updatedAt: new Date(),
       })
-      .where(eq(client.id, id))
+      .where(
+        and(
+          eq(client.id, id),
+          eq(client.userId, session.user.id),
+          isNull(client.deletedAt),
+        ),
+      )
       .returning();
+
+    if (!updatedClient) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ client: updatedClient });
   } catch (error) {
@@ -190,27 +220,29 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Verify ownership before deleting
-    const existingClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, id),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
+    // Validate UUID format
+    const uuidError = validateUUID(id);
+    if (uuidError) return uuidError;
 
-    if (!existingClient) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
-
-    // Soft delete by setting deletedAt
-    await db
+    // Soft delete with ownership and deletion check in WHERE clause
+    const [deletedClient] = await db
       .update(client)
       .set({
         deletedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(client.id, id));
+      .where(
+        and(
+          eq(client.id, id),
+          eq(client.userId, session.user.id),
+          isNull(client.deletedAt),
+        ),
+      )
+      .returning();
+
+    if (!deletedClient) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
 
     return NextResponse.json(
       { message: "Client deleted successfully" },

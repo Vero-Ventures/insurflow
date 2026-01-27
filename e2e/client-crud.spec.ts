@@ -5,6 +5,8 @@ test.describe("Client CRUD API", () => {
   let authCookie: string;
   let clientId: string;
   let testPassword: string;
+  // Track created clients for cleanup
+  const createdClientIds: string[] = [];
 
   // Helper function to create a test client
   async function createTestClient(
@@ -17,12 +19,26 @@ test.describe("Client CRUD API", () => {
       province: string;
     },
   ) {
-    return request.post("http://localhost:3000/api/clients", {
+    const response = await request.post("http://localhost:3000/api/clients", {
       headers: {
         Cookie: authCookie,
       },
       data,
     });
+    // Track created client for cleanup
+    if (response.ok()) {
+      const body = await response.json();
+      if (body.client?.id) {
+        createdClientIds.push(body.client.id);
+      }
+      // Return a response-like object with the parsed body
+      return {
+        ok: () => true,
+        status: () => response.status(),
+        json: async () => body,
+      };
+    }
+    return response;
   }
 
   test.beforeAll(async ({ request }) => {
@@ -82,6 +98,21 @@ test.describe("Client CRUD API", () => {
     } catch (error) {
       console.error("Authentication setup failed:", error);
       throw error;
+    }
+  });
+
+  // Cleanup: Delete all created clients after tests complete
+  test.afterAll(async ({ request }) => {
+    for (const id of createdClientIds) {
+      try {
+        await request.delete(`http://localhost:3000/api/clients/${id}`, {
+          headers: {
+            Cookie: authCookie,
+          },
+        });
+      } catch {
+        // Ignore cleanup errors (client may already be deleted)
+      }
     }
   });
 
