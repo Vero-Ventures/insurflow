@@ -1,6 +1,6 @@
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { client } from "@/server/db/schema";
+import { asset, client, debt } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -282,7 +282,7 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/clients/[id] - Soft delete a client
+ * DELETE /api/clients/[id] - Soft delete a client and cascade to child records
  */
 export async function DELETE(
   _request: Request,
@@ -312,13 +312,14 @@ export async function DELETE(
     }
 
     const db = getDb();
+    const now = new Date();
 
     // Soft delete with ownership and deletion check in WHERE clause
     const [deletedClient] = await db
       .update(client)
       .set({
-        deletedAt: new Date(),
-        updatedAt: new Date(),
+        deletedAt: now,
+        updatedAt: now,
       })
       .where(
         and(
@@ -334,7 +335,23 @@ export async function DELETE(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    await logger.info("Client deleted successfully", { statusCode: 200 });
+    // Cascade soft-delete to child records (assets and debts)
+    // Run these in parallel for better performance
+    await Promise.all([
+      db
+        .update(asset)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(and(eq(asset.clientId, id), isNull(asset.deletedAt))),
+      db
+        .update(debt)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(and(eq(debt.clientId, id), isNull(debt.deletedAt))),
+    ]);
+
+    await logger.info("Client and child records deleted successfully", {
+      statusCode: 200,
+    });
+
     return NextResponse.json(
       { message: "Client deleted successfully" },
       { status: 200 },

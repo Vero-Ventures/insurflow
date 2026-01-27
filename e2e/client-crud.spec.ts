@@ -169,6 +169,10 @@ test.describe("Client CRUD API", () => {
       expect(body.clients).toBeDefined();
       expect(Array.isArray(body.clients)).toBe(true);
       expect(body.clients.length).toBeGreaterThan(0);
+      // Verify pagination metadata is present
+      expect(body.pagination).toBeDefined();
+      expect(body.pagination.page).toBe(1);
+      expect(body.pagination.total).toBeGreaterThan(0);
     });
 
     test("GET /api/clients/[id] - should get a specific client", async ({
@@ -293,6 +297,25 @@ test.describe("Client CRUD API", () => {
     expect(response.status()).toBe(401);
     const body = await response.json();
     expect(body.error).toBe("Unauthorized");
+  });
+
+  test("GET /api/clients - should support pagination parameters", async ({
+    request,
+  }) => {
+    const response = await request.get(
+      "http://localhost:3000/api/clients?page=1&limit=5",
+      {
+        headers: {
+          Cookie: authCookie,
+        },
+      },
+    );
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.pagination).toBeDefined();
+    expect(body.pagination.page).toBe(1);
+    expect(body.pagination.limit).toBe(5);
   });
 
   test("GET /api/clients/[id] - should return 404 for non-existent client", async ({
