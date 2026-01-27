@@ -1,10 +1,18 @@
-# The Vercel provider can be configured via:
-# 1. terraform.tfvars (vercel_api_token variable)
-# 2. Environment variable (VERCEL_API_TOKEN) - used as fallback
+# The Cloudflare provider is configured via environment variable:
+# CLOUDFLARE_API_TOKEN
 #
-# If both are set, the variable takes precedence.
+# This is only needed if you want to use Terraform for infrastructure management.
+# Currently, deployments are handled via GitHub Actions.
 
-provider "vercel" {
-  api_token = var.vercel_api_token
-  team      = var.vercel_team_id
+terraform {
+  required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
 }

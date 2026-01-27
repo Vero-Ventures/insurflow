@@ -1,0 +1,39 @@
+name: Cleanup Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  WORKER_NAME: insurflow-preview-pr-${{ github.event.pull_request.number }}
+
+jobs:
+  cleanup:
+    name: Cleanup Preview Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete Cloudflare Worker
+        continue-on-error: true
+        run: |
+          curl -X DELETE \
+            "https://api.cloudflare.com/client/v4/accounts/${{ env.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/${{ env.WORKER_NAME }}" \
+            -H "Authorization: Bearer ${{ env.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json"
+          echo "Deleted Worker: ${{ env.WORKER_NAME }}"
+
+      - name: Delete Neon Branch
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ github.event.pull_request.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Cleanup Summary
+        run: |
+          echo "## Preview Cleanup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted Worker: \`${{ env.WORKER_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted Neon Branch: \`preview/pr-${{ github.event.pull_request.number }}\`" >> $GITHUB_STEP_SUMMARY

@@ -3,13 +3,18 @@ import { z } from "zod";
 
 /**
  * Derive the Better Auth URL from environment variables.
- * Priority: BETTER_AUTH_URL > VERCEL_URL > localhost fallback
+ * Priority: BETTER_AUTH_URL > CF_PAGES_URL > VERCEL_URL > localhost fallback
  * This allows preview deployments to work without explicit BETTER_AUTH_URL.
  */
 function getBetterAuthUrl() {
   if (process.env.BETTER_AUTH_URL) {
     return process.env.BETTER_AUTH_URL;
   }
+  // Cloudflare Pages provides CF_PAGES_URL for preview deployments
+  if (process.env.CF_PAGES_URL) {
+    return process.env.CF_PAGES_URL;
+  }
+  // Vercel fallback (kept for compatibility)
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -38,12 +43,6 @@ export const env = createEnv({
     AXIOM_TOKEN: z.string().optional(),
     AXIOM_DATASET: z.string().optional(),
     AXIOM_ORG_ID: z.string().optional(),
-
-    // Sentry (Error Tracking) - server-side
-    SENTRY_DSN: z.string().url().optional(),
-    SENTRY_AUTH_TOKEN: z.string().optional(),
-    SENTRY_ORG: z.string().optional(),
-    SENTRY_PROJECT: z.string().optional(),
   },
 
   /**
@@ -52,12 +51,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // Sentry (Error Tracking) - client-side
-    NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-
-    // PostHog (Product Analytics)
-    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-    NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+    // Client-side environment variables can be added here
   },
 
   /**
@@ -77,17 +71,6 @@ export const env = createEnv({
     AXIOM_TOKEN: process.env.AXIOM_TOKEN,
     AXIOM_DATASET: process.env.AXIOM_DATASET,
     AXIOM_ORG_ID: process.env.AXIOM_ORG_ID,
-
-    // Sentry
-    SENTRY_DSN: process.env.SENTRY_DSN,
-    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
-    SENTRY_ORG: process.env.SENTRY_ORG,
-    SENTRY_PROJECT: process.env.SENTRY_PROJECT,
-    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-
-    // PostHog
-    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
-    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

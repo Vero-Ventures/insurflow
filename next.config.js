@@ -3,31 +3,37 @@
  * for Docker builds.
  */
 import "./src/env.js";
-import { withSentryConfig } from "@sentry/nextjs";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Initialize OpenNext for local development with Cloudflare bindings
+// This allows getCloudflareContext() to work during `next dev`
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev();
+}
 
 /** @type {import("next").NextConfig} */
 const config = {
-  webpack: (config) => {
-    // Enable automatic instrumentation of Vercel Cron Monitors
-    config.automaticVercelMonitors = true;
-    return config;
+  // Empty turbopack config to silence Next.js 16 warning about webpack config
+  // Next.js 16 uses Turbopack by default, this tells it we're aware
+  turbopack: {},
+
+  // Bundle size optimizations for Cloudflare Workers
+  // Exclude heavy packages from server bundle
+  serverExternalPackages: ["postgres"],
+
+  // Exclude source maps and heavy optional dependencies from bundle
+  outputFileTracingExcludes: {
+    "*": [
+      // Source maps
+      "./**/*.js.map",
+      "./**/*.mjs.map",
+      "./**/*.cjs.map",
+      // @vercel/og WASM files (not needed if not using OG image generation)
+      "node_modules/next/dist/compiled/@vercel/og/**",
+      // Canvas (optional dependency)
+      "node_modules/canvas/**",
+    ],
   },
 };
 
-// Wrap config with Sentry
-export default withSentryConfig(config, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
-  org: "vero-ventures-du",
-  project: "javascript-nextjs",
-
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
-
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
-
-  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  tunnelRoute: "/monitoring",
-});
+export default config;

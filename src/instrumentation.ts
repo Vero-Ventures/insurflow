@@ -1,13 +1,7 @@
-import * as Sentry from "@sentry/nextjs";
+// Server-side instrumentation
+// Sentry removed to reduce bundle size for Cloudflare Workers free tier
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    await import("../sentry.server.config");
-  }
-
-  if (process.env.NEXT_RUNTIME === "edge") {
-    await import("../sentry.edge.config");
-  }
+  // Future instrumentation can be added here
+  // e.g., OpenTelemetry, custom logging setup
 }
-
-export const onRequestError = Sentry.captureRequestError;

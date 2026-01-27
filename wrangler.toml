@@ -1,0 +1,44 @@
+# =============================================================================
+# InsurFlow - Cloudflare Workers Configuration
+# =============================================================================
+# This Worker is deployed via GitHub Actions, not Wrangler directly.
+# See .github/workflows/deploy-production.yml for deployment configuration.
+# =============================================================================
+
+name = "insurflow"
+main = ".open-next/worker.js"
+compatibility_date = "2025-01-22"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets configuration for OpenNext
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+# Secrets are managed via GitHub Actions and passed during deployment.
+# Do NOT put secrets in this file.
+#
+# Required secrets (set in GitHub Actions):
+#   - DATABASE_URL
+#   - BETTER_AUTH_SECRET
+#   - BETTER_AUTH_URL
+#
+# Optional secrets:
+#   - AXIOM_TOKEN, AXIOM_DATASET, AXIOM_ORG_ID
+#   - SENTRY_DSN, SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT
+#   - NEXT_PUBLIC_SENTRY_DSN
+#   - NEXT_PUBLIC_POSTHOG_KEY, NEXT_PUBLIC_POSTHOG_HOST
+#   - BETTER_AUTH_GITHUB_CLIENT_ID, BETTER_AUTH_GITHUB_CLIENT_SECRET
+# =============================================================================
+
+[vars]
+NODE_ENV = "production"
+
+# =============================================================================
+# Observability (optional)
+# =============================================================================
+# [observability]
+# enabled = true
