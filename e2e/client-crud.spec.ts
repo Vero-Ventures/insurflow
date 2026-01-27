@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { randomBytes } from "node:crypto";
 
 test.describe("Client CRUD API", () => {
   let authCookie: string;
@@ -26,10 +27,10 @@ test.describe("Client CRUD API", () => {
 
   test.beforeAll(async ({ request }) => {
     // Generate a random password for this test run
-    testPassword = `Test${Math.random().toString(36).substring(2)}${Date.now()}!`;
+    testPassword = `Test${randomBytes(8).toString("base64url")}${Date.now()}!`;
 
     // Create a test user with unique email (include random string to avoid collisions)
-    const email = `test-${Date.now()}-${Math.random().toString(36).substring(2, 8)}@example.com`;
+    const email = `test-${Date.now()}-${randomBytes(4).toString("hex")}@example.com`;
     const password = testPassword;
 
     try {
