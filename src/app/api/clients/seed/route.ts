@@ -1,6 +1,7 @@
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
+import { createLogger } from "@/server/axiom";
 import { NextResponse } from "next/server";
 import { testClientsData } from "@/lib/test-data/clients";
 
@@ -9,14 +10,21 @@ import { testClientsData } from "@/lib/test-data/clients";
  * Creates 10 sample clients for the authenticated user
  */
 export async function POST() {
+  const logger = createLogger({
+    endpoint: "/api/clients/seed",
+    method: "POST",
+  });
+
   try {
     const session = await getSession();
 
     if (!session?.user) {
+      await logger.warn("Unauthorized access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { user } = session;
+    logger.addContext({ userId: user.id });
 
     // Add userId to all test clients
     const clientsToInsert = testClientsData.map((c) => ({
@@ -32,6 +40,11 @@ export async function POST() {
       .values(clientsToInsert)
       .returning();
 
+    await logger.info("Test clients seeded successfully", {
+      statusCode: 201,
+      clientCount: inserted.length,
+    });
+
     return NextResponse.json(
       {
         message: `Successfully created ${inserted.length} test clients`,
@@ -40,7 +53,10 @@ export async function POST() {
       { status: 201 },
     );
   } catch (error) {
-    console.error("Error seeding clients:", error);
+    await logger.error(
+      "Error seeding clients",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return NextResponse.json(
       { error: "Failed to seed clients" },
       { status: 500 },
