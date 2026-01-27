@@ -17,12 +17,17 @@ interface ClientsTableProps {
   readonly onRowClick: (clientId: string) => void;
 }
 
-function getBadgeVariant(
-  status: ClientStatus,
-): "default" | "secondary" | "outline" {
-  if (status === "active") return "default";
-  if (status === "draft") return "secondary";
-  return "outline";
+const badgeVariantMap: Record<
+  ClientStatus,
+  "default" | "secondary" | "outline"
+> = {
+  active: "default",
+  draft: "secondary",
+  archived: "outline",
+};
+
+function getBadgeVariant(status: ClientStatus) {
+  return badgeVariantMap[status];
 }
 
 export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
