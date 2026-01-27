@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * Table component - wrapper for HTML table element
  * This component must be used with TableHeader and TableHead children for accessibility
+ * @see TableHeader, TableHead - TableHead includes scope="col" for accessibility
  */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
@@ -14,7 +15,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
       data-slot="table-container"
       className="relative w-full overflow-x-auto"
     >
-      {/* SonarQube: Table headers are provided via TableHeader/TableHead children */}
+      {/* NOSONAR: typescript:S5256 - Table headers provided via TableHeader/TableHead children composition pattern */}
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
