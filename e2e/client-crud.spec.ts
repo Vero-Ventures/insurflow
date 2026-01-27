@@ -1,6 +1,12 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 
+/** Response shape returned by createTestClient helper */
+interface TestClientResult {
+  status: number;
+  body: { client?: { id: string }; error?: string };
+}
+
 test.describe("Client CRUD API", () => {
   let authCookie: string;
   let clientId: string;
@@ -8,7 +14,10 @@ test.describe("Client CRUD API", () => {
   // Track created clients for cleanup
   const createdClientIds: string[] = [];
 
-  // Helper function to create a test client
+  /**
+   * Helper function to create a test client.
+   * Tracks created clients for cleanup and returns a consistent response shape.
+   */
   async function createTestClient(
     request: APIRequestContext,
     data: {
@@ -18,27 +27,19 @@ test.describe("Client CRUD API", () => {
       sex: "M" | "F";
       province: string;
     },
-  ) {
+  ): Promise<TestClientResult> {
     const response = await request.post("http://localhost:3000/api/clients", {
       headers: {
         Cookie: authCookie,
       },
       data,
     });
+    const body = await response.json();
     // Track created client for cleanup
-    if (response.ok()) {
-      const body = await response.json();
-      if (body.client?.id) {
-        createdClientIds.push(body.client.id);
-      }
-      // Return a response-like object with the parsed body
-      return {
-        ok: () => true,
-        status: () => response.status(),
-        json: async () => body,
-      };
+    if (response.ok() && body.client?.id) {
+      createdClientIds.push(body.client.id);
     }
-    return response;
+    return { status: response.status(), body };
   }
 
   test.beforeAll(async ({ request }) => {
@@ -150,6 +151,8 @@ test.describe("Client CRUD API", () => {
       expect(body.client.firstName).toBe("John");
       expect(body.client.lastName).toBe("Doe");
       clientId = body.client.id;
+      // Track for cleanup in case serial tests fail before DELETE
+      createdClientIds.push(clientId);
     });
 
     test("GET /api/clients - should list all clients for authenticated user", async ({
@@ -314,17 +317,17 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a client first
-    const createResponse = await createTestClient(request, {
+    const { body: createBody } = await createTestClient(request, {
       firstName: "Test",
       lastName: "Validation",
       dateOfBirth: "1985-03-10",
       sex: "F",
       province: "AB",
     });
-    const { client } = await createResponse.json();
+    const { client } = createBody;
 
     const response = await request.patch(
-      `http://localhost:3000/api/clients/${client.id}`,
+      `http://localhost:3000/api/clients/${client!.id}`,
       {
         headers: {
           Cookie: authCookie,
@@ -344,17 +347,17 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a client first
-    const createResponse = await createTestClient(request, {
+    const { body: createBody } = await createTestClient(request, {
       firstName: "Test",
       lastName: "Auth",
       dateOfBirth: "1985-03-10",
       sex: "M",
       province: "BC",
     });
-    const { client } = await createResponse.json();
+    const { client } = createBody;
 
     const response = await request.patch(
-      `http://localhost:3000/api/clients/${client.id}`,
+      `http://localhost:3000/api/clients/${client!.id}`,
       {
         data: {
           firstName: "Hacker",
@@ -369,17 +372,17 @@ test.describe("Client CRUD API", () => {
     request,
   }) => {
     // Create a new client first
-    const createResponse = await createTestClient(request, {
+    const { body: createBody } = await createTestClient(request, {
       firstName: "Test",
       lastName: "Delete",
       dateOfBirth: "1985-03-10",
       sex: "F",
       province: "AB",
     });
-    const { client } = await createResponse.json();
+    const { client } = createBody;
 
     const response = await request.delete(
-      `http://localhost:3000/api/clients/${client.id}`,
+      `http://localhost:3000/api/clients/${client!.id}`,
     );
 
     expect(response.status()).toBe(401);
