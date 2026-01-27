@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
@@ -12,10 +12,19 @@ import { ClientsTableSkeleton } from "@/components/clients/clients-table-skeleto
 import { ClientsEmptyState } from "@/components/clients/clients-empty-state";
 import { ClientsTableHeader } from "@/components/clients/clients-table-header";
 import { ClientsTable } from "@/components/clients/clients-table";
+import { CreateClientDialog } from "@/components/clients/create/clients-create-client";
+
+// Optimistic client type for showing pending creations
+type OptimisticClient = Client & {
+  optimistic?: boolean;
+};
 
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
+  const [optimisticClients, setOptimisticClients] = useState<
+    OptimisticClient[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,22 +57,67 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
+  // Combine real clients with optimistic clients
+  const allClients = useMemo(() => {
+    return [...optimisticClients, ...clients];
+  }, [optimisticClients, clients]);
+
   // Filter clients using memoized derived state
   const filteredClients = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
-      return clients;
+      return allClients;
     }
 
     const query = debouncedSearchQuery.toLowerCase();
-    return clients.filter((client) => {
+    return allClients.filter((client) => {
       const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
       return fullName.includes(query);
     });
-  }, [debouncedSearchQuery, clients]);
+  }, [debouncedSearchQuery, allClients]);
 
   const handleRowClick = (clientId: string) => {
     router.push(`/clients/${clientId}`);
   };
+
+  // Callback to handle optimistic client creation
+  const handleOptimisticCreate = useCallback(
+    (clientData: {
+      firstName: string;
+      lastName: string;
+      dateOfBirth: string;
+      province: string;
+    }) => {
+      const optimisticClient: OptimisticClient = {
+        id: `optimistic-${Date.now()}`,
+        firstName: clientData.firstName,
+        lastName: clientData.lastName,
+        dateOfBirth: clientData.dateOfBirth,
+        province: clientData.province,
+        updatedAt: new Date().toISOString(),
+        status: "draft",
+        optimistic: true,
+      };
+
+      setOptimisticClients((prev) => [optimisticClient, ...prev]);
+
+      return optimisticClient.id;
+    },
+    [],
+  );
+
+  // Callback to remove optimistic client after real one is created
+  const handleOptimisticSuccess = useCallback((optimisticId: string) => {
+    setOptimisticClients((prev) =>
+      prev.filter((client) => client.id !== optimisticId),
+    );
+  }, []);
+
+  // Callback to handle optimistic creation failure
+  const handleOptimisticError = useCallback((optimisticId: string) => {
+    setOptimisticClients((prev) =>
+      prev.filter((client) => client.id !== optimisticId),
+    );
+  }, []);
 
   const handleSeedClients = async () => {
     try {
@@ -118,12 +172,19 @@ export default function ClientsPage() {
       </SignedOut>
 
       <SignedIn>
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
+        <div className="container mx-auto px-4 pt-20">
+          <div className="mb-8 w-full">
             <h1 className="mb-2 text-3xl font-bold">Clients</h1>
             <p className="text-muted-foreground">
               Manage your client portfolio and financial analyses
             </p>
+            <div className="flex w-full justify-end">
+              <CreateClientDialog
+                onOptimisticCreate={handleOptimisticCreate}
+                onOptimisticSuccess={handleOptimisticSuccess}
+                onOptimisticError={handleOptimisticError}
+              />
+            </div>
           </div>
 
           <Card>

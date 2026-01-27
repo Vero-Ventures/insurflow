@@ -13,7 +13,7 @@ import type { Client, ClientStatus } from "@/types/client";
 import { calculateAge, formatDate } from "@/lib/client-utils";
 
 interface ClientsTableProps {
-  readonly clients: Client[];
+  readonly clients: (Client & { optimistic?: boolean })[];
   readonly onRowClick: (clientId: string) => void;
 }
 
@@ -48,8 +48,15 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
           {clients.map((client) => (
             <TableRow
               key={client.id}
-              className="hover:bg-muted/50 cursor-pointer"
-              onClick={() => onRowClick(client.id)}
+              className={`hover:bg-muted/50 cursor-pointer ${
+                client.optimistic ? "bg-muted/30 animate-pulse opacity-60" : ""
+              }`}
+              onClick={() => {
+                // Prevent clicking on optimistic rows
+                if (!client.optimistic) {
+                  onRowClick(client.id);
+                }
+              }}
             >
               <TableCell className="font-medium">
                 {client.firstName} {client.lastName}
