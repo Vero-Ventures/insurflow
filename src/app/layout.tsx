@@ -32,8 +32,8 @@ export default function RootLayout({
         <Providers>
           <AppNavigationMenu />
           {children}
+          <Toaster />
         </Providers>
-        <Toaster />
       </body>
     </html>
   );
