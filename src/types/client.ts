@@ -8,4 +8,12 @@ export type Client = {
   province: string;
   updatedAt: string;
   status: ClientStatus;
+  // Optional fields for future expansion
+  sex?: "M" | "F";
+  smoker?: boolean;
+  healthRating?: string;
+  hasSpouse?: boolean;
+  spouseAge?: number;
+  clientIncome?: string;
+  spouseIncome?: string;
 };
