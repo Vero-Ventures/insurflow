@@ -22,9 +22,11 @@ test.describe("Authentication Pages", () => {
 
     // Find and click the sign-up link
     const signUpLink = page.getByRole("link", { name: /sign up/i });
-    await signUpLink.click();
 
-    // Should navigate to sign-up page
+    // Wait for navigation after clicking
+    await Promise.all([page.waitForURL(/\/auth\/sign-up/), signUpLink.click()]);
+
+    // Verify we're on the sign-up page
     await expect(page).toHaveURL(/\/auth\/sign-up/);
   });
 
