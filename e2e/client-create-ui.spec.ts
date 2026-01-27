@@ -85,6 +85,60 @@ test.describe("Client Create UI", () => {
     }
   }
 
+  /**
+   * Helper to navigate to clients page and wait for it to load
+   */
+  async function navigateToClientsPage(page: Page) {
+    await page.goto("/clients");
+    await expect(
+      page.getByRole("heading", { name: "Clients", exact: true }),
+    ).toBeVisible();
+  }
+
+  /**
+   * Helper to open the create client dialog
+   */
+  async function openCreateClientDialog(page: Page) {
+    await page.getByRole("button", { name: /create client/i }).click();
+    await expect(
+      page.getByRole("heading", { name: "Create New Client" }),
+    ).toBeVisible();
+  }
+
+  /**
+   * Helper to set up response listener for client creation
+   */
+  function setupClientCreationListener(page: Page) {
+    return page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/clients") &&
+        response.request().method() === "POST" &&
+        response.status() === 201,
+    );
+  }
+
+  /**
+   * Helper to capture and track client ID from API response
+   */
+  async function captureClientId(
+    clientIdPromise: ReturnType<typeof setupClientCreationListener>,
+  ) {
+    const response = await clientIdPromise;
+    const responseBody = await response.json();
+    if (responseBody.client?.id) {
+      createdClientIds.push(responseBody.client.id);
+    }
+  }
+
+  /**
+   * Helper to wait for dialog to close
+   */
+  async function waitForDialogClose(page: Page) {
+    await expect(
+      page.getByRole("heading", { name: "Create New Client" }),
+    ).not.toBeVisible({ timeout: 3000 });
+  }
+
   test.afterAll(async ({ request }) => {
     // Clean up created clients
     for (const id of createdClientIds) {
@@ -103,32 +157,10 @@ test.describe("Client Create UI", () => {
   test("should create a new client through UI - happy path", async ({
     page,
   }) => {
-    // Set up authentication
     await setAuthContext(page);
-
-    // Set up response listener to capture client ID
-    const clientIdPromise = page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/clients") &&
-        response.request().method() === "POST" &&
-        response.status() === 201,
-    );
-
-    // Navigate to clients page
-    await page.goto("/clients");
-
-    // Wait for page to load - use exact match for the main heading
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Click "Create Client" button
-    await page.getByRole("button", { name: /create client/i }).click();
-
-    // Wait for dialog to open
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).toBeVisible();
+    const clientIdPromise = setupClientCreationListener(page);
+    await navigateToClientsPage(page);
+    await openCreateClientDialog(page);
 
     // Fill out the form
     await page.getByLabel(/first name/i).fill("Jane");
@@ -155,17 +187,8 @@ test.describe("Client Create UI", () => {
       timeout: 10000,
     });
 
-    // Capture the client ID from the response
-    const response = await clientIdPromise;
-    const responseBody = await response.json();
-    if (responseBody.client?.id) {
-      createdClientIds.push(responseBody.client.id);
-    }
-
-    // Wait for the dialog to close
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).not.toBeVisible({ timeout: 3000 });
+    await captureClientId(clientIdPromise);
+    await waitForDialogClose(page);
 
     // Reload the page to ensure we get the latest data
     await page.reload();
@@ -182,24 +205,9 @@ test.describe("Client Create UI", () => {
   test("should show validation error when hasSpouse is true but spouseAge is missing", async ({
     page,
   }) => {
-    // Set up authentication
     await setAuthContext(page);
-
-    // Navigate to clients page
-    await page.goto("/clients");
-
-    // Wait for page to load - use exact match for the main heading
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Click "Create Client" button
-    await page.getByRole("button", { name: /create client/i }).click();
-
-    // Wait for dialog to open
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).toBeVisible();
+    await navigateToClientsPage(page);
+    await openCreateClientDialog(page);
 
     // Fill out required fields
     await page.getByLabel(/first name/i).fill("John");
@@ -241,32 +249,10 @@ test.describe("Client Create UI", () => {
   });
 
   test("should show optimistic UI when creating client", async ({ page }) => {
-    // Set up authentication
     await setAuthContext(page);
-
-    // Set up response listener to capture client ID
-    const clientIdPromise = page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/clients") &&
-        response.request().method() === "POST" &&
-        response.status() === 201,
-    );
-
-    // Navigate to clients page
-    await page.goto("/clients");
-
-    // Wait for page to load - use exact match for the main heading
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Click "Create Client" button
-    await page.getByRole("button", { name: /create client/i }).click();
-
-    // Wait for dialog to open
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).toBeVisible();
+    const clientIdPromise = setupClientCreationListener(page);
+    await navigateToClientsPage(page);
+    await openCreateClientDialog(page);
 
     // Fill out the form
     await page.getByLabel(/first name/i).fill("Optimistic");
@@ -287,17 +273,8 @@ test.describe("Client Create UI", () => {
       timeout: 10000,
     });
 
-    // Capture the client ID from the response
-    const response = await clientIdPromise;
-    const responseBody = await response.json();
-    if (responseBody.client?.id) {
-      createdClientIds.push(responseBody.client.id);
-    }
-
-    // Wait for the dialog to close
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).not.toBeVisible({ timeout: 3000 });
+    await captureClientId(clientIdPromise);
+    await waitForDialogClose(page);
 
     // Reload the page to get the latest data
     await page.reload();
@@ -316,32 +293,10 @@ test.describe("Client Create UI", () => {
   test("should prevent dialog from closing while submitting", async ({
     page,
   }) => {
-    // Set up authentication
     await setAuthContext(page);
-
-    // Set up response listener to capture client ID
-    const clientIdPromise = page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/clients") &&
-        response.request().method() === "POST" &&
-        response.status() === 201,
-    );
-
-    // Navigate to clients page
-    await page.goto("/clients");
-
-    // Wait for page to load - use exact match for the main heading
-    await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
-    ).toBeVisible();
-
-    // Click "Create Client" button
-    await page.getByRole("button", { name: /create client/i }).click();
-
-    // Wait for dialog to open
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).toBeVisible();
+    const clientIdPromise = setupClientCreationListener(page);
+    await navigateToClientsPage(page);
+    await openCreateClientDialog(page);
 
     // Fill out the form
     await page.getByLabel(/first name/i).fill("Lock");
@@ -368,16 +323,7 @@ test.describe("Client Create UI", () => {
       timeout: 10000,
     });
 
-    // Capture the client ID from the response
-    const response = await clientIdPromise;
-    const responseBody = await response.json();
-    if (responseBody.client?.id) {
-      createdClientIds.push(responseBody.client.id);
-    }
-
-    // Now the dialog should be closed
-    await expect(
-      page.getByRole("heading", { name: "Create New Client" }),
-    ).not.toBeVisible({ timeout: 3000 });
+    await captureClientId(clientIdPromise);
+    await waitForDialogClose(page);
   });
 });
