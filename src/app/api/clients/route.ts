@@ -2,7 +2,7 @@ import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -118,9 +118,25 @@ const createClientSchema = z
   );
 
 /**
- * GET /api/clients - List all clients for the authenticated user
+ * Pagination defaults and limits
  */
-export async function GET() {
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+/**
+ * Query parameters schema for pagination
+ */
+const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(DEFAULT_PAGE),
+  limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
+});
+
+/**
+ * GET /api/clients - List all clients for the authenticated user
+ * Supports pagination with ?page=1&limit=20 query parameters
+ */
+export async function GET(request: Request) {
   const logger = createLogger({ endpoint: "/api/clients", method: "GET" });
 
   try {
@@ -133,20 +149,70 @@ export async function GET() {
 
     logger.addContext({ userId: session.user.id });
 
-    const db = getDb();
-
-    // Fetch all non-deleted clients for the current user
-    const clients = await db.query.client.findMany({
-      where: and(eq(client.userId, session.user.id), isNull(client.deletedAt)),
-      orderBy: (client, { desc }) => [desc(client.createdAt)],
+    // Parse pagination parameters from URL
+    const url = new URL(request.url);
+    const paginationResult = paginationSchema.safeParse({
+      page: url.searchParams.get("page") ?? DEFAULT_PAGE,
+      limit: url.searchParams.get("limit") ?? DEFAULT_LIMIT,
     });
+
+    if (!paginationResult.success) {
+      await logger.warn("Invalid pagination parameters", {
+        validationErrors: paginationResult.error.flatten(),
+      });
+      return NextResponse.json(
+        {
+          error: "Invalid pagination parameters",
+          details: paginationResult.error.format(),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { page, limit } = paginationResult.data;
+    const offset = (page - 1) * limit;
+
+    logger.addContext({ page, limit, offset });
+
+    const db = getDb();
+    const whereClause = and(
+      eq(client.userId, session.user.id),
+      isNull(client.deletedAt),
+    );
+
+    // Execute count and data queries in parallel for better performance
+    const [totalResult, clients] = await Promise.all([
+      db.select({ count: count() }).from(client).where(whereClause),
+      db.query.client.findMany({
+        where: whereClause,
+        orderBy: (client, { desc }) => [desc(client.createdAt)],
+        limit,
+        offset,
+      }),
+    ]);
+
+    const total = totalResult[0]?.count ?? 0;
+    const totalPages = Math.ceil(total / limit);
 
     await logger.info("Clients fetched successfully", {
       statusCode: 200,
       clientCount: clients.length,
+      total,
+      page,
+      totalPages,
     });
 
-    return NextResponse.json({ clients });
+    return NextResponse.json({
+      clients,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     await logger.error(
       "Error fetching clients",

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { Toaster } from "@/components/ui/sonner";
 import { authClient } from "@/server/better-auth/client";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ export function Providers({ children }: { children: ReactNode }) {
         Link={Link}
       >
         {children}
+        <Toaster />
       </AuthUIProvider>
     </ThemeProvider>
   );
