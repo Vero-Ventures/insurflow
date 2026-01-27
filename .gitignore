@@ -27,6 +27,7 @@ next-env.d.ts
 # misc
 .DS_Store
 *.pem
+cookies.txt
 
 # debug
 npm-debug.log*
