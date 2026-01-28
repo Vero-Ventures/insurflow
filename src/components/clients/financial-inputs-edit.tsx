@@ -44,10 +44,11 @@ export function FinancialInputsEdit({
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label htmlFor="clientIncome" className="text-sm font-medium">
               Client Annual Income (CAD)
             </label>
             <Input
+              id="clientIncome"
               type="number"
               step="0.01"
               min="0"
@@ -58,10 +59,11 @@ export function FinancialInputsEdit({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label htmlFor="spouseIncome" className="text-sm font-medium">
               Spouse Annual Income (CAD)
             </label>
             <Input
+              id="spouseIncome"
               type="number"
               step="0.01"
               min="0"
@@ -72,8 +74,14 @@ export function FinancialInputsEdit({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Income Replacement %</label>
+            <label
+              htmlFor="incomeReplacementPercent"
+              className="text-sm font-medium"
+            >
+              Income Replacement %
+            </label>
             <Input
+              id="incomeReplacementPercent"
               type="number"
               step="0.01"
               min="0"
@@ -87,30 +95,39 @@ export function FinancialInputsEdit({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label
+              htmlFor="replacementDurationYears"
+              className="text-sm font-medium"
+            >
               Replacement Duration (Years)
             </label>
             <Input
+              id="replacementDurationYears"
               type="number"
               step="1"
               min="0"
               max="50"
               value={formData.replacementDurationYears}
-              onChange={(e) =>
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10);
                 onInputChange(
                   "replacementDurationYears",
-                  parseInt(e.target.value || "0"),
-                )
-              }
+                  Number.isNaN(parsed) ? 0 : parsed,
+                );
+              }}
               placeholder="10"
             />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium">
+            <label
+              htmlFor="existingLifeInsuranceCoverage"
+              className="text-sm font-medium"
+            >
               Existing Life Insurance Coverage (CAD)
             </label>
             <Input
+              id="existingLifeInsuranceCoverage"
               type="number"
               step="0.01"
               min="0"
@@ -124,14 +141,16 @@ export function FinancialInputsEdit({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">
+          <label htmlFor="additionalGoals" className="text-sm font-medium">
             Additional Goals (Optional)
           </label>
           <Textarea
+            id="additionalGoals"
             value={formData.additionalGoals}
             onChange={(e) => onInputChange("additionalGoals", e.target.value)}
             placeholder="Enter any additional financial goals or notes..."
             className="min-h-32"
+            maxLength={2000}
           />
           <p className="text-muted-foreground text-xs">
             {formData.additionalGoals.length}/2000 characters

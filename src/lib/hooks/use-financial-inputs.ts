@@ -45,7 +45,11 @@ export function useFinancialInputs(client: Client) {
       return false;
     }
 
-    if (replacementPercent < 0 || replacementPercent > 100) {
+    if (
+      isNaN(replacementPercent) ||
+      replacementPercent < 0 ||
+      replacementPercent > 100
+    ) {
       toast.error("Replacement percentage must be between 0 and 100");
       return false;
     }
@@ -66,6 +70,15 @@ export function useFinancialInputs(client: Client) {
       return false;
     }
 
+    // Validate replacement duration years
+    if (
+      isNaN(formData.replacementDurationYears) ||
+      formData.replacementDurationYears < 0
+    ) {
+      toast.error("Replacement duration must be a valid number");
+      return false;
+    }
+
     return true;
   };
 
@@ -82,13 +95,11 @@ export function useFinancialInputs(client: Client) {
 
       const updatePayload = {
         clientIncome: formData.clientIncome,
-        ...(formData.spouseIncome && { spouseIncome: formData.spouseIncome }),
+        spouseIncome: formData.spouseIncome || null,
         incomeReplacementPercent: formData.incomeReplacementPercent,
         replacementDurationYears: formData.replacementDurationYears,
         existingLifeInsuranceCoverage: formData.existingLifeInsuranceCoverage,
-        ...(formData.additionalGoals && {
-          additionalGoals: formData.additionalGoals,
-        }),
+        additionalGoals: formData.additionalGoals || null,
       };
 
       const response = await fetch(`/api/clients/${client.id}`, {

@@ -38,9 +38,7 @@ export function FinancialInputsDisplay({
               Client Income (Annual)
             </p>
             <p className="font-medium">
-              {client.clientIncome
-                ? formatCurrency(parseFloat(client.clientIncome))
-                : "$0.00"}
+              {formatCurrency(parseFloat(client.clientIncome || "0") || 0)}
             </p>
           </div>
           {client.spouseIncome && (
@@ -49,7 +47,7 @@ export function FinancialInputsDisplay({
                 Spouse Income (Annual)
               </p>
               <p className="font-medium">
-                {formatCurrency(parseFloat(client.spouseIncome))}
+                {formatCurrency(parseFloat(client.spouseIncome) || 0)}
               </p>
             </div>
           )}
@@ -74,11 +72,9 @@ export function FinancialInputsDisplay({
               Existing Life Insurance Coverage
             </p>
             <p className="font-medium">
-              {client.existingLifeInsuranceCoverage
-                ? formatCurrency(
-                    parseFloat(client.existingLifeInsuranceCoverage),
-                  )
-                : "$0.00"}
+              {formatCurrency(
+                parseFloat(client.existingLifeInsuranceCoverage || "0") || 0,
+              )}
             </p>
           </div>
         </div>
