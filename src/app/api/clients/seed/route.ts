@@ -1,9 +1,9 @@
-import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
 import { NextResponse } from "next/server";
 import { testClientsData } from "@/lib/test-data/clients";
+import { validateSession } from "@/lib/api/route-helpers";
 
 /**
  * POST /api/clients/seed - Seed test clients for development
@@ -16,12 +16,9 @@ export async function POST() {
   });
 
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      await logger.warn("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const sessionResult = await validateSession(logger);
+    if ("error" in sessionResult) return sessionResult.error;
+    const { session } = sessionResult;
 
     const { user } = session;
     logger.addContext({ userId: user.id });

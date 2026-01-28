@@ -1,4 +1,3 @@
-import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { debt } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
@@ -6,6 +5,11 @@ import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { createDebtSchema } from "@/lib/validation/debt";
 import { validateUUID, verifyClientOwnership } from "@/lib/api/client-helpers";
+import {
+  validateSession,
+  parseJsonBody,
+  handleValidationError,
+} from "@/lib/api/route-helpers";
 
 /**
  * GET /api/clients/[id]/debts - Get all debts for a client
@@ -21,12 +25,9 @@ export async function GET(
   });
 
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      await logger.warn("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const sessionResult = await validateSession(logger);
+    if ("error" in sessionResult) return sessionResult.error;
+    const { session } = sessionResult;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 
@@ -84,12 +85,9 @@ export async function POST(
   });
 
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      await logger.warn("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const sessionResult = await validateSession(logger);
+    if ("error" in sessionResult) return sessionResult.error;
+    const { session } = sessionResult;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 
@@ -108,27 +106,13 @@ export async function POST(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      await logger.warn("Invalid JSON body received");
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
+    const bodyResult = await parseJsonBody(request, logger);
+    if ("error" in bodyResult) return bodyResult.error;
 
     // Validate request body
-    const validationResult = createDebtSchema.safeParse(body);
+    const validationResult = createDebtSchema.safeParse(bodyResult.body);
     if (!validationResult.success) {
-      await logger.warn("Validation failed", {
-        validationErrors: validationResult.error.flatten(),
-      });
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: validationResult.error.format(),
-        },
-        { status: 400 },
-      );
+      return handleValidationError(logger, validationResult.error);
     }
 
     const db = getDb();

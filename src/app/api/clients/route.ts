@@ -1,4 +1,3 @@
-import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
@@ -11,6 +10,11 @@ import {
 import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  validateSession,
+  parseJsonBody,
+  handleValidationError,
+} from "@/lib/api/route-helpers";
 
 /**
  * Validation schema for creating a client
@@ -85,12 +89,9 @@ export async function GET(request: Request) {
   const logger = createLogger({ endpoint: "/api/clients", method: "GET" });
 
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      await logger.warn("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const sessionResult = await validateSession(logger);
+    if ("error" in sessionResult) return sessionResult.error;
+    const { session } = sessionResult;
 
     logger.addContext({ userId: session.user.id });
 
@@ -177,36 +178,19 @@ export async function POST(request: Request) {
   const logger = createLogger({ endpoint: "/api/clients", method: "POST" });
 
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      await logger.warn("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const sessionResult = await validateSession(logger);
+    if ("error" in sessionResult) return sessionResult.error;
+    const { session } = sessionResult;
 
     logger.addContext({ userId: session.user.id });
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      await logger.warn("Invalid JSON body received");
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
+    const bodyResult = await parseJsonBody(request, logger);
+    if ("error" in bodyResult) return bodyResult.error;
 
     // Validate request body
-    const validationResult = createClientSchema.safeParse(body);
+    const validationResult = createClientSchema.safeParse(bodyResult.body);
     if (!validationResult.success) {
-      await logger.warn("Validation failed", {
-        validationErrors: validationResult.error.flatten(),
-      });
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: validationResult.error.format(),
-        },
-        { status: 400 },
-      );
+      return handleValidationError(logger, validationResult.error);
     }
 
     const data = validationResult.data;
