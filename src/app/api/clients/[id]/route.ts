@@ -63,6 +63,7 @@ const updateClientSchema = z
       .optional(),
     replacementDurationYears: z.number().int().min(0).max(50).optional(),
     existingLifeInsuranceCoverage: decimalString("coverage amount").optional(),
+    additionalGoals: z.string().max(2000).optional(),
     status: z.enum(["draft", "active", "archived"]).optional(),
   })
   .strict()

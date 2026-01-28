@@ -215,6 +215,9 @@ export const client = pgTable(
       .notNull()
       .default("0"),
 
+    /** Additional goals or notes (informational only) */
+    additionalGoals: text("additional_goals"),
+
     // -------------------------------------------------------------------------
     // Status
     // -------------------------------------------------------------------------

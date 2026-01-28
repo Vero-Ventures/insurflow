@@ -16,4 +16,8 @@ export type Client = {
   spouseAge?: number;
   clientIncome?: string;
   spouseIncome?: string;
+  incomeReplacementPercent?: string;
+  replacementDurationYears?: number;
+  existingLifeInsuranceCoverage?: string;
+  additionalGoals?: string;
 };
