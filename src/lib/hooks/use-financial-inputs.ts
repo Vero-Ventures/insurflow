@@ -50,6 +50,22 @@ export function useFinancialInputs(client: Client) {
       return false;
     }
 
+    // Validate optional spouse income if provided
+    if (formData.spouseIncome) {
+      const spouseIncomeNum = parseFloat(formData.spouseIncome);
+      if (isNaN(spouseIncomeNum) || spouseIncomeNum < 0) {
+        toast.error("Spouse income must be a valid number");
+        return false;
+      }
+    }
+
+    // Validate existing life insurance coverage
+    const coverageNum = parseFloat(formData.existingLifeInsuranceCoverage);
+    if (isNaN(coverageNum) || coverageNum < 0) {
+      toast.error("Existing life insurance coverage must be a valid number");
+      return false;
+    }
+
     return true;
   };
 
@@ -60,6 +76,7 @@ export function useFinancialInputs(client: Client) {
       setIsSaving(true);
 
       if (!validateForm()) {
+        setIsSaving(false);
         return;
       }
 

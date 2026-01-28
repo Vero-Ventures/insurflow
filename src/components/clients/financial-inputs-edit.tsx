@@ -99,7 +99,7 @@ export function FinancialInputsEdit({
               onChange={(e) =>
                 onInputChange(
                   "replacementDurationYears",
-                  parseInt(e.target.value),
+                  parseInt(e.target.value || "0"),
                 )
               }
               placeholder="10"
