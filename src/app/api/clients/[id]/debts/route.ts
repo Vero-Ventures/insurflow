@@ -124,7 +124,7 @@ export async function POST(
         clientId: id,
         name: validationResult.data.name,
         type: validationResult.data.type,
-        currentBalance: validationResult.data.currentBalance.toString(),
+        currentBalance: validationResult.data.currentBalance,
       })
       .returning();
 

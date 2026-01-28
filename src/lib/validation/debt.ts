@@ -22,17 +22,15 @@ export const debtTypeSchema = z.enum(DEBT_TYPES);
 
 /**
  * Validation schema for current balance
+ * Kept as string to match database schema and avoid unnecessary conversions
  */
-export const currentBalanceSchema = z
-  .string()
-  .refine(
-    (val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num >= 0;
-    },
-    { message: "Current balance must be a valid positive number" },
-  )
-  .transform((val) => parseFloat(val));
+export const currentBalanceSchema = z.string().refine(
+  (val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0;
+  },
+  { message: "Current balance must be a valid positive number" },
+);
 
 /**
  * Validation schema for creating a debt

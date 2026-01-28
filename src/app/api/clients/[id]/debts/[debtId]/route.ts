@@ -82,14 +82,6 @@ export async function PATCH(
       updatedAt: new Date(),
     };
 
-    // Convert number back to string for decimal fields
-    if (
-      updateData.currentBalance !== undefined &&
-      updateData.currentBalance !== null
-    ) {
-      updateData.currentBalance = String(updateData.currentBalance);
-    }
-
     const [updatedDebt] = await db
       .update(debt)
       .set(updateData)
