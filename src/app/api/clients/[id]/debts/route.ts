@@ -1,54 +1,11 @@
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { client, debt } from "@/server/db/schema";
+import { debt } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
-import { UUID_REGEX } from "@/lib/validation/client";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-/**
- * Validates UUID format and returns 400 response if invalid
- */
-function validateUUID(id: string): NextResponse | null {
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json(
-      { error: "Invalid client ID format" },
-      { status: 400 },
-    );
-  }
-  return null;
-}
-
-/**
- * Validation schema for creating a debt
- */
-const createDebtSchema = z
-  .object({
-    name: z.string().min(1, "Debt name is required").max(255),
-    type: z.enum([
-      "mortgage",
-      "heloc",
-      "car_loan",
-      "student_loan",
-      "personal_loan",
-      "credit_card",
-      "line_of_credit",
-      "business_loan",
-      "other",
-    ]),
-    currentBalance: z
-      .string()
-      .refine(
-        (val) => {
-          const num = parseFloat(val);
-          return !isNaN(num) && num >= 0;
-        },
-        { message: "Current balance must be a valid positive number" },
-      )
-      .transform((val) => parseFloat(val)),
-  })
-  .strict();
+import { createDebtSchema } from "@/lib/validation/debt";
+import { validateUUID, verifyClientOwnership } from "@/lib/api/client-helpers";
 
 /**
  * GET /api/clients/[id]/debts - Get all debts for a client
@@ -74,7 +31,7 @@ export async function GET(
     logger.addContext({ userId: session.user.id, clientId: id });
 
     // Validate UUID format
-    const uuidError = validateUUID(id);
+    const uuidError = validateUUID(id, "client ID");
     if (uuidError) {
       await logger.warn("Invalid UUID format");
       return uuidError;
@@ -83,13 +40,7 @@ export async function GET(
     const db = getDb();
 
     // Verify client exists and belongs to user
-    const foundClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, id),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
+    const foundClient = await verifyClientOwnership(id, session.user.id);
 
     if (!foundClient) {
       await logger.info("Client not found", { statusCode: 404 });
@@ -143,10 +94,18 @@ export async function POST(
     logger.addContext({ userId: session.user.id, clientId: id });
 
     // Validate UUID format
-    const uuidError = validateUUID(id);
+    const uuidError = validateUUID(id, "client ID");
     if (uuidError) {
       await logger.warn("Invalid UUID format");
       return uuidError;
+    }
+
+    // Verify client exists and belongs to user
+    const foundClient = await verifyClientOwnership(id, session.user.id);
+
+    if (!foundClient) {
+      await logger.info("Client not found", { statusCode: 404 });
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
     let body;
@@ -173,22 +132,6 @@ export async function POST(
     }
 
     const db = getDb();
-
-    // Verify client exists and belongs to user
-    const foundClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, id),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
-
-    if (!foundClient) {
-      await logger.info("Client not found for debt creation", {
-        statusCode: 404,
-      });
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
 
     // Create new debt
     const [newDebt] = await db

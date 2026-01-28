@@ -1,54 +1,11 @@
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { client, debt } from "@/server/db/schema";
+import { debt } from "@/server/db/schema";
 import { createLogger } from "@/server/axiom";
-import { UUID_REGEX } from "@/lib/validation/client";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-/**
- * Validates UUID format and returns 400 response if invalid
- */
-function validateUUID(id: string): NextResponse | null {
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json({ error: "Invalid format" }, { status: 400 });
-  }
-  return null;
-}
-
-/**
- * Validation schema for updating a debt
- */
-const updateDebtSchema = z
-  .object({
-    name: z.string().min(1).max(255).optional(),
-    type: z
-      .enum([
-        "mortgage",
-        "heloc",
-        "car_loan",
-        "student_loan",
-        "personal_loan",
-        "credit_card",
-        "line_of_credit",
-        "business_loan",
-        "other",
-      ])
-      .optional(),
-    currentBalance: z
-      .string()
-      .refine(
-        (val) => {
-          const num = parseFloat(val);
-          return !isNaN(num) && num >= 0;
-        },
-        { message: "Current balance must be a valid positive number" },
-      )
-      .transform((val) => parseFloat(val))
-      .optional(),
-  })
-  .strict();
+import { updateDebtSchema } from "@/lib/validation/debt";
+import { validateUUID, verifyClientOwnership } from "@/lib/api/client-helpers";
 
 /**
  * PATCH /api/clients/[clientId]/debts/[debtId] - Update a debt
@@ -78,13 +35,13 @@ export async function PATCH(
     });
 
     // Validate UUID formats
-    const clientError = validateUUID(clientId);
+    const clientError = validateUUID(clientId, "client ID");
     if (clientError) {
       await logger.warn("Invalid client ID format");
       return clientError;
     }
 
-    const debtError = validateUUID(debtId);
+    const debtError = validateUUID(debtId, "debt ID");
     if (debtError) {
       await logger.warn("Invalid debt ID format");
       return debtError;
@@ -125,13 +82,7 @@ export async function PATCH(
     const db = getDb();
 
     // Verify client exists and belongs to user
-    const foundClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, clientId),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
+    const foundClient = await verifyClientOwnership(clientId, session.user.id);
 
     if (!foundClient) {
       await logger.info("Client not found", { statusCode: 404 });
@@ -223,22 +174,15 @@ export async function DELETE(
       return debtError;
     }
 
-    const db = getDb();
-
     // Verify client exists and belongs to user
-    const foundClient = await db.query.client.findFirst({
-      where: and(
-        eq(client.id, clientId),
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-      ),
-    });
+    const foundClient = await verifyClientOwnership(clientId, session.user.id);
 
     if (!foundClient) {
       await logger.info("Client not found", { statusCode: 404 });
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
+    const db = getDb();
     const now = new Date();
 
     // Soft delete debt with ownership and deletion check

@@ -21,36 +21,41 @@ interface DebtsSectionProps {
 export function DebtsSection({ clientId, totalAssets = 0 }: DebtsSectionProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [totalDebts, setTotalDebts] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch debts to calculate totals
-  useEffect(() => {
-    const fetchDebts = async () => {
-      try {
-        const response = await fetch(`/api/clients/${clientId}/debts`);
-        if (response.ok) {
-          const data = await response.json();
-          const allDebts = data.debts || [];
+  // Fetch debts once in parent component
+  const fetchDebts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/clients/${clientId}/debts`);
+      if (response.ok) {
+        const data = await response.json();
+        const allDebts = data.debts || [];
+        setDebts(allDebts);
 
-          // Calculate total debts
-          const total = allDebts.reduce((sum: number, debt: Debt) => {
-            const balance =
-              typeof debt.currentBalance === "string"
-                ? parseFloat(debt.currentBalance)
-                : debt.currentBalance;
-            return sum + (isNaN(balance) ? 0 : balance);
-          }, 0);
+        // Calculate total debts
+        const total = allDebts.reduce((sum: number, debt: Debt) => {
+          const balance =
+            typeof debt.currentBalance === "string"
+              ? parseFloat(debt.currentBalance)
+              : debt.currentBalance;
+          return sum + (isNaN(balance) ? 0 : balance);
+        }, 0);
 
-          setTotalDebts(total);
-        }
-      } catch (error) {
-        console.error("Error fetching debts:", error);
+        setTotalDebts(total);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching debts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clientId]);
 
+  useEffect(() => {
     fetchDebts();
-  }, [clientId, refreshKey]);
+  }, [fetchDebts]);
 
   const handleEdit = (debt: Debt) => {
     setSelectedDebt(debt);
@@ -70,14 +75,14 @@ export function DebtsSection({ clientId, totalAssets = 0 }: DebtsSectionProps) {
   };
 
   const handleDebtSaved = useCallback(() => {
-    // Force list refresh by updating key
-    setRefreshKey((prev) => prev + 1);
-  }, []);
+    // Refetch debts after save
+    fetchDebts();
+  }, [fetchDebts]);
 
   const handleDebtDeleted = useCallback(() => {
-    // Force list refresh
-    setRefreshKey((prev) => prev + 1);
-  }, []);
+    // Refetch debts after delete
+    fetchDebts();
+  }, [fetchDebts]);
 
   const calculateNetWorth = (): number => {
     return totalAssets - totalDebts;
@@ -103,8 +108,9 @@ export function DebtsSection({ clientId, totalAssets = 0 }: DebtsSectionProps) {
         <CardContent className="space-y-6">
           {/* Debts List */}
           <DebtsList
-            key={refreshKey}
             clientId={clientId}
+            debts={debts}
+            isLoading={isLoading}
             onEdit={handleEdit}
             onDebtDeleted={handleDebtDeleted}
           />

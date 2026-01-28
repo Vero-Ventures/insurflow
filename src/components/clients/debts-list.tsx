@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -35,50 +35,20 @@ export interface Debt {
 
 interface DebtsListProps {
   clientId: string;
+  debts: Debt[];
+  isLoading: boolean;
   onEdit: (debt: Debt) => void;
   onDebtDeleted: () => void;
-  isLoading?: boolean;
 }
 
 export function DebtsList({
   clientId,
+  debts,
+  isLoading,
   onEdit,
   onDebtDeleted,
-  isLoading = false,
 }: DebtsListProps) {
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [isLoading_state, setIsLoading] = useState(isLoading);
-  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const fetchDebts = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/clients/${clientId}/debts`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Client not found");
-        }
-        throw new Error("Failed to fetch debts");
-      }
-
-      const data = await response.json();
-      const debtList = data.debts || [];
-      setDebts(debtList);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      toast.error("Failed to load debts");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clientId]);
-
-  useEffect(() => {
-    fetchDebts();
-  }, [fetchDebts]);
 
   const handleDelete = async (debtId: string) => {
     try {
@@ -92,7 +62,6 @@ export function DebtsList({
       }
 
       toast.success("Debt deleted successfully");
-      setDebts((prev) => prev.filter((d) => d.id !== debtId));
       onDebtDeleted();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete debt");
@@ -116,24 +85,8 @@ export function DebtsList({
     }).format(num);
   };
 
-  if (isLoading_state) {
+  if (isLoading) {
     return <DebtsListSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <div className="border-destructive/50 bg-destructive/10 rounded-md border p-4">
-        <p className="text-destructive text-sm">{error}</p>
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-2"
-          onClick={() => fetchDebts()}
-        >
-          Retry
-        </Button>
-      </div>
-    );
   }
 
   if (debts.length === 0) {

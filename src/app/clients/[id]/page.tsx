@@ -43,6 +43,7 @@ function ClientDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [totalAssets, setTotalAssets] = useState(0);
 
   useEffect(() => {
     async function fetchClient() {
@@ -64,6 +65,24 @@ function ClientDetailContent() {
 
         const data = await response.json();
         setClient(data.client);
+
+        // Fetch assets to calculate total
+        const assetsResponse = await fetch(`/api/clients/${clientId}/assets`);
+        if (assetsResponse.ok) {
+          const assetsData = await assetsResponse.json();
+          const assets = assetsData.assets || [];
+          const total = assets.reduce(
+            (sum: number, asset: { currentValue: string | number }) => {
+              const value =
+                typeof asset.currentValue === "string"
+                  ? parseFloat(asset.currentValue)
+                  : asset.currentValue;
+              return sum + (isNaN(value) ? 0 : value);
+            },
+            0,
+          );
+          setTotalAssets(total);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
@@ -277,7 +296,7 @@ function ClientDetailContent() {
           </Card>
 
           {/* Debts Section */}
-          <DebtsSection clientId={clientId} totalAssets={0} />
+          <DebtsSection clientId={clientId} totalAssets={totalAssets} />
         </TabsContent>
 
         {/* Financial Inputs Tab */}
