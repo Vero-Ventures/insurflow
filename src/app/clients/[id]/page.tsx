@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import { calculateAge, formatDate } from "@/lib/client-utils";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
+import { DebtsSection } from "@/components/clients/debts-section";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -274,6 +275,9 @@ function ClientDetailContent() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Debts Section */}
+          <DebtsSection clientId={clientId} totalAssets={0} />
         </TabsContent>
 
         {/* Financial Inputs Tab */}
