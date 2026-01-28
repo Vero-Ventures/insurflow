@@ -30,6 +30,7 @@ import { ArrowLeft, Trash2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import { calculateAge, formatDate } from "@/lib/client-utils";
+import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -277,19 +278,10 @@ function ClientDetailContent() {
 
         {/* Financial Inputs Tab */}
         <TabsContent value="financial" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Inputs</CardTitle>
-              <CardDescription>
-                Income, assets, debts, and financial planning details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Financial inputs will be available in a future update.
-              </p>
-            </CardContent>
-          </Card>
+          <FinancialInputsForm
+            client={client}
+            onUpdate={async (updatedClient) => setClient(updatedClient)}
+          />
         </TabsContent>
 
         {/* Insurance Needs Tab */}

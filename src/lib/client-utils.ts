@@ -28,3 +28,22 @@ export function formatDate(dateString: string): string {
     day: "numeric",
   }).format(date);
 }
+
+/**
+ * Format number as Canadian currency (CAD)
+ */
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+/**
+ * Parse currency string to number
+ */
+export function parseCurrency(value: string): number {
+  return parseFloat(value.replace(/[^\d.-]/g, ""));
+}
