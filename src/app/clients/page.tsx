@@ -106,11 +106,18 @@ export default function ClientsPage() {
   );
 
   // Callback to remove optimistic client after real one is created
-  const handleOptimisticSuccess = useCallback((optimisticId: string) => {
-    setOptimisticClients((prev) =>
-      prev.filter((client) => client.id !== optimisticId),
-    );
-  }, []);
+  const handleOptimisticSuccess = useCallback(
+    (optimisticId: string, realClient: unknown) => {
+      // Remove the optimistic client
+      setOptimisticClients((prev) =>
+        prev.filter((client) => client.id !== optimisticId),
+      );
+
+      // Add the real client to the top of the list
+      setClients((prev) => [realClient as Client, ...prev]);
+    },
+    [],
+  );
 
   // Callback to handle optimistic creation failure
   const handleOptimisticError = useCallback((optimisticId: string) => {

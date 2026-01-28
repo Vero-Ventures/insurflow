@@ -27,7 +27,7 @@ interface CreateClientDialogProps {
     dateOfBirth: string;
     province: string;
   }) => string;
-  onOptimisticSuccess?: (optimisticId: string) => void;
+  onOptimisticSuccess?: (optimisticId: string, realClient: unknown) => void;
   onOptimisticError?: (optimisticId: string) => void;
 }
 
