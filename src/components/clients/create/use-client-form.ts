@@ -13,7 +13,7 @@ interface UseClientFormOptions {
     dateOfBirth: string;
     province: string;
   }) => string;
-  onOptimisticSuccess?: (optimisticId: string) => void;
+  onOptimisticSuccess?: (optimisticId: string, realClient: unknown) => void;
   onOptimisticError?: (optimisticId: string) => void;
 }
 
@@ -115,13 +115,16 @@ export function useClientForm(
   };
 
   // Helper: Handle successful submission
-  const handleSuccess = (optimisticId: string | undefined) => {
+  const handleSuccess = (
+    optimisticId: string | undefined,
+    createdClient: unknown,
+  ) => {
     toast.success("Client created successfully");
     resetForm();
     router.refresh();
 
     if (optimisticId && options?.onOptimisticSuccess) {
-      options.onOptimisticSuccess(optimisticId);
+      options.onOptimisticSuccess(optimisticId, createdClient);
     }
 
     if (onSuccess) {
@@ -212,8 +215,8 @@ export function useClientForm(
         throw new Error(errorData.error || "Failed to create client");
       }
 
-      await response.json();
-      handleSuccess(optimisticId);
+      const responseData = await response.json();
+      handleSuccess(optimisticId, responseData.client);
     } catch (error) {
       handleError(error, optimisticId);
     } finally {
