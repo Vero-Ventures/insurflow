@@ -192,7 +192,7 @@ test.describe("Client Detail Page", () => {
 
     // Find the copy button - it's the small button right after the Client ID text
     // Look for the button that contains either Copy or Check icon (depending on state)
-    const copyButton = clientIdSection.getByRole("button", { name: /copy|check/i });
+    const clientIdSection = page.locator("text=Client ID:").locator("..");
     const copyButton = clientIdSection.getByRole("button");
     await copyButton.click();
 
