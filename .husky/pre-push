@@ -74,7 +74,7 @@ echo "[2/3] Unit tests..."
 bun run test:run || { echo "Fix failing tests before pushing."; exit 1; }
 
 echo "[3/3] E2E tests..."
-bun run test:e2e || { echo "Fix failing E2E tests before pushing."; exit 1; }
+bun run test:e2e -- --workers=1 || { echo "Fix failing E2E tests before pushing."; exit 1; }
 
 echo ""
 echo "All checks passed."
