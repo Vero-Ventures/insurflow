@@ -38,7 +38,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "knip": "knip",
-    "prepare": "node -e \"if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }\""
+    "prepare": "node -e \"if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }\"",
+    "postinstall": "bash scripts/remove-og-wasm.sh"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
