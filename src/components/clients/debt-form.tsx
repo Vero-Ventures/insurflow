@@ -19,18 +19,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Debt } from "./debts-list";
-
-const DEBT_TYPES = [
-  { value: "mortgage", label: "Mortgage" },
-  { value: "heloc", label: "HELOC" },
-  { value: "car_loan", label: "Car Loan" },
-  { value: "student_loan", label: "Student Loan" },
-  { value: "personal_loan", label: "Personal Loan" },
-  { value: "credit_card", label: "Credit Card" },
-  { value: "line_of_credit", label: "Line of Credit" },
-  { value: "business_loan", label: "Business Loan" },
-  { value: "other", label: "Other" },
-];
+import { DEBT_TYPE_OPTIONS } from "@/lib/validation/debt";
 
 interface DebtFormProps {
   clientId: string;
@@ -105,46 +94,29 @@ export function DebtForm({
         currentBalance: parseFloat(currentBalance).toString(),
       };
 
-      if (debt) {
-        // Update existing debt
-        const response = await fetch(
-          `/api/clients/${clientId}/debts/${debt.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          },
+      const isUpdate = !!debt;
+      const endpoint = isUpdate
+        ? `/api/clients/${clientId}/debts/${debt.id}`
+        : `/api/clients/${clientId}/debts`;
+      const method = isUpdate ? "PATCH" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(
+          data.error ||
+            `HTTP ${response.status}: Failed to ${isUpdate ? "update" : "create"} debt`,
         );
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(
-            data.error || `HTTP ${response.status}: Failed to update debt`,
-          );
-        }
-
-        toast.success("Debt updated successfully");
-      } else {
-        // Create new debt
-        const response = await fetch(`/api/clients/${clientId}/debts`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(
-            data.error || `HTTP ${response.status}: Failed to create debt`,
-          );
-        }
-
-        toast.success("Debt created successfully");
       }
+
+      toast.success(`Debt ${isUpdate ? "updated" : "created"} successfully`);
 
       // Reset form and close dialog
       setName("");
@@ -200,7 +172,7 @@ export function DebtForm({
                 <SelectValue placeholder="Select a debt type" />
               </SelectTrigger>
               <SelectContent>
-                {DEBT_TYPES.map((item) => (
+                {DEBT_TYPE_OPTIONS.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
                     {item.label}
                   </SelectItem>

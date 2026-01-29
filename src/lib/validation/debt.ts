@@ -16,6 +16,29 @@ export const DEBT_TYPES = [
 ] as const;
 
 /**
+ * Human-readable labels for debt types
+ */
+export const DEBT_TYPE_LABELS: Record<(typeof DEBT_TYPES)[number], string> = {
+  mortgage: "Mortgage",
+  heloc: "HELOC",
+  car_loan: "Car Loan",
+  student_loan: "Student Loan",
+  personal_loan: "Personal Loan",
+  credit_card: "Credit Card",
+  line_of_credit: "Line of Credit",
+  business_loan: "Business Loan",
+  other: "Other",
+};
+
+/**
+ * Debt type options for use in select components
+ */
+export const DEBT_TYPE_OPTIONS = DEBT_TYPES.map((value) => ({
+  value,
+  label: DEBT_TYPE_LABELS[value],
+}));
+
+/**
  * Validation schema for debt type enum
  */
 export const debtTypeSchema = z.enum(DEBT_TYPES);

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { DebtsList, type Debt } from "./debts-list";
 import { DebtForm } from "./debt-form";
 
@@ -48,6 +49,7 @@ export function DebtsSection({ clientId, totalAssets = 0 }: DebtsSectionProps) {
       }
     } catch (error) {
       console.error("Error fetching debts:", error);
+      toast.error("Failed to load debt information");
     } finally {
       setIsLoading(false);
     }
