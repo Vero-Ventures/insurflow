@@ -6,7 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function AuthLoading() {
   return (
-    <main className="container flex min-h-screen grow flex-col items-center justify-center self-center p-4 md:p-6">
+    <main
+      className="container flex min-h-screen grow flex-col items-center justify-center self-center p-4 md:p-6"
+      aria-label="Loading page..."
+    >
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Title placeholder */}
         <div className="flex flex-col items-center gap-2">
