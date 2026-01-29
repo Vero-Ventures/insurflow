@@ -32,9 +32,10 @@ import * as schema from "./schema";
  * @see https://github.com/Vero-Ventures/insurflow/issues/90
  */
 export const getDb = cache((): PostgresJsDatabase<typeof schema> => {
+  const isEdgeRuntime = process.env.NEXT_RUNTIME === "edge";
   const client = postgres(env.DATABASE_URL, {
-    max: 1,
-    idle_timeout: 0,
+    max: isEdgeRuntime ? 1 : 5,
+    idle_timeout: isEdgeRuntime ? 0 : 20,
     connect_timeout: 10,
   });
 

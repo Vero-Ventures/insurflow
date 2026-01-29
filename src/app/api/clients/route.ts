@@ -126,16 +126,18 @@ export async function GET(request: Request) {
       isNull(client.deletedAt),
     );
 
-    // Execute count and data queries in parallel for better performance
-    const [totalResult, clients] = await Promise.all([
-      db.select({ count: count() }).from(client).where(whereClause),
-      db.query.client.findMany({
-        where: whereClause,
-        orderBy: (client, { desc }) => [desc(client.createdAt)],
-        limit,
-        offset,
-      }),
-    ]);
+    // Execute queries sequentially to avoid concurrent queries on single connection
+    const totalResult = await db
+      .select({ count: count() })
+      .from(client)
+      .where(whereClause);
+
+    const clients = await db.query.client.findMany({
+      where: whereClause,
+      orderBy: (client, { desc }) => [desc(client.createdAt)],
+      limit,
+      offset,
+    });
 
     const total = totalResult[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);

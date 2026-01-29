@@ -31,7 +31,8 @@ import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import { calculateAge, formatDate } from "@/lib/client-utils";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
-import { DebtsSection } from "@/components/clients/debts-section";
+import { DebtsSectionRefactored } from "@/components/clients/debts-section-refactored";
+import { AssetsSectionRefactored } from "@/components/clients/assets-section-refactored";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -65,24 +66,6 @@ function ClientDetailContent() {
 
         const data = await response.json();
         setClient(data.client);
-
-        // Fetch assets to calculate total
-        const assetsResponse = await fetch(`/api/clients/${clientId}/assets`);
-        if (assetsResponse.ok) {
-          const assetsData = await assetsResponse.json();
-          const assets = assetsData.assets || [];
-          const total = assets.reduce(
-            (sum: number, asset: { currentValue: string | number }) => {
-              const value =
-                typeof asset.currentValue === "string"
-                  ? parseFloat(asset.currentValue)
-                  : asset.currentValue;
-              return sum + (isNaN(value) ? 0 : value);
-            },
-            0,
-          );
-          setTotalAssets(total);
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
@@ -295,8 +278,17 @@ function ClientDetailContent() {
             </CardContent>
           </Card>
 
+          {/* Assets Section */}
+          <AssetsSectionRefactored
+            clientId={clientId}
+            onTotalsChange={setTotalAssets}
+          />
+
           {/* Debts Section */}
-          <DebtsSection clientId={clientId} totalAssets={totalAssets} />
+          <DebtsSectionRefactored
+            clientId={clientId}
+            totalAssets={totalAssets}
+          />
         </TabsContent>
 
         {/* Financial Inputs Tab */}
