@@ -1,51 +1,31 @@
 import { getDb } from "@/server/db";
 import { debt } from "@/server/db/schema";
-import { createLogger } from "@/server/axiom";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateDebtSchema } from "@/lib/validation/debt";
-import { validateUUID, verifyClientOwnership } from "@/lib/api/client-helpers";
 import {
-  validateSession,
+  withApiHandler,
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
 
 /**
- * PATCH /api/clients/[clientId]/debts/[debtId] - Update a debt
+ * PATCH /api/clients/[id]/debts/[debtId] - Update a debt
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string; debtId: string }> },
-) {
-  const { id: clientId, debtId } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${clientId}/debts/${debtId}`,
+export const PATCH = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/debts/[debtId]",
     method: "PATCH",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({
-      userId: session.user.id,
-      clientId,
-      debtId,
-    });
-
-    // Validate UUID formats
-    const clientError = validateUUID(clientId, "client ID");
-    if (clientError) {
-      await logger.warn("Invalid client ID format");
-      return clientError;
-    }
-
-    const debtError = validateUUID(debtId, "debt ID");
-    if (debtError) {
-      await logger.warn("Invalid debt ID format");
-      return debtError;
+    requireClient: true,
+    resourceIdParams: ["debtId"],
+  },
+  async (request, { logger, clientId, resourceIds }) => {
+    const debtId = resourceIds?.debtId;
+    if (!debtId) {
+      return NextResponse.json(
+        { error: "Debt ID is required" },
+        { status: 400 },
+      );
     }
 
     const bodyResult = await parseJsonBody(request, logger);
@@ -68,14 +48,6 @@ export async function PATCH(
 
     const db = getDb();
 
-    // Verify client exists and belongs to user
-    const foundClient = await verifyClientOwnership(clientId, session.user.id);
-
-    if (!foundClient) {
-      await logger.info("Client not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
-
     // Update debt with ownership and deletion checks
     const updateData: Record<string, unknown> = {
       ...validationResult.data,
@@ -88,7 +60,7 @@ export async function PATCH(
       .where(
         and(
           eq(debt.id, debtId),
-          eq(debt.clientId, clientId),
+          eq(debt.clientId, clientId!),
           isNull(debt.deletedAt),
         ),
       )
@@ -100,62 +72,27 @@ export async function PATCH(
     }
 
     await logger.info("Debt updated successfully", { statusCode: 200 });
-    return NextResponse.json({ debt: updatedDebt });
-  } catch (error) {
-    await logger.error(
-      "Error updating debt",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { debt: updatedDebt } };
+  },
+);
 
 /**
- * DELETE /api/clients/[clientId]/debts/[debtId] - Soft delete a debt
+ * DELETE /api/clients/[id]/debts/[debtId] - Soft delete a debt
  */
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string; debtId: string }> },
-) {
-  const { id: clientId, debtId } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${clientId}/debts/${debtId}`,
+export const DELETE = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/debts/[debtId]",
     method: "DELETE",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({
-      userId: session.user.id,
-      clientId,
-      debtId,
-    });
-
-    // Validate UUID formats
-    const clientError = validateUUID(clientId);
-    if (clientError) {
-      await logger.warn("Invalid client ID format");
-      return clientError;
-    }
-
-    const debtError = validateUUID(debtId);
-    if (debtError) {
-      await logger.warn("Invalid debt ID format");
-      return debtError;
-    }
-
-    // Verify client exists and belongs to user
-    const foundClient = await verifyClientOwnership(clientId, session.user.id);
-
-    if (!foundClient) {
-      await logger.info("Client not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    requireClient: true,
+    resourceIdParams: ["debtId"],
+  },
+  async (_request, { logger, clientId, resourceIds }) => {
+    const debtId = resourceIds?.debtId;
+    if (!debtId) {
+      return NextResponse.json(
+        { error: "Debt ID is required" },
+        { status: 400 },
+      );
     }
 
     const db = getDb();
@@ -171,7 +108,7 @@ export async function DELETE(
       .where(
         and(
           eq(debt.id, debtId),
-          eq(debt.clientId, clientId),
+          eq(debt.clientId, clientId!),
           isNull(debt.deletedAt),
         ),
       )
@@ -183,18 +120,6 @@ export async function DELETE(
     }
 
     await logger.info("Debt deleted successfully", { statusCode: 200 });
-    return NextResponse.json(
-      { message: "Debt deleted successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
-    await logger.error(
-      "Error deleting debt",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { message: "Debt deleted successfully" } };
+  },
+);

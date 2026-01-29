@@ -1,12 +1,168 @@
-import { getSession } from "@/server/better-auth/server";
+import { getSession, type Session } from "@/server/better-auth/server";
+import { createLogger, type Logger } from "@/server/axiom";
 import { NextResponse } from "next/server";
-import type { Logger } from "@/server/axiom";
+import { validateUUID, verifyClientOwnership } from "./client-helpers";
+
+/**
+ * Context passed to API route handlers
+ */
+export interface RouteContext {
+  session: Session;
+  logger: Logger;
+  clientId?: string;
+  /** Additional validated resource IDs (e.g., debtId, assetId) */
+  resourceIds?: Record<string, string>;
+}
+
+/**
+ * Configuration for the API handler wrapper
+ */
+export interface ApiHandlerConfig {
+  /** Endpoint path for logging (can include placeholders) */
+  endpoint: string;
+  /** HTTP method */
+  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+  /** Whether to validate and verify client ownership (requires clientId param) */
+  requireClient?: boolean;
+  /** Additional resource IDs to validate as UUIDs */
+  resourceIdParams?: string[];
+}
+
+/**
+ * Result type for handlers - either a NextResponse or data to be JSON serialized
+ */
+type HandlerResult = NextResponse | { data: unknown; status?: number };
+
+/**
+ * Handler function type
+ */
+type ApiHandler = (
+  request: Request,
+  context: RouteContext,
+) => Promise<HandlerResult>;
+
+/**
+ * Higher-order function that wraps API route handlers with common boilerplate:
+ * - Logger setup
+ * - Session validation
+ * - UUID validation for client and other resource IDs
+ * - Client ownership verification (optional)
+ * - Error handling with consistent logging and responses
+ *
+ * @example
+ * ```ts
+ * export const GET = withApiHandler(
+ *   { endpoint: "/api/clients/[id]/debts", method: "GET", requireClient: true },
+ *   async (_request, { logger, clientId }) => {
+ *     const debts = await db.query.debt.findMany({ ... });
+ *     return { data: { debts } };
+ *   }
+ * );
+ * ```
+ */
+export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
+  return async (
+    request: Request,
+    { params }: { params: Promise<Record<string, string>> },
+  ): Promise<NextResponse> => {
+    const resolvedParams = await params;
+    const clientId = resolvedParams.id;
+
+    // Build endpoint string with actual IDs for logging
+    let endpoint = config.endpoint;
+    for (const [key, value] of Object.entries(resolvedParams)) {
+      endpoint = endpoint.replace(`[${key}]`, value);
+    }
+
+    const logger = createLogger({
+      endpoint,
+      method: config.method,
+    });
+
+    try {
+      // Validate session
+      const sessionResult = await validateSession(logger);
+      if ("error" in sessionResult) return sessionResult.error;
+      const { session } = sessionResult;
+
+      logger.addContext({ userId: session.user.id });
+
+      // Validate client ID if present
+      if (clientId) {
+        const clientIdError = validateUUID(clientId, "client ID");
+        if (clientIdError) {
+          await logger.warn("Invalid client ID format");
+          return clientIdError;
+        }
+        logger.addContext({ clientId });
+      }
+
+      // Validate additional resource IDs
+      const resourceIds: Record<string, string> = {};
+      if (config.resourceIdParams) {
+        for (const paramName of config.resourceIdParams) {
+          const paramValue = resolvedParams[paramName];
+          if (paramValue) {
+            const error = validateUUID(paramValue, paramName);
+            if (error) {
+              await logger.warn(`Invalid ${paramName} format`);
+              return error;
+            }
+            resourceIds[paramName] = paramValue;
+            logger.addContext({ [paramName]: paramValue });
+          }
+        }
+      }
+
+      // Verify client ownership if required
+      if (config.requireClient && clientId) {
+        const foundClient = await verifyClientOwnership(
+          clientId,
+          session.user.id,
+        );
+        if (!foundClient) {
+          await logger.info("Client not found", { statusCode: 404 });
+          return NextResponse.json(
+            { error: "Client not found" },
+            { status: 404 },
+          );
+        }
+      }
+
+      // Execute the handler
+      const result = await handler(request, {
+        session,
+        logger,
+        clientId,
+        resourceIds,
+      });
+
+      // Return NextResponse directly or wrap data
+      if (result instanceof NextResponse) {
+        return result;
+      }
+
+      return NextResponse.json(result.data, { status: result.status ?? 200 });
+    } catch (error) {
+      await logger.error(
+        `Error in ${config.method} ${config.endpoint}`,
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+  };
+}
 
 /**
  * Shared helper for session validation in API routes
  * Returns the session if valid, or an error response if unauthorized
  */
-export async function validateSession(logger: Logger) {
+export async function validateSession(
+  logger: Logger,
+): Promise<{ session: Session } | { error: NextResponse }> {
   const session = await getSession();
 
   if (!session?.user) {

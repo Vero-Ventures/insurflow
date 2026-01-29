@@ -1,12 +1,10 @@
 import { getDb } from "@/server/db";
 import { debt } from "@/server/db/schema";
-import { createLogger } from "@/server/axiom";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { createDebtSchema } from "@/lib/validation/debt";
-import { validateUUID, verifyClientOwnership } from "@/lib/api/client-helpers";
 import {
-  validateSession,
+  withApiHandler,
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
@@ -14,43 +12,18 @@ import {
 /**
  * GET /api/clients/[id]/debts - Get all debts for a client
  */
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${id}/debts`,
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/debts",
     method: "GET",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id, clientId: id });
-
-    // Validate UUID format
-    const uuidError = validateUUID(id, "client ID");
-    if (uuidError) {
-      await logger.warn("Invalid UUID format");
-      return uuidError;
-    }
-
+    requireClient: true,
+  },
+  async (_request, { logger, clientId }) => {
     const db = getDb();
-
-    // Verify client exists and belongs to user
-    const foundClient = await verifyClientOwnership(id, session.user.id);
-
-    if (!foundClient) {
-      await logger.info("Client not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
 
     // Fetch all non-deleted debts for the client
     const debts = await db.query.debt.findMany({
-      where: and(eq(debt.clientId, id), isNull(debt.deletedAt)),
+      where: and(eq(debt.clientId, clientId!), isNull(debt.deletedAt)),
     });
 
     await logger.info("Debts fetched successfully", {
@@ -58,54 +31,20 @@ export async function GET(
       debtCount: debts.length,
     });
 
-    return NextResponse.json({ debts });
-  } catch (error) {
-    await logger.error(
-      "Error fetching debts",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { debts } };
+  },
+);
 
 /**
  * POST /api/clients/[id]/debts - Create a new debt for a client
  */
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${id}/debts`,
+export const POST = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/debts",
     method: "POST",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id, clientId: id });
-
-    // Validate UUID format
-    const uuidError = validateUUID(id, "client ID");
-    if (uuidError) {
-      await logger.warn("Invalid UUID format");
-      return uuidError;
-    }
-
-    // Verify client exists and belongs to user
-    const foundClient = await verifyClientOwnership(id, session.user.id);
-
-    if (!foundClient) {
-      await logger.info("Client not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
-
+    requireClient: true,
+  },
+  async (request, { logger, clientId }) => {
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) return bodyResult.error;
 
@@ -121,7 +60,7 @@ export async function POST(
     const [newDebt] = await db
       .insert(debt)
       .values({
-        clientId: id,
+        clientId: clientId!,
         name: validationResult.data.name,
         type: validationResult.data.type,
         currentBalance: validationResult.data.currentBalance,
@@ -141,15 +80,6 @@ export async function POST(
       debtId: newDebt.id,
     });
 
-    return NextResponse.json({ debt: newDebt }, { status: 201 });
-  } catch (error) {
-    await logger.error(
-      "Error creating debt",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { debt: newDebt }, status: 201 };
+  },
+);
