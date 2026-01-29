@@ -29,7 +29,6 @@ jobs:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.pull_request.number }}
           api_key: ${{ secrets.NEON_API_KEY }}
-          username: neondb_owner
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -42,11 +41,11 @@ jobs:
       - name: Run database migrations on branch
         run: bun run db:migrate
         env:
-          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_with_pooler }}?sslmode=require
+          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
 
       - name: Build for Cloudflare Workers
         env:
-          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_with_pooler }}?sslmode=require
+          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
@@ -55,7 +54,7 @@ jobs:
 
       - name: Deploy Preview Worker
         env:
-          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_with_pooler }}?sslmode=require
+          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
