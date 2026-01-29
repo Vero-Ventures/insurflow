@@ -3,7 +3,7 @@ export interface Debt {
   clientId: string;
   name: string;
   type: string;
-  currentBalance: string | number;
+  currentBalance: string;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
