@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 
 test.describe("Client Create UI", () => {
+  // Run tests serially to avoid race conditions with shared auth state
+  test.describe.configure({ mode: "serial" });
   let authCookie: string;
   let testEmail: string;
   let testPassword: string;
@@ -58,6 +60,8 @@ test.describe("Client Create UI", () => {
       const cookies = signInResponse.headers()["set-cookie"];
       if (cookies) {
         authCookie = cookies;
+      } else {
+        throw new Error("No auth cookie received from sign-in response");
       }
     } catch (error) {
       console.error("Authentication setup failed:", error);
@@ -72,11 +76,11 @@ test.describe("Client Create UI", () => {
     // Parse the cookie string and set it in the browser context
     if (authCookie) {
       const cookieParts = authCookie.split(";")[0]?.split("=");
-      if (cookieParts && cookieParts.length === 2) {
+      if (cookieParts && cookieParts.length >= 2) {
         await page.context().addCookies([
           {
-            name: cookieParts[0] || "",
-            value: cookieParts[1] || "",
+            name: cookieParts[0]!,
+            value: cookieParts.slice(1).join("="),
             domain: "localhost",
             path: "/",
           },
