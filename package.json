@@ -47,6 +47,7 @@
     "@daveyplate/better-auth-ui": "^3.3.15",
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
+    "@neondatabase/serverless": "^1.0.2",
     "@opennextjs/cloudflare": "^1.16.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-navigation-menu": "^1.2.14",
