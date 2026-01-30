@@ -83,7 +83,7 @@ export function GenericCrudSection<T extends CrudItem>({
     } finally {
       setIsLoading(false);
     }
-  }, [config.fetchEndpoint]);
+  }, [config.fetchEndpoint, onItemsChange]);
 
   useEffect(() => {
     fetchItems();
