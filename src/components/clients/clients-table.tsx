@@ -35,12 +35,12 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
     <Table>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[250px]">Name</TableHead>
-          <TableHead className="w-[80px]">Age</TableHead>
-          <TableHead className="w-[100px]">Province</TableHead>
-          <TableHead className="w-[140px]">Last Updated</TableHead>
-          <TableHead className="w-[140px]">Insurance Needs</TableHead>
-          <TableHead className="w-[100px]">Status</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Age</TableHead>
+          <TableHead>Province</TableHead>
+          <TableHead>Last Updated</TableHead>
+          <TableHead>Insurance Needs</TableHead>
+          <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
