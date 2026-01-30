@@ -32,48 +32,48 @@ function getBadgeVariant(status: ClientStatus) {
 
 export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Age</TableHead>
-            <TableHead>Province</TableHead>
-            <TableHead>Last Updated</TableHead>
-            <TableHead>Insurance Needs</TableHead>
-            <TableHead>Status</TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-[250px]">Name</TableHead>
+          <TableHead className="w-[80px]">Age</TableHead>
+          <TableHead className="w-[100px]">Province</TableHead>
+          <TableHead className="w-[140px]">Last Updated</TableHead>
+          <TableHead className="w-[140px]">Insurance Needs</TableHead>
+          <TableHead className="w-[100px]">Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {clients.map((client) => (
+          <TableRow
+            key={client.id}
+            className={`cursor-pointer ${
+              client.optimistic ? "bg-muted/30 animate-pulse opacity-60" : ""
+            }`}
+            onClick={() => {
+              // Prevent clicking on optimistic rows
+              if (!client.optimistic) {
+                onRowClick(client.id);
+              }
+            }}
+          >
+            <TableCell className="font-medium">
+              {client.firstName} {client.lastName}
+            </TableCell>
+            <TableCell>{calculateAge(client.dateOfBirth)}</TableCell>
+            <TableCell className="uppercase">{client.province}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {formatDate(client.updatedAt)}
+            </TableCell>
+            <TableCell className="text-muted-foreground">--</TableCell>
+            <TableCell>
+              <Badge variant={getBadgeVariant(client.status)}>
+                {client.status}
+              </Badge>
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {clients.map((client) => (
-            <TableRow
-              key={client.id}
-              className={`hover:bg-muted/50 cursor-pointer ${
-                client.optimistic ? "bg-muted/30 animate-pulse opacity-60" : ""
-              }`}
-              onClick={() => {
-                // Prevent clicking on optimistic rows
-                if (!client.optimistic) {
-                  onRowClick(client.id);
-                }
-              }}
-            >
-              <TableCell className="font-medium">
-                {client.firstName} {client.lastName}
-              </TableCell>
-              <TableCell>{calculateAge(client.dateOfBirth)}</TableCell>
-              <TableCell className="uppercase">{client.province}</TableCell>
-              <TableCell>{formatDate(client.updatedAt)}</TableCell>
-              <TableCell className="text-muted-foreground">N/A</TableCell>
-              <TableCell>
-                <Badge variant={getBadgeVariant(client.status)}>
-                  {client.status}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
