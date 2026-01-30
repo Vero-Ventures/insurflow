@@ -350,7 +350,8 @@ Full Detail:
 const intelligentDefaults = {
   incomeReplacementDuration: 20, // Until youngest child is 23
   estateProbateRate: 0.015, // Ontario: 1.5% over $50K
-  finalTaxRate: 0.2676, // Ontario marginal rate
+  estimatedEffectiveTaxRate: 0.2676, // Estimated effective rate on final return (varies by income)
+  topMarginalTaxRate: 0.5353, // Ontario top marginal rate (federal + provincial)
   lifeExpectancy: 82, // Male, non-smoker
   tfsaMax: 95000, // 2026 limit
   principalResExemption: true, // Single property assumed

@@ -108,45 +108,4 @@ function StatusIndicator({
   );
 }
 
-export interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  status: "success" | "warning" | "danger" | "info" | "neutral";
-}
-
-/**
- * StatusBadge - Compact status indicator as a badge
- *
- * @example
- * <StatusBadge status="success">Active</StatusBadge>
- * <StatusBadge status="danger">Expired</StatusBadge>
- */
-function StatusBadge({
-  status,
-  className,
-  children,
-  ...props
-}: StatusBadgeProps) {
-  const statusClasses = {
-    success: "bg-success/10 text-success border-success/20 dark:bg-success/20",
-    warning:
-      "bg-warning/10 text-warning-foreground border-warning/20 dark:bg-warning/20",
-    danger:
-      "bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20",
-    info: "bg-primary/10 text-primary border-primary/20 dark:bg-primary/20",
-    neutral: "bg-muted text-muted-foreground border-border dark:bg-muted/50",
-  };
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
-        statusClasses[status],
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </span>
-  );
-}
-
-export { StatusIndicator, StatusBadge, statusIndicatorVariants };
+export { StatusIndicator, statusIndicatorVariants };

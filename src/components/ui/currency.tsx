@@ -136,9 +136,10 @@ function Percentage({
   className,
   ...props
 }: PercentageProps) {
-  const percentValue = isDecimal ? value * 100 : value;
-  const isNegative = percentValue < 0;
-  const isPositive = percentValue > 0;
+  // Convert to decimal for Intl.NumberFormat (expects 0.15 for 15%)
+  const valueForIntl = isDecimal ? value : value / 100;
+  const isNegative = value < 0;
+  const isPositive = value > 0;
 
   const sizeClasses = {
     sm: "text-sm",
@@ -154,17 +155,23 @@ function Percentage({
         : "text-foreground"
     : "";
 
+  const formattedValue = new Intl.NumberFormat("en-CA", {
+    style: "percent",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(valueForIntl);
+
   return (
     <span
       className={cn(
-        "font-mono font-medium tabular-nums",
+        "font-mono font-semibold tabular-nums",
         sizeClasses[size],
         colorClasses,
         className,
       )}
       {...props}
     >
-      {percentValue.toFixed(decimals)}%
+      {formattedValue}
     </span>
   );
 }
