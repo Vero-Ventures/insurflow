@@ -31,6 +31,7 @@ export function AssetsSectionRefactored({
     <GenericCrudSection<Asset>
       config={{
         title: "Assets",
+        itemName: "Asset",
         description: "Manage client's assets and calculate total net worth",
         createButtonLabel: "Add Asset",
         fetchEndpoint: `/api/clients/${clientId}/assets`,

@@ -26,7 +26,7 @@ export const GET = withApiHandler(
       assetCount: assets.length,
     });
 
-    return { data: { assets } };
+    return { data: { items: assets } };
   },
 );
 
@@ -73,6 +73,6 @@ export const POST = withApiHandler(
       assetId: newAsset.id,
     });
 
-    return { data: { asset: newAsset }, status: 201 };
+    return { data: { items: [newAsset] }, status: 201 };
   },
 );

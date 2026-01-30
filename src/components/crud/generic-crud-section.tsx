@@ -24,6 +24,7 @@ export interface CrudItem {
 
 export interface CrudSectionConfig {
   title: string;
+  itemName: string;
   description: string;
   createButtonLabel?: string;
   fetchEndpoint: string;
@@ -71,10 +72,10 @@ export function GenericCrudSection<T extends CrudItem>({
       const response = await fetch(config.fetchEndpoint);
       if (response.ok) {
         const data = await response.json();
-        // Support both array directly and nested property
+        // Extract items from standardized { data: { items: [...] } } response
         const itemsData = Array.isArray(data)
           ? data
-          : data.items || data.assets || data.debts || [];
+          : data.data?.items || data.items || data.assets || data.debts || [];
         setItems(itemsData);
         onItemsChange?.(itemsData);
       }
@@ -154,8 +155,8 @@ export function GenericCrudSection<T extends CrudItem>({
           <DialogHeader>
             <DialogTitle>
               {selectedItem
-                ? `Edit ${config.title.slice(0, -1)}`
-                : `Add New ${config.title.slice(0, -1)}`}
+                ? `Edit ${config.itemName}`
+                : `Add New ${config.itemName}`}
             </DialogTitle>
           </DialogHeader>
           <FormComponent

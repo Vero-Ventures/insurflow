@@ -289,6 +289,9 @@ test.describe("Client Detail Page", () => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
     await page.goto(`/clients/${fakeId}`);
 
+    // Wait for page to load and API call to complete
+    await page.waitForLoadState("networkidle");
+
     // Verify error message
     await expect(page.getByText("Client not found")).toBeVisible({
       timeout: 10000,

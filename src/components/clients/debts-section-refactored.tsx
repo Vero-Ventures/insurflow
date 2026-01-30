@@ -47,6 +47,7 @@ export function DebtsSectionRefactored({
       <GenericCrudSection<Debt>
         config={{
           title: "Debts",
+          itemName: "Debt",
           description: "Track and manage client liabilities",
           createButtonLabel: "Add Debt",
           fetchEndpoint: `/api/clients/${clientId}/debts`,
