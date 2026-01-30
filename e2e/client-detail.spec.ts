@@ -289,13 +289,16 @@ test.describe("Client Detail Page", () => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
     await page.goto(`/clients/${fakeId}`);
 
-    // Wait for page to load and API call to complete
+    // Wait for error card to appear and all network requests to complete
     await page.waitForLoadState("networkidle");
 
-    // Verify error message
-    await expect(page.getByText("Client not found")).toBeVisible({
+    // Verify error message is visible
+    const errorMessage = page.getByText("Client not found");
+    await expect(errorMessage).toBeVisible({
       timeout: 10000,
     });
+
+    // Verify back link
     await expect(
       page.getByRole("link", { name: /back to clients/i }),
     ).toBeVisible();
