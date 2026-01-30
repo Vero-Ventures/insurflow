@@ -7,21 +7,25 @@ import { ArrowRight } from "lucide-react";
 
 export function AuthStatus() {
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row">
+    <div className="flex items-center gap-2">
       <SignedIn>
-        <Button asChild size="lg">
+        <Button asChild>
           <Link href="/clients">
             Go to Clients
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-1.5 h-4 w-4" />
           </Link>
         </Button>
       </SignedIn>
 
       <SignedOut>
-        <Button asChild size="lg">
+        <Button asChild>
           <Link href="/auth/sign-up">Get Started</Link>
         </Button>
-        <Button asChild variant="outline" size="lg" className="bg-white/10">
+        <Button
+          asChild
+          variant="outline"
+          className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+        >
           <Link href="/auth/sign-in">Sign in</Link>
         </Button>
       </SignedOut>

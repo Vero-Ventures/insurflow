@@ -39,23 +39,20 @@ export default function Home() {
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] flex-col">
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 px-4 py-16">
-        <div className="container flex max-w-4xl flex-col items-center text-center">
-          <Badge variant="secondary" className="mb-4">
+      <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 px-4 py-12">
+        <div className="flex max-w-2xl flex-col items-center text-center">
+          <Badge variant="secondary" className="mb-6">
             Pre-Alpha Demo
           </Badge>
 
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             InsurFlow
           </h1>
 
-          <p className="mb-2 max-w-2xl text-lg text-slate-300 sm:text-xl">
-            AI-powered financial needs analysis for life insurance advisors
-          </p>
-
-          <p className="mb-8 max-w-xl text-sm text-slate-400">
-            Modernizing how advisors analyze client needs, calculate coverage
-            requirements, and generate compliance documentation.
+          <p className="mb-6 max-w-lg text-base text-slate-300">
+            AI-powered financial needs analysis for life insurance advisors.
+            Modernizing how advisors analyze client needs and generate
+            compliance documentation.
           </p>
 
           <AuthStatus />
@@ -63,39 +60,41 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="bg-muted/30 px-4 py-16">
-        <div className="container mx-auto max-w-5xl">
-          <div className="mb-10 text-center">
-            <h2 className="mb-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <section className="bg-muted/30 px-4 py-12">
+        <div className="container mx-auto max-w-4xl">
+          <div className="mb-8 text-center">
+            <h2 className="mb-1 text-xl font-semibold tracking-tight">
               What We&apos;re Building
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Replacing archaic spreadsheets with a modern, intelligent platform
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {features.map((feature) => (
               <Card
                 key={feature.title}
-                className="border-muted bg-card/50 hover:bg-card transition-colors"
+                size="sm"
+                className="border-border/50 bg-card/50 hover:bg-card transition-colors"
               >
                 <CardHeader>
-                  <div className="mb-2 flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
-                      <feature.icon className="h-5 w-5" />
+                  <div className="mb-1 flex items-center gap-2">
+                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-md">
+                      <feature.icon className="h-4 w-4" />
                     </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    <CardTitle>{feature.title}</CardTitle>
                   </div>
-                  <CardDescription>{feature.description}</CardDescription>
+                  <CardDescription className="text-xs">
+                    {feature.description}
+                  </CardDescription>
                 </CardHeader>
               </Card>
             ))}
           </div>
 
-          <p className="text-muted-foreground mt-10 text-center text-sm">
-            This is an early demo. Features are actively being developed and may
-            change.
+          <p className="text-muted-foreground mt-8 text-center text-xs">
+            This is an early demo. Features are actively being developed.
           </p>
         </div>
       </section>

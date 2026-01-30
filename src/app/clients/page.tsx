@@ -160,17 +160,17 @@ export default function ClientsPage() {
     <>
       <SignedOut>
         <div className="bg-muted/30 flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
-          <Card className="w-full max-w-md text-center">
+          <Card className="w-full max-w-sm text-center" size="sm">
             <CardHeader>
               <CardTitle>Authentication Required</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-3 text-sm">
                 Please sign in to view your clients.
               </p>
               <Link
                 href="/auth/sign-in"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
               >
                 Sign In
               </Link>
@@ -181,11 +181,11 @@ export default function ClientsPage() {
 
       <SignedIn>
         <div className="bg-muted/30 min-h-[calc(100vh-3.5rem)]">
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 py-6">
             {/* Page Header */}
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
+                <h1 className="text-xl font-semibold tracking-tight">
                   Clients
                 </h1>
                 <p className="text-muted-foreground text-sm">
@@ -200,19 +200,19 @@ export default function ClientsPage() {
             </div>
 
             {/* Search and Filters Bar */}
-            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative w-full sm:w-80">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full sm:w-72">
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                 <Input
                   type="search"
                   placeholder="Search clients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-background pl-9"
+                  className="bg-background h-9 pl-8 text-sm"
                 />
               </div>
               {!isLoading && clients.length > 0 && (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs">
                   {filteredClients.length} of {allClients.length} clients
                 </p>
               )}
@@ -222,14 +222,14 @@ export default function ClientsPage() {
             <Card>
               <CardContent className="p-0">
                 {isLoading && (
-                  <div className="p-6">
+                  <div className="p-4">
                     <ClientsTableSkeleton />
                   </div>
                 )}
 
                 {!isLoading && error && (
-                  <div className="p-6">
-                    <div className="border-destructive/50 bg-destructive/10 rounded-lg border p-4">
+                  <div className="p-4">
+                    <div className="border-destructive/50 bg-destructive/10 rounded-md border p-3">
                       <p className="text-destructive text-sm">
                         Error loading clients: {error}
                       </p>
@@ -238,7 +238,7 @@ export default function ClientsPage() {
                 )}
 
                 {!isLoading && !error && filteredClients.length === 0 && (
-                  <div className="p-6">
+                  <div className="p-4">
                     <ClientsEmptyState
                       message={
                         searchQuery

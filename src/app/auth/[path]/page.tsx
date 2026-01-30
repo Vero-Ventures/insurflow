@@ -15,12 +15,12 @@ export default async function AuthPage({
   const { path } = await params;
 
   return (
-    <main className="bg-muted/30 flex min-h-[calc(100vh-3.5rem)] w-full items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-md">
+    <main className="bg-muted/30 flex min-h-[calc(100vh-3.5rem)] w-full items-center justify-center p-4">
+      <div className="w-full max-w-sm">
         <AuthView
           path={path}
           classNames={{
-            base: "w-full shadow-lg border bg-card",
+            base: "w-full shadow-sm border bg-card",
           }}
         />
       </div>

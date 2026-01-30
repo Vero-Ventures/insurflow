@@ -25,14 +25,12 @@ export function AppNavigationMenu() {
         {/* Logo / Brand */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-              <span className="text-primary-foreground text-sm font-bold">
+            <div className="bg-primary flex h-7 w-7 items-center justify-center rounded-md">
+              <span className="text-primary-foreground text-xs font-bold">
                 IF
               </span>
             </div>
-            <span className="text-lg font-semibold tracking-tight">
-              InsurFlow
-            </span>
+            <span className="font-semibold">InsurFlow</span>
           </Link>
 
           {/* Navigation Links */}
@@ -55,9 +53,9 @@ export function AppNavigationMenu() {
         </div>
 
         {/* Right side - Auth */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <SignedIn>
-            <UserButton />
+            <UserButton size="sm" />
           </SignedIn>
           <SignedOut>
             <Button asChild variant="ghost" size="sm">
