@@ -9,6 +9,7 @@
 | **Status**        | Greenfield Development           |
 | **Target Market** | Canadian Life Insurance Advisors |
 | **Company**       | Vero Ventures                    |
+| **Last Updated**  | January 29, 2026                 |
 
 ---
 
@@ -674,11 +675,13 @@ Key hypotheses to validate:
 
 ### Reference Documents
 
-- FNA v1.0 codebase (functional specification)
+- InsurFlow v1.0 codebase (functional specification)
+- Insurance Advisor App Design Guide
+- Feature Research & Style Guide
 - ISSP Project Proposal
-- Competitive analysis documentation
 
 ---
 
-_Document Version: 1.0_
-_Last Updated: January 2026_
+**Document Version:** 1.0  
+**Last Updated:** January 29, 2026  
+**Next Review:** After customer discovery interviews
