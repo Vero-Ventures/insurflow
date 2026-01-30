@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, AlertCircle } from "lucide-react";
+import { formatCurrency, formatDateTime } from "@/lib/client-utils";
+import { cn } from "@/lib/utils";
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 
 interface InsuranceNeedsCardProps {
@@ -18,23 +20,6 @@ interface InsuranceNeedsCardProps {
   error: string | null;
   onRecalculate: () => Promise<void>;
   calculatedAt: string | null;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-  }).format(value);
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export function InsuranceNeedsCard({
@@ -143,7 +128,7 @@ export function InsuranceNeedsCard({
       <CardContent className="space-y-6">
         {calculatedAt && (
           <p className="text-muted-foreground text-sm">
-            Calculated: {formatDate(calculatedAt)}
+            Calculated: {formatDateTime(calculatedAt)}
           </p>
         )}
 
@@ -217,17 +202,32 @@ export function InsuranceNeedsCard({
 
         {/* Total Needs - Emphasized */}
         <div
-          className={`rounded-lg border p-6 ${totalInsuranceNeeds > 0 ? "bg-primary/5 dark:bg-primary/10" : "bg-green-50 dark:bg-green-950/20"}`}
+          className={cn(
+            "rounded-lg border p-6",
+            totalInsuranceNeeds > 0
+              ? "bg-primary/5 dark:bg-primary/10"
+              : "bg-green-50 dark:bg-green-950/20",
+          )}
         >
           <div className="flex items-center justify-between">
             <div>
               <p
-                className={`text-sm font-medium ${totalInsuranceNeeds > 0 ? "text-primary" : "text-green-700 dark:text-green-300"}`}
+                className={cn(
+                  "text-sm font-medium",
+                  totalInsuranceNeeds > 0
+                    ? "text-primary"
+                    : "text-green-700 dark:text-green-300",
+                )}
               >
                 Total Insurance Needs
               </p>
               <p
-                className={`text-3xl font-bold ${totalInsuranceNeeds > 0 ? "text-primary" : "text-green-600 dark:text-green-400"}`}
+                className={cn(
+                  "text-3xl font-bold",
+                  totalInsuranceNeeds > 0
+                    ? "text-primary"
+                    : "text-green-600 dark:text-green-400",
+                )}
               >
                 {formatCurrency(totalInsuranceNeeds)}
               </p>

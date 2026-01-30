@@ -190,12 +190,16 @@ test.describe("Insurance Needs Calculation", () => {
     await page.fill('input[name="currentBalance"]', "250000");
     await page.click("button[type='submit']");
 
-    // Wait for save and go back to insurance tab
-    await page.waitForTimeout(1000);
+    // Wait for debt to be added and dialog to close
+    await page.waitForSelector("text=Debt added successfully", {
+      timeout: 5000,
+    });
+
+    // Go back to insurance tab
     await page.click("text=Insurance Needs");
 
-    // Wait for recalculation
-    await page.waitForTimeout(2000);
+    // Wait for recalculation to complete
+    await page.waitForSelector("text=Calculated:", { timeout: 10000 });
 
     // Chart should be updated (different from original)
     const updatedChart = await page.locator(".recharts-wrapper").screenshot();

@@ -15,19 +15,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/client-utils";
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 
 interface InsuranceNeedsChartClientProps {
   result: InsuranceNeedsResult | null;
   isLoading?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0,
-  }).format(value);
 }
 
 interface ChartData {

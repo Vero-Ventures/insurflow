@@ -78,9 +78,9 @@ export function useInsuranceNeeds(
   // Use a ref to track if we're currently fetching to prevent double calls
   const isFetchingRef = useRef(false);
 
-  const calculate = useCallback(async () => {
+  const calculate = useCallback(async (): Promise<boolean> => {
     if (!clientId || !enabled || isFetchingRef.current) {
-      return;
+      return false;
     }
 
     isFetchingRef.current = true;
@@ -122,6 +122,7 @@ export function useInsuranceNeeds(
       });
 
       setCalculatedAt(data.calculatedAt);
+      return true;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unexpected error occurred";
@@ -129,6 +130,7 @@ export function useInsuranceNeeds(
       toast.error("Failed to calculate insurance needs", {
         description: errorMessage,
       });
+      return false;
     } finally {
       setIsLoading(false);
       setIsInitialLoad(false);
@@ -144,11 +146,11 @@ export function useInsuranceNeeds(
   }, [enabled, clientId, isInitialLoad, calculate]);
 
   const recalculate = useCallback(async () => {
-    await calculate();
-    if (!error) {
+    const success = await calculate();
+    if (success) {
       toast.success("Insurance needs recalculated");
     }
-  }, [calculate, error]);
+  }, [calculate]);
 
   return {
     result,
