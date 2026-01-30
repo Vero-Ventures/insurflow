@@ -40,5 +40,9 @@ NODE_ENV = "production"
 # =============================================================================
 # Observability (optional)
 # =============================================================================
-# [observability]
-# enabled = true
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
