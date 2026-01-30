@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 import type { Client } from "@/types/client";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { ClientsTableSkeleton } from "@/components/clients/clients-table-skeleton";
 import { ClientsEmptyState } from "@/components/clients/clients-empty-state";
-import { ClientsTableHeader } from "@/components/clients/clients-table-header";
 import { ClientsTable } from "@/components/clients/clients-table";
 import { CreateClientDialog } from "@/components/clients/create/clients-create-client";
 
@@ -158,18 +159,18 @@ export default function ClientsPage() {
   return (
     <>
       <SignedOut>
-        <div className="flex min-h-screen items-center justify-center">
-          <Card className="w-96">
+        <div className="bg-muted/30 flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
+          <Card className="w-full max-w-sm text-center" size="sm">
             <CardHeader>
               <CardTitle>Authentication Required</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-3 text-sm">
                 Please sign in to view your clients.
               </p>
               <Link
                 href="/auth/sign-in"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
               >
                 Sign In
               </Link>
@@ -179,60 +180,87 @@ export default function ClientsPage() {
       </SignedOut>
 
       <SignedIn>
-        <div className="container mx-auto px-4 pt-20">
-          <div className="mb-8 w-full">
-            <h1 className="mb-2 text-3xl font-bold">Clients</h1>
-            <p className="text-muted-foreground">
-              Manage your client portfolio and financial analyses
-            </p>
-            <div className="flex w-full justify-end">
+        <div className="bg-muted/30 min-h-[calc(100vh-3.5rem)]">
+          <div className="container mx-auto px-4 py-6">
+            {/* Page Header */}
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">
+                  Clients
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  Manage your client portfolio and financial analyses
+                </p>
+              </div>
               <CreateClientDialog
                 onOptimisticCreate={handleOptimisticCreate}
                 onOptimisticSuccess={handleOptimisticSuccess}
                 onOptimisticError={handleOptimisticError}
               />
             </div>
+
+            {/* Search and Filters Bar */}
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full sm:w-72">
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  type="search"
+                  placeholder="Search clients..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-background h-9 pl-8 text-sm"
+                />
+              </div>
+              {!isLoading && clients.length > 0 && (
+                <p className="text-muted-foreground text-xs">
+                  {filteredClients.length} of {allClients.length} clients
+                </p>
+              )}
+            </div>
+
+            {/* Content Area */}
+            <Card>
+              <CardContent className="p-0">
+                {isLoading && (
+                  <div className="p-4">
+                    <ClientsTableSkeleton />
+                  </div>
+                )}
+
+                {!isLoading && error && (
+                  <div className="p-4">
+                    <div className="border-destructive/50 bg-destructive/10 rounded-md border p-3">
+                      <p className="text-destructive text-sm">
+                        Error loading clients: {error}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!isLoading && !error && filteredClients.length === 0 && (
+                  <div className="p-4">
+                    <ClientsEmptyState
+                      message={
+                        searchQuery
+                          ? `No clients match "${searchQuery}". Try a different search term.`
+                          : "Get started by creating your first client profile."
+                      }
+                      showSeedButton={!searchQuery && clients.length === 0}
+                      onSeed={handleSeedClients}
+                      isSeeding={isSeeding}
+                    />
+                  </div>
+                )}
+
+                {!isLoading && !error && filteredClients.length > 0 && (
+                  <ClientsTable
+                    clients={filteredClients}
+                    onRowClick={handleRowClick}
+                  />
+                )}
+              </CardContent>
+            </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <ClientsTableHeader
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-            </CardHeader>
-            <CardContent>
-              {isLoading && <ClientsTableSkeleton />}
-
-              {!isLoading && error && (
-                <div className="border-destructive/50 bg-destructive/10 rounded-lg border p-4">
-                  <p className="text-destructive text-sm">
-                    Error loading clients: {error}
-                  </p>
-                </div>
-              )}
-
-              {!isLoading && !error && filteredClients.length === 0 && (
-                <ClientsEmptyState
-                  message={
-                    searchQuery
-                      ? `No clients match "${searchQuery}". Try a different search term.`
-                      : "Get started by creating your first client profile."
-                  }
-                  showSeedButton={!searchQuery && clients.length === 0}
-                  onSeed={handleSeedClients}
-                  isSeeding={isSeeding}
-                />
-              )}
-
-              {!isLoading && !error && filteredClients.length > 0 && (
-                <ClientsTable
-                  clients={filteredClients}
-                  onRowClick={handleRowClick}
-                />
-              )}
-            </CardContent>
-          </Card>
         </div>
       </SignedIn>
     </>
