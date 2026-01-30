@@ -287,14 +287,16 @@ test.describe("Client Detail Page", () => {
   test("should show error for non-existent client", async ({ page }) => {
     await setAuthContext(page);
     const fakeId = "00000000-0000-0000-0000-000000000000";
-    await page.goto(`/clients/${fakeId}`);
 
-    // Wait for error card to appear and all network requests to complete
+    // Navigate and wait for network to be idle before assertions
+    await page.goto(`/clients/${fakeId}`);
     await page.waitForLoadState("networkidle");
 
+    // Give page time to render error state
+    await page.waitForTimeout(500);
+
     // Verify error message is visible
-    const errorMessage = page.getByText("Client not found");
-    await expect(errorMessage).toBeVisible({
+    await expect(page.getByText("Client not found")).toBeVisible({
       timeout: 10000,
     });
 
