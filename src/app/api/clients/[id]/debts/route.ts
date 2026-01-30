@@ -31,7 +31,7 @@ export const GET = withApiHandler(
       debtCount: debts.length,
     });
 
-    return { data: { debts } };
+    return { data: { items: debts } };
   },
 );
 
