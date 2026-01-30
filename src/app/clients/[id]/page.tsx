@@ -33,6 +33,11 @@ import { calculateAge, formatDate } from "@/lib/client-utils";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
 import { DebtsSectionRefactored } from "@/components/clients/debts-section-refactored";
 import { AssetsSectionRefactored } from "@/components/clients/assets-section-refactored";
+import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
+import {
+  InsuranceNeedsCard,
+  InsuranceNeedsChart,
+} from "@/components/clients/insurance-needs";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -45,6 +50,18 @@ function ClientDetailContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [totalAssets, setTotalAssets] = useState(0);
+
+  // Insurance needs calculation hook
+  const {
+    result: insuranceResult,
+    isLoading: isInsuranceLoading,
+    error: insuranceError,
+    recalculate: recalculateInsurance,
+    calculatedAt: insuranceCalculatedAt,
+  } = useInsuranceNeeds({
+    clientId,
+    enabled: !!client,
+  });
 
   useEffect(() => {
     async function fetchClient() {
@@ -301,19 +318,19 @@ function ClientDetailContent() {
 
         {/* Insurance Needs Tab */}
         <TabsContent value="insurance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Insurance Needs Analysis</CardTitle>
-              <CardDescription>
-                Calculate and track insurance coverage requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Insurance needs analysis will be available in a future update.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <InsuranceNeedsCard
+              result={insuranceResult}
+              isLoading={isInsuranceLoading}
+              error={insuranceError}
+              onRecalculate={recalculateInsurance}
+              calculatedAt={insuranceCalculatedAt}
+            />
+            <InsuranceNeedsChart
+              result={insuranceResult}
+              isLoading={isInsuranceLoading}
+            />
+          </div>
         </TabsContent>
 
         {/* Report Tab */}

@@ -47,3 +47,17 @@ export function formatCurrency(amount: number): string {
 export function parseCurrency(value: string): number {
   return parseFloat(value.replace(/[^\d.-]/g, ""));
 }
+
+/**
+ * Format date string to localized format with time
+ */
+export function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
