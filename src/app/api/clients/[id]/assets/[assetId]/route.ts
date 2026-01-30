@@ -21,6 +21,12 @@ export const PATCH = withApiHandler(
   },
   async (request, { logger, clientId, resourceIds }) => {
     const assetId = resourceIds?.assetId;
+    if (!assetId) {
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 },
+      );
+    }
 
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) {
@@ -55,7 +61,7 @@ export const PATCH = withApiHandler(
       .set(updateData)
       .where(
         and(
-          eq(asset.id, assetId!),
+          eq(asset.id, assetId),
           eq(asset.clientId, clientId!),
           isNull(asset.deletedAt),
         ),
@@ -84,6 +90,13 @@ export const DELETE = withApiHandler(
   },
   async (_request, { logger, clientId, resourceIds }) => {
     const assetId = resourceIds?.assetId;
+    if (!assetId) {
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 },
+      );
+    }
+
     const db = getDb();
     const now = new Date();
 
@@ -96,7 +109,7 @@ export const DELETE = withApiHandler(
       })
       .where(
         and(
-          eq(asset.id, assetId!),
+          eq(asset.id, assetId),
           eq(asset.clientId, clientId!),
           isNull(asset.deletedAt),
         ),

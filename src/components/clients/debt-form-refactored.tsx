@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +34,12 @@ export function DebtFormRefactored({
     debt?.currentBalance ? String(debt.currentBalance) : "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setName(debt?.name || "");
+    setType(debt?.type || "");
+    setCurrentBalance(debt?.currentBalance ? String(debt.currentBalance) : "");
+  }, [debt]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
