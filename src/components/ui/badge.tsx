@@ -19,6 +19,19 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Financial status variants
+        success:
+          "bg-success/10 text-success border-success/20 dark:bg-success/20 dark:border-success/30",
+        warning:
+          "bg-warning/10 text-warning-foreground border-warning/20 dark:bg-warning/20 dark:border-warning/30",
+        // Financial context variants
+        asset:
+          "bg-asset-light text-asset border-asset/20 dark:bg-asset/20 dark:text-asset dark:border-asset/30",
+        liability:
+          "bg-liability-light text-liability border-liability/20 dark:bg-liability/20 dark:text-liability dark:border-liability/30",
+        insurance:
+          "bg-insurance-light text-insurance border-insurance/20 dark:bg-insurance/20 dark:text-insurance dark:border-insurance/30",
+        tax: "bg-tax-light text-tax border-tax/20 dark:bg-tax/20 dark:text-tax dark:border-tax/30",
       },
     },
     defaultVariants: {
