@@ -4,13 +4,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* =============================================================================
+   INSURFLOW DESIGN SYSTEM
+   Based on: docs/insurflow-v2-design-guide.md
+   
+   Design Principles:
+   1. Trust Blue (#3B82F6) as primary - conveys reliability for fintech
+   2. Inter for UI text - optimized for screen readability
+   3. JetBrains Mono for numbers - tabular figures for financial data
+   4. 8-point spacing grid - consistent visual rhythm
+   5. Financial context colors - semantic meaning for financial data
+   ============================================================================= */
+
 @theme {
+  /* Typography - Primary font for UI, Monospace for financial numbers */
   --font-sans:
-    var(--font-public-sans), ui-sans-serif, system-ui, sans-serif,
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono:
+    var(--font-jetbrains-mono), "SF Mono", "Roboto Mono", "Fira Code", Consolas,
+    monospace;
 }
 
 @theme inline {
+  /* Border Radius Scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -18,6 +35,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Core Color Mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -36,11 +55,15 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Chart Colors - Blue gradient for data visualization */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Sidebar Colors */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -49,83 +72,274 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Financial Context Colors - Semantic colors for financial data */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-asset: var(--asset);
+  --color-asset-light: var(--asset-light);
+  --color-liability: var(--liability);
+  --color-liability-light: var(--liability-light);
+  --color-insurance: var(--insurance);
+  --color-insurance-light: var(--insurance-light);
+  --color-tax: var(--tax);
+  --color-tax-light: var(--tax-light);
 }
 
-/* Teal theme - Vega style with gray base */
+/* =============================================================================
+   LIGHT THEME - Trust Blue Primary
+   ============================================================================= */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0.028 261.692);
+  /* Base radius for consistent corners */
+  --radius: 0.5rem;
+
+  /* Background & Foreground */
+  --background: oklch(1 0 0); /* Pure white */
+  --foreground: oklch(0.145 0.024 264.364); /* Near black - gray-900 */
+
+  /* Card - Elevated surfaces */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.028 261.692);
+  --card-foreground: oklch(0.145 0.024 264.364);
+
+  /* Popover - Dropdowns, tooltips */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.028 261.692);
-  --primary: oklch(0.6 0.1 185);
-  --primary-foreground: oklch(0.98 0.01 181);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.003 264.542);
-  --muted-foreground: oklch(0.551 0.027 264.364);
-  --accent: oklch(0.967 0.003 264.542);
-  --accent-foreground: oklch(0.21 0.034 264.665);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.928 0.006 264.531);
+  --popover-foreground: oklch(0.145 0.024 264.364);
+
+  /* Primary - Trust Blue (#3B82F6) */
+  --primary: oklch(0.623 0.214 259.1);
+  --primary-foreground: oklch(1 0 0);
+
+  /* Secondary - Subtle gray for secondary actions */
+  --secondary: oklch(0.968 0.007 264.536); /* gray-100 */
+  --secondary-foreground: oklch(0.208 0.042 265.755); /* gray-900 */
+
+  /* Muted - Subdued backgrounds and text */
+  --muted: oklch(0.968 0.007 264.536); /* gray-100 */
+  --muted-foreground: oklch(0.554 0.046 264.436); /* gray-500 */
+
+  /* Accent - Highlighted interactive elements */
+  --accent: oklch(0.968 0.007 264.536);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+
+  /* Destructive - Danger/error actions */
+  --destructive: oklch(0.577 0.245 27.325); /* red-500 */
+
+  /* Border & Input */
+  --border: oklch(0.928 0.006 264.531); /* gray-200 */
   --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.707 0.022 261.325);
-  --chart-1: oklch(0.85 0.13 181);
-  --chart-2: oklch(0.78 0.13 182);
-  --chart-3: oklch(0.7 0.12 183);
-  --chart-4: oklch(0.6 0.1 185);
-  --chart-5: oklch(0.51 0.09 186);
-  --sidebar: oklch(0.985 0.002 247.839);
-  --sidebar-foreground: oklch(0.13 0.028 261.692);
-  --sidebar-primary: oklch(0.6 0.1 185);
-  --sidebar-primary-foreground: oklch(0.98 0.01 181);
-  --sidebar-accent: oklch(0.967 0.003 264.542);
-  --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
+  --ring: oklch(0.623 0.214 259.1); /* Primary blue for focus rings */
+
+  /* Chart Colors - Blue gradient */
+  --chart-1: oklch(0.623 0.214 259.1); /* primary-500 */
+  --chart-2: oklch(0.707 0.165 254.624); /* primary-400 */
+  --chart-3: oklch(0.809 0.105 251.813); /* primary-300 */
+  --chart-4: oklch(0.882 0.059 254.128); /* primary-200 */
+  --chart-5: oklch(0.932 0.032 255.508); /* primary-100 */
+
+  /* Sidebar */
+  --sidebar: oklch(0.985 0.002 247.839); /* gray-50 */
+  --sidebar-foreground: oklch(0.145 0.024 264.364);
+  --sidebar-primary: oklch(0.623 0.214 259.1);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.968 0.007 264.536);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.928 0.006 264.531);
-  --sidebar-ring: oklch(0.707 0.022 261.325);
+  --sidebar-ring: oklch(0.623 0.214 259.1);
+
+  /* ==========================================================================
+     FINANCIAL CONTEXT COLORS
+     Semantic colors for financial data display
+     ========================================================================== */
+
+  /* Success - Completed, adequate, good */
+  --success: oklch(0.696 0.17 162.48); /* green-500 #10B981 */
+  --success-foreground: oklch(1 0 0);
+
+  /* Warning - Review needed, moderate risk */
+  --warning: oklch(0.769 0.188 70.08); /* amber-500 #F59E0B */
+  --warning-foreground: oklch(0.208 0.042 265.755);
+
+  /* Asset - Positive values, gains (green) */
+  --asset: oklch(0.696 0.17 162.48); /* #10B981 */
+  --asset-light: oklch(0.935 0.052 163.051); /* green-100 */
+
+  /* Liability - Negative values, debts (red) */
+  --liability: oklch(0.637 0.237 25.331); /* #EF4444 */
+  --liability-light: oklch(0.936 0.032 17.717); /* red-100 */
+
+  /* Insurance - Coverage amounts (purple) */
+  --insurance: oklch(0.627 0.265 303.9); /* #8B5CF6 */
+  --insurance-light: oklch(0.943 0.029 294.588); /* purple-100 */
+
+  /* Tax - Taxes, fees (orange) */
+  --tax: oklch(0.769 0.188 70.08); /* #F59E0B */
+  --tax-light: oklch(0.962 0.059 95.617); /* amber-100 */
+
+  /* ==========================================================================
+     SHADOW SCALE
+     Elevation system for depth hierarchy
+     ========================================================================== */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
 }
 
+/* =============================================================================
+   DARK THEME - Trust Blue Primary (Dark Variant)
+   ============================================================================= */
 .dark {
-  --background: oklch(0.13 0.028 261.692);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.21 0.034 264.665);
+  /* Background & Foreground - Dark surfaces */
+  --background: oklch(0.145 0.024 264.364); /* gray-900 */
+  --foreground: oklch(0.985 0.002 247.839); /* gray-50 */
+
+  /* Card */
+  --card: oklch(0.208 0.042 265.755); /* gray-800 */
   --card-foreground: oklch(0.985 0.002 247.839);
-  --popover: oklch(0.21 0.034 264.665);
+
+  /* Popover */
+  --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.7 0.12 183);
-  --primary-foreground: oklch(0.28 0.04 193);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.278 0.033 256.848);
-  --muted-foreground: oklch(0.707 0.022 261.325);
-  --accent: oklch(0.278 0.033 256.848);
+
+  /* Primary - Brighter blue for dark mode visibility */
+  --primary: oklch(0.707 0.165 254.624); /* blue-400 */
+  --primary-foreground: oklch(0.208 0.042 265.755);
+
+  /* Secondary */
+  --secondary: oklch(0.274 0.032 264.052); /* gray-700 */
+  --secondary-foreground: oklch(0.985 0.002 247.839);
+
+  /* Muted */
+  --muted: oklch(0.274 0.032 264.052);
+  --muted-foreground: oklch(0.707 0.022 261.325); /* gray-400 */
+
+  /* Accent */
+  --accent: oklch(0.274 0.032 264.052);
   --accent-foreground: oklch(0.985 0.002 247.839);
+
+  /* Destructive - Brighter red for dark mode */
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.85 0.13 181);
-  --chart-2: oklch(0.78 0.13 182);
-  --chart-3: oklch(0.7 0.12 183);
-  --chart-4: oklch(0.6 0.1 185);
-  --chart-5: oklch(0.51 0.09 186);
-  --sidebar: oklch(0.21 0.034 264.665);
+
+  /* Border & Input */
+  --border: oklch(0.274 0.032 264.052);
+  --input: oklch(0.274 0.032 264.052);
+  --ring: oklch(0.707 0.165 254.624);
+
+  /* Chart Colors - Adjusted for dark mode */
+  --chart-1: oklch(0.707 0.165 254.624);
+  --chart-2: oklch(0.623 0.214 259.1);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+
+  /* Sidebar */
+  --sidebar: oklch(0.208 0.042 265.755);
   --sidebar-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-primary: oklch(0.78 0.13 182);
-  --sidebar-primary-foreground: oklch(0.28 0.04 193);
-  --sidebar-accent: oklch(0.278 0.033 256.848);
+  --sidebar-primary: oklch(0.707 0.165 254.624);
+  --sidebar-primary-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-accent: oklch(0.274 0.032 264.052);
   --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-border: oklch(0.274 0.032 264.052);
+  --sidebar-ring: oklch(0.707 0.165 254.624);
+
+  /* Financial Context Colors - Adjusted for dark mode visibility */
+  --success: oklch(0.765 0.177 163.223); /* green-400 */
+  --success-foreground: oklch(0.208 0.042 265.755);
+
+  --warning: oklch(0.828 0.189 84.429); /* amber-400 */
+  --warning-foreground: oklch(0.208 0.042 265.755);
+
+  --asset: oklch(0.765 0.177 163.223);
+  --asset-light: oklch(0.262 0.051 172.552); /* green-900 */
+
+  --liability: oklch(0.704 0.191 22.216); /* red-400 */
+  --liability-light: oklch(0.258 0.092 26.042); /* red-900 */
+
+  --insurance: oklch(0.702 0.183 293.541); /* purple-400 */
+  --insurance-light: oklch(0.291 0.149 302.717); /* purple-900 */
+
+  --tax: oklch(0.828 0.189 84.429);
+  --tax-light: oklch(0.279 0.077 45.635); /* amber-900 */
+
+  /* Shadows - Darker for dark mode */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
 }
 
+/* =============================================================================
+   BASE STYLES
+   ============================================================================= */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Ensure smooth font rendering */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* =============================================================================
+   TYPOGRAPHY UTILITIES
+   Based on design guide type scale
+   ============================================================================= */
+@layer utilities {
+  /* Financial number formatting - tabular figures for aligned columns */
+  .font-tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Currency display - monospace with tabular figures */
+  .font-currency {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" on;
+  }
+
+  /* Positive financial value (assets, gains) */
+  .text-positive {
+    color: var(--asset);
+  }
+
+  /* Negative financial value (liabilities, losses) */
+  .text-negative {
+    color: var(--liability);
+  }
+}
+
+/* =============================================================================
+   ANIMATION UTILITIES
+   ============================================================================= */
+@layer utilities {
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Public_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AppNavigationMenu } from "@/components/navigation-menu";
@@ -14,9 +14,26 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const publicSans = Public_Sans({
+/**
+ * Inter - Primary UI font
+ * Optimized for screen readability with excellent legibility at small sizes.
+ * Used for all UI text, headings, and body content.
+ */
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-public-sans",
+  variable: "--font-inter",
+  display: "swap",
+});
+
+/**
+ * JetBrains Mono - Monospace font for financial data
+ * Features tabular figures for aligned number columns.
+ * Used for currency values, percentages, and financial calculations.
+ */
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
 });
 
 export default function RootLayout({
@@ -25,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${publicSans.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body>

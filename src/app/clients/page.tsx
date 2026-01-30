@@ -222,13 +222,13 @@ export default function ClientsPage() {
             <Card>
               <CardContent className="p-0">
                 {isLoading && (
-                  <div className="p-4">
+                  <div className="p-6">
                     <ClientsTableSkeleton />
                   </div>
                 )}
 
                 {!isLoading && error && (
-                  <div className="p-4">
+                  <div className="p-6">
                     <div className="border-destructive/50 bg-destructive/10 rounded-md border p-3">
                       <p className="text-destructive text-sm">
                         Error loading clients: {error}
@@ -238,7 +238,7 @@ export default function ClientsPage() {
                 )}
 
                 {!isLoading && !error && filteredClients.length === 0 && (
-                  <div className="p-4">
+                  <div className="p-6">
                     <ClientsEmptyState
                       message={
                         searchQuery
@@ -253,10 +253,12 @@ export default function ClientsPage() {
                 )}
 
                 {!isLoading && !error && filteredClients.length > 0 && (
-                  <ClientsTable
-                    clients={filteredClients}
-                    onRowClick={handleRowClick}
-                  />
+                  <div className="overflow-x-auto">
+                    <ClientsTable
+                      clients={filteredClients}
+                      onRowClick={handleRowClick}
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>
