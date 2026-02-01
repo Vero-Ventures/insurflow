@@ -1,8 +1,4 @@
 import {
-  drizzle as drizzleNodePg,
-  type NodePgDatabase,
-} from "drizzle-orm/node-postgres";
-import {
   drizzle as drizzlePostgresJs,
   type PostgresJsDatabase,
 } from "drizzle-orm/postgres-js";
@@ -11,7 +7,6 @@ import {
   type NeonHttpDatabase,
 } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { Client } from "pg";
 import postgres from "postgres";
 import { cache } from "react";
 
@@ -19,7 +14,6 @@ import type { CloudflareEnv } from "@/../worker-configuration.d";
 import * as schema from "./schema";
 
 type Database =
-  | NodePgDatabase<typeof schema>
   | PostgresJsDatabase<typeof schema>
   | NeonHttpDatabase<typeof schema>;
 
@@ -29,7 +23,7 @@ type Database =
  * This follows best practices from OpenNext, Neon, and Cloudflare documentation:
  *
  * 1. **Production (Cloudflare Workers with Hyperdrive)**:
- *    Uses `pg` Client with Hyperdrive's connection string from `getCloudflareContext()`.
+ *    Uses `postgres-js` with Hyperdrive's connection string from `getCloudflareContext()`.
  *    Hyperdrive provides edge connection pooling for lowest latency.
  *
  * 2. **Preview Deployments (Cloudflare Workers without Hyperdrive)**:
@@ -65,12 +59,15 @@ export const getDb = cache((): Database => {
       const hyperdriveConnectionString =
         context?.env?.HYPERDRIVE?.connectionString;
       if (hyperdriveConnectionString) {
-        // Production: Use Hyperdrive (edge connection pooling)
-        const client = new Client({
-          connectionString: hyperdriveConnectionString,
+        // Production: Use postgres-js with Hyperdrive (edge connection pooling)
+        // Hyperdrive works with postgres-js - see https://developers.cloudflare.com/hyperdrive/configuration/connect-to-postgres/
+        const client = postgres(hyperdriveConnectionString, {
+          // Hyperdrive handles connection pooling, so we use a single connection
+          max: 1,
+          // Hyperdrive requires prepared statements to be disabled
+          prepare: false,
         });
-        // Note: Client.connect() is called automatically by drizzle on first query
-        return drizzleNodePg({ client, schema });
+        return drizzlePostgresJs(client, { schema });
       }
     } catch {
       // Not in Cloudflare Workers context or Hyperdrive not configured

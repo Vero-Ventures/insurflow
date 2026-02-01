@@ -82,6 +82,10 @@ const config = {
         "sharp",
         // Exclude source map support
         "source-map-support",
+        // Exclude prismjs (1.2MB) - pulled in by @react-email/code-block
+        // We don't use code syntax highlighting in emails
+        "prismjs",
+        "@react-email/code-block",
       ];
 
       // Resolve aliases to reduce bundle size
@@ -102,7 +106,6 @@ const config = {
   // Exclude heavy packages from server bundle
   serverExternalPackages: [
     "postgres",
-    "pg",
     "@neondatabase/serverless",
     // Keep better-auth external to reduce bundle (will be bundled separately)
     // "better-auth",
