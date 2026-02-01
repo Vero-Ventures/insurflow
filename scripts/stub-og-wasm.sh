@@ -28,3 +28,16 @@ else
   echo "WASM directory not found: $WASM_DIR"
   echo "This is normal if @vercel/og is not installed."
 fi
+
+# Stub @react-email/components to reduce bundle size
+# The @daveyplate/better-auth-ui package depends on @react-email/components for email templates,
+# but we don't use email functionality, so we replace it with a minimal stub.
+REACT_EMAIL_DIR="node_modules/@react-email/components"
+STUB_DIR="stubs/react-email-components"
+
+if [ -d "$STUB_DIR" ]; then
+  echo "Installing @react-email/components stub..."
+  mkdir -p "$REACT_EMAIL_DIR"
+  cp "$STUB_DIR"/* "$REACT_EMAIL_DIR/"
+  echo "Done! @react-email/components stubbed."
+fi

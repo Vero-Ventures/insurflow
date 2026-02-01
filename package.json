@@ -42,7 +42,6 @@
     "postinstall": "bash scripts/stub-og-wasm.sh"
   },
   "dependencies": {
-    "@auth/drizzle-adapter": "^1.11.1",
     "@axiomhq/js": "^1.4.0",
     "@daveyplate/better-auth-ui": "^3.3.15",
     "@hugeicons/core-free-icons": "^3.1.1",
@@ -113,7 +112,11 @@
     ]
   },
   "overrides": {
-    "prismjs": "npm:empty-npm-package@1.0.0",
-    "@react-email/code-block": "npm:empty-npm-package@1.0.0"
+    "prismjs": "file:./stubs/empty",
+    "@react-email/code-block": "file:./stubs/empty",
+    "@react-email/tailwind": "file:./stubs/empty",
+    "@react-email/render": "file:./stubs/empty",
+    "@react-email/markdown": "file:./stubs/empty",
+    "@react-email/components": "file:./stubs/react-email-components"
   }
 }

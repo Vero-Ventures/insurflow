@@ -1,0 +1,6 @@
+{
+  "name": "@react-email/components",
+  "version": "0.0.32",
+  "main": "index.js",
+  "type": "module"
+}
