@@ -48,29 +48,37 @@ type Database =
  * @see https://developers.cloudflare.com/hyperdrive/
  */
 export const getDb = cache((): Database => {
-  // Try to get Hyperdrive binding from Cloudflare context (production)
-  try {
-    // Dynamic import to avoid issues during build/SSG
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require("@opennextjs/cloudflare");
-    const context = getCloudflareContext() as
-      | { env?: CloudflareEnv }
-      | undefined;
+  // Get DATABASE_URL first - it's used for local dev and preview deployments
+  const connectionString = process.env.DATABASE_URL;
 
-    if (context?.env?.HYPERDRIVE?.connectionString) {
-      // Production: Use Hyperdrive (edge connection pooling)
-      const client = new Client({
-        connectionString: context.env.HYPERDRIVE.connectionString,
-      });
-      // Note: Client.connect() is called automatically by drizzle on first query
-      return drizzleNodePg({ client, schema });
+  // Try to get Hyperdrive binding from Cloudflare context (production only)
+  // Skip this in development to avoid issues with placeholder Hyperdrive IDs
+  if (process.env.NODE_ENV === "production") {
+    try {
+      // Dynamic import to avoid issues during build/SSG
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getCloudflareContext } = require("@opennextjs/cloudflare");
+      const context = getCloudflareContext() as
+        | { env?: CloudflareEnv }
+        | undefined;
+
+      const hyperdriveConnectionString =
+        context?.env?.HYPERDRIVE?.connectionString;
+      if (hyperdriveConnectionString) {
+        // Production: Use Hyperdrive (edge connection pooling)
+        const client = new Client({
+          connectionString: hyperdriveConnectionString,
+        });
+        // Note: Client.connect() is called automatically by drizzle on first query
+        return drizzleNodePg({ client, schema });
+      }
+    } catch {
+      // Not in Cloudflare Workers context or Hyperdrive not configured
+      // Fall through to DATABASE_URL-based methods
     }
-  } catch {
-    // Not in Cloudflare Workers context - fall through to other methods
   }
 
-  // Get DATABASE_URL for non-Hyperdrive environments
-  const connectionString = process.env.DATABASE_URL;
+  // Require DATABASE_URL for non-Hyperdrive environments
   if (!connectionString) {
     throw new Error(
       "DATABASE_URL environment variable is required when Hyperdrive is not available",
