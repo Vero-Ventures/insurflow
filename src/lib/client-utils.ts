@@ -61,3 +61,35 @@ export function formatDateTime(dateString: string): string {
     minute: "2-digit",
   }).format(date);
 }
+
+/**
+ * Calculate total and liquid asset values from an array of assets
+ */
+export function calculateAssetTotals(
+  assets: Array<{ currentValue: string; isLiquid: boolean }>,
+): { total: number; liquid: number } {
+  return assets.reduce(
+    (acc, asset) => {
+      const value = parseFloat(asset.currentValue);
+      const assetValue = isNaN(value) ? 0 : value;
+
+      return {
+        total: acc.total + assetValue,
+        liquid: acc.liquid + (asset.isLiquid ? assetValue : 0),
+      };
+    },
+    { total: 0, liquid: 0 },
+  );
+}
+
+/**
+ * Calculate total debt balance from an array of debts
+ */
+export function calculateDebtTotal(
+  debts: Array<{ currentBalance: string }>,
+): number {
+  return debts.reduce((sum, debt) => {
+    const balance = parseFloat(debt.currentBalance);
+    return sum + (isNaN(balance) ? 0 : balance);
+  }, 0);
+}

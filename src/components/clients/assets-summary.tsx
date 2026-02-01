@@ -2,34 +2,14 @@
 
 import { DollarSign, Droplet } from "lucide-react";
 import type { Asset } from "@/types/asset";
+import { formatCurrency, calculateAssetTotals } from "@/lib/client-utils";
 
 interface AssetsSummaryProps {
   items: Asset[];
 }
 
 export function AssetsSummary({ items }: AssetsSummaryProps) {
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("en-CA", {
-      style: "currency",
-      currency: "CAD",
-    }).format(value);
-  };
-
-  const totals = items.reduce(
-    (acc, asset) => {
-      const value =
-        typeof asset.currentValue === "string"
-          ? parseFloat(asset.currentValue)
-          : asset.currentValue;
-      const assetValue = isNaN(value) ? 0 : value;
-
-      return {
-        total: acc.total + assetValue,
-        liquid: acc.liquid + (asset.isLiquid ? assetValue : 0),
-      };
-    },
-    { total: 0, liquid: 0 },
-  );
+  const totals = calculateAssetTotals(items);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">

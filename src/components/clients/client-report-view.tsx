@@ -23,6 +23,7 @@ import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
 import {
   calculateAge,
+  calculateAssetTotals,
   formatCurrency,
   formatDate,
   formatDateTime,
@@ -48,8 +49,7 @@ interface ClientReportViewProps {
 export function ClientReportView({ client, clientId }: ClientReportViewProps) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
-  const [isLoadingAssets, setIsLoadingAssets] = useState(true);
-  const [isLoadingDebts, setIsLoadingDebts] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Insurance needs calculation
   const {
@@ -63,50 +63,36 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
     enabled: !!client,
   });
 
-  // Fetch assets
+  // Fetch assets and debts in parallel
   useEffect(() => {
-    async function fetchAssets() {
+    async function fetchData() {
+      setIsLoadingData(true);
       try {
-        const response = await fetch(`/api/clients/${clientId}/assets`);
-        if (response.ok) {
-          const data = await response.json();
+        const [assetsResponse, debtsResponse] = await Promise.all([
+          fetch(`/api/clients/${clientId}/assets`),
+          fetch(`/api/clients/${clientId}/debts`),
+        ]);
+
+        if (assetsResponse.ok) {
+          const data = await assetsResponse.json();
           setAssets(data.assets || []);
         }
-      } catch {
-        // Silently handle error - summary will show $0
-      } finally {
-        setIsLoadingAssets(false);
-      }
-    }
-    fetchAssets();
-  }, [clientId]);
 
-  // Fetch debts
-  useEffect(() => {
-    async function fetchDebts() {
-      try {
-        const response = await fetch(`/api/clients/${clientId}/debts`);
-        if (response.ok) {
-          const data = await response.json();
+        if (debtsResponse.ok) {
+          const data = await debtsResponse.json();
           setDebts(data.debts || []);
         }
       } catch {
         // Silently handle error - summary will show $0
       } finally {
-        setIsLoadingDebts(false);
+        setIsLoadingData(false);
       }
     }
-    fetchDebts();
+    fetchData();
   }, [clientId]);
 
-  // Calculate totals
-  const totalAssets = assets.reduce((sum, asset) => {
-    const value =
-      typeof asset.currentValue === "string"
-        ? parseFloat(asset.currentValue)
-        : asset.currentValue;
-    return sum + (isNaN(value) ? 0 : value);
-  }, 0);
+  // Calculate totals using shared utility
+  const { total: totalAssets } = calculateAssetTotals(assets);
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -285,7 +271,7 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLoadingAssets || isLoadingDebts ? (
+          {isLoadingData ? (
             <div className="grid gap-4 md:grid-cols-2">
               <Skeleton className="h-24" />
               <Skeleton className="h-24" />
@@ -311,6 +297,7 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
             error={insuranceError}
             onRecalculate={recalculateInsurance}
             calculatedAt={insuranceCalculatedAt}
+            isReadOnly
           />
           <InsuranceNeedsChart
             result={insuranceResult}

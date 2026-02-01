@@ -2,6 +2,7 @@
 
 import { DollarSign, TrendingUp } from "lucide-react";
 import type { Debt } from "@/types/debt";
+import { formatCurrency, calculateDebtTotal } from "@/lib/client-utils";
 
 interface DebtsSummaryProps {
   items: Debt[];
@@ -9,21 +10,7 @@ interface DebtsSummaryProps {
 }
 
 export function DebtsSummary({ items, totalAssets = 0 }: DebtsSummaryProps) {
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("en-CA", {
-      style: "currency",
-      currency: "CAD",
-    }).format(value);
-  };
-
-  const totalDebts = items.reduce((sum, debt) => {
-    const balance =
-      typeof debt.currentBalance === "string"
-        ? parseFloat(debt.currentBalance)
-        : debt.currentBalance;
-    return sum + (isNaN(balance) ? 0 : balance);
-  }, 0);
-
+  const totalDebts = calculateDebtTotal(items);
   const netWorth = totalAssets - totalDebts;
 
   return (
