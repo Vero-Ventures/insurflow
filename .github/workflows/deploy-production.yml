@@ -40,22 +40,26 @@ jobs:
       - name: Build for Cloudflare Workers
         run: bun run build:cloudflare
         env:
+          # DATABASE_URL needed for build-time validation
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
 
+      - name: Configure Hyperdrive in wrangler.toml
+        run: |
+          # Replace the placeholder HYPERDRIVE_ID with actual value
+          sed -i 's/\${HYPERDRIVE_ID}/${{ vars.HYPERDRIVE_ID }}/g' wrangler.toml
+
       - name: Deploy to Cloudflare Workers
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
         run: |
           npx wrangler deploy \
-            --var "DATABASE_URL:$DATABASE_URL" \
             --var "BETTER_AUTH_SECRET:$BETTER_AUTH_SECRET" \
             --var "BETTER_AUTH_URL:$BETTER_AUTH_URL" \
             --var "AXIOM_TOKEN:$AXIOM_TOKEN" \

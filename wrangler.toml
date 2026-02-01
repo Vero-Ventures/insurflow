@@ -38,6 +38,32 @@ binding = "ASSETS"
 NODE_ENV = "production"
 
 # =============================================================================
+# Hyperdrive Configuration (Database Connection Pooling)
+# =============================================================================
+# Hyperdrive provides edge connection pooling for Neon Postgres.
+# The HYPERDRIVE_ID is set during deployment via GitHub Actions.
+#
+# To create a Hyperdrive configuration:
+#   npx wrangler hyperdrive create insurflow-db \
+#     --connection-string="postgres://USER:PASS@HOST/DB"
+#
+# For local development, localConnectionString connects directly to Docker Postgres.
+# =============================================================================
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "${HYPERDRIVE_ID}"
+localConnectionString = "postgresql://postgres:password@localhost:5432/insurflow"
+
+# =============================================================================
+# Worker Placement (Optional - reduces latency for multi-query requests)
+# =============================================================================
+# Place Worker near the Neon database region for lower latency on sequential queries.
+# Only beneficial if your Worker makes multiple database queries per request.
+# =============================================================================
+# [placement]
+# region = "aws:us-east-1"
+
+# =============================================================================
 # Observability (optional)
 # =============================================================================
 [observability]

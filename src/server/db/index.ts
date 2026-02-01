@@ -1,57 +1,92 @@
 import {
-  drizzle as drizzleNeon,
-  type NeonHttpDatabase,
-} from "drizzle-orm/neon-http";
+  drizzle as drizzleNodePg,
+  type NodePgDatabase,
+} from "drizzle-orm/node-postgres";
 import {
-  drizzle as drizzlePostgres,
+  drizzle as drizzlePostgresJs,
   type PostgresJsDatabase,
 } from "drizzle-orm/postgres-js";
+import {
+  drizzle as drizzleNeonHttp,
+  type NeonHttpDatabase,
+} from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { Client } from "pg";
 import postgres from "postgres";
 import { cache } from "react";
 
-import { env } from "@/env";
+import type { CloudflareEnv } from "@/../worker-configuration.d";
 import * as schema from "./schema";
+
+type Database =
+  | NodePgDatabase<typeof schema>
+  | PostgresJsDatabase<typeof schema>
+  | NeonHttpDatabase<typeof schema>;
 
 /**
  * Database connection factory with environment-aware driver selection.
  *
- * - **Production (Cloudflare Workers)**: Uses @neondatabase/serverless with HTTP
- *   for edge compatibility
- * - **Local Development**: Uses postgres-js with TCP connections for Docker Postgres
+ * This follows best practices from OpenNext, Neon, and Cloudflare documentation:
  *
- * The driver is selected based on DATABASE_URL:
- * - URLs containing "neon.tech" use the Neon HTTP driver
- * - All other URLs use the standard postgres-js driver
+ * 1. **Production (Cloudflare Workers with Hyperdrive)**:
+ *    Uses `pg` Client with Hyperdrive's connection string from `getCloudflareContext()`.
+ *    Hyperdrive provides edge connection pooling for lowest latency.
  *
- * Usage: Call getDb() inside your request handler, NOT at module scope.
+ * 2. **Preview Deployments (Cloudflare Workers without Hyperdrive)**:
+ *    Uses Neon serverless driver via HTTP for direct database access.
+ *    Each PR preview gets its own Neon branch via DATABASE_URL env var.
  *
- * @example
- * ```ts
- * export async function GET() {
- *   const db = getDb();
- *   const users = await db.query.user.findMany();
- *   return NextResponse.json(users);
- * }
- * ```
+ * 3. **Local Development**:
+ *    Uses `postgres-js` for TCP connections to local Docker Postgres.
+ *
+ * IMPORTANT: Per OpenNext docs, database clients must be created at request time,
+ * not at module initialization time. The `cache()` wrapper ensures we reuse the
+ * same client within a single React request context.
+ *
+ * @see https://opennext.js.org/cloudflare/howtos/db
+ * @see https://neon.tech/docs/guides/cloudflare-workers
+ * @see https://developers.cloudflare.com/hyperdrive/
  */
-
-type Database =
-  | NeonHttpDatabase<typeof schema>
-  | PostgresJsDatabase<typeof schema>;
-
-const isNeonUrl = env.DATABASE_URL.includes("neon.tech");
-
 export const getDb = cache((): Database => {
-  if (isNeonUrl) {
-    // Production: Use Neon serverless HTTP driver for Cloudflare Workers
-    const sql = neon(env.DATABASE_URL);
-    return drizzleNeon(sql, { schema });
-  } else {
-    // Local development: Use postgres-js with TCP connection
-    const client = postgres(env.DATABASE_URL);
-    return drizzlePostgres(client, { schema });
+  // Try to get Hyperdrive binding from Cloudflare context (production)
+  try {
+    // Dynamic import to avoid issues during build/SSG
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCloudflareContext } = require("@opennextjs/cloudflare");
+    const context = getCloudflareContext() as
+      | { env?: CloudflareEnv }
+      | undefined;
+
+    if (context?.env?.HYPERDRIVE?.connectionString) {
+      // Production: Use Hyperdrive (edge connection pooling)
+      const client = new Client({
+        connectionString: context.env.HYPERDRIVE.connectionString,
+      });
+      // Note: Client.connect() is called automatically by drizzle on first query
+      return drizzleNodePg({ client, schema });
+    }
+  } catch {
+    // Not in Cloudflare Workers context - fall through to other methods
   }
+
+  // Get DATABASE_URL for non-Hyperdrive environments
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      "DATABASE_URL environment variable is required when Hyperdrive is not available",
+    );
+  }
+
+  // Preview deployments: Use Neon serverless driver (HTTP-based)
+  // This handles Neon branch URLs for PR previews
+  if (connectionString.includes("neon.tech")) {
+    const sql = neon(connectionString);
+    return drizzleNeonHttp(sql, { schema });
+  }
+
+  // Local development: Use postgres-js for Docker Postgres
+  const client = postgres(connectionString);
+  return drizzlePostgresJs(client, { schema });
 });
 
 // Type export for convenience

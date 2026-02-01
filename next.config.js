@@ -102,6 +102,7 @@ const config = {
   // Exclude heavy packages from server bundle
   serverExternalPackages: [
     "postgres",
+    "pg",
     "@neondatabase/serverless",
     // Keep better-auth external to reduce bundle (will be bundled separately)
     // "better-auth",

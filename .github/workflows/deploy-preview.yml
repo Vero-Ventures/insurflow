@@ -52,6 +52,12 @@ jobs:
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
         run: bun run build:cloudflare
 
+      - name: Remove Hyperdrive config for preview
+        run: |
+          # Preview deployments use Neon serverless driver directly via DATABASE_URL,
+          # not Hyperdrive. Remove the hyperdrive block from wrangler.toml.
+          sed -i '/^\[\[hyperdrive\]\]/,/^localConnectionString/d' wrangler.toml
+
       - name: Deploy Preview Worker
         env:
           DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}

@@ -1,1 +1,1 @@
-export { auth } from "./config";
+export { createAuth, type Auth, type Session } from "./config";
