@@ -1,62 +1,146 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { randomBytes } from "node:crypto";
 
 test.describe("Insurance Needs Calculation", () => {
-  // Generate a unique test client for each test run
-  const testClient = {
-    firstName: `TestClient${Date.now()}`,
-    lastName: "Insurance",
-    dateOfBirth: "1985-05-15",
-    province: "ON",
-  };
-
+  let authCookie: string;
+  let testEmail: string;
+  let testPassword: string;
   let clientId: string;
 
-  test.beforeEach(async ({ page }) => {
-    // Navigate to clients page
-    await page.goto("/clients");
-    await page.waitForLoadState("networkidle");
+  test.beforeAll(async ({ request }) => {
+    // Generate unique credentials
+    testPassword = `Test${randomBytes(8).toString("base64url")}${Date.now()}!`;
+    testEmail = `test-insurance-${Date.now()}-${randomBytes(4).toString("hex")}@example.com`;
 
-    // Create a test client
-    await page.click("button:has-text('Create Client')");
-    await page.fill('input[name="firstName"]', testClient.firstName);
-    await page.fill('input[name="lastName"]', testClient.lastName);
-    await page.fill('input[name="dateOfBirth"]', testClient.dateOfBirth);
-    await page.selectOption('select[name="province"]', testClient.province);
-    await page.click("button[type='submit']");
+    try {
+      // Sign up
+      const signUpResponse = await request.post(
+        "http://localhost:3000/api/auth/sign-up/email",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost:3000",
+          },
+          data: {
+            email: testEmail,
+            password: testPassword,
+            name: "Test Insurance User",
+          },
+        },
+      );
 
-    // Wait for creation and get client ID
-    await page.waitForURL(/\/clients\/.+/);
-    const url = page.url();
-    clientId = url.split("/").pop() || "";
+      if (!signUpResponse.ok()) {
+        const errorText = await signUpResponse.text();
+        console.error("Sign up failed:", errorText);
+        throw new Error(`Sign up failed: ${errorText}`);
+      }
 
-    // Add financial inputs
-    await page.click("text=Financial Inputs");
-    await page.click("button:has-text('Edit Financial Inputs')");
-    await page.fill('input[name="clientIncome"]', "100000");
-    await page.fill('input[name="incomeReplacementPercent"]', "70");
-    await page.fill('input[name="replacementDurationYears"]', "10");
-    await page.fill('input[name="existingLifeInsuranceCoverage"]', "100000");
-    await page.click("button:has-text('Save Changes')");
+      // Sign in
+      const signInResponse = await request.post(
+        "http://localhost:3000/api/auth/sign-in/email",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost:3000",
+          },
+          data: {
+            email: testEmail,
+            password: testPassword,
+          },
+        },
+      );
 
-    // Wait for save
-    await page.waitForSelector("text=Financial inputs updated", {
-      timeout: 5000,
-    });
-  });
+      if (!signInResponse.ok()) {
+        const errorText = await signInResponse.text();
+        console.error("Sign in failed:", errorText);
+        throw new Error(`Sign in failed: ${errorText}`);
+      }
 
-  test.afterEach(async ({ page }) => {
-    // Clean up: delete the test client
-    if (clientId) {
-      await page.goto(`/clients/${clientId}`);
-      await page.click("button[aria-label='Delete client']");
-      await page.click("button:has-text('Delete'):not(:has(button))");
-      await page.waitForURL("/clients");
+      const cookies = signInResponse.headers()["set-cookie"];
+      if (cookies) {
+        authCookie = cookies;
+      } else {
+        throw new Error("No auth cookie received");
+      }
+
+      // Create a test client with financial inputs
+      const createClientResponse = await request.post(
+        "http://localhost:3000/api/clients",
+        {
+          headers: {
+            Cookie: authCookie,
+            "Content-Type": "application/json",
+          },
+          data: {
+            firstName: "TestClient",
+            lastName: "Insurance",
+            dateOfBirth: "1985-05-15",
+            sex: "M",
+            province: "ON",
+            smoker: false,
+            healthRating: "standard",
+            hasSpouse: false,
+            clientIncome: "100000.00",
+            incomeReplacementPercent: "70",
+            replacementDurationYears: "10",
+            existingLifeInsuranceCoverage: "100000.00",
+            status: "draft",
+          },
+        },
+      );
+
+      if (!createClientResponse.ok()) {
+        const errorText = await createClientResponse.text();
+        console.error("Failed to create test client:", errorText);
+        throw new Error(`Failed to create test client: ${errorText}`);
+      }
+
+      const clientData = await createClientResponse.json();
+      clientId = clientData.client.id;
+    } catch (error) {
+      console.error("Test setup failed:", error);
+      throw error;
     }
   });
+
+  test.afterAll(async ({ request }) => {
+    // Clean up: delete the test client
+    if (clientId && authCookie) {
+      try {
+        await request.delete(`http://localhost:3000/api/clients/${clientId}`, {
+          headers: {
+            Cookie: authCookie,
+          },
+        });
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  });
+
+  async function setAuthContext(page: Page) {
+    // Parse the cookie string and set it in the browser context
+    if (authCookie) {
+      const cookieParts = authCookie.split(";")[0]?.split("=");
+      if (cookieParts && cookieParts.length >= 2) {
+        await page.context().addCookies([
+          {
+            name: cookieParts[0]!,
+            value: cookieParts.slice(1).join("="),
+            domain: "localhost",
+            path: "/",
+          },
+        ]);
+      }
+    }
+  }
 
   test("should auto-calculate insurance needs on tab load", async ({
     page,
   }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
+
     // Navigate to Insurance Needs tab
     await page.click("text=Insurance Needs");
 
@@ -77,6 +161,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should display correct calculation breakdown", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
 
     // Verify calculated values
@@ -91,6 +177,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should show loading state while calculating", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
 
     // Check for loading state (skeleton or spinner)
@@ -105,6 +193,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should recalculate on button click", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
@@ -123,6 +213,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should display chart with breakdown", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Needs Composition", { timeout: 10000 });
 
@@ -136,6 +228,9 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should handle zero income scenario gracefully", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
+
     // Set income to 0
     await page.click("text=Financial Inputs");
     await page.click("button:has-text('Edit Financial Inputs')");
@@ -157,11 +252,14 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should display error state on API failure", async ({ page }) => {
+    await setAuthContext(page);
+
     // Mock API failure by blocking the endpoint
     await page.route("**/api/clients/*/calculate", async (route) => {
       await route.abort();
     });
 
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
 
     // Should show error message
@@ -174,6 +272,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should update chart when financial data changes", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
@@ -207,8 +307,11 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should be responsive on different viewports", async ({ page }) => {
+    await setAuthContext(page);
+
     // Test desktop
     await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
@@ -220,7 +323,7 @@ test.describe("Insurance Needs Calculation", () => {
 
     // Test tablet
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.reload();
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
@@ -232,6 +335,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should display correct timestamp", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
@@ -243,6 +348,8 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test("should show input parameters used in calculation", async ({ page }) => {
+    await setAuthContext(page);
+    await page.goto(`/clients/${clientId}`);
     await page.click("text=Insurance Needs");
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
