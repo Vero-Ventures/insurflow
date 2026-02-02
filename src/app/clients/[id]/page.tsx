@@ -26,10 +26,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Trash2, Copy, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Trash2,
+  Copy,
+  Check,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Client } from "@/types/client";
-import { calculateAge, formatDate } from "@/lib/client-utils";
+import {
+  calculateAge,
+  formatDate,
+  calculateCompletionStatus,
+  getCompletionCount,
+} from "@/lib/client-utils";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
 import { DebtsSectionRefactored } from "@/components/clients/debts-section-refactored";
 import { AssetsSectionRefactored } from "@/components/clients/assets-section-refactored";
@@ -160,6 +172,10 @@ function ClientDetailContent() {
     );
   }
 
+  // Calculate completion status for sections
+  const completionStatus = calculateCompletionStatus(client, insuranceResult);
+  const { completed, total } = getCompletionCount(completionStatus);
+
   return (
     <div className="container mx-auto px-4 pt-20">
       {/* Header */}
@@ -175,9 +191,17 @@ function ClientDetailContent() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">
-              {client.firstName} {client.lastName}
-            </h1>
+            <div className="mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-bold">
+                {client.firstName} {client.lastName}
+              </h1>
+              <Badge
+                variant={completed === total ? "default" : "secondary"}
+                className="text-xs"
+              >
+                {completed}/{total} complete
+              </Badge>
+            </div>
             <div className="flex items-center gap-2">
               <p className="text-muted-foreground font-mono text-sm">
                 Client ID: {client.id}
@@ -242,9 +266,30 @@ function ClientDetailContent() {
       {/* Tabbed Navigation */}
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="financial">Financial Inputs</TabsTrigger>
-          <TabsTrigger value="insurance">Insurance Needs</TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-1.5">
+            {completionStatus.profile ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Circle className="text-muted-foreground h-3.5 w-3.5" />
+            )}
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="financial" className="flex items-center gap-1.5">
+            {completionStatus.financialInputs ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Circle className="text-muted-foreground h-3.5 w-3.5" />
+            )}
+            Financial
+          </TabsTrigger>
+          <TabsTrigger value="insurance" className="flex items-center gap-1.5">
+            {completionStatus.insuranceNeeds ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Circle className="text-muted-foreground h-3.5 w-3.5" />
+            )}
+            Insurance
+          </TabsTrigger>
           <TabsTrigger value="report">Report</TabsTrigger>
         </TabsList>
 
