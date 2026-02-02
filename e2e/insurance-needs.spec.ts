@@ -141,8 +141,8 @@ test.describe("Insurance Needs Calculation", () => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
 
-    // Navigate to Insurance Needs tab
-    await page.click("text=Insurance Needs");
+    // Navigate to Insurance tab
+    await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Wait for calculation to complete
     await page.waitForSelector("text=Insurance Needs Analysis", {
@@ -163,7 +163,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should display correct calculation breakdown", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Verify calculated values
     // Income replacement should be: $100,000 * 70% * 10 years = $700,000
@@ -179,7 +179,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should show loading state while calculating", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Check for loading state (skeleton or spinner)
     await expect(
@@ -195,7 +195,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should recalculate on button click", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
@@ -215,7 +215,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should display chart with breakdown", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Needs Composition", { timeout: 10000 });
 
     // Verify chart is rendered (look for SVG or chart container)
@@ -232,7 +232,7 @@ test.describe("Insurance Needs Calculation", () => {
     await page.goto(`/clients/${clientId}`);
 
     // Set income to 0
-    await page.click("text=Financial Inputs");
+    await page.getByRole("tab", { name: "Financial" }).click();
     await page.click("button:has-text('Edit Financial Inputs')");
     await page.fill('input[name="clientIncome"]', "0");
     await page.click("button:has-text('Save Changes')");
@@ -243,7 +243,7 @@ test.describe("Insurance Needs Calculation", () => {
     });
 
     // Go to insurance tab
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Should show fallback message for no needs
     await expect(
@@ -274,7 +274,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should update chart when financial data changes", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
@@ -296,7 +296,7 @@ test.describe("Insurance Needs Calculation", () => {
     });
 
     // Go back to insurance tab
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Wait for recalculation to complete
     await page.waitForSelector("text=Calculated:", { timeout: 10000 });
@@ -312,7 +312,7 @@ test.describe("Insurance Needs Calculation", () => {
     // Test desktop
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
@@ -324,7 +324,7 @@ test.describe("Insurance Needs Calculation", () => {
     // Test tablet
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
@@ -337,7 +337,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should display correct timestamp", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
@@ -350,7 +350,7 @@ test.describe("Insurance Needs Calculation", () => {
   test("should show input parameters used in calculation", async ({ page }) => {
     await setAuthContext(page);
     await page.goto(`/clients/${clientId}`);
-    await page.click("text=Insurance Needs");
+    await page.getByRole("tab", { name: "Insurance" }).click();
     await page.waitForSelector("text=Insurance Needs Analysis", {
       timeout: 10000,
     });
