@@ -1,67 +1,21 @@
 import { test, expect, type Page } from "@playwright/test";
-import { randomBytes } from "node:crypto";
+import {
+  createAuthenticatedUser,
+  setAuthContext as setAuth,
+} from "./helpers/auth";
 
 test.describe.skip("Insurance Needs Calculation", () => {
   let authCookie: string;
-  let testEmail: string;
-  let testPassword: string;
   let clientId: string;
 
   test.beforeAll(async ({ request }) => {
-    // Generate unique credentials
-    testPassword = `Test${randomBytes(8).toString("base64url")}${Date.now()}!`;
-    testEmail = `test-insurance-${Date.now()}-${randomBytes(4).toString("hex")}@example.com`;
-
     try {
-      // Sign up
-      const signUpResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-up/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-            name: "Test Insurance User",
-          },
-        },
+      // Create authenticated user
+      const auth = await createAuthenticatedUser(
+        request,
+        "Test Insurance User",
       );
-
-      if (!signUpResponse.ok()) {
-        const errorText = await signUpResponse.text();
-        console.error("Sign up failed:", errorText);
-        throw new Error(`Sign up failed: ${errorText}`);
-      }
-
-      // Sign in
-      const signInResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-in/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-          },
-        },
-      );
-
-      if (!signInResponse.ok()) {
-        const errorText = await signInResponse.text();
-        console.error("Sign in failed:", errorText);
-        throw new Error(`Sign in failed: ${errorText}`);
-      }
-
-      const cookies = signInResponse.headers()["set-cookie"];
-      if (cookies) {
-        authCookie = cookies;
-      } else {
-        throw new Error("No auth cookie received");
-      }
+      authCookie = auth.authCookie;
 
       // Create a test client with financial inputs
       const createClientResponse = await request.post(
@@ -119,20 +73,7 @@ test.describe.skip("Insurance Needs Calculation", () => {
   });
 
   async function setAuthContext(page: Page) {
-    // Parse the cookie string and set it in the browser context
-    if (authCookie) {
-      const cookieParts = authCookie.split(";")[0]?.split("=");
-      if (cookieParts && cookieParts.length >= 2) {
-        await page.context().addCookies([
-          {
-            name: cookieParts[0]!,
-            value: cookieParts.slice(1).join("="),
-            domain: "localhost",
-            path: "/",
-          },
-        ]);
-      }
-    }
+    await setAuth(page, authCookie);
   }
 
   // TODO: Re-enable after fixing database connection pooling issues
