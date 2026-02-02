@@ -12,8 +12,8 @@ import {
   generateText,
   buildReasonsWhyPrompt,
   isGeminiConfigured,
-  GeminiNotConfiguredError,
   GeminiApiError,
+  GEMINI_MODEL,
 } from "@/server/ai";
 
 /**
@@ -180,24 +180,12 @@ export const POST = withApiHandler(
         data: {
           letter,
           generatedAt: new Date().toISOString(),
-          model: "gemini-3-flash-preview",
+          model: GEMINI_MODEL,
           clientId,
           clientName: `${clientData.firstName} ${clientData.lastName}`,
         },
       };
     } catch (error) {
-      if (error instanceof GeminiNotConfiguredError) {
-        await logger.warn("Gemini API not configured", { statusCode: 503 });
-        return NextResponse.json(
-          {
-            error: "AI service not configured",
-            message:
-              "The AI letter generation service is not available. Please contact support.",
-          },
-          { status: 503 },
-        );
-      }
-
       if (error instanceof GeminiApiError) {
         await logger.error("Gemini API error", error, {
           statusCode: error.statusCode,
