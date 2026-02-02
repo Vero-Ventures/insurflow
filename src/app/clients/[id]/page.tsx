@@ -38,6 +38,7 @@ import {
   InsuranceNeedsCard,
   InsuranceNeedsChart,
 } from "@/components/clients/insurance-needs";
+import { ClientReportView } from "@/components/clients/client-report-view";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -335,19 +336,7 @@ function ClientDetailContent() {
 
         {/* Report Tab */}
         <TabsContent value="report" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Needs Analysis Report</CardTitle>
-              <CardDescription>
-                Generate and view comprehensive financial reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Report generation will be available in a future update.
-              </p>
-            </CardContent>
-          </Card>
+          <ClientReportView client={client} clientId={clientId} />
         </TabsContent>
       </Tabs>
     </div>

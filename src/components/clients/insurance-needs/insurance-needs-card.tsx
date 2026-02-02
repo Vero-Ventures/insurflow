@@ -20,6 +20,8 @@ interface InsuranceNeedsCardProps {
   error: string | null;
   onRecalculate: () => Promise<void>;
   calculatedAt: string | null;
+  /** When true, hides action buttons for read-only contexts like reports */
+  isReadOnly?: boolean;
 }
 
 export function InsuranceNeedsCard({
@@ -28,6 +30,7 @@ export function InsuranceNeedsCard({
   error,
   onRecalculate,
   calculatedAt,
+  isReadOnly = false,
 }: InsuranceNeedsCardProps) {
   if (isLoading) {
     return <InsuranceNeedsCardSkeleton />;
@@ -49,15 +52,17 @@ export function InsuranceNeedsCard({
               <span className="font-medium">Failed to calculate</span>
             </div>
             <p className="text-sm">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRecalculate}
-              className="w-fit"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Try Again
-            </Button>
+            {!isReadOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRecalculate}
+                className="w-fit"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -75,14 +80,16 @@ export function InsuranceNeedsCard({
         </CardHeader>
         <CardContent>
           <div className="text-muted-foreground py-4 text-center">
-            <p className="mb-4">
+            <p className={isReadOnly ? "" : "mb-4"}>
               No calculation available. Please ensure client financial
               information is complete.
             </p>
-            <Button onClick={onRecalculate}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Calculate Now
-            </Button>
+            {!isReadOnly && (
+              <Button onClick={onRecalculate}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Calculate Now
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -115,15 +122,17 @@ export function InsuranceNeedsCard({
             Breakdown of recommended insurance coverage
           </CardDescription>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRecalculate}
-          className="shrink-0"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Recalculate
-        </Button>
+        {!isReadOnly && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRecalculate}
+            className="shrink-0"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Recalculate
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {calculatedAt && (
