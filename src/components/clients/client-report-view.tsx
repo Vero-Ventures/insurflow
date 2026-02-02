@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   User,
   Calendar,
@@ -17,6 +18,7 @@ import {
   Heart,
   Cigarette,
   FileText,
+  Printer,
 } from "lucide-react";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
@@ -94,20 +96,36 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
   // Calculate totals using shared utility
   const { total: totalAssets } = calculateAssetTotals(assets);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6 print:space-y-4">
       {/* Report Header */}
       <div className="border-b pb-4 print:pb-2">
-        <div className="text-muted-foreground mb-1 flex items-center gap-2 text-sm">
-          <FileText className="h-4 w-4" />
-          <span>Financial Needs Analysis Report</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-muted-foreground mb-1 flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4" />
+              <span>Financial Needs Analysis Report</span>
+            </div>
+            <h2 className="text-2xl font-bold print:text-xl">
+              {client.firstName} {client.lastName}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Generated: {formatDateTime(new Date().toISOString())}
+            </p>
+          </div>
+          <Button
+            onClick={handlePrint}
+            variant="outline"
+            className="print:hidden"
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Print Report
+          </Button>
         </div>
-        <h2 className="text-2xl font-bold print:text-xl">
-          {client.firstName} {client.lastName}
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Generated: {formatDateTime(new Date().toISOString())}
-        </p>
       </div>
 
       {/* Client Snapshot */}

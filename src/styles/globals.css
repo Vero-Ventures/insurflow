@@ -343,3 +343,57 @@
     }
   }
 }
+
+/* =============================================================================
+   PRINT STYLES
+   Ensures clean, readable output when printing reports
+   ============================================================================= */
+@media print {
+  /* Hide navigation and non-essential UI elements */
+  nav,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Reset body for print */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  /* Ensure cards have visible borders in print */
+  .card,
+  [class*="Card"] {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Handle page breaks */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid;
+  }
+
+  /* Ensure charts and visualizations are visible */
+  .recharts-wrapper {
+    break-inside: avoid;
+  }
+
+  /* Print-friendly link styling */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  /* Ensure adequate margins */
+  @page {
+    margin: 1.5cm;
+  }
+}
