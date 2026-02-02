@@ -212,14 +212,12 @@ test.describe("Client Detail Page", () => {
 
     // Navigate to Insurance tab
     await page.getByRole("tab", { name: "Insurance" }).click();
-    await expect(
-      page.getByText("Calculate and track insurance coverage requirements"),
-    ).toBeVisible();
+    await expect(page.getByText("Insurance Needs Analysis")).toBeVisible();
 
     // Navigate to Report tab
     await page.getByRole("tab", { name: "Report" }).click();
     await expect(
-      page.getByText("Generate and view comprehensive financial reports"),
+      page.getByText("Financial Needs Analysis Report"),
     ).toBeVisible();
 
     // Navigate back to Profile tab
