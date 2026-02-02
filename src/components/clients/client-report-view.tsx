@@ -35,6 +35,7 @@ import {
 } from "@/components/clients/insurance-needs";
 import { AssetsSummary } from "@/components/clients/assets-summary";
 import { DebtsSummary } from "@/components/clients/debts-summary";
+import { AISummaryCard } from "@/components/clients/ai-summary-card";
 
 interface ClientReportViewProps {
   client: Client;
@@ -304,6 +305,11 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
             isLoading={isInsuranceLoading}
           />
         </div>
+      </div>
+
+      {/* AI Recommendation Letter */}
+      <div className="print:break-before-page">
+        <AISummaryCard clientId={clientId} />
       </div>
 
       {/* Report Footer */}

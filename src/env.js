@@ -48,6 +48,9 @@ export const env = createEnv({
     AXIOM_TOKEN: z.string().optional(),
     AXIOM_DATASET: z.string().optional(),
     AXIOM_ORG_ID: z.string().optional(),
+
+    // Gemini AI (GenAI Co-Pilot)
+    GEMINI_API_KEY: z.string().optional(),
   },
 
   /**
@@ -76,6 +79,9 @@ export const env = createEnv({
     AXIOM_TOKEN: process.env.AXIOM_TOKEN,
     AXIOM_DATASET: process.env.AXIOM_DATASET,
     AXIOM_ORG_ID: process.env.AXIOM_ORG_ID,
+
+    // Gemini AI
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
