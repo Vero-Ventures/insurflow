@@ -93,3 +93,89 @@ export function calculateDebtTotal(
     return sum + (isNaN(balance) ? 0 : balance);
   }, 0);
 }
+
+/**
+ * Client section completion status
+ */
+export type SectionCompletionStatus = {
+  profile: boolean;
+  financialInputs: boolean;
+  insuranceNeeds: boolean;
+};
+
+/**
+ * Check if a client's profile section is complete.
+ * Profile is complete when basic info exists (always true if client exists).
+ */
+export function isProfileComplete(client: {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  province: string;
+}): boolean {
+  return !!(
+    client.firstName &&
+    client.lastName &&
+    client.dateOfBirth &&
+    client.province
+  );
+}
+
+/**
+ * Check if a client's financial inputs section is complete.
+ * Financial inputs are complete when income is specified.
+ */
+export function isFinancialInputsComplete(client: {
+  clientIncome?: string;
+}): boolean {
+  const income = parseFloat(client.clientIncome || "0");
+  return income > 0;
+}
+
+/**
+ * Check if insurance needs calculation is complete.
+ * Insurance needs are complete when a result exists with total > 0 or explicit calculation was done.
+ */
+export function isInsuranceNeedsComplete(
+  insuranceResult: { totalInsuranceNeeds: number } | null,
+): boolean {
+  return insuranceResult !== null;
+}
+
+/**
+ * Calculate overall completion status for a client
+ */
+export function calculateCompletionStatus(
+  client: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    province: string;
+    clientIncome?: string;
+  },
+  insuranceResult: { totalInsuranceNeeds: number } | null,
+): SectionCompletionStatus {
+  return {
+    profile: isProfileComplete(client),
+    financialInputs: isFinancialInputsComplete(client),
+    insuranceNeeds: isInsuranceNeedsComplete(insuranceResult),
+  };
+}
+
+/**
+ * Get completion count (e.g., "2/3 sections complete")
+ */
+export function getCompletionCount(status: SectionCompletionStatus): {
+  completed: number;
+  total: number;
+} {
+  const sections = [
+    status.profile,
+    status.financialInputs,
+    status.insuranceNeeds,
+  ];
+  return {
+    completed: sections.filter(Boolean).length,
+    total: sections.length,
+  };
+}

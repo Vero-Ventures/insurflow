@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   User,
   Calendar,
@@ -17,10 +18,12 @@ import {
   Heart,
   Cigarette,
   FileText,
+  Printer,
 } from "lucide-react";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
+import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
 import {
   calculateAge,
   calculateAssetTotals,
@@ -36,36 +39,57 @@ import {
 import { AssetsSummary } from "@/components/clients/assets-summary";
 import { DebtsSummary } from "@/components/clients/debts-summary";
 import { AISummaryCard } from "@/components/clients/ai-summary-card";
+import { Button } from "@/components/ui/button";
 
 interface ClientReportViewProps {
   client: Client;
   clientId: string;
+  /** Pre-loaded assets for demo mode (skips API fetch) */
+  demoAssets?: Asset[];
+  /** Pre-loaded debts for demo mode (skips API fetch) */
+  demoDebts?: Debt[];
+  /** Pre-loaded insurance result for demo mode (skips calculation) */
+  demoInsuranceResult?: InsuranceNeedsResult;
 }
 
 /**
  * Read-only report view for a client's financial needs analysis.
  * Displays client snapshot, financial summary, and insurance needs breakdown
  * in a print-friendly format without edit controls.
+ *
+ * Supports demo mode when demoAssets, demoDebts, and demoInsuranceResult are provided.
  */
-export function ClientReportView({ client, clientId }: ClientReportViewProps) {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+export function ClientReportView({
+  client,
+  clientId,
+  demoAssets,
+  demoDebts,
+  demoInsuranceResult,
+}: ClientReportViewProps) {
+  const isDemo = !!(demoAssets && demoDebts && demoInsuranceResult);
+  const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
+  const [debts, setDebts] = useState<Debt[]>(demoDebts || []);
+  const [isLoadingData, setIsLoadingData] = useState(!isDemo);
 
-  // Insurance needs calculation
+  // Insurance needs calculation (skipped in demo mode)
   const {
-    result: insuranceResult,
+    result: calculatedResult,
     isLoading: isInsuranceLoading,
     error: insuranceError,
     recalculate: recalculateInsurance,
     calculatedAt: insuranceCalculatedAt,
   } = useInsuranceNeeds({
     clientId,
-    enabled: !!client,
+    enabled: !!client && !isDemo,
   });
 
-  // Fetch assets and debts in parallel
+  // Use demo result or calculated result
+  const insuranceResult = demoInsuranceResult || calculatedResult;
+
+  // Fetch assets and debts in parallel (skipped in demo mode)
   useEffect(() => {
+    if (isDemo) return;
+
     async function fetchData() {
       setIsLoadingData(true);
       try {
@@ -90,25 +114,46 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
       }
     }
     fetchData();
-  }, [clientId]);
+  }, [clientId, isDemo]);
 
   // Calculate totals using shared utility
   const { total: totalAssets } = calculateAssetTotals(assets);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="space-y-6 print:space-y-4">
       {/* Report Header */}
       <div className="border-b pb-4 print:pb-2">
-        <div className="text-muted-foreground mb-1 flex items-center gap-2 text-sm">
-          <FileText className="h-4 w-4" />
-          <span>Financial Needs Analysis Report</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-muted-foreground mb-1 flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4" />
+              <span>Financial Needs Analysis Report</span>
+              {isDemo && (
+                <Badge variant="secondary" className="ml-2">
+                  Demo
+                </Badge>
+              )}
+            </div>
+            <h2 className="text-2xl font-bold print:text-xl">
+              {client.firstName} {client.lastName}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Generated: {formatDateTime(new Date().toISOString())}
+            </p>
+          </div>
+          <Button
+            onClick={handlePrint}
+            variant="outline"
+            className="print:hidden"
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Print Report
+          </Button>
         </div>
-        <h2 className="text-2xl font-bold print:text-xl">
-          {client.firstName} {client.lastName}
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Generated: {formatDateTime(new Date().toISOString())}
-        </p>
       </div>
 
       {/* Client Snapshot */}
@@ -294,15 +339,17 @@ export function ClientReportView({ client, clientId }: ClientReportViewProps) {
         <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-1">
           <InsuranceNeedsCard
             result={insuranceResult}
-            isLoading={isInsuranceLoading}
-            error={insuranceError}
-            onRecalculate={recalculateInsurance}
-            calculatedAt={insuranceCalculatedAt}
-            isReadOnly
+            isLoading={!isDemo && isInsuranceLoading}
+            error={isDemo ? null : insuranceError}
+            onRecalculate={isDemo ? undefined : recalculateInsurance}
+            calculatedAt={
+              isDemo ? new Date().toISOString() : insuranceCalculatedAt
+            }
+            isReadOnly={isDemo}
           />
           <InsuranceNeedsChart
             result={insuranceResult}
-            isLoading={isInsuranceLoading}
+            isLoading={!isDemo && isInsuranceLoading}
           />
         </div>
       </div>

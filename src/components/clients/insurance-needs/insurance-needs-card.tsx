@@ -18,7 +18,7 @@ interface InsuranceNeedsCardProps {
   result: InsuranceNeedsResult | null;
   isLoading: boolean;
   error: string | null;
-  onRecalculate: () => Promise<void>;
+  onRecalculate?: () => Promise<void>;
   calculatedAt: string | null;
   /** When true, hides action buttons for read-only contexts like reports */
   isReadOnly?: boolean;
