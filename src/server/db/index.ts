@@ -90,7 +90,12 @@ export const getDb = cache((): Database => {
   }
 
   // Local development: Use postgres-js for Docker Postgres
-  const client = postgres(connectionString);
+  // Limit connection pool size to prevent "too many clients" during tests
+  const client = postgres(connectionString, {
+    max: 10,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  });
   return drizzlePostgresJs(client, { schema });
 });
 

@@ -170,12 +170,8 @@ test.describe("Client Detail Page", () => {
 
     // Verify tabs are present
     await expect(page.getByRole("tab", { name: "Profile" })).toBeVisible();
-    await expect(
-      page.getByRole("tab", { name: "Financial Inputs" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("tab", { name: "Insurance Needs" }),
-    ).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Financial" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Insurance" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Report" })).toBeVisible();
   });
 
@@ -208,22 +204,22 @@ test.describe("Client Detail Page", () => {
 
     await waitForClientDetailPage(page);
 
-    // Navigate to Financial Inputs tab
-    await page.getByRole("tab", { name: "Financial Inputs" }).click();
+    // Navigate to Financial tab
+    await page.getByRole("tab", { name: "Financial" }).click();
     await expect(
       page.getByText("Income, assets, debts, and financial planning details"),
     ).toBeVisible();
 
-    // Navigate to Insurance Needs tab
-    await page.getByRole("tab", { name: "Insurance Needs" }).click();
-    await expect(
-      page.getByText("Calculate and track insurance coverage requirements"),
-    ).toBeVisible();
+    // Navigate to Insurance tab
+    await page.getByRole("tab", { name: "Insurance" }).click();
+    // Insurance tab shows InsuranceNeedsCard which has different states
+    // We just verify the tab title is visible since calculation might fail
+    await expect(page.getByText("Insurance Needs Analysis")).toBeVisible();
 
     // Navigate to Report tab
     await page.getByRole("tab", { name: "Report" }).click();
     await expect(
-      page.getByText("Generate and view comprehensive financial reports"),
+      page.getByText("Financial Needs Analysis Report"),
     ).toBeVisible();
 
     // Navigate back to Profile tab

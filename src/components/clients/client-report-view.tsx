@@ -39,7 +39,6 @@ import {
 import { AssetsSummary } from "@/components/clients/assets-summary";
 import { DebtsSummary } from "@/components/clients/debts-summary";
 import { AISummaryCard } from "@/components/clients/ai-summary-card";
-import { Button } from "@/components/ui/button";
 
 interface ClientReportViewProps {
   client: Client;
