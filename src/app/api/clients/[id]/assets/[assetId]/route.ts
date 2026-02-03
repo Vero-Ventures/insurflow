@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
 import { asset, client } from "@/server/db/schema";
-import { and, eq, exists, isNull } from "drizzle-orm";
+import { and, eq, exists, isNull, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetSchema } from "@/lib/validation/asset";
 import {
@@ -8,6 +8,29 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
+
+/**
+ * Creates the ownership verification EXISTS subquery.
+ * Ensures client belongs to user and is not deleted.
+ */
+function createOwnershipCheck(
+  db: ReturnType<typeof getDb>,
+  clientId: string,
+  userId: string,
+) {
+  return exists(
+    db
+      .select({ id: client.id })
+      .from(client)
+      .where(
+        and(
+          eq(client.id, clientId),
+          eq(client.userId, userId),
+          isNull(client.deletedAt),
+        ),
+      ),
+  );
+}
 
 /**
  * PATCH /api/clients/[id]/assets/[assetId] - Update an asset
@@ -19,7 +42,6 @@ export const PATCH = withApiHandler(
   {
     endpoint: "/api/clients/[id]/assets/[assetId]",
     method: "PATCH",
-    requireClient: true,
     resourceIdParams: ["assetId"],
   },
   async (request, { logger, session, clientId, resourceIds }) => {
@@ -53,13 +75,16 @@ export const PATCH = withApiHandler(
 
     const db = getDb();
 
+    // Base WHERE conditions for asset queries (DRY)
+    const baseWhere: SQL = and(
+      eq(asset.id, assetId),
+      eq(asset.clientId, clientId!),
+      isNull(asset.deletedAt),
+    )!;
+
     // First check if asset exists (to distinguish "not found" from "ownership failed")
     const existingAsset = await db.query.asset.findFirst({
-      where: and(
-        eq(asset.id, assetId),
-        eq(asset.clientId, clientId!),
-        isNull(asset.deletedAt),
-      ),
+      where: baseWhere,
     });
 
     if (!existingAsset) {
@@ -78,24 +103,7 @@ export const PATCH = withApiHandler(
       .update(asset)
       .set(updateData)
       .where(
-        and(
-          eq(asset.id, assetId),
-          eq(asset.clientId, clientId!),
-          isNull(asset.deletedAt),
-          // Atomic ownership check - ensures client still belongs to user at update time
-          exists(
-            db
-              .select({ id: client.id })
-              .from(client)
-              .where(
-                and(
-                  eq(client.id, clientId!),
-                  eq(client.userId, session.user.id),
-                  isNull(client.deletedAt),
-                ),
-              ),
-          ),
-        ),
+        and(baseWhere, createOwnershipCheck(db, clientId!, session.user.id)),
       )
       .returning();
 
@@ -125,7 +133,6 @@ export const DELETE = withApiHandler(
   {
     endpoint: "/api/clients/[id]/assets/[assetId]",
     method: "DELETE",
-    requireClient: true,
     resourceIdParams: ["assetId"],
   },
   async (_request, { logger, session, clientId, resourceIds }) => {
@@ -139,13 +146,16 @@ export const DELETE = withApiHandler(
 
     const db = getDb();
 
+    // Base WHERE conditions for asset queries (DRY)
+    const baseWhere: SQL = and(
+      eq(asset.id, assetId),
+      eq(asset.clientId, clientId!),
+      isNull(asset.deletedAt),
+    )!;
+
     // First check if asset exists (to distinguish "not found" from "ownership failed")
     const existingAsset = await db.query.asset.findFirst({
-      where: and(
-        eq(asset.id, assetId),
-        eq(asset.clientId, clientId!),
-        isNull(asset.deletedAt),
-      ),
+      where: baseWhere,
     });
 
     if (!existingAsset) {
@@ -166,24 +176,7 @@ export const DELETE = withApiHandler(
         updatedAt: now,
       })
       .where(
-        and(
-          eq(asset.id, assetId),
-          eq(asset.clientId, clientId!),
-          isNull(asset.deletedAt),
-          // Atomic ownership check - ensures client still belongs to user at delete time
-          exists(
-            db
-              .select({ id: client.id })
-              .from(client)
-              .where(
-                and(
-                  eq(client.id, clientId!),
-                  eq(client.userId, session.user.id),
-                  isNull(client.deletedAt),
-                ),
-              ),
-          ),
-        ),
+        and(baseWhere, createOwnershipCheck(db, clientId!, session.user.id)),
       )
       .returning();
 
