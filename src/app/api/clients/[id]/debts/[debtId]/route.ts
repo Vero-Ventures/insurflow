@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
-import { debt } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { client, debt } from "@/server/db/schema";
+import { and, eq, exists, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateDebtSchema } from "@/lib/validation/debt";
 import {
@@ -11,6 +11,9 @@ import {
 
 /**
  * PATCH /api/clients/[id]/debts/[debtId] - Update a debt
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const PATCH = withApiHandler(
   {
@@ -19,7 +22,7 @@ export const PATCH = withApiHandler(
     requireClient: true,
     resourceIdParams: ["debtId"],
   },
-  async (request, { logger, clientId, resourceIds }) => {
+  async (request, { logger, session, clientId, resourceIds }) => {
     const debtId = resourceIds?.debtId;
     if (!debtId) {
       return NextResponse.json(
@@ -48,7 +51,22 @@ export const PATCH = withApiHandler(
 
     const db = getDb();
 
-    // Update debt with ownership and deletion checks
+    // First check if debt exists (to distinguish "not found" from "ownership failed")
+    const existingDebt = await db.query.debt.findFirst({
+      where: and(
+        eq(debt.id, debtId),
+        eq(debt.clientId, clientId!),
+        isNull(debt.deletedAt),
+      ),
+    });
+
+    if (!existingDebt) {
+      await logger.info("Debt not found for update", { statusCode: 404 });
+      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+    }
+
+    // Update debt with atomic ownership verification via EXISTS subquery
+    // This prevents TOCTOU race condition by checking ownership in the same statement
     const updateData: Record<string, unknown> = {
       ...validationResult.data,
       updatedAt: new Date(),
@@ -62,13 +80,32 @@ export const PATCH = withApiHandler(
           eq(debt.id, debtId),
           eq(debt.clientId, clientId!),
           isNull(debt.deletedAt),
+          // Atomic ownership check - ensures client still belongs to user at update time
+          exists(
+            db
+              .select({ id: client.id })
+              .from(client)
+              .where(
+                and(
+                  eq(client.id, clientId!),
+                  eq(client.userId, session.user.id),
+                  isNull(client.deletedAt),
+                ),
+              ),
+          ),
         ),
       )
       .returning();
 
     if (!updatedDebt) {
-      await logger.info("Debt not found for update", { statusCode: 404 });
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+      // Debt exists but ownership check failed - client was reassigned between check and update
+      await logger.warn("Client ownership verification failed during update", {
+        statusCode: 403,
+      });
+      return NextResponse.json(
+        { error: "Client not found or access denied" },
+        { status: 403 },
+      );
     }
 
     await logger.info("Debt updated successfully", { statusCode: 200 });
@@ -78,6 +115,9 @@ export const PATCH = withApiHandler(
 
 /**
  * DELETE /api/clients/[id]/debts/[debtId] - Soft delete a debt
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const DELETE = withApiHandler(
   {
@@ -86,7 +126,7 @@ export const DELETE = withApiHandler(
     requireClient: true,
     resourceIdParams: ["debtId"],
   },
-  async (_request, { logger, clientId, resourceIds }) => {
+  async (_request, { logger, session, clientId, resourceIds }) => {
     const debtId = resourceIds?.debtId;
     if (!debtId) {
       return NextResponse.json(
@@ -96,9 +136,25 @@ export const DELETE = withApiHandler(
     }
 
     const db = getDb();
+
+    // First check if debt exists (to distinguish "not found" from "ownership failed")
+    const existingDebt = await db.query.debt.findFirst({
+      where: and(
+        eq(debt.id, debtId),
+        eq(debt.clientId, clientId!),
+        isNull(debt.deletedAt),
+      ),
+    });
+
+    if (!existingDebt) {
+      await logger.info("Debt not found for deletion", { statusCode: 404 });
+      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+    }
+
     const now = new Date();
 
-    // Soft delete debt with ownership and deletion check
+    // Soft delete debt with atomic ownership verification via EXISTS subquery
+    // This prevents TOCTOU race condition by checking ownership in the same statement
     const [deletedDebt] = await db
       .update(debt)
       .set({
@@ -110,13 +166,32 @@ export const DELETE = withApiHandler(
           eq(debt.id, debtId),
           eq(debt.clientId, clientId!),
           isNull(debt.deletedAt),
+          // Atomic ownership check - ensures client still belongs to user at delete time
+          exists(
+            db
+              .select({ id: client.id })
+              .from(client)
+              .where(
+                and(
+                  eq(client.id, clientId!),
+                  eq(client.userId, session.user.id),
+                  isNull(client.deletedAt),
+                ),
+              ),
+          ),
         ),
       )
       .returning();
 
     if (!deletedDebt) {
-      await logger.info("Debt not found for deletion", { statusCode: 404 });
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+      // Debt exists but ownership check failed - client was reassigned between check and delete
+      await logger.warn("Client ownership verification failed during delete", {
+        statusCode: 403,
+      });
+      return NextResponse.json(
+        { error: "Client not found or access denied" },
+        { status: 403 },
+      );
     }
 
     await logger.info("Debt deleted successfully", { statusCode: 200 });

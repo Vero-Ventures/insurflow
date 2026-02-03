@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
-import { asset } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { asset, client } from "@/server/db/schema";
+import { and, eq, exists, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetSchema } from "@/lib/validation/asset";
 import {
@@ -11,6 +11,9 @@ import {
 
 /**
  * PATCH /api/clients/[id]/assets/[assetId] - Update an asset
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const PATCH = withApiHandler(
   {
@@ -19,7 +22,7 @@ export const PATCH = withApiHandler(
     requireClient: true,
     resourceIdParams: ["assetId"],
   },
-  async (request, { logger, clientId, resourceIds }) => {
+  async (request, { logger, session, clientId, resourceIds }) => {
     const assetId = resourceIds?.assetId;
     if (!assetId) {
       return NextResponse.json(
@@ -50,7 +53,22 @@ export const PATCH = withApiHandler(
 
     const db = getDb();
 
-    // Update asset with ownership and deletion checks
+    // First check if asset exists (to distinguish "not found" from "ownership failed")
+    const existingAsset = await db.query.asset.findFirst({
+      where: and(
+        eq(asset.id, assetId),
+        eq(asset.clientId, clientId!),
+        isNull(asset.deletedAt),
+      ),
+    });
+
+    if (!existingAsset) {
+      await logger.info("Asset not found", { statusCode: 404 });
+      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    }
+
+    // Update asset with atomic ownership verification via EXISTS subquery
+    // This prevents TOCTOU race condition by checking ownership in the same statement
     const updateData: Record<string, unknown> = {
       ...validationResult.data,
       updatedAt: new Date(),
@@ -64,13 +82,32 @@ export const PATCH = withApiHandler(
           eq(asset.id, assetId),
           eq(asset.clientId, clientId!),
           isNull(asset.deletedAt),
+          // Atomic ownership check - ensures client still belongs to user at update time
+          exists(
+            db
+              .select({ id: client.id })
+              .from(client)
+              .where(
+                and(
+                  eq(client.id, clientId!),
+                  eq(client.userId, session.user.id),
+                  isNull(client.deletedAt),
+                ),
+              ),
+          ),
         ),
       )
       .returning();
 
     if (!updatedAsset) {
-      await logger.info("Asset not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+      // Asset exists but ownership check failed - client was reassigned between check and update
+      await logger.warn("Client ownership verification failed during update", {
+        statusCode: 403,
+      });
+      return NextResponse.json(
+        { error: "Client not found or access denied" },
+        { status: 403 },
+      );
     }
 
     await logger.info("Asset updated successfully");
@@ -80,6 +117,9 @@ export const PATCH = withApiHandler(
 
 /**
  * DELETE /api/clients/[id]/assets/[assetId] - Soft delete an asset
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const DELETE = withApiHandler(
   {
@@ -88,7 +128,7 @@ export const DELETE = withApiHandler(
     requireClient: true,
     resourceIdParams: ["assetId"],
   },
-  async (_request, { logger, clientId, resourceIds }) => {
+  async (_request, { logger, session, clientId, resourceIds }) => {
     const assetId = resourceIds?.assetId;
     if (!assetId) {
       return NextResponse.json(
@@ -98,9 +138,27 @@ export const DELETE = withApiHandler(
     }
 
     const db = getDb();
+
+    // First check if asset exists (to distinguish "not found" from "ownership failed")
+    const existingAsset = await db.query.asset.findFirst({
+      where: and(
+        eq(asset.id, assetId),
+        eq(asset.clientId, clientId!),
+        isNull(asset.deletedAt),
+      ),
+    });
+
+    if (!existingAsset) {
+      await logger.info("Asset not found or already deleted", {
+        statusCode: 404,
+      });
+      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    }
+
     const now = new Date();
 
-    // Soft delete asset with ownership and deletion check
+    // Soft delete asset with atomic ownership verification via EXISTS subquery
+    // This prevents TOCTOU race condition by checking ownership in the same statement
     const [deletedAsset] = await db
       .update(asset)
       .set({
@@ -112,15 +170,32 @@ export const DELETE = withApiHandler(
           eq(asset.id, assetId),
           eq(asset.clientId, clientId!),
           isNull(asset.deletedAt),
+          // Atomic ownership check - ensures client still belongs to user at delete time
+          exists(
+            db
+              .select({ id: client.id })
+              .from(client)
+              .where(
+                and(
+                  eq(client.id, clientId!),
+                  eq(client.userId, session.user.id),
+                  isNull(client.deletedAt),
+                ),
+              ),
+          ),
         ),
       )
       .returning();
 
     if (!deletedAsset) {
-      await logger.info("Asset not found or already deleted", {
-        statusCode: 404,
+      // Asset exists but ownership check failed - client was reassigned between check and delete
+      await logger.warn("Client ownership verification failed during delete", {
+        statusCode: 403,
       });
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Client not found or access denied" },
+        { status: 403 },
+      );
     }
 
     await logger.info("Asset soft deleted successfully");
