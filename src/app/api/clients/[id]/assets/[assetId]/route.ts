@@ -1,6 +1,3 @@
-import { getDb } from "@/server/db";
-import { asset, client } from "@/server/db/schema";
-import { and, eq, exists, isNull, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetSchema } from "@/lib/validation/asset";
 import {
@@ -8,29 +5,11 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
-
-/**
- * Creates the ownership verification EXISTS subquery.
- * Ensures client belongs to user and is not deleted.
- */
-function createOwnershipCheck(
-  db: ReturnType<typeof getDb>,
-  clientId: string,
-  userId: string,
-) {
-  return exists(
-    db
-      .select({ id: client.id })
-      .from(client)
-      .where(
-        and(
-          eq(client.id, clientId),
-          eq(client.userId, userId),
-          isNull(client.deletedAt),
-        ),
-      ),
-  );
-}
+import {
+  updateResource,
+  deleteResource,
+  assetConfig,
+} from "@/lib/api/resource-helpers";
 
 /**
  * PATCH /api/clients/[id]/assets/[assetId] - Update an asset
@@ -73,53 +52,17 @@ export const PATCH = withApiHandler(
       );
     }
 
-    const db = getDb();
-
-    // Base WHERE conditions for asset queries (DRY)
-    const baseWhere: SQL = and(
-      eq(asset.id, assetId),
-      eq(asset.clientId, clientId!),
-      isNull(asset.deletedAt),
-    )!;
-
-    // First check if asset exists (to distinguish "not found" from "ownership failed")
-    const existingAsset = await db.query.asset.findFirst({
-      where: baseWhere,
+    const result = await updateResource({
+      config: assetConfig,
+      resourceId: assetId,
+      clientId: clientId!,
+      userId: session.user.id,
+      updateData: validationResult.data,
+      logger,
     });
 
-    if (!existingAsset) {
-      await logger.info("Asset not found", { statusCode: 404 });
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
-    }
-
-    // Update asset with atomic ownership verification via EXISTS subquery
-    // This prevents TOCTOU race condition by checking ownership in the same statement
-    const updateData: Record<string, unknown> = {
-      ...validationResult.data,
-      updatedAt: new Date(),
-    };
-
-    const [updatedAsset] = await db
-      .update(asset)
-      .set(updateData)
-      .where(
-        and(baseWhere, createOwnershipCheck(db, clientId!, session.user.id)),
-      )
-      .returning();
-
-    if (!updatedAsset) {
-      // Asset exists but ownership check failed - client was reassigned between check and update
-      await logger.warn("Client ownership verification failed during update", {
-        statusCode: 403,
-      });
-      return NextResponse.json(
-        { error: "Client not found or access denied" },
-        { status: 403 },
-      );
-    }
-
-    await logger.info("Asset updated successfully");
-    return { data: { asset: updatedAsset } };
+    if (!result.success) return result.response;
+    return { data: { asset: result.data } };
   },
 );
 
@@ -144,54 +87,15 @@ export const DELETE = withApiHandler(
       );
     }
 
-    const db = getDb();
-
-    // Base WHERE conditions for asset queries (DRY)
-    const baseWhere: SQL = and(
-      eq(asset.id, assetId),
-      eq(asset.clientId, clientId!),
-      isNull(asset.deletedAt),
-    )!;
-
-    // First check if asset exists (to distinguish "not found" from "ownership failed")
-    const existingAsset = await db.query.asset.findFirst({
-      where: baseWhere,
+    const result = await deleteResource({
+      config: assetConfig,
+      resourceId: assetId,
+      clientId: clientId!,
+      userId: session.user.id,
+      logger,
     });
 
-    if (!existingAsset) {
-      await logger.info("Asset not found or already deleted", {
-        statusCode: 404,
-      });
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
-    }
-
-    const now = new Date();
-
-    // Soft delete asset with atomic ownership verification via EXISTS subquery
-    // This prevents TOCTOU race condition by checking ownership in the same statement
-    const [deletedAsset] = await db
-      .update(asset)
-      .set({
-        deletedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(baseWhere, createOwnershipCheck(db, clientId!, session.user.id)),
-      )
-      .returning();
-
-    if (!deletedAsset) {
-      // Asset exists but ownership check failed - client was reassigned between check and delete
-      await logger.warn("Client ownership verification failed during delete", {
-        statusCode: 403,
-      });
-      return NextResponse.json(
-        { error: "Client not found or access denied" },
-        { status: 403 },
-      );
-    }
-
-    await logger.info("Asset soft deleted successfully");
+    if (!result.success) return result.response;
     return { data: { message: "Asset deleted successfully" } };
   },
 );
