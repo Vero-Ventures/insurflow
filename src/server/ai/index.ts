@@ -9,6 +9,7 @@ export {
   isGeminiConfigured,
   GeminiNotConfiguredError,
   GeminiApiError,
+  GEMINI_MODEL,
   type GenerateTextOptions,
 } from "./gemini";
 

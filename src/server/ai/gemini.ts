@@ -8,7 +8,7 @@
 import { env } from "@/env";
 
 /** Gemini model to use - Gemini 3 Flash Preview (best on free tier) */
-const GEMINI_MODEL = "gemini-3-flash-preview";
+export const GEMINI_MODEL = "gemini-3-flash-preview";
 
 /** Base URL for Gemini API */
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -93,7 +93,7 @@ export async function generateText(
     throw new GeminiNotConfiguredError();
   }
 
-  const url = `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
+  const url = `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent`;
 
   const requestBody = {
     contents: [
@@ -111,6 +111,7 @@ export async function generateText(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "x-goog-api-key": env.GEMINI_API_KEY,
     },
     body: JSON.stringify(requestBody),
   });
