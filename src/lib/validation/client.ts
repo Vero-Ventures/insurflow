@@ -31,6 +31,14 @@ export const HEALTH_RATINGS = [
 ] as const;
 
 /**
+ * Validation constants for financial fields
+ * MAX_MONEY_VALUE matches PostgreSQL decimal(14, 2) - max 12 digits before decimal
+ */
+export const MAX_MONEY_VALUE = 999_999_999_999.99; // ~1 trillion
+export const MIN_CLIENT_AGE = 18;
+export const MAX_CLIENT_AGE = 120;
+
+/**
  * Validates a date string is a valid date (not just format) and not in the future.
  * Uses UTC consistently to avoid timezone-related edge cases.
  */
@@ -69,10 +77,46 @@ export function isValidDate(dateStr: string): boolean {
 }
 
 /**
+ * Validates that a date of birth represents a person between MIN_CLIENT_AGE and MAX_CLIENT_AGE years old.
+ * Insurance clients must be adults (18+) and realistically under 120.
+ */
+export function isValidClientAge(dateStr: string): boolean {
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+
+  if (year === undefined || month === undefined || day === undefined) {
+    return false;
+  }
+
+  const today = new Date();
+  const birthDate = new Date(Date.UTC(year, month - 1, day));
+
+  // Calculate age
+  let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
+  const monthDiff = today.getUTCMonth() - birthDate.getUTCMonth();
+  const dayDiff = today.getUTCDate() - birthDate.getUTCDate();
+
+  // Adjust if birthday hasn't occurred yet this year
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--;
+  }
+
+  return age >= MIN_CLIENT_AGE && age <= MAX_CLIENT_AGE;
+}
+
+/**
  * Decimal string validation - matches PostgreSQL decimal format.
  * Allows positive numbers with optional 2 decimal places.
+ *
+ * @param fieldName - Human-readable field name for error messages
+ * @param maxValue - Optional maximum value (defaults to MAX_MONEY_VALUE)
  */
-export const decimalString = (fieldName: string) =>
+export const decimalString = (
+  fieldName: string,
+  maxValue: number = MAX_MONEY_VALUE,
+) =>
   z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/, `Invalid ${fieldName} format`)
@@ -82,6 +126,15 @@ export const decimalString = (fieldName: string) =>
         return !isNaN(num) && num >= 0;
       },
       { message: `${fieldName} must be a non-negative number` },
+    )
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num <= maxValue;
+      },
+      {
+        message: `${fieldName} must not exceed ${maxValue.toLocaleString()}`,
+      },
     );
 
 /**
