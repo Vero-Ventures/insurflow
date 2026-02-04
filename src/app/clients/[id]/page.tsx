@@ -318,7 +318,7 @@ function ClientDetailContent() {
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">State</p>
-                <p className="font-medium uppercase">{client.province}</p>
+                <p className="font-medium uppercase">{client.state}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Status</p>

@@ -25,7 +25,7 @@ test.describe("Client CRUD API", () => {
       lastName: string;
       dateOfBirth: string;
       sex: "M" | "F";
-      province: string;
+      state: string;
     },
   ): Promise<TestClientResult> {
     const response = await request.post("http://localhost:3000/api/clients", {
@@ -131,7 +131,7 @@ test.describe("Client CRUD API", () => {
           lastName: "Doe",
           dateOfBirth: "1980-01-15",
           sex: "M",
-          province: "ON",
+          state: "ON",
           smoker: false,
           healthRating: "standard",
           hasSpouse: true,
@@ -258,7 +258,7 @@ test.describe("Client CRUD API", () => {
         lastName: "Smith",
         dateOfBirth: "1990-05-20",
         sex: "F",
-        province: "BC",
+        state: "BC",
       },
     });
 
@@ -279,7 +279,7 @@ test.describe("Client CRUD API", () => {
         lastName: "Doe",
         dateOfBirth: "invalid-date", // Invalid format
         sex: "M",
-        province: "ON",
+        state: "ON",
       },
     });
 
@@ -345,7 +345,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Validation",
       dateOfBirth: "1985-03-10",
       sex: "F",
-      province: "AB",
+      state: "AB",
     });
     const { client } = createBody;
 
@@ -375,7 +375,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Auth",
       dateOfBirth: "1985-03-10",
       sex: "M",
-      province: "BC",
+      state: "BC",
     });
     const { client } = createBody;
 
@@ -400,7 +400,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Delete",
       dateOfBirth: "1985-03-10",
       sex: "F",
-      province: "AB",
+      state: "AB",
     });
     const { client } = createBody;
 

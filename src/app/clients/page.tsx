@@ -86,14 +86,14 @@ export default function ClientsPage() {
       firstName: string;
       lastName: string;
       dateOfBirth: string;
-      province: string;
+      state: string;
     }) => {
       const optimisticClient: OptimisticClient = {
         id: `optimistic-${Date.now()}`,
         firstName: clientData.firstName,
         lastName: clientData.lastName,
         dateOfBirth: clientData.dateOfBirth,
-        province: clientData.province,
+        state: clientData.state,
         updatedAt: new Date().toISOString(),
         status: "draft",
         optimistic: true,

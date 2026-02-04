@@ -77,7 +77,7 @@ test.describe("Client Detail Page", () => {
             lastName: "Detail",
             dateOfBirth: "1985-06-15",
             sex: "F",
-            province: "BC",
+            state: "BC",
             smoker: false,
             healthRating: "preferred",
             hasSpouse: false,

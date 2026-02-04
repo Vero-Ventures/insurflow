@@ -13,7 +13,7 @@ import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
 export interface ReasonsWhyClientData {
   firstName: string;
   lastName: string;
-  province: string;
+  state: string;
   hasSpouse: boolean;
   spouseAge?: number | null;
   clientIncome: number;
@@ -44,10 +44,10 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * Get full province name from abbreviation
+ * Get full state/province name from abbreviation
  */
-function getProvinceName(code: string): string {
-  const provinces: Record<string, string> = {
+function getStateName(code: string): string {
+  const states: Record<string, string> = {
     AB: "Alberta",
     BC: "British Columbia",
     MB: "Manitoba",
@@ -62,7 +62,7 @@ function getProvinceName(code: string): string {
     SK: "Saskatchewan",
     YT: "Yukon",
   };
-  return provinces[code] ?? code;
+  return states[code] ?? code;
 }
 
 /**
@@ -73,7 +73,7 @@ export function buildReasonsWhyPrompt(
   financial: ReasonsWhyFinancialData,
 ): string {
   const { insuranceResult } = financial;
-  const provinceName = getProvinceName(client.province);
+  const stateName = getStateName(client.state);
   const clientName = `${client.firstName} ${client.lastName}`;
 
   // Build household income description
@@ -101,7 +101,7 @@ export function buildReasonsWhyPrompt(
 
 CLIENT INFORMATION:
 - Name: ${clientName}
-- Province: ${provinceName}
+- State: ${stateName}
 - Household Status: ${client.hasSpouse ? `Married${client.spouseAge ? ` (spouse age: ${client.spouseAge})` : ""}` : "Single"}
 - Income: ${incomeDescription}
 

@@ -153,7 +153,7 @@ test.describe("Client Create UI", () => {
       lastName: string;
       dateOfBirth: string;
       sex: "M" | "F";
-      province: string;
+      state: string;
       healthRating: string;
     },
   ) {
@@ -161,7 +161,7 @@ test.describe("Client Create UI", () => {
     await page.getByLabel(/last name/i).fill(data.lastName);
     await page.getByLabel(/date of birth/i).fill(data.dateOfBirth);
     await page.getByLabel(/sex/i).selectOption(data.sex);
-    await page.getByLabel(/state/i).selectOption(data.province);
+    await page.getByLabel(/state/i).selectOption(data.state);
     await page.getByLabel(/health rating/i).selectOption(data.healthRating);
   }
 
@@ -223,7 +223,7 @@ test.describe("Client Create UI", () => {
       lastName: "Doe",
       dateOfBirth: "1985-06-15",
       sex: "F",
-      province: "BC",
+      state: "BC",
       healthRating: "preferred",
     });
 
@@ -246,7 +246,7 @@ test.describe("Client Create UI", () => {
       lastName: "Smith",
       dateOfBirth: "1990-03-20",
       sex: "M",
-      province: "ON",
+      state: "ON",
       healthRating: "standard",
     });
 
@@ -288,7 +288,7 @@ test.describe("Client Create UI", () => {
       lastName: "Test",
       dateOfBirth: "1995-12-10",
       sex: "M",
-      province: "AB",
+      state: "AB",
       healthRating: "standard_plus",
     });
 
@@ -312,7 +312,7 @@ test.describe("Client Create UI", () => {
       lastName: "Dialog",
       dateOfBirth: "1988-08-08",
       sex: "F",
-      province: "QC",
+      state: "QC",
       healthRating: "preferred_plus",
     });
 

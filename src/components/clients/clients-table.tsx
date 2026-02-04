@@ -61,7 +61,7 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
               {client.firstName} {client.lastName}
             </TableCell>
             <TableCell>{calculateAge(client.dateOfBirth)}</TableCell>
-            <TableCell className="uppercase">{client.province}</TableCell>
+            <TableCell className="uppercase">{client.state}</TableCell>
             <TableCell className="text-muted-foreground">
               {formatDate(client.updatedAt)}
             </TableCell>

@@ -10,7 +10,7 @@ type TestClientData = {
   lastName: string;
   dateOfBirth: string;
   sex: "M" | "F";
-  province: "ON" | "BC" | "AB" | "QC" | "NS" | "MB" | "SK" | "NB" | "PE" | "NL";
+  state: "ON" | "BC" | "AB" | "QC" | "NS" | "MB" | "SK" | "NB" | "PE" | "NL";
   smoker: boolean;
   healthRating:
     | "preferred"
@@ -31,7 +31,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Pork",
     dateOfBirth: "1980-05-15",
     sex: "M",
-    province: "ON",
+    state: "ON",
     smoker: false,
     healthRating: "preferred",
     hasSpouse: true,
@@ -44,7 +44,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Pork",
     dateOfBirth: "1985-08-22",
     sex: "F",
-    province: "BC",
+    state: "BC",
     smoker: false,
     healthRating: "preferred_plus",
     hasSpouse: false,
@@ -56,7 +56,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Pork",
     dateOfBirth: "1975-03-10",
     sex: "M",
-    province: "AB",
+    state: "AB",
     smoker: true,
     healthRating: "standard",
     hasSpouse: true,
@@ -70,7 +70,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Rodriguez",
     dateOfBirth: "1992-11-05",
     sex: "F",
-    province: "QC",
+    state: "QC",
     smoker: false,
     healthRating: "standard_plus",
     hasSpouse: false,
@@ -82,7 +82,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Thompson",
     dateOfBirth: "1970-07-18",
     sex: "M",
-    province: "NS",
+    state: "NS",
     smoker: false,
     healthRating: "standard",
     hasSpouse: true,
@@ -96,7 +96,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Pork",
     dateOfBirth: "1988-02-14",
     sex: "F",
-    province: "MB",
+    state: "MB",
     smoker: false,
     healthRating: "preferred",
     hasSpouse: false,
@@ -108,7 +108,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Martinez",
     dateOfBirth: "1965-09-30",
     sex: "M",
-    province: "SK",
+    state: "SK",
     smoker: true,
     healthRating: "substandard",
     hasSpouse: true,
@@ -122,7 +122,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Wilson",
     dateOfBirth: "1995-12-03",
     sex: "F",
-    province: "NB",
+    state: "NB",
     smoker: false,
     healthRating: "standard_plus",
     hasSpouse: false,
@@ -134,7 +134,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Pork",
     dateOfBirth: "1982-06-25",
     sex: "M",
-    province: "PE",
+    state: "PE",
     smoker: false,
     healthRating: "preferred_plus",
     hasSpouse: true,
@@ -148,7 +148,7 @@ export const testClientsData: TestClientData[] = [
     lastName: "Taylor",
     dateOfBirth: "1990-04-17",
     sex: "F",
-    province: "NL",
+    state: "NL",
     smoker: false,
     healthRating: "standard",
     hasSpouse: false,

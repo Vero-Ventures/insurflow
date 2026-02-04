@@ -5,7 +5,7 @@ export type Client = {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  province: string;
+  state: string;
   updatedAt: string;
   status: ClientStatus;
   // Optional fields for future expansion

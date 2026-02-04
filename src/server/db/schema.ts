@@ -19,8 +19,8 @@ export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 // ENUMS
 // ============================================================================
 
-/** Canadian provinces and territories */
-export const provinceEnum = pgEnum("province", [
+/** US states / Canadian provinces and territories */
+export const stateEnum = pgEnum("state", [
   "AB",
   "BC",
   "MB",
@@ -173,7 +173,7 @@ export const client = pgTable(
     lastName: text("last_name").notNull(),
     dateOfBirth: date("date_of_birth").notNull(),
     sex: sexEnum("sex").notNull(),
-    province: provinceEnum("province").notNull(),
+    state: stateEnum("state").notNull(),
     smoker: boolean("smoker").notNull().default(false),
     healthRating: healthRatingEnum("health_rating")
       .notNull()

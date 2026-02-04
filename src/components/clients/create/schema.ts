@@ -8,7 +8,7 @@ export const formStateSchema = z.object({
   lastName: z.string(),
   dateOfBirth: z.string(),
   sex: z.string(),
-  province: z.string(),
+  state: z.string(),
   smoker: z.boolean(),
   healthRating: z.string(),
   hasSpouse: z.boolean(),
@@ -29,7 +29,7 @@ export const clientFormSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Date of birth is required (YYYY-MM-DD)"),
     sex: z.enum(["M", "F"], { message: "Sex is required" }),
-    province: z.enum(
+    state: z.enum(
       [
         "AB",
         "BC",
@@ -45,7 +45,7 @@ export const clientFormSchema = z
         "SK",
         "YT",
       ],
-      { message: "Province is required" },
+      { message: "State is required" },
     ),
     smoker: z.boolean(),
     healthRating: z.enum(

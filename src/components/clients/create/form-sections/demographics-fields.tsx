@@ -9,7 +9,7 @@ interface DemographicsFieldsProps {
   ) => void;
 }
 
-const PROVINCES = [
+const STATES = [
   { value: "AB", label: "Alberta" },
   { value: "BC", label: "British Columbia" },
   { value: "MB", label: "Manitoba" },
@@ -48,25 +48,20 @@ export function DemographicsFields({
         </select>
       </FormField>
 
-      <FormField
-        label="State"
-        required
-        error={errors.province}
-        htmlFor="province"
-      >
+      <FormField label="State" required error={errors.state} htmlFor="state">
         <select
-          id="province"
-          name="province"
-          value={formData.province}
+          id="state"
+          name="state"
+          value={formData.state}
           onChange={onInputChange}
           className={`border-input bg-background ring-offset-background focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
-            errors.province ? "border-red-500" : ""
+            errors.state ? "border-red-500" : ""
           }`}
         >
           <option value="">Select state</option>
-          {PROVINCES.map((prov) => (
-            <option key={prov.value} value={prov.value}>
-              {prov.label}
+          {STATES.map((state) => (
+            <option key={state.value} value={state.value}>
+              {state.label}
             </option>
           ))}
         </select>
