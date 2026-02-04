@@ -4,6 +4,7 @@ import { createLogger } from "@/server/axiom";
 import {
   decimalString,
   HEALTH_RATINGS,
+  isValidClientAge,
   isValidDate,
   STATES,
   UUID_REGEX,
@@ -47,6 +48,7 @@ const updateClientSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
       .refine(isValidDate, "Invalid or future date")
+      .refine(isValidClientAge, "Client must be between 18 and 120 years old")
       .optional(),
     sex: z.enum(["M", "F"]).optional(),
     state: z.enum(STATES).optional(),
