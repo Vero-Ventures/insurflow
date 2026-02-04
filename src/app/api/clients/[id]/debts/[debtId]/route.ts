@@ -1,6 +1,3 @@
-import { getDb } from "@/server/db";
-import { debt } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateDebtSchema } from "@/lib/validation/debt";
 import {
@@ -8,18 +5,25 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
+import {
+  updateResource,
+  deleteResource,
+  debtConfig,
+} from "@/lib/api/resource-helpers";
 
 /**
  * PATCH /api/clients/[id]/debts/[debtId] - Update a debt
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const PATCH = withApiHandler(
   {
     endpoint: "/api/clients/[id]/debts/[debtId]",
     method: "PATCH",
-    requireClient: true,
     resourceIdParams: ["debtId"],
   },
-  async (request, { logger, clientId, resourceIds }) => {
+  async (request, { logger, session, clientId, resourceIds }) => {
     const debtId = resourceIds?.debtId;
     if (!debtId) {
       return NextResponse.json(
@@ -46,47 +50,33 @@ export const PATCH = withApiHandler(
       );
     }
 
-    const db = getDb();
+    const result = await updateResource({
+      config: debtConfig,
+      resourceId: debtId,
+      clientId: clientId!,
+      userId: session.user.id,
+      updateData: validationResult.data,
+      logger,
+    });
 
-    // Update debt with ownership and deletion checks
-    const updateData: Record<string, unknown> = {
-      ...validationResult.data,
-      updatedAt: new Date(),
-    };
-
-    const [updatedDebt] = await db
-      .update(debt)
-      .set(updateData)
-      .where(
-        and(
-          eq(debt.id, debtId),
-          eq(debt.clientId, clientId!),
-          isNull(debt.deletedAt),
-        ),
-      )
-      .returning();
-
-    if (!updatedDebt) {
-      await logger.info("Debt not found for update", { statusCode: 404 });
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
-    }
-
-    await logger.info("Debt updated successfully", { statusCode: 200 });
-    return { data: { debt: updatedDebt } };
+    if (!result.success) return result.response;
+    return { data: { debt: result.data } };
   },
 );
 
 /**
  * DELETE /api/clients/[id]/debts/[debtId] - Soft delete a debt
+ *
+ * Security: Uses EXISTS subquery to atomically verify client ownership
+ * in the same UPDATE statement, preventing TOCTOU race conditions.
  */
 export const DELETE = withApiHandler(
   {
     endpoint: "/api/clients/[id]/debts/[debtId]",
     method: "DELETE",
-    requireClient: true,
     resourceIdParams: ["debtId"],
   },
-  async (_request, { logger, clientId, resourceIds }) => {
+  async (_request, { logger, session, clientId, resourceIds }) => {
     const debtId = resourceIds?.debtId;
     if (!debtId) {
       return NextResponse.json(
@@ -95,31 +85,15 @@ export const DELETE = withApiHandler(
       );
     }
 
-    const db = getDb();
-    const now = new Date();
+    const result = await deleteResource({
+      config: debtConfig,
+      resourceId: debtId,
+      clientId: clientId!,
+      userId: session.user.id,
+      logger,
+    });
 
-    // Soft delete debt with ownership and deletion check
-    const [deletedDebt] = await db
-      .update(debt)
-      .set({
-        deletedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(debt.id, debtId),
-          eq(debt.clientId, clientId!),
-          isNull(debt.deletedAt),
-        ),
-      )
-      .returning();
-
-    if (!deletedDebt) {
-      await logger.info("Debt not found for deletion", { statusCode: 404 });
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
-    }
-
-    await logger.info("Debt deleted successfully", { statusCode: 200 });
+    if (!result.success) return result.response;
     return { data: { message: "Debt deleted successfully" } };
   },
 );
