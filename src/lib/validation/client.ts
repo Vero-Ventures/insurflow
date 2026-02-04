@@ -81,12 +81,16 @@ export function isValidDate(dateStr: string): boolean {
  * Insurance clients must be adults (18+) and realistically under 120.
  */
 export function isValidClientAge(dateStr: string): boolean {
-  const parts = dateStr.split("-").map(Number);
-  const year = parts[0];
-  const month = parts[1];
-  const day = parts[2];
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) {
+    return false;
+  }
 
-  if (year === undefined || month === undefined || day === undefined) {
+  const year = parseInt(parts[0]!, 10);
+  const month = parseInt(parts[1]!, 10);
+  const day = parseInt(parts[2]!, 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
     return false;
   }
 
