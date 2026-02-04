@@ -11,7 +11,7 @@ interface UseClientFormOptions {
     firstName: string;
     lastName: string;
     dateOfBirth: string;
-    province: string;
+    state: string;
   }) => string;
   onOptimisticSuccess?: (optimisticId: string, realClient: unknown) => void;
   onOptimisticError?: (optimisticId: string) => void;
@@ -33,7 +33,7 @@ const initialFormData: FormState = {
   lastName: "",
   dateOfBirth: "",
   sex: "",
-  province: "",
+  state: "",
   smoker: false,
   healthRating: "",
   hasSpouse: false,
@@ -108,7 +108,7 @@ export function useClientForm(
     firstName: string;
     lastName: string;
     dateOfBirth: string;
-    province: string;
+    state: string;
   }): string | undefined => {
     if (!options?.onOptimisticCreate) return undefined;
     return options.onOptimisticCreate(validatedData);

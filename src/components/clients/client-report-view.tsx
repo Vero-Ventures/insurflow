@@ -184,8 +184,8 @@ export function ClientReportView({
             <div className="flex items-start gap-3">
               <MapPin className="text-muted-foreground mt-0.5 h-4 w-4" />
               <div>
-                <p className="text-muted-foreground text-sm">Province/State</p>
-                <p className="font-medium uppercase">{client.province}</p>
+                <p className="text-muted-foreground text-sm">State</p>
+                <p className="font-medium uppercase">{client.state}</p>
               </div>
             </div>
 

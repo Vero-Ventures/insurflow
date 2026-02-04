@@ -111,13 +111,13 @@ export function isProfileComplete(client: {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  province: string;
+  state: string;
 }): boolean {
   return !!(
     client.firstName &&
     client.lastName &&
     client.dateOfBirth &&
-    client.province
+    client.state
   );
 }
 
@@ -150,7 +150,7 @@ export function calculateCompletionStatus(
     firstName: string;
     lastName: string;
     dateOfBirth: string;
-    province: string;
+    state: string;
     clientIncome?: string;
   },
   insuranceResult: { totalInsuranceNeeds: number } | null,

@@ -5,7 +5,7 @@ import {
   decimalString,
   HEALTH_RATINGS,
   isValidDate,
-  PROVINCES,
+  STATES,
 } from "@/lib/validation/client";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -29,7 +29,7 @@ const createClientSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)")
       .refine(isValidDate, "Invalid or future date"),
     sex: z.enum(["M", "F"]),
-    province: z.enum(PROVINCES),
+    state: z.enum(STATES),
     smoker: z.boolean().default(false),
     healthRating: z.enum(HEALTH_RATINGS).default("standard"),
     hasSpouse: z.boolean().default(false),

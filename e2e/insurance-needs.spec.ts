@@ -80,7 +80,7 @@ test.describe("Insurance Needs Calculation", () => {
             lastName: "Insurance",
             dateOfBirth: "1985-05-15",
             sex: "M",
-            province: "ON",
+            state: "ON",
             smoker: false,
             healthRating: "standard",
             hasSpouse: false,

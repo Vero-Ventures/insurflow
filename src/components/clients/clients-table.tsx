@@ -37,7 +37,7 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
         <TableRow className="hover:bg-transparent">
           <TableHead>Name</TableHead>
           <TableHead>Age</TableHead>
-          <TableHead>Province</TableHead>
+          <TableHead>State</TableHead>
           <TableHead>Last Updated</TableHead>
           <TableHead>Insurance Needs</TableHead>
           <TableHead>Status</TableHead>
@@ -61,7 +61,7 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
               {client.firstName} {client.lastName}
             </TableCell>
             <TableCell>{calculateAge(client.dateOfBirth)}</TableCell>
-            <TableCell className="uppercase">{client.province}</TableCell>
+            <TableCell className="uppercase">{client.state}</TableCell>
             <TableCell className="text-muted-foreground">
               {formatDate(client.updatedAt)}
             </TableCell>

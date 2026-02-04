@@ -43,7 +43,7 @@ async function seedClients() {
 
     console.log(`Successfully created ${inserted.length} test clients:`);
     for (const c of inserted) {
-      console.log(`   - ${c.firstName} ${c.lastName} (${c.province})`);
+      console.log(`   - ${c.firstName} ${c.lastName} (${c.state})`);
     }
   } catch (error) {
     console.error("Error seeding clients:", error);

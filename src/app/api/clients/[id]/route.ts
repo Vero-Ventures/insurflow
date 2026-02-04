@@ -5,7 +5,7 @@ import {
   decimalString,
   HEALTH_RATINGS,
   isValidDate,
-  PROVINCES,
+  STATES,
   UUID_REGEX,
 } from "@/lib/validation/client";
 import { and, eq, isNull } from "drizzle-orm";
@@ -49,7 +49,7 @@ const updateClientSchema = z
       .refine(isValidDate, "Invalid or future date")
       .optional(),
     sex: z.enum(["M", "F"]).optional(),
-    province: z.enum(PROVINCES).optional(),
+    state: z.enum(STATES).optional(),
     smoker: z.boolean().optional(),
     healthRating: z.enum(HEALTH_RATINGS).optional(),
     hasSpouse: z.boolean().optional(),

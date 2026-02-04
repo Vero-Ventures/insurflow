@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 /**
- * Canadian provinces/territories enum
+ * US states / Canadian provinces/territories enum
  */
-export const PROVINCES = [
+export const STATES = [
   "AB",
   "BC",
   "MB",

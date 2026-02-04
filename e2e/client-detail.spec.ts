@@ -77,7 +77,7 @@ test.describe("Client Detail Page", () => {
             lastName: "Detail",
             dateOfBirth: "1985-06-15",
             sex: "F",
-            province: "BC",
+            state: "BC",
             smoker: false,
             healthRating: "preferred",
             hasSpouse: false,
@@ -153,9 +153,9 @@ test.describe("Client Detail Page", () => {
       page.getByText("Basic demographic and contact details"),
     ).toBeVisible();
 
-    // Verify province is displayed in the profile section
+    // Verify state is displayed in the profile section
     const profileContent = page.locator('[role="tabpanel"]').first();
-    await expect(profileContent.getByText("Province")).toBeVisible();
+    await expect(profileContent.getByText("State")).toBeVisible();
     await expect(profileContent.getByText("BC")).toBeVisible();
   });
 

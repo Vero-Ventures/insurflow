@@ -20,7 +20,7 @@ export const demoClient: Client = {
   firstName: "Alex",
   lastName: "Thompson",
   dateOfBirth: "1982-06-15", // 43 years old
-  province: "ON",
+  state: "ON",
   sex: "M",
   smoker: false,
   healthRating: "preferred",

@@ -148,7 +148,7 @@ export const POST = withApiHandler(
       {
         firstName: clientData.firstName,
         lastName: clientData.lastName,
-        province: clientData.province,
+        state: clientData.state,
         hasSpouse: clientData.hasSpouse ?? false,
         spouseAge: clientData.spouseAge,
         clientIncome: decimalToNumber(clientData.clientIncome),
