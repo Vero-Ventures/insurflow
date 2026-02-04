@@ -37,7 +37,7 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
         <TableRow className="hover:bg-transparent">
           <TableHead>Name</TableHead>
           <TableHead>Age</TableHead>
-          <TableHead>Province</TableHead>
+          <TableHead>State</TableHead>
           <TableHead>Last Updated</TableHead>
           <TableHead>Insurance Needs</TableHead>
           <TableHead>Status</TableHead>

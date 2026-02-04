@@ -161,7 +161,7 @@ test.describe("Client Create UI", () => {
     await page.getByLabel(/last name/i).fill(data.lastName);
     await page.getByLabel(/date of birth/i).fill(data.dateOfBirth);
     await page.getByLabel(/sex/i).selectOption(data.sex);
-    await page.getByLabel(/province/i).selectOption(data.province);
+    await page.getByLabel(/state/i).selectOption(data.province);
     await page.getByLabel(/health rating/i).selectOption(data.healthRating);
   }
 

@@ -317,7 +317,7 @@ function ClientDetailContent() {
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground text-sm">Province</p>
+                <p className="text-muted-foreground text-sm">State</p>
                 <p className="font-medium uppercase">{client.province}</p>
               </div>
               <div>

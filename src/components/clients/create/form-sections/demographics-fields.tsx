@@ -49,7 +49,7 @@ export function DemographicsFields({
       </FormField>
 
       <FormField
-        label="Province"
+        label="State"
         required
         error={errors.province}
         htmlFor="province"
@@ -63,7 +63,7 @@ export function DemographicsFields({
             errors.province ? "border-red-500" : ""
           }`}
         >
-          <option value="">Select province</option>
+          <option value="">Select state</option>
           {PROVINCES.map((prov) => (
             <option key={prov.value} value={prov.value}>
               {prov.label}
