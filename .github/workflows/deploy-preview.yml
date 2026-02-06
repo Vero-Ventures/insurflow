@@ -1,27 +1,19 @@
-name: Deploy Preview
+name: Preview Database Branch
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: preview-${{ github.event.pull_request.number }}
+  group: preview-db-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-env:
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  WORKER_NAME: insurflow-preview-pr-${{ github.event.pull_request.number }}
-
 jobs:
-  deploy-preview:
-    name: Deploy Preview
+  create-neon-branch:
+    name: Create Neon Database Branch
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
       - name: Create Neon Branch
         id: neon-branch
         uses: neondatabase/create-branch-action@v6
@@ -29,6 +21,49 @@ jobs:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.pull_request.number }}
           api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Set DATABASE_URL in Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+        run: |
+          # Get the project ID
+          PROJECT_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/insurflow" | jq -r '.id')
+
+          # Check if DATABASE_URL already exists for this branch
+          EXISTING=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$PROJECT_ID/env" | \
+            jq -r --arg branch "${{ github.head_ref }}" \
+            '.envs[] | select(.key == "DATABASE_URL" and (.gitBranch == $branch)) | .id')
+
+          DB_URL="${{ steps.neon-branch.outputs.db_url_pooled }}"
+
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            # Update existing env var
+            curl -s -X PATCH \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"value\": \"$DB_URL\"}" \
+              "https://api.vercel.com/v10/projects/$PROJECT_ID/env/$EXISTING"
+            echo "Updated existing DATABASE_URL for branch ${{ github.head_ref }}"
+          else
+            # Create new env var for this branch
+            curl -s -X POST \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"DATABASE_URL\",
+                \"value\": \"$DB_URL\",
+                \"type\": \"encrypted\",
+                \"target\": [\"preview\"],
+                \"gitBranch\": \"${{ github.head_ref }}\"
+              }" \
+              "https://api.vercel.com/v10/projects/$PROJECT_ID/env"
+            echo "Created new DATABASE_URL for branch ${{ github.head_ref }}"
+          fi
+
+      - name: Checkout for migrations
+        uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -38,60 +73,29 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Run database migrations on branch
+      - name: Run migrations on Neon branch
         run: bun run db:migrate
         env:
           DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
 
-      - name: Build for Cloudflare Workers
-        env:
-          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
-          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
-          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
-        run: bun run build:cloudflare
-
-      - name: Remove Hyperdrive config for preview
-        run: |
-          # Preview deployments use Neon serverless driver directly via DATABASE_URL,
-          # not Hyperdrive. Remove the hyperdrive block from wrangler.toml.
-          sed -i '/^\[\[hyperdrive\]\]/,/^localConnectionString/d' wrangler.toml
-
-      - name: Deploy Preview Worker
-        env:
-          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          BETTER_AUTH_URL: https://${{ env.WORKER_NAME }}.workers.dev
-          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
-          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
-        run: |
-          npx wrangler deploy \
-            --name "${{ env.WORKER_NAME }}" \
-            --var "DATABASE_URL:$DATABASE_URL" \
-            --var "BETTER_AUTH_SECRET:$BETTER_AUTH_SECRET" \
-            --var "BETTER_AUTH_URL:$BETTER_AUTH_URL" \
-            --var "AXIOM_TOKEN:$AXIOM_TOKEN" \
-            --var "AXIOM_DATASET:$AXIOM_DATASET"
-
       - name: Comment on PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           script: |
-            const workerUrl = `https://${process.env.WORKER_NAME}.workers.dev`;
             const neonBranchUrl = `https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches`;
 
-            const body = `## Preview Deployment Ready
+            const body = `## Database Branch Ready
 
             | Resource | Link |
             |----------|------|
-            | Preview URL | [${workerUrl}](${workerUrl}) |
             | Neon Branch | [preview/pr-${{ github.event.pull_request.number }}](${neonBranchUrl}) |
 
-            This preview has its own isolated database branch. Changes here won't affect production data.
+            This PR has its own isolated database branch. Changes here won't affect production data.
+
+            Vercel will automatically deploy the preview - check the Vercel bot comment for the URL.
 
             ---
-            <sub>Deployed by Cloudflare Workers via GitHub Actions</sub>`;
+            <sub>Database branch created by GitHub Actions</sub>`;
 
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
@@ -100,9 +104,9 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(c => 
-              c.user.type === 'Bot' && 
-              c.body.includes('Preview Deployment Ready')
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('Database Branch Ready')
             );
 
             if (botComment) {

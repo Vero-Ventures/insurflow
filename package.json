@@ -5,12 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "build:cloudflare": "opennextjs-cloudflare build",
     "build:full": "drizzle-kit migrate && next build",
-    "build:full:cloudflare": "drizzle-kit migrate && opennextjs-cloudflare build",
-    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "check": "eslint && tsc --noEmit",
     "verify": "bun run check && bun run test:run && bun run test:e2e && bun run build",
     "sync": "bash scripts/sync-branch.sh",
@@ -38,8 +33,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "knip": "knip",
-    "prepare": "node -e \"if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }\"",
-    "postinstall": "bash scripts/stub-og-wasm.sh"
+    "prepare": "node -e \"if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }\""
   },
   "dependencies": {
     "@axiomhq/js": "^1.4.0",
@@ -47,7 +41,6 @@
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
     "@neondatabase/serverless": "^1.0.2",
-    "@opennextjs/cloudflare": "^1.16.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-navigation-menu": "^1.2.14",
     "@t3-oss/env-nextjs": "0.13.10",
@@ -96,8 +89,7 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
-    "vitest": "^4.0.18",
-    "wrangler": "^4.61.0"
+    "vitest": "^4.0.18"
   },
   "ct3aMetadata": {
     "initVersion": "7.40.0"

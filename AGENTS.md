@@ -17,7 +17,7 @@ This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern
 - **Observability**: Axiom (Structured Logging)
 - **Services** (planned): Stripe (Payments), UploadThing (File Storage), OpenAI/Gemini (AI features)
 - **Runtime**: Bun
-- **DevOps**: GitHub Actions, Cloudflare Workers (CI/CD)
+- **DevOps**: GitHub Actions, Vercel (CI/CD)
 
 ## Project Structure
 
@@ -48,20 +48,19 @@ src/
 ├── types/                  # Shared TypeScript type definitions
 └── styles/globals.css      # Global styles with CSS variables
 
-infra/                      # Infrastructure documentation
-├── main.tf                 # Cloudflare Workers setup reference
-├── provider.tf             # Cloudflare provider configuration
-├── variables.tf            # Input variables reference
+infra/                      # Infrastructure (Terraform)
+├── main.tf                 # Vercel project configuration
+├── provider.tf             # Vercel provider configuration
+├── variables.tf            # Input variables
 ├── outputs.tf              # Output values
 └── terraform.tfvars.example # Example variable values
 
 .github/workflows/          # GitHub Actions
 ├── ci.yml                  # CI pipeline (lint, test, build)
-├── deploy-production.yml   # Production deployment to Cloudflare Workers
-├── deploy-preview.yml      # Preview deployment with Neon branching
-├── cleanup-preview.yml     # Cleanup preview resources on PR close
+├── deploy-preview.yml      # Neon database branching for previews
+├── cleanup-preview.yml     # Cleanup Neon branches on PR close
 ├── codeql.yml              # CodeQL security analysis
-└── security.yml            # Trivy vulnerability scanning
+└── sonarcloud.yml          # SonarCloud analysis
 ```
 
 ## Key Modules
@@ -83,10 +82,7 @@ infra/                      # Infrastructure documentation
 
 - `bun run dev` — start Docker services, push schema, and run HMR dev server
 - `bun run build` — create the production bundle and run type checks
-- `bun run build:cloudflare` — build for Cloudflare Workers using OpenNext
 - `bun run preview` — serve the built app for smoke testing
-- `bun run preview:cloudflare` — build and preview Cloudflare Workers locally
-- `bun run deploy:cloudflare` — build and deploy to Cloudflare Workers
 - `bun run check` — run ESLint and TypeScript without emitting output
 - `bun run verify` — full verification: lint, typecheck, unit tests, e2e tests, build
 - `bun run db:generate` / `bun run db:migrate` — generate Drizzle migrations & apply them
@@ -220,77 +216,61 @@ Drizzle ORM uses two different workflows:
 - Restart dev server after schema or environment changes
 - Do not commit local database artifacts
 
-## Deployment (Cloudflare Workers + GitHub Actions)
+## Deployment (Vercel + GitHub Actions)
 
-InsurFlow deploys to Cloudflare Workers using the `@opennextjs/cloudflare` adapter, which provides full Node.js compatibility via the `nodejs_compat` flag.
+InsurFlow deploys to Vercel with automatic Git integration. Database branching for previews is handled by GitHub Actions.
 
 ### Architecture
 
-| Environment | Worker Name                | URL                                          | Database                     |
-| ----------- | -------------------------- | -------------------------------------------- | ---------------------------- |
-| Production  | `insurflow`                | https://insurflow.workers.dev                | Neon main branch             |
-| Preview     | `insurflow-preview-pr-{N}` | https://insurflow-preview-pr-{N}.workers.dev | Neon `preview/pr-{N}` branch |
+| Environment | URL                                 | Database                     |
+| ----------- | ----------------------------------- | ---------------------------- |
+| Production  | https://insurflow.vercel.app        | Neon main branch             |
+| Preview     | https://insurflow-{hash}.vercel.app | Neon `preview/pr-{N}` branch |
 
 ### Deployment Workflows
 
-**Production** (`.github/workflows/deploy-production.yml`):
+**Production**:
 
-- Triggered on push to `main` branch
-- Runs database migrations
-- Builds with OpenNext (`bun run build:cloudflare`)
-- Deploys via wrangler with secrets
+- Triggered automatically by Vercel on push to `main` branch
+- Vercel runs `bun run build` and deploys
 
-**Preview** (`.github/workflows/deploy-preview.yml`):
+**Preview** (GitHub Actions + Vercel):
 
-- Triggered on PR opened/updated
-- Creates isolated Neon database branch
-- Runs migrations on the branch
-- Deploys as separate Worker with unique name
-- Comments on PR with preview URL and Neon branch link
+- Vercel automatically creates preview deployment on PR
+- GitHub Actions creates Neon database branch and sets DATABASE_URL
+- Runs migrations on the Neon branch
 
 **Cleanup** (`.github/workflows/cleanup-preview.yml`):
 
 - Triggered when PR is closed
-- Deletes the preview Worker
 - Deletes the Neon database branch
 
 ### GitHub Secrets Required
 
 Configure in: Settings → Secrets and variables → Actions → Secrets
 
-| Secret                  | Description                                       |
-| ----------------------- | ------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Cloudflare API token with Workers edit permission |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID                             |
-| `DATABASE_URL`          | Production Neon connection string                 |
-| `BETTER_AUTH_SECRET`    | Session encryption key (min 32 chars)             |
-| `NEON_API_KEY`          | Neon API key for database branching               |
-| `AXIOM_TOKEN`           | (Optional) Axiom logging token                    |
+| Secret             | Description                             |
+| ------------------ | --------------------------------------- |
+| `VERCEL_API_TOKEN` | Vercel API token for env var management |
+| `NEON_API_KEY`     | Neon API key for database branching     |
+| `NEON_PROJECT_ID`  | Neon project ID                         |
 
-### GitHub Variables Required
+### Terraform Variables
 
-Configure in: Settings → Secrets and variables → Actions → Variables
+The Vercel project and environment variables are managed via Terraform in `infra/`.
 
-| Variable          | Description                     |
-| ----------------- | ------------------------------- |
-| `NEON_PROJECT_ID` | Neon project ID                 |
-| `BETTER_AUTH_URL` | `https://insurflow.workers.dev` |
-| `AXIOM_DATASET`   | (Optional) Axiom dataset name   |
-
-### Local Development with Cloudflare
-
-```bash
-# Preview locally (builds and runs Workers runtime)
-bun run preview:cloudflare
-
-# Deploy manually (requires wrangler auth)
-bun run deploy:cloudflare
-```
+| Variable             | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `database_url`       | Production Neon connection string (pooled)          |
+| `better_auth_secret` | Session encryption key (min 32 chars)               |
+| `better_auth_url`    | Production URL (e.g., https://insurflow.vercel.app) |
+| `axiom_token`        | (Optional) Axiom logging token                      |
+| `axiom_dataset`      | (Optional) Axiom dataset name                       |
 
 ### Security Scanning
 
-- **Trivy**: Scans for vulnerabilities in dependencies and IaC misconfigurations
 - **CodeQL**: Static analysis for JavaScript/TypeScript security issues
+- **SonarCloud**: Code quality and security analysis
 - **Dependency Review**: Blocks PRs introducing high-severity vulnerabilities
 
 ## Domain-Specific Concepts
@@ -441,9 +421,9 @@ Modern development requires automated guardrails, not just manual vigilance. We 
 ### 5. Security & Deployment (DevSecOps)
 
 - **Main Branch Protection**: Passing CI, code owner approval, no direct pushes
-- **Vulnerability Scanning**: Trivy (scan for CVEs before deployment)
-- **Deployment Gates**: Cloudflare Workers deployment requires CI pass
-- **Preview Environments**: Isolated Workers per PR with dedicated database branches
+- **Vulnerability Scanning**: CodeQL, SonarCloud (scan for security issues)
+- **Deployment Gates**: Vercel deployment requires CI pass
+- **Preview Environments**: Automatic Vercel previews with dedicated Neon database branches
 
 ### 6. Observability & Analytics
 
