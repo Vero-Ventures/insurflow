@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
@@ -42,9 +42,10 @@ import {
   calculateCompletionStatus,
   getCompletionCount,
 } from "@/lib/client-utils";
+import { COPY_FEEDBACK_DURATION_MS } from "@/lib/constants";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
-import { DebtsSectionRefactored } from "@/components/clients/debts-section-refactored";
-import { AssetsSectionRefactored } from "@/components/clients/assets-section-refactored";
+import { DebtsSection } from "@/components/clients/debts-section";
+import { AssetsSection } from "@/components/clients/assets-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
 import {
   InsuranceNeedsCard,
@@ -63,6 +64,16 @@ function ClientDetailContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [totalAssets, setTotalAssets] = useState(0);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Insurance needs calculation hook
   const {
@@ -136,10 +147,13 @@ function ClientDetailContent() {
       setIsCopied(true);
       toast.success("Client ID copied to clipboard");
 
-      // Reset copied state after 2 seconds
-      setTimeout(() => {
+      // Clear any existing timeout before setting a new one
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(() => {
         setIsCopied(false);
-      }, 2000);
+      }, COPY_FEEDBACK_DURATION_MS);
     } catch {
       toast.error("Failed to copy client ID");
     }
@@ -342,16 +356,10 @@ function ClientDetailContent() {
           </Card>
 
           {/* Assets Section */}
-          <AssetsSectionRefactored
-            clientId={clientId}
-            onTotalsChange={setTotalAssets}
-          />
+          <AssetsSection clientId={clientId} onTotalsChange={setTotalAssets} />
 
           {/* Debts Section */}
-          <DebtsSectionRefactored
-            clientId={clientId}
-            totalAssets={totalAssets}
-          />
+          <DebtsSection clientId={clientId} totalAssets={totalAssets} />
         </TabsContent>
 
         {/* Financial Inputs Tab */}

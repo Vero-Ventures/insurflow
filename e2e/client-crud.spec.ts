@@ -1,12 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 
-/** Response shape returned by createTestClient helper */
-interface TestClientResult {
-  status: number;
-  body: { client?: { id: string }; error?: string };
-}
-
 /** Base URL from environment or default */
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
@@ -42,6 +36,12 @@ function extractSessionCookie(
   }
 
   return nameValue;
+}
+
+/** Response shape returned by createTestClient helper */
+interface TestClientResult {
+  status: number;
+  body: { client?: { id: string }; error?: string };
 }
 
 test.describe("Client CRUD API", () => {

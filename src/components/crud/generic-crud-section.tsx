@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export interface CrudItem {
   id: string;
@@ -79,8 +80,9 @@ export function GenericCrudSection<T extends CrudItem>({
         setItems(itemsData);
         onItemsChange?.(itemsData);
       }
-    } catch (error) {
-      console.error(`Error fetching items:`, error);
+    } catch {
+      // Show error toast so users can distinguish "no items" from "failed to load"
+      toast.error(`Failed to load ${config.title.toLowerCase()}`);
     } finally {
       setIsLoading(false);
     }
