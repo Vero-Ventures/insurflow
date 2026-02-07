@@ -40,8 +40,6 @@ resource "vercel_project" "insurflow" {
   # Disable directory listing
   directory_listing = false
 
-  # Skew protection - keeps old deployments accessible for 24 hours
-  skew_protection = "24 hours"
 }
 
 # =============================================================================
