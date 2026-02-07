@@ -106,21 +106,29 @@ export function InsuranceNeedsChartClient({
     );
   }
 
+  // Hardcoded hex colors are required because Recharts sets `fill` via
+  // SVG DOM attributes, where CSS `var()` functions don't resolve.
+  const CHART_COLORS = {
+    primary: "#3B82F6", // blue-500  (Income Replacement)
+    destructive: "#EF4444", // red-500   (Debt Payoff)
+    warning: "#F59E0B", // amber-500 (Estate Buffer)
+  } as const;
+
   const data: ChartData[] = [
     {
       name: "Income Replacement",
       value: incomeReplacementNeeds,
-      color: "hsl(var(--primary))",
+      color: CHART_COLORS.primary,
     },
     {
       name: "Debt Payoff",
       value: debtPayoffNeeds,
-      color: "hsl(var(--destructive))",
+      color: CHART_COLORS.destructive,
     },
     {
       name: "Estate Buffer",
       value: estateBufferNeeds,
-      color: "hsl(var(--warning))",
+      color: CHART_COLORS.warning,
     },
   ].filter((item) => item.value > 0);
 
@@ -172,10 +180,35 @@ export function InsuranceNeedsChartClient({
                 formatter={(value: number | undefined) =>
                   typeof value === "number" ? formatCurrency(value) : ""
                 }
+                wrapperClassName="print:!hidden"
               />
               <Legend verticalAlign="bottom" height={36} iconType="circle" />
             </PieChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Detailed breakdown — visible only in print */}
+        <div className="mt-4 hidden border-t pt-3 print:block">
+          <div className="space-y-1.5">
+            {data.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center justify-between text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-3 w-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span>{item.name}</span>
+                </div>
+                <span className="font-medium">
+                  {formatCurrency(item.value)} (
+                  {((item.value / grossNeeds) * 100).toFixed(1)}%)
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

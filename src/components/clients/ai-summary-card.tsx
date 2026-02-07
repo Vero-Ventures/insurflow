@@ -19,6 +19,8 @@ interface AISummaryCardProps {
   clientId: string;
   /** Whether to hide the card entirely (e.g., when not enough data) */
   hidden?: boolean;
+  /** Pre-generated letter for demo mode (skips API call, simulates generation) */
+  demoLetter?: string;
 }
 
 interface GenerateLetterResponse {
@@ -39,7 +41,11 @@ interface GenerateLetterError {
  * Allows advisors to generate, view, edit, and regenerate compliance
  * letters explaining insurance recommendations using Gemini AI.
  */
-export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
+export function AISummaryCard({
+  clientId,
+  hidden,
+  demoLetter,
+}: AISummaryCardProps) {
   const [letter, setLetter] = useState<string | null>(null);
   const [editedLetter, setEditedLetter] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,10 +54,12 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
@@ -61,6 +69,19 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
   const generateLetter = useCallback(async () => {
     setIsGenerating(true);
     setError(null);
+
+    // Demo mode: simulate generation delay and return static letter
+    if (demoLetter) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!isMountedRef.current) return;
+      setLetter(demoLetter);
+      setEditedLetter(demoLetter);
+      setGeneratedAt(new Date().toISOString());
+      setIsEditing(false);
+      setIsGenerating(false);
+      toast.success("Letter generated successfully");
+      return;
+    }
 
     try {
       const response = await fetch(`/api/clients/${clientId}/generate-letter`, {
@@ -93,7 +114,7 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
     } finally {
       setIsGenerating(false);
     }
-  }, [clientId]);
+  }, [clientId, demoLetter]);
 
   const handleRegenerate = useCallback(async () => {
     if (letter && editedLetter !== letter) {
@@ -146,8 +167,8 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
   }
 
   return (
-    <Card className="print:border-gray-300 print:shadow-none">
-      <CardHeader className="print:pb-2">
+    <Card className="print:border-none print:shadow-none">
+      <CardHeader className="print:hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
@@ -188,9 +209,9 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
             : 'Generate a professional "Reasons Why" compliance letter using AI'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="print:p-0">
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300 print:hidden">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">Generation failed</p>
@@ -222,7 +243,7 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
                 placeholder="Edit the generated letter..."
               />
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-white p-4 font-serif leading-relaxed whitespace-pre-wrap dark:bg-gray-950">
+              <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-white p-4 font-serif leading-relaxed whitespace-pre-wrap dark:bg-gray-950 print:rounded-none print:border-none print:bg-transparent print:p-0 print:text-black">
                 {letter}
               </div>
             )}
@@ -245,7 +266,7 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-col items-center justify-center py-8 text-center print:hidden">
             <Sparkles className="text-muted-foreground mb-4 h-12 w-12" />
             <p className="text-muted-foreground mb-4 max-w-md text-sm">
               Generate a professional &quot;Reasons Why&quot; letter that

@@ -36,3 +36,11 @@ production_branch = "main"
 # Get token from: https://app.axiom.co/settings/tokens
 # axiom_token   = ""
 # axiom_dataset = "insurflow"
+
+# =============================================================================
+# AI/LLM Configuration (optional)
+# =============================================================================
+
+# Gemini API Key (for AI-powered features)
+# Get your key from: https://aistudio.google.com/apikey
+# gemini_api_key = ""
