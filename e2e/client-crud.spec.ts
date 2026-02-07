@@ -10,21 +10,38 @@ interface TestClientResult {
 /** Base URL from environment or default */
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
+/** Origin extracted from BASE_URL for use in Origin headers */
+const BASE_ORIGIN = new URL(BASE_URL).origin;
+
+/** Session cookie name used by Better Auth */
+const SESSION_COOKIE_NAME = "better_auth.session_token";
+
 /**
- * Parse session cookie from set-cookie header.
- * The set-cookie header includes attributes like Path, HttpOnly, etc.
- * We only need the "name=value" portion for the Cookie header.
+ * Extract session cookie from sign-in response headers.
+ * Uses headersArray() to handle multiple Set-Cookie headers correctly.
  */
-function parseSessionCookie(setCookieHeader: string): string {
-  // set-cookie can have multiple cookies separated by commas, but session cookies
-  // typically contain semicolon-separated attributes. We want "name=value" only.
-  // Example: "better_auth.session_token=abc123; Path=/; HttpOnly; Secure"
-  // We extract: "better_auth.session_token=abc123"
-  const cookie = setCookieHeader.split(";")[0];
-  if (!cookie) {
-    throw new Error("Invalid set-cookie header: no cookie value found");
+function extractSessionCookie(
+  headers: Array<{ name: string; value: string }>,
+): string {
+  const sessionCookieHeader = headers.find(
+    (h) =>
+      h.name.toLowerCase() === "set-cookie" &&
+      h.value.startsWith(`${SESSION_COOKIE_NAME}=`),
+  );
+
+  if (!sessionCookieHeader) {
+    throw new Error(
+      `Session cookie '${SESSION_COOKIE_NAME}' not found in response`,
+    );
   }
-  return cookie;
+
+  // Extract only "name=value" portion, stripping attributes like Path, HttpOnly, etc.
+  const nameValue = sessionCookieHeader.value.split(";")[0];
+  if (!nameValue) {
+    throw new Error("Invalid session cookie: no value found");
+  }
+
+  return nameValue;
 }
 
 test.describe("Client CRUD API", () => {
@@ -74,7 +91,7 @@ test.describe("Client CRUD API", () => {
     const signUpResponse = await request.post("/api/auth/sign-up/email", {
       headers: {
         "Content-Type": "application/json",
-        Origin: BASE_URL,
+        Origin: BASE_ORIGIN,
       },
       data: {
         email,
@@ -94,7 +111,7 @@ test.describe("Client CRUD API", () => {
     const signInResponse = await request.post("/api/auth/sign-in/email", {
       headers: {
         "Content-Type": "application/json",
-        Origin: BASE_URL,
+        Origin: BASE_ORIGIN,
       },
       data: {
         email,
@@ -109,26 +126,27 @@ test.describe("Client CRUD API", () => {
       );
     }
 
-    const setCookieHeader = signInResponse.headers()["set-cookie"];
-    if (!setCookieHeader) {
-      throw new Error("No session cookie received from sign-in response");
-    }
-
-    // Parse the cookie properly - extract only "name=value" portion
-    authCookie = parseSessionCookie(setCookieHeader);
+    // Extract session cookie using headersArray() for reliable multi-cookie handling
+    authCookie = extractSessionCookie(signInResponse.headersArray());
   });
 
   // Cleanup: Delete all created clients after tests complete
   test.afterAll(async ({ request }) => {
     for (const id of createdClientIds) {
       try {
-        await request.delete(`/api/clients/${id}`, {
+        const response = await request.delete(`/api/clients/${id}`, {
           headers: {
             Cookie: authCookie,
           },
         });
-      } catch {
-        // Ignore cleanup errors (client may already be deleted)
+        if (!response.ok()) {
+          console.warn(
+            `Cleanup: Failed to delete client ${id}: ${response.status()}`,
+          );
+        }
+      } catch (error) {
+        // Network errors during cleanup - log but don't fail
+        console.warn(`Cleanup: Error deleting client ${id}:`, error);
       }
     }
   });
