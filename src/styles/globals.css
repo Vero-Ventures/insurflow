@@ -355,6 +355,39 @@
     display: none !important;
   }
 
+  /* Force light mode colors in print, even when user is in dark mode */
+  .dark {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0.024 264.364);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0.024 264.364);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0.024 264.364);
+    --primary: oklch(0.623 0.214 259.1);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.968 0.007 264.536);
+    --secondary-foreground: oklch(0.208 0.042 265.755);
+    --muted: oklch(0.968 0.007 264.536);
+    --muted-foreground: oklch(0.554 0.046 264.436);
+    --accent: oklch(0.968 0.007 264.536);
+    --accent-foreground: oklch(0.208 0.042 265.755);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.928 0.006 264.531);
+    --input: oklch(0.928 0.006 264.531);
+    --ring: oklch(0.623 0.214 259.1);
+    --chart-1: oklch(0.623 0.214 259.1);
+    --chart-2: oklch(0.707 0.165 254.624);
+    --chart-3: oklch(0.809 0.105 251.813);
+    --chart-4: oklch(0.882 0.059 254.128);
+    --chart-5: oklch(0.932 0.032 255.508);
+    --success: oklch(0.696 0.17 162.48);
+    --warning: oklch(0.769 0.188 70.08);
+    --asset: oklch(0.696 0.17 162.48);
+    --liability: oklch(0.637 0.237 25.331);
+    --insurance: oklch(0.627 0.265 303.9);
+    --tax: oklch(0.769 0.188 70.08);
+  }
+
   /* Reset body for print */
   body {
     background: white !important;
