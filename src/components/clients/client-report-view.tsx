@@ -49,6 +49,8 @@ interface ClientReportViewProps {
   demoDebts?: Debt[];
   /** Pre-loaded insurance result for demo mode (skips calculation) */
   demoInsuranceResult?: InsuranceNeedsResult;
+  /** Pre-generated AI letter for demo mode (skips API call) */
+  demoLetter?: string;
 }
 
 /**
@@ -64,6 +66,7 @@ export function ClientReportView({
   demoAssets,
   demoDebts,
   demoInsuranceResult,
+  demoLetter,
 }: ClientReportViewProps) {
   const isDemo = !!(demoAssets && demoDebts && demoInsuranceResult);
   const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
@@ -335,7 +338,7 @@ export function ClientReportView({
         <h3 className="mb-4 text-lg font-semibold print:text-base">
           Insurance Needs Analysis
         </h3>
-        <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-1">
+        <div className="grid gap-4 lg:grid-cols-2 print:block print:space-y-4">
           <InsuranceNeedsCard
             result={insuranceResult}
             isLoading={!isDemo && isInsuranceLoading}
@@ -355,7 +358,7 @@ export function ClientReportView({
 
       {/* AI Recommendation Letter */}
       <div className="print:break-before-page">
-        <AISummaryCard clientId={clientId} />
+        <AISummaryCard clientId={clientId} demoLetter={demoLetter} />
       </div>
 
       {/* Report Footer */}

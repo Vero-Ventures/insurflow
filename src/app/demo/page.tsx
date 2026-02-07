@@ -10,6 +10,7 @@ import {
   demoAssets,
   demoDebts,
   demoInsuranceResult,
+  demoLetter,
 } from "@/lib/demo-data";
 
 /**
@@ -54,6 +55,7 @@ export default function DemoPage() {
         demoAssets={demoAssets}
         demoDebts={demoDebts}
         demoInsuranceResult={demoInsuranceResult}
+        demoLetter={demoLetter}
       />
 
       {/* CTA Section */}
