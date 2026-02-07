@@ -1,7 +1,7 @@
 /**
  * Run `build` with `SKIP_ENV_VALIDATION` to skip env validation.
  */
-import "./src/env.js";
+import "./src/env.ts";
 
 /** @type {import("next").NextConfig} */
 const config = {
