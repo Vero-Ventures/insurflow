@@ -39,17 +39,17 @@ export default function Home() {
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] flex-col">
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 px-4 py-12">
+      <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-12 dark:from-slate-900 dark:to-slate-800">
         <div className="flex max-w-2xl flex-col items-center text-center">
           <Badge variant="secondary" className="mb-6">
             Pre-Alpha Demo
           </Badge>
 
-          <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="text-foreground mb-3 text-3xl font-bold tracking-tight sm:text-4xl">
             InsurFlow
           </h1>
 
-          <p className="mb-6 max-w-lg text-base text-slate-300">
+          <p className="text-muted-foreground mb-6 max-w-lg text-base">
             AI-powered financial needs analysis for life insurance advisors.
             Modernizing how advisors analyze client needs and generate
             compliance documentation.

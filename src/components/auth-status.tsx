@@ -21,18 +21,10 @@ export function AuthStatus() {
         <Button asChild>
           <Link href="/auth/sign-up">Get Started</Link>
         </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-        >
+        <Button asChild variant="outline">
           <Link href="/auth/sign-in">Sign in</Link>
         </Button>
-        <Button
-          asChild
-          variant="ghost"
-          className="text-white/70 hover:bg-white/10 hover:text-white"
-        >
+        <Button asChild variant="ghost">
           <Link href="/demo">
             <Play className="mr-1.5 h-4 w-4" />
             Try Demo

@@ -57,11 +57,11 @@ export default function DemoPage() {
       />
 
       {/* CTA Section */}
-      <div className="mt-8 rounded-lg border bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-center text-white print:hidden">
-        <h2 className="mb-2 text-xl font-semibold">
+      <div className="bg-muted mt-8 rounded-lg border p-6 text-center print:hidden">
+        <h2 className="text-foreground mb-2 text-xl font-semibold">
           Ready to create your own analyses?
         </h2>
-        <p className="text-muted mb-4 text-sm text-slate-300">
+        <p className="text-muted-foreground mb-4 text-sm">
           Sign up for free and start building financial needs reports for your
           clients.
         </p>
@@ -69,11 +69,7 @@ export default function DemoPage() {
           <Button asChild>
             <Link href="/auth/sign-up">Get Started Free</Link>
           </Button>
-          <Button
-            variant="outline"
-            asChild
-            className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-          >
+          <Button variant="outline" asChild>
             <Link href="/auth/sign-in">Sign In</Link>
           </Button>
         </div>

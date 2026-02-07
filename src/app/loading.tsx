@@ -4,10 +4,10 @@
  */
 export default function Loading() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800">
+    <main className="bg-background flex min-h-screen flex-col items-center justify-center">
       <div className="flex flex-col items-center gap-4" role="status">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-600 border-t-white" />
-        <p className="text-sm text-slate-400">Loading...</p>
+        <div className="border-muted-foreground/30 border-t-primary h-10 w-10 animate-spin rounded-full border-4" />
+        <p className="text-muted-foreground text-sm">Loading...</p>
       </div>
     </main>
   );

@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Settings, Sun, Moon } from "lucide-react";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
+import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,12 @@ export function AppNavigationMenu() {
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const user = session?.user;
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="bg-background sticky top-0 z-50 w-full border-b">
@@ -94,8 +101,23 @@ export function AppNavigationMenu() {
           </nav>
         </div>
 
-        {/* Right side - Auth */}
+        {/* Right side - Theme toggle & Auth */}
         <div className="flex items-center gap-3">
+          {mounted && (
+            <button
+              onClick={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
+              className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-2 transition-colors"
+              aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
+          )}
           <SignedIn>
             <Link
               href="/settings"
