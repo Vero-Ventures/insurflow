@@ -21,22 +21,23 @@ jobs:
         continue-on-error: true
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          GIT_BRANCH: ${{ github.head_ref }}
         run: |
           # Get the project ID
           PROJECT_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v9/projects/insurflow" | jq -r '.id')
 
-          # Find and delete the branch-specific DATABASE_URL env var
+          # Find and delete the branch-specific preview DATABASE_URL env var
           ENV_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v10/projects/$PROJECT_ID/env" | \
-            jq -r --arg branch "${{ github.head_ref }}" \
-            '.envs[] | select(.key == "DATABASE_URL" and (.gitBranch == $branch)) | .id')
+            jq -r --arg branch "$GIT_BRANCH" \
+            '.envs[] | select(.key == "DATABASE_URL" and .gitBranch == $branch and (.target | index("preview"))) | .id')
 
           if [ -n "$ENV_ID" ] && [ "$ENV_ID" != "null" ]; then
             curl -s -X DELETE \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
               "https://api.vercel.com/v10/projects/$PROJECT_ID/env/$ENV_ID"
-            echo "Deleted DATABASE_URL env var for branch ${{ github.head_ref }}"
+            echo "Deleted DATABASE_URL env var for branch $GIT_BRANCH"
           fi
 
       - name: Cleanup Summary

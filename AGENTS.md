@@ -222,10 +222,10 @@ InsurFlow deploys to Vercel with automatic Git integration. Database branching f
 
 ### Architecture
 
-| Environment | URL                                 | Database                     |
-| ----------- | ----------------------------------- | ---------------------------- |
-| Production  | https://insurflow.vercel.app        | Neon main branch             |
-| Preview     | https://insurflow-{hash}.vercel.app | Neon `preview/pr-{N}` branch |
+| Environment | URL                                                   | Database                     |
+| ----------- | ----------------------------------------------------- | ---------------------------- |
+| Production  | https://insurflow.vercel.app                          | Neon main branch             |
+| Preview     | https://insurflow-{git-hash}-{vercel-team}.vercel.app | Neon `preview/pr-{N}` branch |
 
 ### Deployment Workflows
 

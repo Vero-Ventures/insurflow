@@ -1,5 +1,4 @@
-import { pgTable, pgSequence, pgEnum } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgSequence, pgEnum } from "drizzle-orm/pg-core";
 
 export const assetType = pgEnum("asset_type", [
   "rrsp",

@@ -25,41 +25,42 @@ jobs:
       - name: Set DATABASE_URL in Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          DB_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
+          GIT_BRANCH: ${{ github.head_ref }}
         run: |
           # Get the project ID
           PROJECT_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v9/projects/insurflow" | jq -r '.id')
 
-          # Check if DATABASE_URL already exists for this branch
+          # Check if DATABASE_URL already exists for this branch (filter by preview target too)
           EXISTING=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v10/projects/$PROJECT_ID/env" | \
-            jq -r --arg branch "${{ github.head_ref }}" \
-            '.envs[] | select(.key == "DATABASE_URL" and (.gitBranch == $branch)) | .id')
-
-          DB_URL="${{ steps.neon-branch.outputs.db_url_pooled }}"
+            jq -r --arg branch "$GIT_BRANCH" \
+            '.envs[] | select(.key == "DATABASE_URL" and .gitBranch == $branch and (.target | index("preview"))) | .id')
 
           if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
-            # Update existing env var
+            # Update existing env var - use jq to safely encode JSON
+            JSON_PAYLOAD=$(jq -n --arg value "$DB_URL" '{value: $value}')
             curl -s -X PATCH \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"value\": \"$DB_URL\"}" \
+              -d "$JSON_PAYLOAD" \
               "https://api.vercel.com/v10/projects/$PROJECT_ID/env/$EXISTING"
-            echo "Updated existing DATABASE_URL for branch ${{ github.head_ref }}"
+            echo "Updated existing DATABASE_URL for branch $GIT_BRANCH"
           else
-            # Create new env var for this branch
+            # Create new env var for this branch - use jq to safely encode JSON
+            JSON_PAYLOAD=$(jq -n \
+              --arg key "DATABASE_URL" \
+              --arg value "$DB_URL" \
+              --arg type "encrypted" \
+              --arg gitBranch "$GIT_BRANCH" \
+              '{key: $key, value: $value, type: $type, target: ["preview"], gitBranch: $gitBranch}')
             curl -s -X POST \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{
-                \"key\": \"DATABASE_URL\",
-                \"value\": \"$DB_URL\",
-                \"type\": \"encrypted\",
-                \"target\": [\"preview\"],
-                \"gitBranch\": \"${{ github.head_ref }}\"
-              }" \
+              -d "$JSON_PAYLOAD" \
               "https://api.vercel.com/v10/projects/$PROJECT_ID/env"
-            echo "Created new DATABASE_URL for branch ${{ github.head_ref }}"
+            echo "Created new DATABASE_URL for branch $GIT_BRANCH"
           fi
 
       - name: Checkout for migrations
@@ -68,7 +69,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.2.22
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
