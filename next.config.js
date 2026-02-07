@@ -1,13 +1,7 @@
 /**
- * Run `build` or `build:cloudflare` with `SKIP_ENV_VALIDATION` to skip env validation.
+ * Run `build` with `SKIP_ENV_VALIDATION` to skip env validation.
  */
 import "./src/env.js";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-// Initialize OpenNext for local development with Cloudflare bindings
-if (process.env.NODE_ENV === "development") {
-  initOpenNextCloudflareForDev();
-}
 
 /** @type {import("next").NextConfig} */
 const config = {
@@ -162,12 +156,10 @@ const config = {
   // Disable powered by header
   poweredByHeader: false,
 
-  // Images optimization - use external loader to reduce bundle
+  // Images optimization
   images: {
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 86400,
-    // Use unoptimized in Workers to reduce bundle size
-    unoptimized: process.env.NODE_ENV === "production",
   },
 };
 

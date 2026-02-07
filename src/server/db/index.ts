@@ -10,7 +10,6 @@ import { neon } from "@neondatabase/serverless";
 import postgres from "postgres";
 import { cache } from "react";
 
-import type { CloudflareEnv } from "@/../worker-configuration.d";
 import * as schema from "./schema";
 
 type Database =
@@ -20,77 +19,32 @@ type Database =
 /**
  * Database connection factory with environment-aware driver selection.
  *
- * This follows best practices from OpenNext, Neon, and Cloudflare documentation:
+ * 1. **Production & Preview (Vercel)**:
+ *    Uses Neon serverless driver via HTTP for optimal edge performance.
+ *    Neon provides built-in connection pooling.
  *
- * 1. **Production (Cloudflare Workers with Hyperdrive)**:
- *    Uses `postgres-js` with Hyperdrive's connection string from `getCloudflareContext()`.
- *    Hyperdrive provides edge connection pooling for lowest latency.
- *
- * 2. **Preview Deployments (Cloudflare Workers without Hyperdrive)**:
- *    Uses Neon serverless driver via HTTP for direct database access.
- *    Each PR preview gets its own Neon branch via DATABASE_URL env var.
- *
- * 3. **Local Development**:
+ * 2. **Local Development**:
  *    Uses `postgres-js` for TCP connections to local Docker Postgres.
  *
- * IMPORTANT: Per OpenNext docs, database clients must be created at request time,
- * not at module initialization time. The `cache()` wrapper ensures we reuse the
- * same client within a single React request context.
+ * The `cache()` wrapper ensures we reuse the same client within a single
+ * React request context.
  *
- * @see https://opennext.js.org/cloudflare/howtos/db
- * @see https://neon.tech/docs/guides/cloudflare-workers
- * @see https://developers.cloudflare.com/hyperdrive/
+ * @see https://neon.tech/docs/guides/vercel
  */
 export const getDb = cache((): Database => {
-  // Get DATABASE_URL first - it's used for local dev and preview deployments
   const connectionString = process.env.DATABASE_URL;
 
-  // Try to get Hyperdrive binding from Cloudflare context (production only)
-  // Skip this in development to avoid issues with placeholder Hyperdrive IDs
-  if (process.env.NODE_ENV === "production") {
-    try {
-      // Dynamic import to avoid issues during build/SSG
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { getCloudflareContext } = require("@opennextjs/cloudflare");
-      const context = getCloudflareContext() as
-        | { env?: CloudflareEnv }
-        | undefined;
-
-      const hyperdriveConnectionString =
-        context?.env?.HYPERDRIVE?.connectionString;
-      if (hyperdriveConnectionString) {
-        // Production: Use postgres-js with Hyperdrive (edge connection pooling)
-        // Hyperdrive works with postgres-js - see https://developers.cloudflare.com/hyperdrive/configuration/connect-to-postgres/
-        const client = postgres(hyperdriveConnectionString, {
-          // Hyperdrive handles connection pooling, so we use a single connection
-          max: 1,
-          // Hyperdrive requires prepared statements to be disabled
-          prepare: false,
-        });
-        return drizzlePostgresJs(client, { schema });
-      }
-    } catch {
-      // Not in Cloudflare Workers context or Hyperdrive not configured
-      // Fall through to DATABASE_URL-based methods
-    }
-  }
-
-  // Require DATABASE_URL for non-Hyperdrive environments
   if (!connectionString) {
-    throw new Error(
-      "DATABASE_URL environment variable is required when Hyperdrive is not available",
-    );
+    throw new Error("DATABASE_URL environment variable is required");
   }
 
-  // Preview deployments: Use Neon serverless driver (HTTP-based)
-  // This handles Neon branch URLs for PR previews
+  // Production/Preview: Use Neon serverless driver (HTTP-based)
   if (connectionString.includes("neon.tech")) {
     const sql = neon(connectionString);
     return drizzleNeonHttp(sql, { schema });
   }
 
   // Local development: Use postgres-js for Docker Postgres
-  // Limit connection pool size to prevent "too many clients" during tests
   const client = postgres(connectionString, {
     max: 10,
     idle_timeout: 20,

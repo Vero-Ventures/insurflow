@@ -3,18 +3,14 @@ import { z } from "zod";
 
 /**
  * Derive the Better Auth URL from environment variables.
- * Priority: BETTER_AUTH_URL > CF_PAGES_URL > VERCEL_URL > localhost fallback
- * This allows preview deployments to work without explicit BETTER_AUTH_URL.
+ * Priority: BETTER_AUTH_URL > VERCEL_URL > localhost fallback
+ * This allows Vercel preview deployments to work without explicit BETTER_AUTH_URL.
  */
 function getBetterAuthUrl() {
   if (process.env.BETTER_AUTH_URL) {
     return process.env.BETTER_AUTH_URL;
   }
-  // Cloudflare Pages provides CF_PAGES_URL for preview deployments
-  if (process.env.CF_PAGES_URL) {
-    return process.env.CF_PAGES_URL;
-  }
-  // Vercel fallback (kept for compatibility)
+  // Vercel provides VERCEL_URL for preview deployments
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -34,12 +30,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.string().url(),
     BETTER_AUTH_GITHUB_CLIENT_ID: z.string().optional(),
     BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string().optional(),
-    // DATABASE_URL is optional in production because we use Hyperdrive instead
-    // In development/preview, it's required for local Postgres or Neon branches
-    DATABASE_URL:
-      process.env.NODE_ENV === "production"
-        ? z.string().url().optional()
-        : z.string().url(),
+    DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

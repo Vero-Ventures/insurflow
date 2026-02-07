@@ -1,34 +1,24 @@
 # =============================================================================
-# Variables Reference
-# =============================================================================
-#
-# These variables document the configuration needed for InsurFlow deployment.
-# Actual values are managed via GitHub Secrets/Variables, not Terraform.
-#
-# See main.tf for complete setup instructions.
+# Variables
 # =============================================================================
 
-# =============================================================================
-# Cloudflare Configuration
-# =============================================================================
-
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token with Workers edit permissions"
+variable "vercel_api_token" {
+  description = "Vercel API token from https://vercel.com/account/tokens"
   type        = string
   sensitive   = true
-  default     = null
+  default     = null # Will use VERCEL_API_TOKEN env var if not set
 }
 
-variable "cloudflare_account_id" {
-  description = "Cloudflare Account ID (found in dashboard sidebar)"
+variable "github_repo" {
+  description = "GitHub repository in format 'org/repo'"
   type        = string
-  default     = ""
+  default     = "Vero-Ventures/insurflow"
 }
 
-variable "project_name" {
-  description = "Cloudflare Workers project name"
+variable "production_branch" {
+  description = "Git branch for production deployments"
   type        = string
-  default     = "insurflow"
+  default     = "main"
 }
 
 # =============================================================================
@@ -36,23 +26,14 @@ variable "project_name" {
 # =============================================================================
 
 variable "database_url" {
-  description = "PostgreSQL connection string (Neon production)"
+  description = "PostgreSQL connection string (Neon)"
   type        = string
   sensitive   = true
-  default     = ""
-}
 
-variable "neon_project_id" {
-  description = "Neon project ID for database branching"
-  type        = string
-  default     = ""
-}
-
-variable "neon_api_key" {
-  description = "Neon API key for branch management"
-  type        = string
-  sensitive   = true
-  default     = ""
+  validation {
+    condition     = can(regex("^postgres(ql)?://", var.database_url))
+    error_message = "DATABASE_URL must be a valid PostgreSQL connection string starting with 'postgresql://' or 'postgres://'"
+  }
 }
 
 # =============================================================================
@@ -60,16 +41,32 @@ variable "neon_api_key" {
 # =============================================================================
 
 variable "better_auth_secret" {
-  description = "Secret key for Better Auth session encryption (min 32 chars)"
+  description = "Secret key for Better Auth session encryption"
   type        = string
   sensitive   = true
-  default     = ""
+
+  validation {
+    condition     = length(var.better_auth_secret) >= 32
+    error_message = "BETTER_AUTH_SECRET must be at least 32 characters for security. Generate with: openssl rand -base64 32"
+  }
 }
 
 variable "better_auth_url" {
-  description = "Base URL for Better Auth (e.g., https://insurflow.workers.dev)"
+  description = "Base URL for Better Auth (e.g., https://insurflow.vercel.app)"
   type        = string
-  default     = "https://insurflow.workers.dev"
+}
+
+variable "github_client_id" {
+  description = "GitHub OAuth App Client ID (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "github_client_secret" {
+  description = "GitHub OAuth App Client Secret (optional)"
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 # =============================================================================
@@ -87,29 +84,4 @@ variable "axiom_dataset" {
   description = "Axiom dataset name"
   type        = string
   default     = "insurflow"
-}
-
-variable "sentry_dsn" {
-  description = "Sentry DSN for server-side error tracking"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "next_public_sentry_dsn" {
-  description = "Sentry DSN for client-side error tracking"
-  type        = string
-  default     = ""
-}
-
-variable "next_public_posthog_key" {
-  description = "PostHog project API key"
-  type        = string
-  default     = ""
-}
-
-variable "next_public_posthog_host" {
-  description = "PostHog instance URL"
-  type        = string
-  default     = "https://app.posthog.com"
 }

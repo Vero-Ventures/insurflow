@@ -1,31 +1,26 @@
 # =============================================================================
-# Terraform Variables for InsurFlow (Cloudflare Pages)
+# Terraform Variables for InsurFlow (Vercel)
 # =============================================================================
 # Copy this file to terraform.tfvars and fill in the values
 # NEVER commit terraform.tfvars to version control
 # =============================================================================
 
-# Cloudflare Configuration
-# Get your API token from: https://dash.cloudflare.com/profile/api-tokens
-# Required permissions: Account.Cloudflare Pages (Edit)
-# cloudflare_api_token  = "your-cloudflare-api-token"
+# Vercel Configuration
+# Get your API token from: https://vercel.com/account/tokens
+# vercel_api_token = "your-vercel-api-token"
 
-# Get your Account ID from: Cloudflare Dashboard → any domain → Overview → right sidebar
-cloudflare_account_id = "your-account-id"
-
-# Project Configuration
-project_name      = "insurflow"
+# GitHub Repository
 github_repo       = "Vero-Ventures/insurflow"
 production_branch = "main"
 
 # Database (Neon PostgreSQL)
-# Get connection string from Neon dashboard
+# Get the POOLED connection string from Neon dashboard
 # database_url = "postgresql://user:pass@host/db?sslmode=require"
 
 # Better Auth Configuration
 # Generate a secure secret: openssl rand -base64 32
 # better_auth_secret = "your-32-char-secret"
-# better_auth_url    = "https://insurflow.pages.dev"
+# better_auth_url    = "https://insurflow.vercel.app"
 
 # GitHub OAuth (optional)
 # Create OAuth App: https://github.com/settings/developers
@@ -33,7 +28,7 @@ production_branch = "main"
 # github_client_secret = ""
 
 # =============================================================================
-# Observability & Analytics (optional but recommended)
+# Observability (optional)
 # =============================================================================
 
 # Axiom (Structured Logging)
@@ -41,19 +36,3 @@ production_branch = "main"
 # Get token from: https://app.axiom.co/settings/tokens
 # axiom_token   = ""
 # axiom_dataset = "insurflow"
-# axiom_org_id  = ""
-
-# Sentry (Error Tracking)
-# Sign up at: https://sentry.io
-# Get DSN from: https://sentry.io/settings/projects/
-# sentry_dsn                = ""
-# next_public_sentry_dsn    = ""
-# sentry_auth_token         = ""  # For source map uploads
-# sentry_org                = ""
-# sentry_project            = ""
-
-# PostHog (Product Analytics)
-# Sign up at: https://posthog.com
-# Get key from: https://app.posthog.com/project/settings
-# next_public_posthog_key  = ""
-# next_public_posthog_host = "https://app.posthog.com"
