@@ -11,10 +11,11 @@ test.describe("Home Page", () => {
   test("should have navigation to auth pages", async ({ page }) => {
     await page.goto("/");
 
-    // Verify sign-in link exists
-    const signInLink = page.getByRole("link", { name: /sign in/i });
-    if (await signInLink.isVisible()) {
-      await expect(signInLink).toHaveAttribute("href", /auth\/sign-in/);
-    }
+    // Verify sign-in link exists in the header navigation and is visible
+    const signInLink = page
+      .getByRole("banner")
+      .getByRole("link", { name: /sign in/i });
+    await expect(signInLink).toBeVisible();
+    await expect(signInLink).toHaveAttribute("href", /auth\/sign-in/);
   });
 });
