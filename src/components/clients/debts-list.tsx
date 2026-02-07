@@ -6,17 +6,10 @@ import {
 } from "@/components/crud/generic-crud-table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/constants";
-import type { Debt } from "../../types/debt";
+import { DEBT_TYPE_LABELS, type DEBT_TYPES } from "@/lib/validation/debt";
+import type { Debt } from "@/types/debt";
 
-const DEBT_TYPE_LABELS: Record<string, string> = {
-  mortgage: "Mortgage",
-  car_loan: "Car Loan",
-  personal_loan: "Personal Loan",
-  credit_card: "Credit Card",
-  line_of_credit: "Line of Credit",
-  student_loan: "Student Loan",
-  other: "Other",
-};
+type DebtType = (typeof DEBT_TYPES)[number];
 
 const columns: ColumnDef<Debt>[] = [
   {
@@ -26,11 +19,14 @@ const columns: ColumnDef<Debt>[] = [
   {
     key: "type",
     header: "Type",
-    render: (value): React.ReactNode => (
-      <Badge variant="secondary">
-        {DEBT_TYPE_LABELS[String(value) as string] || String(value)}
-      </Badge>
-    ),
+    render: (value): React.ReactNode => {
+      const typeKey = String(value) as DebtType;
+      return (
+        <Badge variant="secondary">
+          {DEBT_TYPE_LABELS[typeKey] || String(value)}
+        </Badge>
+      );
+    },
   },
   {
     key: "currentBalance",

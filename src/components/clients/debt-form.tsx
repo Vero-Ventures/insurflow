@@ -13,7 +13,7 @@ import {
 import { GenericCrudForm } from "@/components/crud/generic-crud-form";
 import { toast } from "sonner";
 import { DEBT_TYPE_OPTIONS } from "@/lib/validation/debt";
-import type { Debt } from "../../types/debt";
+import type { Debt } from "@/types/debt";
 
 interface DebtFormProps {
   clientId: string;
@@ -71,9 +71,11 @@ export function DebtForm({
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const errorData = await response.json();
         throw new Error(
-          error.message || `Failed to ${debt ? "update" : "create"} debt`,
+          errorData.error ||
+            errorData.message ||
+            `Failed to ${debt ? "update" : "create"} debt`,
         );
       }
 

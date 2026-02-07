@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { GenericCrudSection } from "@/components/crud/generic-crud-section";
 import { AssetsList } from "@/components/clients/assets-list";
 import { AssetForm } from "@/components/clients/asset-form";
@@ -15,17 +16,20 @@ export function AssetsSection({
   clientId,
   onTotalsChange,
 }: AssetsSectionProps) {
-  const handleItemsChange = (items: Asset[]) => {
-    const totalAssets = items.reduce((sum, asset) => {
-      const value =
-        typeof asset.currentValue === "string"
-          ? parseFloat(asset.currentValue)
-          : asset.currentValue;
-      return sum + (isNaN(value) ? 0 : value);
-    }, 0);
+  const handleItemsChange = useCallback(
+    (items: Asset[]) => {
+      const totalAssets = items.reduce((sum, asset) => {
+        const value =
+          typeof asset.currentValue === "string"
+            ? parseFloat(asset.currentValue)
+            : asset.currentValue;
+        return sum + (isNaN(value) ? 0 : value);
+      }, 0);
 
-    onTotalsChange?.(totalAssets);
-  };
+      onTotalsChange?.(totalAssets);
+    },
+    [onTotalsChange],
+  );
 
   return (
     <GenericCrudSection<Asset>

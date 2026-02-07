@@ -44,43 +44,6 @@ interface TestClientResult {
   body: { client?: { id: string }; error?: string };
 }
 
-/** Base URL from environment or default */
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-
-/** Origin extracted from BASE_URL for use in Origin headers */
-const BASE_ORIGIN = new URL(BASE_URL).origin;
-
-/** Session cookie name used by Better Auth */
-const SESSION_COOKIE_NAME = "better_auth.session_token";
-
-/**
- * Extract session cookie from sign-in response headers.
- * Uses headersArray() to handle multiple Set-Cookie headers correctly.
- */
-function extractSessionCookie(
-  headers: Array<{ name: string; value: string }>,
-): string {
-  const sessionCookieHeader = headers.find(
-    (h) =>
-      h.name.toLowerCase() === "set-cookie" &&
-      h.value.startsWith(`${SESSION_COOKIE_NAME}=`),
-  );
-
-  if (!sessionCookieHeader) {
-    throw new Error(
-      `Session cookie '${SESSION_COOKIE_NAME}' not found in response`,
-    );
-  }
-
-  // Extract only "name=value" portion, stripping attributes like Path, HttpOnly, etc.
-  const nameValue = sessionCookieHeader.value.split(";")[0];
-  if (!nameValue) {
-    throw new Error("Invalid session cookie: no value found");
-  }
-
-  return nameValue;
-}
-
 test.describe("Client CRUD API", () => {
   let authCookie: string;
   let clientId: string;
