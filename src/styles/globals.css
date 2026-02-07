@@ -355,7 +355,10 @@
     display: none !important;
   }
 
-  /* Force light mode colors in print, even when user is in dark mode */
+  /* ⚠️  MAINTENANCE WARNING: This block mirrors `:root` light theme values.
+     When adding or changing light theme variables above, you MUST also update
+     this block to keep print output consistent for dark-mode users.
+     If they diverge, dark-mode users will get incorrect colors when printing. */
   .dark {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0.024 264.364);
@@ -380,12 +383,36 @@
     --chart-3: oklch(0.809 0.105 251.813);
     --chart-4: oklch(0.882 0.059 254.128);
     --chart-5: oklch(0.932 0.032 255.508);
+    --sidebar: oklch(0.985 0.002 247.839);
+    --sidebar-foreground: oklch(0.145 0.024 264.364);
+    --sidebar-primary: oklch(0.623 0.214 259.1);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.968 0.007 264.536);
+    --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+    --sidebar-border: oklch(0.928 0.006 264.531);
+    --sidebar-ring: oklch(0.623 0.214 259.1);
     --success: oklch(0.696 0.17 162.48);
+    --success-foreground: oklch(1 0 0);
     --warning: oklch(0.769 0.188 70.08);
+    --warning-foreground: oklch(0.208 0.042 265.755);
     --asset: oklch(0.696 0.17 162.48);
+    --asset-light: oklch(0.935 0.052 163.051);
     --liability: oklch(0.637 0.237 25.331);
+    --liability-light: oklch(0.936 0.032 17.717);
     --insurance: oklch(0.627 0.265 303.9);
+    --insurance-light: oklch(0.943 0.029 294.588);
     --tax: oklch(0.769 0.188 70.08);
+    --tax-light: oklch(0.962 0.059 95.617);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
   }
 
   /* Reset body for print */

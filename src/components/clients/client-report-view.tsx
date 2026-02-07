@@ -352,7 +352,6 @@ export function ClientReportView({
           <InsuranceNeedsChart
             result={insuranceResult}
             isLoading={!isDemo && isInsuranceLoading}
-            showLabels
           />
         </div>
       </div>

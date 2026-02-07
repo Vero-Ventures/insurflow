@@ -54,10 +54,12 @@ export function AISummaryCard({
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
@@ -71,6 +73,7 @@ export function AISummaryCard({
     // Demo mode: simulate generation delay and return static letter
     if (demoLetter) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!isMountedRef.current) return;
       setLetter(demoLetter);
       setEditedLetter(demoLetter);
       setGeneratedAt(new Date().toISOString());

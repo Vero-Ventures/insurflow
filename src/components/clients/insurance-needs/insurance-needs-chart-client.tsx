@@ -21,8 +21,6 @@ import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 interface InsuranceNeedsChartClientProps {
   result: InsuranceNeedsResult | null;
   isLoading?: boolean;
-  /** When true, renders inline labels instead of tooltip-only (for print/PDF) */
-  showLabels?: boolean;
 }
 
 interface ChartData {
@@ -39,7 +37,6 @@ interface ChartData {
 export function InsuranceNeedsChartClient({
   result,
   isLoading = false,
-  showLabels = false,
 }: InsuranceNeedsChartClientProps) {
   if (isLoading) {
     return (
@@ -179,43 +176,40 @@ export function InsuranceNeedsChartClient({
                   <Cell key={`cell-${index}`} fill={entry?.color || "#ccc"} />
                 ))}
               </Pie>
-              {!showLabels && (
-                <Tooltip
-                  formatter={(value: number | undefined) =>
-                    typeof value === "number" ? formatCurrency(value) : ""
-                  }
-                />
-              )}
+              <Tooltip
+                formatter={(value: number | undefined) =>
+                  typeof value === "number" ? formatCurrency(value) : ""
+                }
+                wrapperClassName="print:!hidden"
+              />
               <Legend verticalAlign="bottom" height={36} iconType="circle" />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Print-only detailed breakdown */}
-        {showLabels && (
-          <div className="mt-4 border-t pt-3">
-            <div className="space-y-1.5">
-              {data.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-block h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span>{item.name}</span>
-                  </div>
-                  <span className="font-medium">
-                    {formatCurrency(item.value)} (
-                    {((item.value / grossNeeds) * 100).toFixed(1)}%)
-                  </span>
+        {/* Detailed breakdown — visible only in print */}
+        <div className="mt-4 hidden border-t pt-3 print:block">
+          <div className="space-y-1.5">
+            {data.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center justify-between text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-3 w-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span>{item.name}</span>
                 </div>
-              ))}
-            </div>
+                <span className="font-medium">
+                  {formatCurrency(item.value)} (
+                  {((item.value / grossNeeds) * 100).toFixed(1)}%)
+                </span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -13,8 +13,6 @@ import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 interface InsuranceNeedsChartProps {
   result: InsuranceNeedsResult | null;
   isLoading?: boolean;
-  /** When true, renders inline labels instead of tooltip-only (for print/PDF) */
-  showLabels?: boolean;
 }
 
 // Dynamically import the chart component with SSR disabled
@@ -57,13 +55,6 @@ const InsuranceNeedsChartClient = dynamic(
 export function InsuranceNeedsChart({
   result,
   isLoading,
-  showLabels,
 }: InsuranceNeedsChartProps) {
-  return (
-    <InsuranceNeedsChartClient
-      result={result}
-      isLoading={isLoading}
-      showLabels={showLabels}
-    />
-  );
+  return <InsuranceNeedsChartClient result={result} isLoading={isLoading} />;
 }
