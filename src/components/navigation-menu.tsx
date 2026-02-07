@@ -103,12 +103,14 @@ export function AppNavigationMenu() {
 
         {/* Right side - Theme toggle & Auth */}
         <div className="flex items-center gap-3">
-          {mounted && (
-            <button
+          {mounted && resolvedTheme && (
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() =>
                 setTheme(resolvedTheme === "dark" ? "light" : "dark")
               }
-              className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-2 transition-colors"
+              className="text-muted-foreground"
               aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
             >
               {resolvedTheme === "dark" ? (
@@ -116,7 +118,7 @@ export function AppNavigationMenu() {
               ) : (
                 <Moon className="h-5 w-5" />
               )}
-            </button>
+            </Button>
           )}
           <SignedIn>
             <Link
