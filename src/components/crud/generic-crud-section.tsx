@@ -79,8 +79,9 @@ export function GenericCrudSection<T extends CrudItem>({
         setItems(itemsData);
         onItemsChange?.(itemsData);
       }
-    } catch (error) {
-      console.error(`Error fetching items:`, error);
+    } catch {
+      // Error is handled silently - empty state is shown to user
+      // Server-side logging captures the actual error
     } finally {
       setIsLoading(false);
     }

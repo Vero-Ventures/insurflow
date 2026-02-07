@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, Copy, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { COPY_FEEDBACK_DURATION_MS } from "@/lib/constants";
 
 interface AISummaryCardProps {
   clientId: string;
@@ -46,6 +47,16 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const generateLetter = useCallback(async () => {
     setIsGenerating(true);
@@ -103,7 +114,14 @@ export function AISummaryCard({ clientId, hidden }: AISummaryCardProps) {
       await navigator.clipboard.writeText(textToCopy);
       setHasCopied(true);
       toast.success("Letter copied to clipboard");
-      setTimeout(() => setHasCopied(false), 2000);
+      // Clear any existing timeout before setting a new one
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(
+        () => setHasCopied(false),
+        COPY_FEEDBACK_DURATION_MS,
+      );
     } catch {
       toast.error("Failed to copy to clipboard");
     }

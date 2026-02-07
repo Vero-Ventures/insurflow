@@ -40,7 +40,7 @@ interface GenericCrudTableProps<T extends { id: string }> {
   onDeleteSuccess: () => void;
   emptyMessage?: string;
   itemName?: string;
-  _clientId?: string; // Not used but passed by container
+  _clientId?: string; // Unused - kept for interface compatibility
 }
 
 export function GenericCrudTable<T extends { id: string }>({
@@ -63,9 +63,8 @@ export function GenericCrudTable<T extends { id: string }>({
         `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} deleted successfully`,
       );
       onDeleteSuccess();
-    } catch (error) {
+    } catch {
       toast.error(`Failed to delete ${itemName}`);
-      console.error(error);
     } finally {
       setDeletingId(null);
     }

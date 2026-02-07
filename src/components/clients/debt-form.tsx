@@ -1,13 +1,6 @@
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,208 +10,133 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GenericCrudForm } from "@/components/crud/generic-crud-form";
 import { toast } from "sonner";
-import type { Debt } from "./debts-list";
 import { DEBT_TYPE_OPTIONS } from "@/lib/validation/debt";
+import type { Debt } from "../../types/debt";
 
 interface DebtFormProps {
   clientId: string;
-  debt?: Debt | null;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  item: Debt | null;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 export function DebtForm({
   clientId,
-  debt,
-  isOpen,
-  onOpenChange,
-  onSaved,
+  item: debt,
+  onSuccess,
+  onCancel,
 }: DebtFormProps) {
   const [name, setName] = useState(debt?.name || "");
   const [type, setType] = useState(debt?.type || "");
   const [currentBalance, setCurrentBalance] = useState(
-    debt?.currentBalance?.toString() || "",
+    debt?.currentBalance ? String(debt.currentBalance) : "",
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // Reset form when closing
-      setName("");
-      setType("");
-      setCurrentBalance("");
-      setErrors({});
-    }
-    onOpenChange(open);
-  };
+  useEffect(() => {
+    setName(debt?.name || "");
+    setType(debt?.type || "");
+    setCurrentBalance(debt?.currentBalance ? String(debt.currentBalance) : "");
+  }, [debt]);
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!name.trim()) {
-      newErrors.name = "Debt name is required";
-    }
-
-    if (!type) {
-      newErrors.type = "Debt type is required";
-    }
-
-    if (!currentBalance.trim()) {
-      newErrors.currentBalance = "Current balance is required";
-    } else if (isNaN(parseFloat(currentBalance))) {
-      newErrors.currentBalance = "Current balance must be a valid number";
-    } else if (parseFloat(currentBalance) < 0) {
-      newErrors.currentBalance = "Current balance must be positive";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!name.trim() || !type || !currentBalance) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
     try {
-      setIsLoading(true);
+      setIsSubmitting(true);
 
       const payload = {
         name: name.trim(),
         type,
-        currentBalance: parseFloat(currentBalance).toString(),
+        currentBalance,
       };
 
-      const isUpdate = !!debt;
-      const endpoint = isUpdate
+      const url = debt
         ? `/api/clients/${clientId}/debts/${debt.id}`
         : `/api/clients/${clientId}/debts`;
-      const method = isUpdate ? "PATCH" : "POST";
 
-      const response = await fetch(endpoint, {
+      const method = debt ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const error = await response.json();
         throw new Error(
-          data.error ||
-            `HTTP ${response.status}: Failed to ${isUpdate ? "update" : "create"} debt`,
+          error.message || `Failed to ${debt ? "update" : "create"} debt`,
         );
       }
 
-      toast.success(`Debt ${isUpdate ? "updated" : "created"} successfully`);
-
-      // Reset form and close dialog
-      setName("");
-      setType("");
-      setCurrentBalance("");
-      setErrors({});
-      onOpenChange(false);
-      onSaved();
+      toast.success(
+        debt ? "Debt updated successfully" : "Debt created successfully",
+      );
+      onSuccess();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "An error occurred";
-      toast.error(message);
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{debt ? "Edit Debt" : "Add New Debt"}</DialogTitle>
-          <DialogDescription>
-            {debt
-              ? "Update the details of this debt"
-              : "Add a new debt to track client liabilities"}
-          </DialogDescription>
-        </DialogHeader>
+    <GenericCrudForm
+      onSubmit={handleSubmit}
+      onCancel={onCancel}
+      isSubmitting={isSubmitting}
+      submitLabel={debt ? "Update" : "Create"}
+    >
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="name">Debt Name *</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Home Mortgage, Car Loan"
+            disabled={isSubmitting}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Debt Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Primary Mortgage, Car Loan"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-              className={errors.name ? "border-destructive" : ""}
-            />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name}</p>
-            )}
-          </div>
+        <div>
+          <Label htmlFor="type">Debt Type *</Label>
+          <Select value={type} onValueChange={setType} disabled={isSubmitting}>
+            <SelectTrigger id="type">
+              <SelectValue placeholder="Select debt type" />
+            </SelectTrigger>
+            <SelectContent>
+              {DEBT_TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="type">Debt Type</Label>
-            <Select value={type} onValueChange={setType} disabled={isLoading}>
-              <SelectTrigger
-                id="type"
-                className={errors.type ? "border-destructive" : ""}
-              >
-                <SelectValue placeholder="Select a debt type" />
-              </SelectTrigger>
-              <SelectContent>
-                {DEBT_TYPE_OPTIONS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.type && (
-              <p className="text-destructive text-sm">{errors.type}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="balance">Current Balance (CAD)</Label>
-            <Input
-              id="balance"
-              type="number"
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              value={currentBalance}
-              onChange={(e) => setCurrentBalance(e.target.value)}
-              disabled={isLoading}
-              className={errors.currentBalance ? "border-destructive" : ""}
-            />
-            {errors.currentBalance && (
-              <p className="text-destructive text-sm">
-                {errors.currentBalance}
-              </p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Debt"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div>
+          <Label htmlFor="balance">Current Balance (CAD) *</Label>
+          <Input
+            id="balance"
+            type="number"
+            step="0.01"
+            min="0"
+            value={currentBalance}
+            onChange={(e) => setCurrentBalance(e.target.value)}
+            placeholder="0.00"
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+    </GenericCrudForm>
   );
 }
