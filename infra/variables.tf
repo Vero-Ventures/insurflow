@@ -85,3 +85,14 @@ variable "axiom_dataset" {
   type        = string
   default     = "insurflow"
 }
+
+# =============================================================================
+# AI/LLM Configuration (Optional)
+# =============================================================================
+
+variable "gemini_api_key" {
+  description = "Google Gemini API key for AI features"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

@@ -149,3 +149,27 @@ resource "vercel_project_environment_variable" "axiom_dataset_preview" {
   target     = ["preview"]
   comment    = "Axiom dataset name"
 }
+
+# =============================================================================
+# Environment Variables - Gemini AI (Production + Preview)
+# =============================================================================
+
+resource "vercel_project_environment_variable" "gemini_api_key_prod" {
+  count      = var.gemini_api_key != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GEMINI_API_KEY"
+  value      = var.gemini_api_key
+  target     = ["production"]
+  sensitive  = true
+  comment    = "Google Gemini API key for AI features"
+}
+
+resource "vercel_project_environment_variable" "gemini_api_key_preview" {
+  count      = var.gemini_api_key != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GEMINI_API_KEY"
+  value      = var.gemini_api_key
+  target     = ["preview"]
+  sensitive  = true
+  comment    = "Google Gemini API key for AI features"
+}
