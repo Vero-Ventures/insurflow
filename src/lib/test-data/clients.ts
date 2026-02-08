@@ -5,70 +5,16 @@
  * - CLI seed script: scripts/seed-clients.ts
  */
 
+import type { STATES, HEALTH_RATINGS } from "@/lib/validation/client";
+
 type TestClientData = {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
   sex: "M" | "F";
-  state:
-    | "AL"
-    | "AK"
-    | "AZ"
-    | "AR"
-    | "CA"
-    | "CO"
-    | "CT"
-    | "DE"
-    | "FL"
-    | "GA"
-    | "HI"
-    | "ID"
-    | "IL"
-    | "IN"
-    | "IA"
-    | "KS"
-    | "KY"
-    | "LA"
-    | "ME"
-    | "MD"
-    | "MA"
-    | "MI"
-    | "MN"
-    | "MS"
-    | "MO"
-    | "MT"
-    | "NE"
-    | "NV"
-    | "NH"
-    | "NJ"
-    | "NM"
-    | "NY"
-    | "NC"
-    | "ND"
-    | "OH"
-    | "OK"
-    | "OR"
-    | "PA"
-    | "RI"
-    | "SC"
-    | "SD"
-    | "TN"
-    | "TX"
-    | "UT"
-    | "VT"
-    | "VA"
-    | "WA"
-    | "WV"
-    | "WI"
-    | "WY"
-    | "DC";
+  state: (typeof STATES)[number];
   smoker: boolean;
-  healthRating:
-    | "preferred"
-    | "preferred_plus"
-    | "standard"
-    | "standard_plus"
-    | "substandard";
+  healthRating: (typeof HEALTH_RATINGS)[number];
   hasSpouse: boolean;
   spouseAge?: number;
   clientIncome: string;

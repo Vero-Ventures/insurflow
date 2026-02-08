@@ -91,14 +91,17 @@ export const clientStatusEnum = pgEnum("client_status", [
   "archived",
 ]);
 
-/** Asset type classification */
+/** Asset type classification (US market) */
 export const assetTypeEnum = pgEnum("asset_type", [
-  "rrsp",
-  "tfsa",
-  "non_registered",
-  "rrif",
-  "lira",
-  "lif",
+  "401k",
+  "403b",
+  "ira_traditional",
+  "ira_roth",
+  "sep_ira",
+  "simple_ira",
+  "brokerage",
+  "hsa",
+  "529_plan",
   "real_estate",
   "life_insurance",
   "business_interest",
@@ -106,6 +109,7 @@ export const assetTypeEnum = pgEnum("asset_type", [
   "stock_options",
   "cryptocurrency",
   "collectibles",
+  "savings",
   "other",
 ]);
 

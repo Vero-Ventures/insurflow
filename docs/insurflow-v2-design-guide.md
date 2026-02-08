@@ -215,7 +215,7 @@ Source: Insurance Advisor Pain Points Survey 2026[source:33][source:36]
 
 - Show calculation methodology in expandable sections
 - Include "How we calculated this" tooltips
-- Display data sources (e.g., "2026 Ontario probate rates: 1.5%")
+- Display data sources (e.g., "2026 federal estate tax rates")
 - Make assumptions explicit (e.g., "Assuming 3% annual asset appreciation")
 
 ---
@@ -263,14 +263,14 @@ Expanded View:
   Assets:
     • Primary Residence: $850K
     • Investments: $1.2M
-    • RRSP: $780K
+    • 401(k): $780K
     • Business: $450K
   [Show Calculation Details ▼]
 
 Full Detail:
   [Asset appreciation formulas]
   [Tax calculation methodology]
-  [Province-specific rates applied]
+  [State-specific rates applied]
 ```
 
 ---
@@ -341,20 +341,20 @@ Full Detail:
 
 ### Feature 3: Intelligent Defaults & Auto-Fill
 
-**User Story:** "As an advisor, I don't want to enter the same data twice. If the system knows my client is 45 with 3 kids in Ontario, it should suggest everything."
+**User Story:** "As an advisor, I don't want to enter the same data twice. If the system knows my client is 45 with 3 kids in California, it should suggest everything."
 
 **Auto-Calculated Defaults:**
 
 ```javascript
-// Example: Client Age 45, Ontario, Married, 3 Children
+// Example: Client Age 45, California, Married, 3 Children
 const intelligentDefaults = {
   incomeReplacementDuration: 20, // Until youngest child is 23
-  estateProbateRate: 0.015, // Ontario: 1.5% over $50K
-  estimatedEffectiveTaxRate: 0.2676, // Estimated effective rate on final return (varies by income)
-  topMarginalTaxRate: 0.5353, // Ontario top marginal rate (federal + provincial)
+  federalEstateTaxExemption: 13610000, // 2026 federal exemption
+  estimatedEffectiveTaxRate: 0.28, // Estimated effective rate on final return (varies by income)
+  topMarginalTaxRate: 0.466, // California top marginal rate (federal 37% + state 13.3%)
   lifeExpectancy: 82, // Male, non-smoker
-  tfsaMax: 95000, // 2026 limit
-  principalResExemption: true, // Single property assumed
+  iraContributionLimit: 7000, // 2026 IRA limit (under 50)
+  stepUpBasis: true, // Federal step-up in basis at death
   retirementAge: 65, // Standard assumption
   inflationRate: 0.02, // Federal Reserve target
   assetAppreciation: 0.05, // Conservative estimate
@@ -368,7 +368,7 @@ const intelligentDefaults = {
 - [ ] Pre-fill life expectancy based on age, sex, smoking status
 - [ ] Show suggested values with "✓ Auto-calculated" indicator
 - [ ] Allow advisor to override any default
-- [ ] Display calculation source: "Based on 2026 California estate tax schedule"
+- [ ] Display calculation source: "Based on 2026 federal estate tax schedule"
 
 ---
 
@@ -410,7 +410,7 @@ coverage of $2.5 million for the estate tax protection strategy
 we discussed.
 
 Your current estate is valued at approximately $3.2 million.
-Based on Ontario's probate rates and your marginal tax bracket,
+Based on current federal estate tax rates and your marginal tax bracket,
 your estate would face approximately $890,000 in taxes and
 settlement costs upon your passing. Without adequate insurance,
 your beneficiaries would need to liquidate assets to cover these
@@ -549,9 +549,9 @@ Document: Smith_Estate_Analysis_2026.pdf
 Status: ⚠️ Needs Compliance Review
 
 Pre-Send Checks:
-✅ Provincial regulations (Ontario) - PASSED
+✅ State regulations (California) - PASSED
 ✅ Required disclaimers included - PASSED
-✅ MFDA/CIRO guidelines met - PASSED
+✅ FINRA/SEC guidelines met - PASSED
 ⚠️ Recommendation exceeds 3x income standard
    → Additional justification required in Reasons Why letter
 ❌ Missing client signature on needs analysis form
@@ -585,7 +585,7 @@ Jan 16, 2026 2:00 PM   |  Sent to client
                        |  Delivery confirmed: 2:01 PM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Jan 16, 2026 5:45 PM   |  Viewed by client
-                       |  IP: 192.168.1.100 (Toronto, ON)
+                       |  IP: 192.168.1.100 (Los Angeles, CA)
                        |  Device: iPhone 15
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Jan 17, 2026 8:20 AM   |  Signed by client
@@ -604,10 +604,10 @@ Jan 17, 2026 8:20 AM   |  Signed by client
 - [ ] Record user, IP address, device for each action
 - [ ] Track document version history (restore previous versions)
 - [ ] Pre-send compliance checks (flag issues before sending)
-- [ ] Province-specific regulatory checks (ON, BC, AB, QC, etc.)
+- [ ] State-specific regulatory checks (CA, NY, TX, FL, etc.)
 - [ ] Export audit trail as PDF for E&O documentation
 - [ ] Immutable log (cannot be edited or deleted)
-- [ ] Retention: 7 years (MFDA requirement)
+- [ ] Retention: 7 years (FINRA requirement)
 
 ---
 
@@ -979,7 +979,7 @@ Level 3 (Full Detail):
 │ Assets:                │
 │  • Residence: $850K   │
 │  • Investments: $1.2M │
-│  • RRSP: $780K        │
+│  • 401(k): $780K        │
 │  • Business: $450K    │
 │  • Vehicles: $110K    │
 │  • Other: $500K       │
@@ -2096,7 +2096,7 @@ Page Hierarchy:
       <td className="positive text-right">+30%</td>
     </tr>
     <tr>
-      <td>RRSP</td>
+      <td>401(k)</td>
       <td className="currency text-right">$780,000</td>
       <td className="currency text-right">$1,015,000</td>
       <td className="positive text-right">+30%</td>
@@ -2219,7 +2219,7 @@ Page Hierarchy:
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Client Header (sticky, white, shadow)               │
-│ John Smith, 45 • Ontario • $3.2M Estate            │
+│ John Smith, 45 • California • $3.2M Estate            │
 │ [Edit] [Generate Report] [AI Chat] [More ▼]        │
 ├──────────┬──────────────────────────────────────────┤
 │          │                                          │

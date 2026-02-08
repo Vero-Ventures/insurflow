@@ -1,15 +1,18 @@
 import { z } from "zod";
 
 /**
- * Enum of supported asset types
+ * Enum of supported asset types (US market)
  */
 export const ASSET_TYPES = [
-  "rrsp",
-  "tfsa",
-  "non_registered",
-  "rrif",
-  "lira",
-  "lif",
+  "401k",
+  "403b",
+  "ira_traditional",
+  "ira_roth",
+  "sep_ira",
+  "simple_ira",
+  "brokerage",
+  "hsa",
+  "529_plan",
   "real_estate",
   "life_insurance",
   "business_interest",
@@ -17,6 +20,7 @@ export const ASSET_TYPES = [
   "stock_options",
   "cryptocurrency",
   "collectibles",
+  "savings",
   "other",
 ] as const;
 

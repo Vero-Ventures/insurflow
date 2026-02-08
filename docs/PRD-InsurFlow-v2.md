@@ -92,7 +92,7 @@ InsurFlow will be the tool advisors open first when meeting a client, and the sy
 
 #### Capabilities
 
-- Record assets by type (real estate, investments, TFSA, RRSP, vehicles, etc.)
+- Record assets by type (real estate, investments, 401(k), IRA, vehicles, etc.)
 - Track initial value vs. current value
 - Set appreciation rate and term
 - Flag assets as:
