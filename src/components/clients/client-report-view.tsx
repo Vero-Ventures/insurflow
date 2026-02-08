@@ -96,8 +96,8 @@ export function ClientReportView({
       setIsLoadingData(true);
       try {
         const [assetsResponse, debtsResponse] = await Promise.all([
-          fetch(`/api/clients/${clientId}/assets`),
-          fetch(`/api/clients/${clientId}/debts`),
+          fetch(`/api/clients/${clientId}/assets`, { credentials: "include" }),
+          fetch(`/api/clients/${clientId}/debts`, { credentials: "include" }),
         ]);
 
         if (assetsResponse.ok) {

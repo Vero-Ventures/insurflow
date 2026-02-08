@@ -58,6 +58,7 @@ export function DebtsList({
   const handleDelete = async (id: string) => {
     const response = await fetch(`/api/clients/${clientId}/debts/${id}`, {
       method: "DELETE",
+      credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to delete debt");
   };

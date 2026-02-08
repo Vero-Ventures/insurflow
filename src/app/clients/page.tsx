@@ -40,16 +40,32 @@ export default function ClientsPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch("/api/clients");
+        const response = await fetch("/api/clients", {
+          credentials: "include",
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch clients");
+          if (response.status === 401) {
+            throw new Error("Please sign in to view your clients");
+          }
+          if (response.status === 500) {
+            throw new Error(
+              "Server error. Please try again later or contact support.",
+            );
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Failed to fetch clients (${response.status})`,
+          );
         }
 
         const data = await response.json();
         setClients(data.clients || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        const errorMessage =
+          err instanceof Error ? err.message : "An unexpected error occurred";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -132,6 +148,7 @@ export default function ClientsPage() {
       setIsSeeding(true);
       const response = await fetch("/api/clients/seed", {
         method: "POST",
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -142,7 +159,9 @@ export default function ClientsPage() {
       toast.success(data.message);
 
       // Refresh the client list
-      const refreshResponse = await fetch("/api/clients");
+      const refreshResponse = await fetch("/api/clients", {
+        credentials: "include",
+      });
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
         setClients(refreshData.clients || []);

@@ -86,6 +86,7 @@ export function AISummaryCard({
     try {
       const response = await fetch(`/api/clients/${clientId}/generate-letter`, {
         method: "POST",
+        credentials: "include",
       });
 
       const data = (await response.json()) as

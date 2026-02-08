@@ -70,7 +70,9 @@ export function GenericCrudSection<T extends CrudItem>({
   const fetchItems = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(config.fetchEndpoint);
+      const response = await fetch(config.fetchEndpoint, {
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         // Extract items from standardized { data: { items: [...] } } response
