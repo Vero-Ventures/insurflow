@@ -13,5 +13,4 @@ export default {
   dbCredentials: {
     url: databaseUrl,
   },
-  tablesFilter: ["insurflow_*"],
 } satisfies Config;
