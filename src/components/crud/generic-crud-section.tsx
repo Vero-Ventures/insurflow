@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -30,6 +31,8 @@ export interface CrudSectionConfig {
   createButtonLabel?: string;
   fetchEndpoint: string;
   emptyMessage?: string;
+  icon?: LucideIcon;
+  iconClassName?: string;
 }
 
 interface GenericCrudSectionProps<T extends CrudItem> {
@@ -119,22 +122,41 @@ export function GenericCrudSection<T extends CrudItem>({
     setSelectedItem(null);
   };
 
+  const Icon = config.icon;
+
   return (
     <>
-      <Card>
+      <Card className="border-border/60 overflow-hidden">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">{config.title}</h3>
-              <CardDescription>{config.description}</CardDescription>
+            <div className="flex items-center gap-4">
+              {Icon && (
+                <div
+                  className={`bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg ${config.iconClassName || ""}`}
+                >
+                  <Icon className="text-primary h-5 w-5" />
+                </div>
+              )}
+              <div>
+                <h3 className="font-display text-lg font-semibold tracking-tight">
+                  {config.title}
+                </h3>
+                <CardDescription>{config.description}</CardDescription>
+              </div>
             </div>
-            <Button onClick={handleAddNew} size="sm" className="gap-2">
+            <Button
+              onClick={handleAddNew}
+              size="sm"
+              className="bg-primary hover:bg-primary/90 gap-2 shadow-sm"
+            >
               <Plus className="h-4 w-4" />
-              {config.createButtonLabel || "Add Item"}
+              <span className="hidden sm:inline">
+                {config.createButtonLabel || "Add Item"}
+              </span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6">
           {/* List Component */}
           <ListComponent
             items={items}
@@ -146,7 +168,7 @@ export function GenericCrudSection<T extends CrudItem>({
 
           {/* Summary Component */}
           {SummaryComponent && items.length > 0 && (
-            <div className="border-t pt-4">
+            <div className="border-border/60 mt-6 border-t pt-6">
               <SummaryComponent items={items} />
             </div>
           )}
@@ -155,13 +177,20 @@ export function GenericCrudSection<T extends CrudItem>({
 
       {/* CRUD Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedItem
-                ? `Edit ${config.itemName}`
-                : `Add New ${config.itemName}`}
-            </DialogTitle>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              {Icon && (
+                <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+                  <Icon className="text-primary h-5 w-5" />
+                </div>
+              )}
+              <DialogTitle className="font-display text-xl font-semibold tracking-tight">
+                {selectedItem
+                  ? `Edit ${config.itemName}`
+                  : `Add New ${config.itemName}`}
+              </DialogTitle>
+            </div>
           </DialogHeader>
           <FormComponent
             clientId={clientId}
