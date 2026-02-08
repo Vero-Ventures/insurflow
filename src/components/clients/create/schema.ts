@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { STATES } from "@/lib/validation/client";
+
 /**
  * Form state schema (uses strings for selects before validation)
  */
@@ -29,62 +31,7 @@ export const clientFormSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Date of birth is required (YYYY-MM-DD)"),
     sex: z.enum(["M", "F"], { message: "Sex is required" }),
-    state: z.enum(
-      [
-        "AL",
-        "AK",
-        "AZ",
-        "AR",
-        "CA",
-        "CO",
-        "CT",
-        "DE",
-        "FL",
-        "GA",
-        "HI",
-        "ID",
-        "IL",
-        "IN",
-        "IA",
-        "KS",
-        "KY",
-        "LA",
-        "ME",
-        "MD",
-        "MA",
-        "MI",
-        "MN",
-        "MS",
-        "MO",
-        "MT",
-        "NE",
-        "NV",
-        "NH",
-        "NJ",
-        "NM",
-        "NY",
-        "NC",
-        "ND",
-        "OH",
-        "OK",
-        "OR",
-        "PA",
-        "RI",
-        "SC",
-        "SD",
-        "TN",
-        "TX",
-        "UT",
-        "VT",
-        "VA",
-        "WA",
-        "WV",
-        "WI",
-        "WY",
-        "DC",
-      ],
-      { message: "State is required" },
-    ),
+    state: z.enum(STATES, { message: "State is required" }),
     smoker: z.boolean(),
     healthRating: z.enum(
       [
