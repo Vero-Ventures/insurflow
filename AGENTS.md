@@ -224,7 +224,7 @@ InsurFlow deploys to Vercel with automatic Git integration. Database branching f
 
 | Environment | URL                                                   | Database                     |
 | ----------- | ----------------------------------------------------- | ---------------------------- |
-| Production  | https://insurflow.vercel.app                          | Neon main branch             |
+| Production  | https://insurflow.biz                                 | Neon main branch             |
 | Preview     | https://insurflow-{git-hash}-{vercel-team}.vercel.app | Neon `preview/pr-{N}` branch |
 
 ### Deployment Workflows
@@ -259,13 +259,13 @@ Configure in: Settings → Secrets and variables → Actions → Secrets
 
 The Vercel project and environment variables are managed via Terraform in `infra/`.
 
-| Variable             | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `database_url`       | Production Neon connection string (pooled)          |
-| `better_auth_secret` | Session encryption key (min 32 chars)               |
-| `better_auth_url`    | Production URL (e.g., https://insurflow.vercel.app) |
-| `axiom_token`        | (Optional) Axiom logging token                      |
-| `axiom_dataset`      | (Optional) Axiom dataset name                       |
+| Variable             | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `database_url`       | Production Neon connection string (pooled)   |
+| `better_auth_secret` | Session encryption key (min 32 chars)        |
+| `better_auth_url`    | Production URL (e.g., https://insurflow.biz) |
+| `axiom_token`        | (Optional) Axiom logging token               |
+| `axiom_dataset`      | (Optional) Axiom dataset name                |
 
 ### Security Scanning
 

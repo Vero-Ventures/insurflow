@@ -14,7 +14,7 @@ output "project_name" {
 
 output "production_url" {
   description = "Production deployment URL"
-  value       = "https://insurflow.vercel.app"
+  value       = "https://insurflow.biz"
 }
 
 output "preview_url_pattern" {
