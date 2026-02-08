@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Sparkles,
   ArrowRight,
+  Play,
   UserPlus,
   Calculator,
   FileText,
@@ -112,33 +113,22 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* Primary CTA with Tooltip */}
+        {/* Primary CTA */}
         <div className="animate-fade-up animation-delay-300 mx-auto mt-12 max-w-lg text-center">
-          <div className="relative inline-block">
-            {/* Animated tooltip */}
-            <div className="absolute -top-14 left-1/2 -translate-x-1/2 animate-bounce">
-              <div className="bg-foreground text-background relative rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap shadow-lg">
-                Try adding a new client
-                {/* Tooltip arrow */}
-                <div className="bg-foreground absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45" />
-              </div>
-            </div>
-
-            <Button
-              asChild
-              size="lg"
-              className="bg-emerald hover:bg-emerald/90 gap-2 text-white shadow-lg"
-            >
-              <Link href="/demo/add-client">
-                <UserPlus className="h-4 w-4" />
-                Add Your First Client
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+          <Button
+            asChild
+            size="lg"
+            className="bg-emerald hover:bg-emerald/90 gap-2 text-white shadow-lg"
+          >
+            <Link href="/demo/portfolio">
+              <Play className="h-4 w-4" />
+              Start Demo
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
 
           <p className="text-muted-foreground mt-4 text-sm">
-            Takes about 2 minutes. No sign-up required.
+            Takes about 3 minutes. No sign-up required.
           </p>
         </div>
 
