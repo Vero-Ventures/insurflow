@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +78,7 @@ function getAvatarColor(firstName: string, lastName: string): string {
  * Demo portfolio page showing the client list experience.
  */
 export default function DemoPortfolioPage() {
+  const router = useRouter();
   const { state, nextTourStep, prevTourStep } = useDemoContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [showNextStepTooltip, setShowNextStepTooltip] = useState(false);
@@ -253,7 +255,7 @@ export default function DemoPortfolioPage() {
                     data-tour={index === 0 ? "client-row" : undefined}
                     onClick={() => {
                       // Navigate to client detail in demo
-                      window.location.href = "/demo/client";
+                      router.push("/demo/client");
                     }}
                   >
                     <TableCell>

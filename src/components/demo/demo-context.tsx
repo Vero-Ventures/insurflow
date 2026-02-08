@@ -7,6 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 export type DemoSegment = "landing" | "portfolio" | "add-client" | "client";
 
@@ -69,6 +70,14 @@ export function getSegmentPath(segment: DemoSegment): string {
   }
 }
 
+function getSegmentFromPath(pathname: string): DemoSegment {
+  if (pathname === "/demo") return "landing";
+  if (pathname.startsWith("/demo/portfolio")) return "portfolio";
+  if (pathname.startsWith("/demo/add-client")) return "add-client";
+  if (pathname.startsWith("/demo/client")) return "client";
+  return "landing";
+}
+
 interface DemoProviderProps {
   children: ReactNode;
   initialSegment?: DemoSegment;
@@ -78,6 +87,10 @@ export function DemoProvider({
   children,
   initialSegment = "landing",
 }: DemoProviderProps) {
+  const pathname = usePathname();
+  // Derive current segment from pathname
+  const currentSegment = getSegmentFromPath(pathname);
+
   const [state, setState] = useState<DemoState>({
     currentSegment: initialSegment,
     currentTourStep: 0,
@@ -86,6 +99,20 @@ export function DemoProvider({
     tourCompletedForSegment: null,
     isTransitioning: false,
   });
+
+  // Track previous segment to reset tour when navigating
+  const [prevSegment, setPrevSegment] = useState<DemoSegment>(currentSegment);
+
+  // Update state when segment changes (derived from pathname)
+  if (currentSegment !== prevSegment) {
+    setPrevSegment(currentSegment);
+    setState((prev) => ({
+      ...prev,
+      currentSegment,
+      currentTourStep: 0,
+      showTour: true,
+    }));
+  }
 
   const nextTourStep = useCallback(() => {
     setState((prev) => ({

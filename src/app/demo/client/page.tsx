@@ -297,7 +297,7 @@ export default function DemoClientPage() {
                   result={demoInsuranceResult}
                   isLoading={false}
                   error={null}
-                  calculatedAt={new Date().toISOString()}
+                  calculatedAt="2026-02-08T14:30:00.000Z"
                   isReadOnly
                 />
               </div>

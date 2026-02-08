@@ -153,7 +153,7 @@ export function TourOverlay({
 
     // Ensure tooltip stays within viewport bounds
     left = Math.max(16, Math.min(left, viewportWidth - tooltipWidth - 16));
-    top = Math.max(16, top);
+    top = Math.max(16, Math.min(top, viewportHeight - tooltipHeight - 16));
 
     setTooltipPosition({ top, left, placement });
 
@@ -193,15 +193,28 @@ export function TourOverlay({
         onClick={(e) => {
           // Allow clicking through to highlighted element
           if (spotlightRect) {
-            const clickX = e.clientX + window.scrollX;
-            const clickY = e.clientY + window.scrollY;
+            // Use viewport-relative coordinates (clientX/clientY) to match
+            // spotlightRect, which is based on getBoundingClientRect()
+            const clickX = e.clientX;
+            const clickY = e.clientY;
             const inSpotlight =
               clickX >= spotlightRect.left &&
               clickX <= spotlightRect.left + spotlightRect.width &&
               clickY >= spotlightRect.top &&
               clickY <= spotlightRect.top + spotlightRect.height;
             if (inSpotlight) {
-              // Let click through
+              // Forward the click to the underlying element
+              const svgElement = e.currentTarget as SVGSVGElement;
+              const previousPointerEvents = svgElement.style.pointerEvents;
+              svgElement.style.pointerEvents = "none";
+              const underlyingElement = document.elementFromPoint(
+                clickX,
+                clickY,
+              ) as HTMLElement | null;
+              svgElement.style.pointerEvents = previousPointerEvents;
+              if (underlyingElement) {
+                underlyingElement.click();
+              }
               return;
             }
           }
@@ -261,8 +274,10 @@ export function TourOverlay({
       >
         {/* Close button */}
         <button
+          type="button"
           onClick={onSkip}
           className="absolute top-2 right-2 rounded-md p-1 text-white/50 hover:bg-white/10 hover:text-white/80"
+          aria-label="Close tour"
         >
           <X className="h-4 w-4" />
         </button>

@@ -256,7 +256,7 @@ export default function DemoAddClientPage() {
                       id="smoker"
                       checked={formData.smoker}
                       onCheckedChange={(checked: boolean | "indeterminate") =>
-                        handleInputChange("smoker", Boolean(checked))
+                        handleInputChange("smoker", checked === true)
                       }
                     />
                     <Label htmlFor="smoker" className="cursor-pointer">
@@ -277,7 +277,7 @@ export default function DemoAddClientPage() {
                       id="hasSpouse"
                       checked={formData.hasSpouse}
                       onCheckedChange={(checked: boolean | "indeterminate") =>
-                        handleInputChange("hasSpouse", Boolean(checked))
+                        handleInputChange("hasSpouse", checked === true)
                       }
                     />
                     <Label htmlFor="hasSpouse" className="cursor-pointer">
