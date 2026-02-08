@@ -36,6 +36,20 @@
       "when": 1769136000000,
       "tag": "0004_add_auth_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770525783487,
+      "tag": "0005_update_state_enum_to_us_states",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770525783488,
+      "tag": "0006_update_asset_type_enum_to_us_types",
+      "breakpoints": true
     }
   ]
 }
