@@ -11,7 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, RefreshCw, Copy, Check, AlertCircle } from "lucide-react";
+import {
+  Sparkles,
+  RefreshCw,
+  Copy,
+  Check,
+  AlertCircle,
+  Pencil,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { COPY_FEEDBACK_DURATION_MS } from "@/lib/constants";
 
@@ -168,12 +176,23 @@ export function AISummaryCard({
   }
 
   return (
-    <Card className="print:border-none print:shadow-none">
-      <CardHeader className="print:hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-500" />
-            <CardTitle>AI Recommendation Letter</CardTitle>
+    <Card className="border-border/60 shadow-sm print:border-none print:shadow-none">
+      <CardHeader className="pb-4 print:hidden">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[oklch(0.627_0.265_303.9)] to-[oklch(0.5_0.2_280)]">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                AI Recommendation Letter
+              </CardTitle>
+              <CardDescription>
+                {letter
+                  ? `Generated on ${new Date(generatedAt!).toLocaleString()}`
+                  : "Generate a professional 'Reasons Why' compliance letter"}
+              </CardDescription>
+            </div>
           </div>
           {letter && (
             <div className="flex items-center gap-2 print:hidden">
@@ -182,11 +201,12 @@ export function AISummaryCard({
                 size="sm"
                 onClick={handleCopy}
                 disabled={isGenerating}
+                className="border-border/60 gap-1.5"
               >
                 {hasCopied ? (
-                  <Check className="mr-1 h-4 w-4" />
+                  <Check className="h-4 w-4" />
                 ) : (
-                  <Copy className="mr-1 h-4 w-4" />
+                  <Copy className="h-4 w-4" />
                 )}
                 {hasCopied ? "Copied" : "Copy"}
               </Button>
@@ -195,44 +215,54 @@ export function AISummaryCard({
                 size="sm"
                 onClick={handleRegenerate}
                 disabled={isGenerating}
+                className="border-border/60 gap-1.5"
               >
                 <RefreshCw
-                  className={`mr-1 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`}
                 />
                 Regenerate
               </Button>
             </div>
           )}
         </div>
-        <CardDescription>
-          {letter
-            ? `Generated on ${new Date(generatedAt!).toLocaleString()}`
-            : 'Generate a professional "Reasons Why" compliance letter using AI'}
-        </CardDescription>
       </CardHeader>
       <CardContent className="print:p-0">
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300 print:hidden">
-            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <div className="border-destructive/20 bg-destructive/5 mb-4 flex items-start gap-3 rounded-xl border p-4 print:hidden">
+            <AlertCircle className="text-destructive mt-0.5 h-5 w-5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium">Generation failed</p>
-              <p className="text-sm">{error}</p>
+              <p className="text-destructive text-sm font-medium">
+                Generation failed
+              </p>
+              <p className="text-destructive/80 text-sm">{error}</p>
             </div>
           </div>
         )}
 
         {isGenerating ? (
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-            <p className="text-muted-foreground mt-4 text-center text-sm">
-              Generating your personalized recommendation letter...
-            </p>
+          <div className="space-y-3 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[oklch(0.627_0.265_303.9)] to-[oklch(0.5_0.2_280)]">
+                <Sparkles className="h-5 w-5 animate-pulse text-white" />
+              </div>
+              <div>
+                <p className="text-foreground font-medium">
+                  Generating your letter...
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  This may take a few seconds
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
           </div>
         ) : letter ? (
           <div className="space-y-4">
@@ -240,11 +270,11 @@ export function AISummaryCard({
               <Textarea
                 value={editedLetter}
                 onChange={(e) => setEditedLetter(e.target.value)}
-                className="min-h-[300px] font-serif text-sm leading-relaxed"
+                className="border-border/60 min-h-[300px] font-serif text-sm leading-relaxed"
                 placeholder="Edit the generated letter..."
               />
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-white p-4 font-serif leading-relaxed whitespace-pre-wrap dark:bg-gray-950 print:rounded-none print:border-none print:bg-transparent print:p-0 print:text-black">
+              <div className="bg-muted/20 border-border/60 prose prose-sm dark:prose-invert max-w-none rounded-xl border p-6 font-serif leading-relaxed whitespace-pre-wrap print:rounded-none print:border-none print:bg-transparent print:p-0 print:text-black">
                 {letter}
               </div>
             )}
@@ -252,35 +282,59 @@ export function AISummaryCard({
             <div className="flex justify-end gap-2 print:hidden">
               {isEditing ? (
                 <>
-                  <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelEdit}
+                    className="gap-1.5"
+                  >
+                    <X className="h-4 w-4" />
                     Cancel
                   </Button>
-                  <Button size="sm" onClick={handleEditToggle}>
+                  <Button
+                    size="sm"
+                    onClick={handleEditToggle}
+                    className="bg-emerald hover:bg-emerald/90 gap-1.5"
+                  >
+                    <Check className="h-4 w-4" />
                     Save Changes
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={handleEditToggle}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditToggle}
+                  className="border-border/60 gap-1.5"
+                >
+                  <Pencil className="h-4 w-4" />
                   Edit Letter
                 </Button>
               )}
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center print:hidden">
-            <Sparkles className="text-muted-foreground mb-4 h-12 w-12" />
-            <p className="text-muted-foreground mb-4 max-w-md text-sm">
-              Generate a professional &quot;Reasons Why&quot; letter that
-              explains your insurance recommendation. This compliance document
-              is based on the client&apos;s financial data and calculated
-              insurance needs.
+          <div className="flex flex-col items-center justify-center py-12 text-center print:hidden">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[oklch(0.627_0.265_303.9_/_0.2)] to-[oklch(0.5_0.2_280_/_0.1)] blur-xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[oklch(0.627_0.265_303.9)] to-[oklch(0.5_0.2_280)]">
+                <Sparkles className="h-7 w-7 text-white" />
+              </div>
+            </div>
+            <h3 className="font-display text-foreground mb-2 text-lg font-semibold tracking-tight">
+              Generate Compliance Letter
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-sm text-sm leading-relaxed">
+              Create a professional &quot;Reasons Why&quot; letter that explains
+              your insurance recommendation based on the client&apos;s financial
+              data.
             </p>
             <Button
               onClick={generateLetter}
               disabled={isGenerating}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="gap-2 bg-gradient-to-r from-[oklch(0.627_0.265_303.9)] to-[oklch(0.5_0.2_280)] text-white shadow-lg hover:opacity-90"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
               Generate Letter
             </Button>
           </div>
@@ -295,16 +349,22 @@ export function AISummaryCard({
  */
 export function AISummaryCardSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="mb-2 h-6 w-48" />
-        <Skeleton className="h-4 w-64" />
+    <Card className="border-border/60">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center py-8">
-          <Skeleton className="mb-4 h-12 w-12 rounded-full" />
-          <Skeleton className="mb-4 h-4 w-72" />
-          <Skeleton className="h-10 w-36" />
+        <div className="flex flex-col items-center py-12">
+          <Skeleton className="mb-6 h-16 w-16 rounded-2xl" />
+          <Skeleton className="mb-2 h-5 w-48" />
+          <Skeleton className="mb-6 h-4 w-72" />
+          <Skeleton className="h-10 w-36 rounded-lg" />
         </div>
       </CardContent>
     </Card>
