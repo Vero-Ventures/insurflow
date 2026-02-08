@@ -1,9 +1,24 @@
-CREATE TYPE "public"."asset_type" AS ENUM('401k', '403b', 'ira_traditional', 'ira_roth', 'sep_ira', 'simple_ira', 'brokerage', 'hsa', '529_plan', 'real_estate', 'life_insurance', 'business_interest', 'pension', 'stock_options', 'cryptocurrency', 'collectibles', 'savings', 'other');--> statement-breakpoint
-CREATE TYPE "public"."client_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."debt_type" AS ENUM('mortgage', 'heloc', 'car_loan', 'student_loan', 'personal_loan', 'credit_card', 'line_of_credit', 'business_loan', 'other');--> statement-breakpoint
-CREATE TYPE "public"."health_rating" AS ENUM('preferred_plus', 'preferred', 'standard_plus', 'standard', 'substandard');--> statement-breakpoint
-CREATE TYPE "public"."sex" AS ENUM('M', 'F');--> statement-breakpoint
-CREATE TYPE "public"."state" AS ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC');--> statement-breakpoint
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'asset_type') THEN
+        CREATE TYPE "public"."asset_type" AS ENUM('401k', '403b', 'ira_traditional', 'ira_roth', 'sep_ira', 'simple_ira', 'brokerage', 'hsa', '529_plan', 'real_estate', 'life_insurance', 'business_interest', 'pension', 'stock_options', 'cryptocurrency', 'collectibles', 'savings', 'other');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_status') THEN
+        CREATE TYPE "public"."client_status" AS ENUM('draft', 'active', 'archived');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'debt_type') THEN
+        CREATE TYPE "public"."debt_type" AS ENUM('mortgage', 'heloc', 'car_loan', 'student_loan', 'personal_loan', 'credit_card', 'line_of_credit', 'business_loan', 'other');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'health_rating') THEN
+        CREATE TYPE "public"."health_rating" AS ENUM('preferred_plus', 'preferred', 'standard_plus', 'standard', 'substandard');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sex') THEN
+        CREATE TYPE "public"."sex" AS ENUM('M', 'F');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'state') THEN
+        CREATE TYPE "public"."state" AS ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC');
+    END IF;
+END$$;--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
