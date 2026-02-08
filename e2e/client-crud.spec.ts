@@ -8,7 +8,7 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 const BASE_ORIGIN = new URL(BASE_URL).origin;
 
 /** Session cookie name used by Better Auth */
-const SESSION_COOKIE_NAME = "better_auth.session_token";
+const SESSION_COOKIE_NAME = "better-auth.session_token";
 
 /**
  * Extract session cookie from sign-in response headers.
