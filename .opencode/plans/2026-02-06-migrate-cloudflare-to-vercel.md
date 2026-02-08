@@ -143,7 +143,7 @@ variable "better_auth_secret" {
 }
 
 variable "better_auth_url" {
-  description = "Base URL for Better Auth (e.g., https://insurflow.vercel.app)"
+  description = "Base URL for Better Auth (e.g., https://insurflow.biz)"
   type        = string
 }
 
@@ -440,7 +440,7 @@ production_branch = "main"
 # Better Auth Configuration
 # Generate a secure secret: openssl rand -base64 32
 # better_auth_secret = "your-32-char-secret"
-# better_auth_url    = "https://insurflow.vercel.app"
+# better_auth_url    = "https://insurflow.biz"
 
 # GitHub OAuth (optional)
 # Create OAuth App: https://github.com/settings/developers
