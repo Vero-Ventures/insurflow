@@ -1,7 +1,7 @@
 # InsurFlow v2.0 — Complete Design & Feature Guide
 
 **Product:** InsurFlow v2.0  
-**Target Market:** Canadian Life Insurance Advisors  
+**Target Market:** US Life Insurance Advisors  
 **Document Version:** 2.0  
 **Last Updated:** January 29, 2026
 
@@ -112,7 +112,7 @@ Based on comprehensive research across insurance advisor tools, financial planni
 - Automatic regulatory disclaimers
 - Document version history
 - Timestamped audit log
-- State/province-specific compliance rules built-in
+- State-specific compliance rules built-in
 
 ---
 
@@ -227,7 +227,7 @@ Source: Insurance Advisor Pain Points Survey 2026[source:33][source:36]
 **Application to InsurFlow:**
 
 - Suggest coverage amounts based on similar client profiles
-- Pre-fill province-specific tax rates
+- Pre-fill state-specific tax rates
 - Recommend letter templates based on client scenario
 - Allow advisors to override all AI suggestions
 
@@ -298,7 +298,7 @@ Full Detail:
 - Pre-calculate common scenarios (cache results)
 - Use optimistic UI updates (show results immediately, validate in background)
 - Background PDF generation with progress indicator
-- Implement Redis caching for province-specific tax rates
+- Implement Redis caching for state-specific tax rates
 
 ---
 
@@ -356,19 +356,19 @@ const intelligentDefaults = {
   tfsaMax: 95000, // 2026 limit
   principalResExemption: true, // Single property assumed
   retirementAge: 65, // Standard assumption
-  inflationRate: 0.02, // Bank of Canada target
+  inflationRate: 0.02, // Federal Reserve target
   assetAppreciation: 0.05, // Conservative estimate
 };
 ```
 
 **Acceptance Criteria:**
 
-- [ ] Auto-populate province-specific tax rates
+- [ ] Auto-populate state-specific tax rates
 - [ ] Suggest income replacement duration based on family structure
 - [ ] Pre-fill life expectancy based on age, sex, smoking status
 - [ ] Show suggested values with "✓ Auto-calculated" indicator
 - [ ] Allow advisor to override any default
-- [ ] Display calculation source: "Based on 2026 Ontario probate schedule"
+- [ ] Display calculation source: "Based on 2026 California estate tax schedule"
 
 ---
 
@@ -423,7 +423,7 @@ maximizes the wealth transfer to your children and protects the
 cottage you wish to keep in the family.
 
 [Advisor can edit inline or click "Regenerate"]
-[Auto-includes compliance disclaimers based on province]
+[Auto-includes compliance disclaimers based on state]
 ```
 
 **Acceptance Criteria:**
@@ -434,7 +434,7 @@ cottage you wish to keep in the family.
 - [ ] Letter generation in < 60 seconds
 - [ ] Advisor can edit AI output inline
 - [ ] Regenerate button for alternative versions
-- [ ] Auto-include province-specific compliance disclaimers
+- [ ] Auto-include state-specific compliance disclaimers
 - [ ] Save chat history per client
 
 ---
@@ -611,33 +611,33 @@ Jan 17, 2026 8:20 AM   |  Signed by client
 
 ---
 
-### Feature 8: Province-Specific Calculations
+### Feature 8: State-Specific Calculations
 
-**User Story:** "As an advisor, I need accurate province-specific tax rates so my recommendations are credible."
+**User Story:** "As an advisor, I need accurate state-specific tax rates so my recommendations are credible."
 
-**Auto-Applied Provincial Rules (2026):**
+**Auto-Applied State Rules (2026):**
 
-| Province             | Probate Fee   | Top Tax Rate | Capital Gains | TFSA Limit | Notes                  |
-| -------------------- | ------------- | ------------ | ------------- | ---------- | ---------------------- |
-| **Ontario**          | 1.5% (>$50K)  | 53.53%       | 66.67%        | $95,000    | Health premium applies |
-| **British Columbia** | 1.4% (>$50K)  | 53.50%       | 66.67%        | $95,000    | No health premium      |
-| **Alberta**          | $525 flat     | 48.00%       | 66.67%        | $95,000    | Lowest tax rate        |
-| **Quebec**           | 1.4% (>$100K) | 53.31%       | 66.67%        | $95,000    | Notarial will common   |
-| **Manitoba**         | 0.7%          | 50.40%       | 66.67%        | $95,000    | -                      |
-| **Saskatchewan**     | 0.7%          | 47.75%       | 66.67%        | $95,000    | -                      |
-| **Nova Scotia**      | 1.695%        | 54.00%       | 66.67%        | $95,000    | Highest tax rate       |
-| **New Brunswick**    | 0.5%          | 53.30%       | 66.67%        | $95,000    | -                      |
-| **PEI**              | 1.0%          | 51.37%       | 66.67%        | $95,000    | -                      |
-| **Newfoundland**     | 0.6%          | 51.30%       | 66.67%        | $95,000    | -                      |
+| State             | Estate Tax | Inheritance Tax | Top Income Tax | Notes                            |
+| ----------------- | ---------- | --------------- | -------------- | -------------------------------- |
+| **California**    | None       | None            | 13.30%         | No state estate tax              |
+| **New York**      | 3.06%-16%  | None            | 10.90%         | Estate tax exemption $6.94M      |
+| **Florida**       | None       | None            | None           | No state income or estate tax    |
+| **Texas**         | None       | None            | None           | No state income or estate tax    |
+| **Illinois**      | 0.8%-16%   | None            | 4.95%          | Estate tax exemption $4M         |
+| **Pennsylvania**  | None       | 4.5%-15%        | 3.07%          | Inheritance tax applies          |
+| **New Jersey**    | None       | 11%-16%         | 10.75%         | Inheritance tax exemption varies |
+| **Massachusetts** | 0.8%-16%   | None            | 9.00%          | Estate tax exemption $2M         |
+| **Washington**    | 10%-20%    | None            | None           | Estate tax exemption $2.193M     |
+| **Connecticut**   | 10.8%-12%  | None            | 6.99%          | Estate tax exemption $13.61M     |
 
 **Calculation Transparency:**
 
 ```
-Province: Ontario ▼
+State: California ▼
 
 Auto-Applied Rates (2026):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Probate Fee:
+State Estate Tax: None
   • First $50,000: $250 flat
   • Over $50,000: 1.5%
   • Source: Ontario Courts of Justice Act, 2026
@@ -662,13 +662,13 @@ Estate Administration Costs:
 
 **Acceptance Criteria:**
 
-- [ ] Accurate tax rates for all 10 provinces + 3 territories
+- [ ] Accurate tax rates for all 50 states + DC
 - [ ] Update rates automatically when legislation changes
-- [ ] Display calculation sources (Acts, CRA tables)
+- [ ] Display calculation sources (State revenue departments, IRS tables)
 - [ ] Show "Last updated: Jan 1, 2026" for transparency
 - [ ] Alert advisors when rates change (email notification)
-- [ ] Quebec-specific rules (notarial will, civil code)
-- [ ] Alberta-specific: flat probate fee (not percentage)
+- [ ] California-specific rules (community property)
+- [ ] Florida-specific: no state estate or income tax
 
 ---
 
@@ -929,7 +929,7 @@ John:  "@Sarah Good catch. I'll add a breakdown."
 | Scenario comparison      | Best-in-class tools      | 72%                       |
 | Compliance audit trail   | Pain point research      | 68%                       |
 | Real-time collaboration  | Modern SaaS expectations | 65%                       |
-| Province-specific calcs  | Canadian market need     | 92%                       |
+| State-specific calcs     | US market need           | 92%                       |
 | Self-service onboarding  | SaaS best practices      | 81%                       |
 | Intelligent defaults     | Efficiency research      | 76%                       |
 
@@ -1872,12 +1872,12 @@ Page Hierarchy:
 
 ```jsx
 <div className="form-group">
-  <label className="form-label">Province</label>
+  <label className="form-label">State</label>
   <select className="form-select">
-    <option value="">Select province...</option>
-    <option value="ON">Ontario</option>
-    <option value="BC">British Columbia</option>
-    <option value="AB">Alberta</option>
+    <option value="">Select state...</option>
+    <option value="CA">California</option>
+    <option value="NY">New York</option>
+    <option value="TX">Texas</option>
   </select>
 </div>
 ```
@@ -2643,7 +2643,7 @@ Page Hierarchy:
 - Index frequently queried fields (client_id, user_id)
 - Use database connection pooling
 - Implement pagination (limit 50 results per page)
-- Cache province tax rates (update monthly)
+- Cache state tax rates (update monthly)
 
 ---
 
@@ -2797,7 +2797,7 @@ Page Hierarchy:
 
 ## Conclusion
 
-InsurFlow v2.0 combines research-validated features with a modern, accessible design system to create the definitive tool for Canadian life insurance advisors.
+InsurFlow v2.0 combines research-validated features with a modern, accessible design system to create the definitive tool for US life insurance advisors.
 
 **Key Success Factors:**
 
@@ -2806,7 +2806,7 @@ InsurFlow v2.0 combines research-validated features with a modern, accessible de
 3. **Mobile-First** — Perfect iPad experience
 4. **AI-Native** — Automation built-in from day one
 5. **Compliance-Ready** — Audit trails and regulatory checks
-6. **Province-Specific** — Accurate Canadian tax calculations
+6. **State-Specific** — Accurate US state tax calculations
 7. **Collaborative** — Real-time editing like Google Docs
 8. **Accessible** — WCAG 2.1 AA compliant
 

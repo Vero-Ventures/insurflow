@@ -45,7 +45,7 @@ export function FinancialInputsEdit({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="clientIncome" className="text-sm font-medium">
-              Client Annual Income (CAD)
+              Client Annual Income
             </label>
             <Input
               id="clientIncome"
@@ -60,7 +60,7 @@ export function FinancialInputsEdit({
 
           <div className="space-y-2">
             <label htmlFor="spouseIncome" className="text-sm font-medium">
-              Spouse Annual Income (CAD)
+              Spouse Annual Income
             </label>
             <Input
               id="spouseIncome"
@@ -124,7 +124,7 @@ export function FinancialInputsEdit({
               htmlFor="existingLifeInsuranceCoverage"
               className="text-sm font-medium"
             >
-              Existing Life Insurance Coverage (CAD)
+              Existing Life Insurance Coverage
             </label>
             <Input
               id="existingLifeInsuranceCoverage"

@@ -7,11 +7,11 @@
 // Locale & Currency
 // ============================================================================
 
-/** Default locale for formatting (Canadian English) */
-export const DEFAULT_LOCALE = "en-CA";
+/** Default locale for formatting (US English) */
+export const DEFAULT_LOCALE = "en-US";
 
 /** Default currency code */
-export const DEFAULT_CURRENCY = "CAD";
+export const DEFAULT_CURRENCY = "USD";
 
 // Pre-configured Intl formatters for performance (created once, reused everywhere)
 const currencyFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
@@ -43,7 +43,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
 });
 
 /**
- * Format a number as Canadian currency
+ * Format a number as US currency
  */
 export function formatCurrency(amount: number): string {
   return currencyFormatter.format(amount);

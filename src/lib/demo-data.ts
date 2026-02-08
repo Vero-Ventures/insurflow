@@ -20,7 +20,7 @@ export const demoClient: Client = {
   firstName: "Alex",
   lastName: "Thompson",
   dateOfBirth: "1982-06-15", // 43 years old
-  state: "ON",
+  state: "CA",
   sex: "M",
   smoker: false,
   healthRating: "preferred",
@@ -38,7 +38,7 @@ export const demoClient: Client = {
 };
 
 /**
- * Demo assets representing a typical Canadian family's wealth.
+ * Demo assets representing a typical US family's wealth.
  */
 export const demoAssets: Asset[] = [
   {
@@ -55,7 +55,7 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-002",
     clientId: DEMO_CLIENT_ID,
-    name: "RRSP - Self",
+    name: "401(k) - Self",
     type: "retirement",
     currentValue: "185000.00",
     isLiquid: false,
@@ -66,7 +66,7 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-003",
     clientId: DEMO_CLIENT_ID,
-    name: "RRSP - Spouse",
+    name: "401(k) - Spouse",
     type: "retirement",
     currentValue: "95000.00",
     isLiquid: false,
@@ -77,7 +77,7 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-004",
     clientId: DEMO_CLIENT_ID,
-    name: "TFSA - Joint",
+    name: "Joint Brokerage Account",
     type: "investment",
     currentValue: "45000.00",
     isLiquid: true,
@@ -110,7 +110,7 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-007",
     clientId: DEMO_CLIENT_ID,
-    name: "RESP - Children",
+    name: "529 Plan - Children",
     type: "education",
     currentValue: "42000.00",
     isLiquid: false,
@@ -121,7 +121,7 @@ export const demoAssets: Asset[] = [
 ];
 
 /**
- * Demo debts representing typical Canadian household liabilities.
+ * Demo debts representing typical US household liabilities.
  */
 export const demoDebts: Debt[] = [
   {
