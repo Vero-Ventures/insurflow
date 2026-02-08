@@ -5,6 +5,7 @@ import { GenericCrudSection } from "@/components/crud/generic-crud-section";
 import { AssetsList } from "@/components/clients/assets-list";
 import { AssetForm } from "@/components/clients/asset-form";
 import { AssetsSummary } from "@/components/clients/assets-summary";
+import { Wallet } from "lucide-react";
 import type { Asset } from "@/types/asset";
 
 interface AssetsSectionProps {
@@ -40,6 +41,7 @@ export function AssetsSection({
         createButtonLabel: "Add Asset",
         fetchEndpoint: `/api/clients/${clientId}/assets`,
         emptyMessage: "No assets found. Add your first asset to get started.",
+        icon: Wallet,
       }}
       ListComponent={AssetsList}
       FormComponent={AssetForm}
