@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Settings, Sun, Moon } from "lucide-react";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
@@ -45,34 +46,15 @@ export function AppNavigationMenu() {
         {/* Logo / Brand */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              className="text-primary"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 2L2 7v10l10 5 10-5V7L12 2z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M12 22V12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M2 7l10 5 10-5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Image
+              src="/insurflow-logo.png"
+              alt="InsurFlow"
+              width={28}
+              height={28}
+              className="h-7 w-7"
+              quality={90}
+              priority
+            />
             <span className="text-base font-semibold tracking-tight">
               InsurFlow
             </span>
