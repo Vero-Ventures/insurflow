@@ -224,7 +224,7 @@ InsurFlow deploys to Vercel with automatic Git integration. Database branching f
 
 | Environment | URL                                                   | Database                     |
 | ----------- | ----------------------------------------------------- | ---------------------------- |
-| Production  | https://insurflow.vercel.app                          | Neon main branch             |
+| Production  | https://insurflow.biz                                 | Neon main branch             |
 | Preview     | https://insurflow-{git-hash}-{vercel-team}.vercel.app | Neon `preview/pr-{N}` branch |
 
 ### Deployment Workflows
@@ -259,13 +259,13 @@ Configure in: Settings → Secrets and variables → Actions → Secrets
 
 The Vercel project and environment variables are managed via Terraform in `infra/`.
 
-| Variable             | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `database_url`       | Production Neon connection string (pooled)          |
-| `better_auth_secret` | Session encryption key (min 32 chars)               |
-| `better_auth_url`    | Production URL (e.g., https://insurflow.vercel.app) |
-| `axiom_token`        | (Optional) Axiom logging token                      |
-| `axiom_dataset`      | (Optional) Axiom dataset name                       |
+| Variable             | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `database_url`       | Production Neon connection string (pooled)   |
+| `better_auth_secret` | Session encryption key (min 32 chars)        |
+| `better_auth_url`    | Production URL (e.g., https://insurflow.biz) |
+| `axiom_token`        | (Optional) Axiom logging token               |
+| `axiom_dataset`      | (Optional) Axiom dataset name                |
 
 ### Security Scanning
 
@@ -331,17 +331,31 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 
 ### Git Hooks (Husky)
 
-| Hook         | When                  | What it Does                                              |
-| ------------ | --------------------- | --------------------------------------------------------- |
-| `pre-commit` | Before commit created | Runs lint-staged (ESLint + Prettier on staged files)      |
-| `commit-msg` | After message entered | Validates conventional commit format                      |
-| `pre-push`   | Before push to remote | Auto-syncs with main if behind, runs lint/typecheck/tests |
+| Hook         | When                  | What it Does                                                       |
+| ------------ | --------------------- | ------------------------------------------------------------------ |
+| `pre-commit` | Before commit created | Runs lint-staged (ESLint + Prettier on staged files)               |
+| `commit-msg` | After message entered | Validates conventional commit format                               |
+| `pre-push`   | Before push to remote | Auto-syncs with main if behind, runs lint + typecheck + unit tests |
+
+**Pre-push checks (fast, ~10-15 seconds):**
+
+1. Lint & typecheck (`bun run check`)
+2. Unit tests (`bun run test:run`)
+
+**Note:** E2E tests are NOT run in pre-push (too slow, ~2+ minutes). They run in CI instead.
 
 **Pre-push auto-sync:**
 
 - If your branch is behind main, the hook automatically rebases
 - If there are conflicts, it aborts and tells you to run `bun run sync` manually
 - If the branch was previously pushed, it reminds you to `git push --force-with-lease`
+
+**Bypassing pre-push (use sparingly):**
+
+```bash
+SKIP_SYNC_CHECK=1 git push  # Skip sync check only
+git push --no-verify         # Skip all hooks (not recommended)
+```
 
 ### CI Pipeline (GitHub Actions)
 
@@ -368,6 +382,43 @@ The CI workflow (`.github/workflows/ci.yml`) runs on all PRs and pushes to main/
 - Include verification commands
 - Add UI screenshots for user-facing changes
 - Squash formatting-only changes into related commits
+
+### Responding to PR Review Comments
+
+When addressing PR review feedback, use efficient workflows:
+
+**Batch replies:** Instead of replying to each comment individually, post a single summary comment:
+
+```markdown
+## Addressed Review Comments
+
+| Comment                  | Fix                                                     |
+| ------------------------ | ------------------------------------------------------- |
+| Migration safety warning | Added NOTE + commented UPDATE example in migration file |
+| California estate tax    | Fixed: CA has no state estate tax, updated to federal   |
+| Asset types mismatch     | Aligned across validation, schema, and demo data        |
+
+All fixes in commit `abc1234`.
+```
+
+**Use `gh pr comment`** for summary replies instead of multiple `gh api` calls:
+
+```bash
+gh pr comment 174 --body "$(cat <<'EOF'
+## Review Comments Addressed
+
+- Fixed X in commit abc1234
+- Fixed Y in commit def5678
+EOF
+)"
+```
+
+**Verify before claiming fixes:**
+
+1. Run `bun run check` (lint + typecheck)
+2. Run `bun run test:run` (unit tests)
+3. Run `bun run build` (production build)
+4. Then commit, push, and reply to comments
 
 ### Incremental Commits
 

@@ -126,7 +126,7 @@ export function DebtForm({
         </div>
 
         <div>
-          <Label htmlFor="balance">Current Balance (CAD) *</Label>
+          <Label htmlFor="balance">Current Balance *</Label>
           <Input
             id="balance"
             type="number"

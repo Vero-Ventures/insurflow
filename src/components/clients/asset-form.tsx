@@ -15,12 +15,15 @@ import { toast } from "sonner";
 import type { Asset } from "@/types/asset";
 
 const ASSET_TYPES = [
-  { value: "rrsp", label: "RRSP" },
-  { value: "tfsa", label: "TFSA" },
-  { value: "non_registered", label: "Non-Registered" },
-  { value: "rrif", label: "RRIF" },
-  { value: "lira", label: "LIRA" },
-  { value: "lif", label: "LIF" },
+  { value: "401k", label: "401(k)" },
+  { value: "403b", label: "403(b)" },
+  { value: "ira_traditional", label: "Traditional IRA" },
+  { value: "ira_roth", label: "Roth IRA" },
+  { value: "sep_ira", label: "SEP IRA" },
+  { value: "simple_ira", label: "SIMPLE IRA" },
+  { value: "brokerage", label: "Brokerage Account" },
+  { value: "hsa", label: "HSA" },
+  { value: "529_plan", label: "529 Plan" },
   { value: "real_estate", label: "Real Estate" },
   { value: "life_insurance", label: "Life Insurance" },
   { value: "business_interest", label: "Business Interest" },
@@ -28,6 +31,7 @@ const ASSET_TYPES = [
   { value: "stock_options", label: "Stock Options" },
   { value: "cryptocurrency", label: "Cryptocurrency" },
   { value: "collectibles", label: "Collectibles" },
+  { value: "savings", label: "Savings Account" },
   { value: "other", label: "Other" },
 ];
 
@@ -147,7 +151,7 @@ export function AssetForm({
         </div>
 
         <div>
-          <Label htmlFor="value">Current Value (CAD) *</Label>
+          <Label htmlFor="value">Current Value *</Label>
           <Input
             id="value"
             type="number"

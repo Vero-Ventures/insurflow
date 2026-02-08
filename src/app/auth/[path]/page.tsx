@@ -64,7 +64,7 @@ export default async function AuthPage({
           {/* Value Proposition - Hidden on Mobile */}
           <div className="hidden space-y-6 lg:block">
             <h2 className="text-xl font-semibold">
-              Built for Canadian Life Insurance Advisors
+              Built for US Life Insurance Advisors
             </h2>
             <p className="text-primary-foreground/80 leading-relaxed">
               Replace archaic spreadsheets with a modern, AI-native platform

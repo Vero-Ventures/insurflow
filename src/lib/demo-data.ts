@@ -20,7 +20,7 @@ export const demoClient: Client = {
   firstName: "Alex",
   lastName: "Thompson",
   dateOfBirth: "1982-06-15", // 43 years old
-  state: "ON",
+  state: "CA",
   sex: "M",
   smoker: false,
   healthRating: "preferred",
@@ -38,7 +38,7 @@ export const demoClient: Client = {
 };
 
 /**
- * Demo assets representing a typical Canadian family's wealth.
+ * Demo assets representing a typical US family's wealth.
  */
 export const demoAssets: Asset[] = [
   {
@@ -55,8 +55,8 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-002",
     clientId: DEMO_CLIENT_ID,
-    name: "RRSP - Self",
-    type: "retirement",
+    name: "401(k) - Self",
+    type: "401k",
     currentValue: "185000.00",
     isLiquid: false,
     createdAt: DEMO_TIMESTAMP,
@@ -66,8 +66,8 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-003",
     clientId: DEMO_CLIENT_ID,
-    name: "RRSP - Spouse",
-    type: "retirement",
+    name: "401(k) - Spouse",
+    type: "401k",
     currentValue: "95000.00",
     isLiquid: false,
     createdAt: DEMO_TIMESTAMP,
@@ -77,8 +77,8 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-004",
     clientId: DEMO_CLIENT_ID,
-    name: "TFSA - Joint",
-    type: "investment",
+    name: "Joint Brokerage Account",
+    type: "brokerage",
     currentValue: "45000.00",
     isLiquid: true,
     createdAt: DEMO_TIMESTAMP,
@@ -100,7 +100,7 @@ export const demoAssets: Asset[] = [
     id: "demo-asset-006",
     clientId: DEMO_CLIENT_ID,
     name: "Family Vehicle",
-    type: "vehicle",
+    type: "other",
     currentValue: "35000.00",
     isLiquid: false,
     createdAt: DEMO_TIMESTAMP,
@@ -110,8 +110,8 @@ export const demoAssets: Asset[] = [
   {
     id: "demo-asset-007",
     clientId: DEMO_CLIENT_ID,
-    name: "RESP - Children",
-    type: "education",
+    name: "529 Plan - Children",
+    type: "529_plan",
     currentValue: "42000.00",
     isLiquid: false,
     createdAt: DEMO_TIMESTAMP,
@@ -121,7 +121,7 @@ export const demoAssets: Asset[] = [
 ];
 
 /**
- * Demo debts representing typical Canadian household liabilities.
+ * Demo debts representing typical US household liabilities.
  */
 export const demoDebts: Debt[] = [
   {
@@ -138,7 +138,7 @@ export const demoDebts: Debt[] = [
     id: "demo-debt-002",
     clientId: DEMO_CLIENT_ID,
     name: "Vehicle Loan",
-    type: "auto_loan",
+    type: "car_loan",
     currentBalance: "18500.00",
     createdAt: DEMO_TIMESTAMP,
     updatedAt: DEMO_TIMESTAMP,
@@ -166,7 +166,7 @@ export const demoDebts: Debt[] = [
  * - Estate Buffer: $15,000 (fixed default)
  * - Gross Needs: $1,843,000
  * - Existing Coverage: $250,000
- * - Liquid Assets: $70,000 (TFSA $45,000 + Emergency Fund $25,000)
+ * - Liquid Assets: $70,000 (Brokerage $45,000 + Emergency Fund $25,000)
  * - Net Needs: $1,523,000
  */
 export const demoInsuranceResult: InsuranceNeedsResult = {
@@ -201,7 +201,7 @@ Our analysis considered your combined household income of $210,000, comprising y
 
 To determine the appropriate level of coverage, we employed a needs-based analysis methodology. This approach calculates the total financial obligations your family would face and offsets them against your existing resources. The income replacement component was calculated at 70% of your annual income over a 15-year period, resulting in a need of $1,312,500. This duration and percentage reflect the time required for your dependents to achieve financial independence while maintaining their current standard of living. Additionally, we identified $515,500 in outstanding debts, including your mortgage on your primary residence, vehicle loan, and line of credit, all of which would need to be addressed to prevent financial hardship. An estate settlement provision of $15,000 was also included to cover probate, legal, and final expenses.
 
-The gross insurance need was determined to be $1,843,000. From this amount, we deducted your existing life insurance coverage of $250,000 and available liquid assets of $70,000, which include your TFSA and emergency fund. These offsets reduce the net insurance requirement to $1,523,000.
+The gross insurance need was determined to be $1,843,000. From this amount, we deducted your existing life insurance coverage of $250,000 and available liquid assets of $70,000, which include your brokerage account and emergency fund. These offsets reduce the net insurance requirement to $1,523,000.
 
 Your stated goals of funding your children's education and ensuring your mortgage is fully paid off in the event of your passing were factored into this analysis. The recommended coverage amount of $1,523,000 is designed to address these objectives while providing your spouse with the financial means to maintain your family's current lifestyle.
 

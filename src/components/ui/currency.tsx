@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Format a number as Canadian currency
+ * Format a number as US currency
  * Uses monospace font with tabular figures for aligned columns
  */
 function formatCurrency(
@@ -15,9 +15,9 @@ function formatCurrency(
   const { showCents = false, showSign = false } = options ?? {};
 
   const absValue = Math.abs(value);
-  const formatted = new Intl.NumberFormat("en-CA", {
+  const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "CAD",
+    currency: "USD",
     minimumFractionDigits: showCents ? 2 : 0,
     maximumFractionDigits: showCents ? 2 : 0,
   }).format(absValue);
@@ -155,7 +155,7 @@ function Percentage({
         : "text-foreground"
     : "";
 
-  const formattedValue = new Intl.NumberFormat("en-CA", {
+  const formattedValue = new Intl.NumberFormat("en-US", {
     style: "percent",
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,

@@ -2,14 +2,14 @@
 
 ## Document Info
 
-| Field             | Value                            |
-| ----------------- | -------------------------------- |
-| **Product Name**  | InsurFlow                        |
-| **Version**       | 2.0                              |
-| **Status**        | Greenfield Development           |
-| **Target Market** | Canadian Life Insurance Advisors |
-| **Company**       | Vero Ventures                    |
-| **Last Updated**  | January 29, 2026                 |
+| Field             | Value                      |
+| ----------------- | -------------------------- |
+| **Product Name**  | InsurFlow                  |
+| **Version**       | 2.0                        |
+| **Status**        | Greenfield Development     |
+| **Target Market** | US Life Insurance Advisors |
+| **Company**       | Vero Ventures              |
+| **Last Updated**  | January 29, 2026           |
 
 ---
 
@@ -72,7 +72,7 @@ InsurFlow will be the tool advisors open first when meeting a client, and the sy
 #### Capabilities
 
 - Create and manage client profiles
-- Capture demographics: name, date of birth, province, sex
+- Capture demographics: name, date of birth, state, sex
 - Record health factors: smoking status, health rating
 - Set life expectancy assumptions
 - Track onboarding status
@@ -92,7 +92,7 @@ InsurFlow will be the tool advisors open first when meeting a client, and the sy
 
 #### Capabilities
 
-- Record assets by type (real estate, investments, TFSA, RRSP, vehicles, etc.)
+- Record assets by type (real estate, investments, 401(k), IRA, vehicles, etc.)
 - Track initial value vs. current value
 - Set appreciation rate and term
 - Flag assets as:
@@ -203,7 +203,7 @@ InsurFlow will be the tool advisors open first when meeting a client, and the sy
 
 Calculates the costs associated with settling an estate:
 
-- **Probate fees** (province-specific)
+- **Estate taxes** (state-specific)
 - **Final taxes** (capital gains on deemed disposition)
 - **Professional fees** (legal, accounting)
 - **Funeral and administrative costs**
@@ -329,7 +329,7 @@ Aggregates all needs into a single defensible number:
 
 #### Capabilities
 
-- Upload Excel-based illustrations from Canadian insurers
+- Upload Excel-based illustrations from US insurers
 - Parse illustration data automatically
 - Display illustration data in tables and charts
 - Compare multiple illustrations side-by-side
@@ -430,7 +430,7 @@ Aggregates all needs into a single defensible number:
 - Database encryption at rest
 - Row-level security for multi-tenancy
 - Audit logging for sensitive operations
-- PIPEDA compliance (Canadian privacy law)
+- Data privacy compliance (US state and federal privacy laws)
 
 ---
 
@@ -493,7 +493,7 @@ The following features are explicitly **not included** in the v2.0 release:
 | Custom branding/white-label    | Future enterprise feature                    |
 | API access for third parties   | Future platform feature                      |
 | Integration with external CRMs | Future integration                           |
-| US market support              | Canadian market focus for v2.0               |
+| Canadian market support        | US market focus for v2.0                     |
 
 ---
 

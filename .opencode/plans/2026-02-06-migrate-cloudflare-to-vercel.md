@@ -143,7 +143,7 @@ variable "better_auth_secret" {
 }
 
 variable "better_auth_url" {
-  description = "Base URL for Better Auth (e.g., https://insurflow.vercel.app)"
+  description = "Base URL for Better Auth (e.g., https://insurflow.biz)"
   type        = string
 }
 
@@ -389,7 +389,7 @@ output "project_name" {
 
 output "production_url" {
   description = "Production deployment URL"
-  value       = "https://insurflow.vercel.app"
+  value       = "https://insurflow.biz"
 }
 
 output "preview_url_pattern" {
@@ -440,7 +440,7 @@ production_branch = "main"
 # Better Auth Configuration
 # Generate a secure secret: openssl rand -base64 32
 # better_auth_secret = "your-32-char-secret"
-# better_auth_url    = "https://insurflow.vercel.app"
+# better_auth_url    = "https://insurflow.biz"
 
 # GitHub OAuth (optional)
 # Create OAuth App: https://github.com/settings/developers
@@ -993,7 +993,7 @@ InsurFlow deploys to Vercel with automatic Git integration. Database branching f
 
 | Environment | URL                                 | Database                     |
 | ----------- | ----------------------------------- | ---------------------------- |
-| Production  | https://insurflow.vercel.app        | Neon main branch             |
+| Production  | https://insurflow.biz               | Neon main branch             |
 | Preview     | https://insurflow-{hash}.vercel.app | Neon `preview/pr-{N}` branch |
 
 ### Deployment Workflows
@@ -1027,13 +1027,13 @@ Configure in: Settings → Secrets and variables → Actions → Secrets
 
 The Vercel project and environment variables are managed via Terraform in `infra/`.
 
-| Variable             | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `database_url`       | Production Neon connection string                   |
-| `better_auth_secret` | Session encryption key (min 32 chars)               |
-| `better_auth_url`    | Production URL (e.g., https://insurflow.vercel.app) |
-| `axiom_token`        | (Optional) Axiom logging token                      |
-| `axiom_dataset`      | (Optional) Axiom dataset name                       |
+| Variable             | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `database_url`       | Production Neon connection string            |
+| `better_auth_secret` | Session encryption key (min 32 chars)        |
+| `better_auth_url`    | Production URL (e.g., https://insurflow.biz) |
+| `axiom_token`        | (Optional) Axiom logging token               |
+| `axiom_dataset`      | (Optional) Axiom dataset name                |
 ```
 
 Also search for and update any other references to:

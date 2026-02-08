@@ -52,7 +52,7 @@ variable "better_auth_secret" {
 }
 
 variable "better_auth_url" {
-  description = "Base URL for Better Auth (e.g., https://insurflow.vercel.app)"
+  description = "Base URL for Better Auth (e.g., https://insurflow.biz)"
   type        = string
 }
 

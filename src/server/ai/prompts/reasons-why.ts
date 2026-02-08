@@ -2,7 +2,7 @@
  * Reasons Why Letter Prompt Template
  *
  * Generates a professional compliance document explaining insurance recommendations.
- * This is a regulatory requirement for life insurance advisors in Canada.
+ * This is a regulatory requirement for life insurance advisors in the United States.
  */
 
 import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
@@ -35,32 +35,70 @@ export interface ReasonsWhyFinancialData {
  * Format currency for display in the letter
  */
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-CA", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "CAD",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
 /**
- * Get full state/province name from abbreviation
+ * Get full state name from abbreviation
  */
 function getStateName(code: string): string {
   const states: Record<string, string> = {
-    AB: "Alberta",
-    BC: "British Columbia",
-    MB: "Manitoba",
-    NB: "New Brunswick",
-    NL: "Newfoundland and Labrador",
-    NS: "Nova Scotia",
-    NT: "Northwest Territories",
-    NU: "Nunavut",
-    ON: "Ontario",
-    PE: "Prince Edward Island",
-    QC: "Quebec",
-    SK: "Saskatchewan",
-    YT: "Yukon",
+    AL: "Alabama",
+    AK: "Alaska",
+    AZ: "Arizona",
+    AR: "Arkansas",
+    CA: "California",
+    CO: "Colorado",
+    CT: "Connecticut",
+    DE: "Delaware",
+    FL: "Florida",
+    GA: "Georgia",
+    HI: "Hawaii",
+    ID: "Idaho",
+    IL: "Illinois",
+    IN: "Indiana",
+    IA: "Iowa",
+    KS: "Kansas",
+    KY: "Kentucky",
+    LA: "Louisiana",
+    ME: "Maine",
+    MD: "Maryland",
+    MA: "Massachusetts",
+    MI: "Michigan",
+    MN: "Minnesota",
+    MS: "Mississippi",
+    MO: "Missouri",
+    MT: "Montana",
+    NE: "Nebraska",
+    NV: "Nevada",
+    NH: "New Hampshire",
+    NJ: "New Jersey",
+    NM: "New Mexico",
+    NY: "New York",
+    NC: "North Carolina",
+    ND: "North Dakota",
+    OH: "Ohio",
+    OK: "Oklahoma",
+    OR: "Oregon",
+    PA: "Pennsylvania",
+    RI: "Rhode Island",
+    SC: "South Carolina",
+    SD: "South Dakota",
+    TN: "Tennessee",
+    TX: "Texas",
+    UT: "Utah",
+    VT: "Vermont",
+    VA: "Virginia",
+    WA: "Washington",
+    WV: "West Virginia",
+    WI: "Wisconsin",
+    WY: "Wyoming",
+    DC: "District of Columbia",
   };
   return states[code] ?? code;
 }
@@ -97,7 +135,7 @@ export function buildReasonsWhyPrompt(
     ? `\n\nAdditional client goals and considerations: ${client.additionalGoals}`
     : "";
 
-  const prompt = `You are a professional life insurance advisor in Canada. Generate a formal "Reasons Why" letter explaining the insurance recommendation for a client. This is a compliance document that will be part of the client's file.
+  const prompt = `You are a professional life insurance advisor in the United States. Generate a formal "Reasons Why" letter explaining the insurance recommendation for a client. This is a compliance document that will be part of the client's file.
 
 CLIENT INFORMATION:
 - Name: ${clientName}

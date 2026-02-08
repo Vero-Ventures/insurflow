@@ -23,9 +23,9 @@ export type EstateBufferConfig =
  * Input parameters for insurance needs calculation
  */
 export interface InsuranceNeedsInput {
-  /** Client's annual income in CAD */
+  /** Client's annual income in USD */
   clientIncome: number;
-  /** Spouse's annual income in CAD (optional) */
+  /** Spouse's annual income in USD (optional) */
   spouseIncome?: number;
   /** Whether to include spouse income in calculation */
   includeSpouseIncome: boolean;
@@ -33,13 +33,13 @@ export interface InsuranceNeedsInput {
   incomeReplacementPercent: number;
   /** Number of years to replace income */
   replacementDurationYears: number;
-  /** Existing life insurance coverage amount in CAD */
+  /** Existing life insurance coverage amount in USD */
   existingLifeInsuranceCoverage: number;
-  /** Total debt balance across all debts in CAD */
+  /** Total debt balance across all debts in USD */
   totalDebts: number;
-  /** Total liquid assets in CAD (easily accessible) */
+  /** Total liquid assets in USD (easily accessible) */
   liquidAssets: number;
-  /** Total assets in CAD (used for percentage-based estate buffer) */
+  /** Total assets in USD (used for percentage-based estate buffer) */
   totalAssets: number;
   /** Estate buffer configuration */
   estateBuffer: EstateBufferConfig;
@@ -77,7 +77,7 @@ export interface InsuranceNeedsResult {
 
 /**
  * Default estate buffer configuration
- * $15,000 is a common estimate for funeral costs and probate fees in Canada
+ * $15,000 is a common estimate for funeral costs and estate settlement expenses
  */
 export const DEFAULT_ESTATE_BUFFER: EstateBufferConfig = {
   type: "fixed",

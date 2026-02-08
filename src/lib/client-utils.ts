@@ -22,7 +22,7 @@ export function calculateAge(dateOfBirth: string): number {
  */
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -30,12 +30,12 @@ export function formatDate(dateString: string): string {
 }
 
 /**
- * Format number as Canadian currency (CAD)
+ * Format number as US currency (USD)
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-CA", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "CAD",
+    currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -53,7 +53,7 @@ export function parseCurrency(value: string): number {
  */
 export function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
