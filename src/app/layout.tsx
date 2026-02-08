@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: "InsurFlow",
   description:
     "AI-powered financial needs analysis for life insurance advisors",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: {
+    icon: "/insurflow-logo.png",
+    apple: "/insurflow-logo.png",
+  },
 };
 
 /**
