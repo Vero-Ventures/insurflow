@@ -1,1 +1,0 @@
-ALTER TABLE "client" ADD COLUMN "additional_goals" text;

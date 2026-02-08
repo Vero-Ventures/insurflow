@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769047987331,
-      "tag": "0000_oval_madrox",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1769056256644,
-      "tag": "0001_flaky_ricochet",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1769484773620,
-      "tag": "0002_noisy_leech",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1769566263858,
-      "tag": "0003_remarkable_shatterstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1769136000000,
-      "tag": "0004_add_auth_indexes",
+      "when": 1770587090019,
+      "tag": "0000_happy_wiccan",
       "breakpoints": true
     },
     {
