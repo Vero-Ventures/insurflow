@@ -12,11 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="light">
       <AuthUIProvider
         authClient={authClient}
         navigate={router.push}
