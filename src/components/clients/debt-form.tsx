@@ -99,7 +99,7 @@ export function DebtForm({
       submitLabel={debt ? "Update" : "Create"}
     >
       <div className="space-y-4">
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="name">Debt Name *</Label>
           <Input
             id="name"
@@ -110,7 +110,7 @@ export function DebtForm({
           />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="type">Debt Type *</Label>
           <Select value={type} onValueChange={setType} disabled={isSubmitting}>
             <SelectTrigger id="type">
@@ -126,7 +126,7 @@ export function DebtForm({
           </Select>
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="balance">Current Balance *</Label>
           <Input
             id="balance"

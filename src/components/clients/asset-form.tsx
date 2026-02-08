@@ -124,7 +124,7 @@ export function AssetForm({
       submitLabel={item ? "Update" : "Create"}
     >
       <div className="space-y-4">
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="name">Asset Name *</Label>
           <Input
             id="name"
@@ -135,7 +135,7 @@ export function AssetForm({
           />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="type">Asset Type *</Label>
           <Select value={type} onValueChange={setType} disabled={isSubmitting}>
             <SelectTrigger id="type">
@@ -151,7 +151,7 @@ export function AssetForm({
           </Select>
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="value">Current Value *</Label>
           <Input
             id="value"
@@ -165,7 +165,7 @@ export function AssetForm({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-2">
           <input
             type="checkbox"
             id="liquid"
@@ -174,7 +174,7 @@ export function AssetForm({
             disabled={isSubmitting}
             className="h-4 w-4 rounded border-gray-300"
           />
-          <Label htmlFor="liquid" className="mb-0 cursor-pointer">
+          <Label htmlFor="liquid" className="mb-0 cursor-pointer font-normal">
             This is a liquid asset
           </Label>
         </div>
