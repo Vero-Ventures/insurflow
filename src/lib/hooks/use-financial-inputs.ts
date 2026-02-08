@@ -107,6 +107,7 @@ export function useFinancialInputs(client: Client) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(updatePayload),
       });
 

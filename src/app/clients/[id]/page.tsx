@@ -93,7 +93,9 @@ function ClientDetailContent() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/clients/${clientId}`);
+        const response = await fetch(`/api/clients/${clientId}`, {
+          credentials: "include",
+        });
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -122,6 +124,7 @@ function ClientDetailContent() {
       setIsDeleting(true);
       const response = await fetch(`/api/clients/${clientId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {

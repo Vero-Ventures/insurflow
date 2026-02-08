@@ -83,6 +83,7 @@ export function AssetsList({
   const handleDelete = async (id: string) => {
     const response = await fetch(`/api/clients/${clientId}/assets/${id}`, {
       method: "DELETE",
+      credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to delete asset");
   };
