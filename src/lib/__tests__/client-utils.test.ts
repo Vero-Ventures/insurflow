@@ -15,7 +15,7 @@ describe("Completion Status Functions", () => {
         firstName: "John",
         lastName: "Doe",
         dateOfBirth: "1980-01-01",
-        state: "ON",
+        state: "NY",
       };
       expect(isProfileComplete(client)).toBe(true);
     });
@@ -25,7 +25,7 @@ describe("Completion Status Functions", () => {
         firstName: "",
         lastName: "Doe",
         dateOfBirth: "1980-01-01",
-        state: "ON",
+        state: "NY",
       };
       expect(isProfileComplete(client)).toBe(false);
     });
@@ -35,7 +35,7 @@ describe("Completion Status Functions", () => {
         firstName: "John",
         lastName: "",
         dateOfBirth: "1980-01-01",
-        state: "ON",
+        state: "NY",
       };
       expect(isProfileComplete(client)).toBe(false);
     });
@@ -45,12 +45,12 @@ describe("Completion Status Functions", () => {
         firstName: "John",
         lastName: "Doe",
         dateOfBirth: "",
-        state: "ON",
+        state: "NY",
       };
       expect(isProfileComplete(client)).toBe(false);
     });
 
-    it("returns false when province is missing", () => {
+    it("returns false when state is missing", () => {
       const client = {
         firstName: "John",
         lastName: "Doe",
@@ -109,7 +109,7 @@ describe("Completion Status Functions", () => {
         firstName: "John",
         lastName: "Doe",
         dateOfBirth: "1980-01-01",
-        state: "ON",
+        state: "NY",
         clientIncome: "100000.00",
       };
       const insuranceResult = { totalInsuranceNeeds: 500000 };
@@ -128,7 +128,7 @@ describe("Completion Status Functions", () => {
         firstName: "John",
         lastName: "Doe",
         dateOfBirth: "1980-01-01",
-        state: "ON",
+        state: "NY",
         clientIncome: "0", // Not complete
       };
 
