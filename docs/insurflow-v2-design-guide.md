@@ -638,23 +638,9 @@ State: California ▼
 Auto-Applied Rates (2026):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 State Estate Tax: None
-  • First $50,000: $250 flat
-  • Over $50,000: 1.5%
-  • Source: Ontario Courts of Justice Act, 2026
-
-Marginal Tax Rate: 53.53%
-  • Federal: 33%
-  • Provincial: 20.53%
-  • Source: CRA 2026 Tax Tables
-
-Capital Gains Inclusion: 66.67%
-  • Applies to gains over $250,000
-  • Source: 2024 Federal Budget (amended)
-
-Estate Administration Costs:
-  • Legal fees: $5,000 avg
-  • Accounting fees: $2,500 avg
-  • Source: Ontario Estate Law Society, 2026
+  • California does not currently levy a state estate or inheritance tax.
+  • Federal estate tax may still apply.
+  • Source: California State Board of Equalization
 
 [View Full Calculation Breakdown ▼]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

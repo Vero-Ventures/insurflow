@@ -7,6 +7,17 @@ CREATE TYPE "public"."state_new" AS ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT
 -- Step 2: Add new state column to client table
 ALTER TABLE "client" ADD COLUMN "state_new" "public"."state_new";
 
+-- NOTE: This migration drops existing location data. If you need to preserve
+-- data, add an UPDATE step before dropping columns to map old values to the
+-- new enum.
+-- Example (replace mappings as needed):
+-- UPDATE "client"
+-- SET "state_new" = CASE
+--   WHEN "state" IN ('ON', 'QC') THEN 'NY'
+--   WHEN "state" IN ('BC', 'AB') THEN 'CA'
+--   ELSE 'TX'
+-- END;
+
 -- Step 3: Drop the old province column
 ALTER TABLE "client" DROP COLUMN IF EXISTS "province";
 ALTER TABLE "client" DROP COLUMN IF EXISTS "state";

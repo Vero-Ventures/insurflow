@@ -346,7 +346,7 @@ I had to recall the letter, apologize, recalculate, regenerate. Lost 4 hours and
 
 Now InsurFlow auto-updates tax tables and flags outdated rates before I send anything."
 
-- David L., advisor in Ottawa
+- David L., advisor in Austin
 
 See the error-flagging in action: [insurflow.vercel.app/demo](https://insurflow.vercel.app/demo)
 
