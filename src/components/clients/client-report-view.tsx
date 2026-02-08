@@ -19,6 +19,9 @@ import {
   Cigarette,
   FileText,
   Printer,
+  DollarSign,
+  Clock,
+  Shield,
 } from "lucide-react";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
@@ -125,59 +128,89 @@ export function ClientReportView({
     window.print();
   };
 
-  return (
-    <div className="space-y-6 print:space-y-4">
-      {/* Report Header */}
-      <div className="border-b pb-4 print:pb-2">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-muted-foreground mb-1 flex items-center gap-2 text-sm">
-              <FileText className="h-4 w-4" />
-              <span>Financial Needs Analysis Report</span>
-              {isDemo && (
-                <Badge variant="secondary" className="ml-2">
-                  Demo
-                </Badge>
-              )}
-            </div>
-            <h2 className="text-2xl font-bold print:text-xl">
-              {client.firstName} {client.lastName}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Generated: {formatDateTime(new Date().toISOString())}
-            </p>
-          </div>
-          <Button
-            onClick={handlePrint}
-            variant="outline"
-            className="print:hidden"
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Print Report
-          </Button>
-        </div>
-      </div>
+  // Generate initials for avatar
+  const initials =
+    `${client.firstName.charAt(0)}${client.lastName.charAt(0)}`.toUpperCase();
 
-      {/* Client Snapshot */}
-      <Card className="print:border-gray-300 print:shadow-none">
-        <CardHeader className="print:pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Client Profile
-          </CardTitle>
-          <CardDescription>
-            Personal and demographic information
-          </CardDescription>
+  return (
+    <div className="space-y-8 print:space-y-4">
+      {/* Report Header */}
+      <Card className="border-border/60 overflow-hidden py-0 shadow-sm print:border-gray-300 print:shadow-none">
+        {/* Use explicit deep navy color for consistent branding across themes */}
+        <div className="relative bg-[oklch(0.35_0.08_250)] px-6 py-6 print:bg-gray-100">
+          {/* Decorative elements */}
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-white/5 blur-xl" />
+          <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/5 blur-xl" />
+
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-4">
+              {/* Client avatar */}
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-xl font-semibold text-white backdrop-blur-sm">
+                {initials}
+              </div>
+              <div>
+                <div className="mb-1 flex items-center gap-2">
+                  <h2 className="font-display text-2xl font-semibold tracking-tight text-white print:text-xl print:text-gray-900">
+                    {client.firstName} {client.lastName}
+                  </h2>
+                  {isDemo && (
+                    <Badge
+                      variant="secondary"
+                      className="border-white/20 bg-white/10 text-white"
+                    >
+                      Demo
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-white/70 print:text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />
+                    Financial Needs Analysis
+                  </span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    {formatDateTime(new Date().toISOString())}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={handlePrint}
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print Report
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Client Profile */}
+      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
+        <CardHeader className="pb-4 print:pb-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
+              <User className="text-primary h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Client Profile</CardTitle>
+              <CardDescription>
+                Personal and demographic information
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3 print:grid-cols-3">
             <div className="flex items-start gap-3">
               <Calendar className="text-muted-foreground mt-0.5 h-4 w-4" />
               <div>
                 <p className="text-muted-foreground text-sm">Age</p>
                 <p className="font-medium">
                   {calculateAge(client.dateOfBirth)} years
-                  <span className="text-muted-foreground ml-1 text-sm">
+                  <span className="text-muted-foreground ml-1 text-sm font-normal">
                     (DOB: {formatDate(client.dateOfBirth)})
                   </span>
                 </p>
@@ -188,7 +221,9 @@ export function ClientReportView({
               <MapPin className="text-muted-foreground mt-0.5 h-4 w-4" />
               <div>
                 <p className="text-muted-foreground text-sm">State</p>
-                <p className="font-medium uppercase">{client.state}</p>
+                <p className="font-medium tracking-wide uppercase">
+                  {client.state}
+                </p>
               </div>
             </div>
 
@@ -210,7 +245,14 @@ export function ClientReportView({
               <Cigarette className="text-muted-foreground mt-0.5 h-4 w-4" />
               <div>
                 <p className="text-muted-foreground text-sm">Smoker Status</p>
-                <Badge variant={client.smoker ? "destructive" : "secondary"}>
+                <Badge
+                  variant={client.smoker ? "destructive" : "outline"}
+                  className={
+                    client.smoker
+                      ? ""
+                      : "border-emerald/30 bg-emerald/5 text-emerald"
+                  }
+                >
                   {client.smoker ? "Smoker" : "Non-Smoker"}
                 </Badge>
               </div>
@@ -244,52 +286,59 @@ export function ClientReportView({
       </Card>
 
       {/* Financial Inputs Summary */}
-      <Card className="print:border-gray-300 print:shadow-none">
-        <CardHeader className="print:pb-2">
-          <CardTitle>Financial Inputs</CardTitle>
-          <CardDescription>
-            Income and insurance planning parameters
-          </CardDescription>
+      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
+        <CardHeader className="pb-4 print:pb-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
+              <DollarSign className="text-primary h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Financial Inputs</CardTitle>
+              <CardDescription>
+                Income and insurance planning parameters
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 print:grid-cols-3">
-            <div className="bg-muted/50 rounded-lg border p-4 print:p-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
               <p className="text-muted-foreground text-sm">
                 Client Annual Income
               </p>
-              <p className="text-lg font-semibold">
+              <p className="font-currency mt-1 text-xl font-semibold">
                 {formatCurrency(parseFloat(client.clientIncome || "0") || 0)}
               </p>
             </div>
 
             {client.spouseIncome && parseFloat(client.spouseIncome) > 0 && (
-              <div className="bg-muted/50 rounded-lg border p-4 print:p-2">
+              <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
                 <p className="text-muted-foreground text-sm">
                   Spouse Annual Income
                 </p>
-                <p className="text-lg font-semibold">
+                <p className="font-currency mt-1 text-xl font-semibold">
                   {formatCurrency(parseFloat(client.spouseIncome) || 0)}
                 </p>
               </div>
             )}
 
-            <div className="bg-muted/50 rounded-lg border p-4 print:p-2">
+            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
               <p className="text-muted-foreground text-sm">
                 Income Replacement
               </p>
-              <p className="text-lg font-semibold">
+              <p className="font-currency mt-1 text-xl font-semibold">
                 {client.incomeReplacementPercent || "70"}%
               </p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 for {client.replacementDurationYears || 10} years
               </p>
             </div>
 
-            <div className="bg-muted/50 rounded-lg border p-4 print:p-2">
+            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
               <p className="text-muted-foreground text-sm">
                 Existing Life Insurance
               </p>
-              <p className="text-lg font-semibold">
+              <p className="font-currency mt-1 text-xl font-semibold">
                 {formatCurrency(
                   parseFloat(client.existingLifeInsuranceCoverage || "0") || 0,
                 )}
@@ -298,11 +347,11 @@ export function ClientReportView({
           </div>
 
           {client.additionalGoals && (
-            <div className="mt-4 border-t pt-4">
-              <p className="text-muted-foreground mb-1 text-sm">
+            <div className="border-border/60 mt-6 border-t pt-4">
+              <p className="text-muted-foreground mb-2 text-sm font-medium">
                 Additional Goals & Notes
               </p>
-              <p className="text-sm whitespace-pre-wrap">
+              <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
                 {client.additionalGoals}
               </p>
             </div>
@@ -311,12 +360,19 @@ export function ClientReportView({
       </Card>
 
       {/* Assets & Debts Summary */}
-      <Card className="print:border-gray-300 print:shadow-none">
-        <CardHeader className="print:pb-2">
-          <CardTitle>Net Worth Summary</CardTitle>
-          <CardDescription>
-            Assets, liabilities, and net position
-          </CardDescription>
+      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
+        <CardHeader className="pb-4 print:pb-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
+              <Shield className="text-primary h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Net Worth Summary</CardTitle>
+              <CardDescription>
+                Assets, liabilities, and net position
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoadingData ? (
@@ -335,10 +391,13 @@ export function ClientReportView({
 
       {/* Insurance Needs Analysis */}
       <div className="print:break-before-page">
-        <h3 className="mb-4 text-lg font-semibold print:text-base">
-          Insurance Needs Analysis
-        </h3>
-        <div className="grid gap-4 lg:grid-cols-2 print:block print:space-y-4">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="bg-emerald h-1 w-1 rounded-full" />
+          <h3 className="font-display text-foreground text-xl font-semibold tracking-tight print:text-base">
+            Insurance Needs Analysis
+          </h3>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2 print:block print:space-y-4">
           <InsuranceNeedsCard
             result={insuranceResult}
             isLoading={!isDemo && isInsuranceLoading}
@@ -362,13 +421,13 @@ export function ClientReportView({
       </div>
 
       {/* Report Footer */}
-      <div className="text-muted-foreground border-t pt-4 text-sm print:pt-2">
-        <p>
+      <div className="border-border/60 text-muted-foreground border-t pt-6 text-sm print:pt-2">
+        <p className="leading-relaxed">
           This report is generated for informational purposes only and should
           not be considered financial advice. Please consult with a licensed
           financial advisor for personalized recommendations.
         </p>
-        <p className="mt-2">
+        <p className="mt-3 font-mono text-xs">
           Report ID: {clientId} | Last Updated:{" "}
           {formatDateTime(client.updatedAt)}
         </p>
@@ -382,48 +441,76 @@ export function ClientReportView({
  */
 export function ClientReportViewSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="border-b pb-4">
-        <Skeleton className="mb-2 h-4 w-48" />
-        <Skeleton className="mb-1 h-8 w-64" />
-        <Skeleton className="h-4 w-40" />
-      </div>
+    <div className="space-y-8">
+      {/* Header skeleton */}
+      <Card className="border-border/60 overflow-hidden py-0">
+        <div className="bg-primary/10 px-6 py-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-14 w-14 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+        </div>
+      </Card>
 
-      <Card>
+      {/* Profile skeleton */}
+      <Card className="border-border/60">
         <CardHeader>
-          <Skeleton className="mb-2 h-6 w-32" />
-          <Skeleton className="h-4 w-48" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i}>
-                <Skeleton className="mb-2 h-4 w-24" />
-                <Skeleton className="h-5 w-32" />
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="h-4 w-4" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Financial inputs skeleton */}
+      <Card className="border-border/60">
         <CardHeader>
-          <Skeleton className="mb-2 h-6 w-36" />
-          <Skeleton className="h-4 w-56" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-24 rounded-xl" />
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Net worth skeleton */}
+      <Card className="border-border/60">
         <CardHeader>
-          <Skeleton className="mb-2 h-6 w-40" />
-          <Skeleton className="h-4 w-52" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-52" />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
@@ -433,7 +520,8 @@ export function ClientReportViewSkeleton() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Insurance needs skeleton */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <Skeleton className="h-96" />
         <Skeleton className="h-96" />
       </div>

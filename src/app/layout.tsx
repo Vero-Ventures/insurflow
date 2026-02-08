@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, DM_Serif_Display } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AppNavigationMenu } from "@/components/navigation-menu";
@@ -39,13 +39,25 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+/**
+ * DM Serif Display - Display font for headlines
+ * Elegant, authoritative serif that conveys trust and professionalism.
+ * Used for hero headlines and key marketing text.
+ */
+const dmSerifDisplay = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${dmSerifDisplay.variable}`}
       suppressHydrationWarning
     >
       <body>

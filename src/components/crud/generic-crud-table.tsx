@@ -22,13 +22,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Edit2 } from "lucide-react";
+import { Trash2, Edit2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ColumnDef<T> {
   key: keyof T;
   header: string;
   render?: (value: unknown, item: T) => React.ReactNode;
+  className?: string;
 }
 
 interface GenericCrudTableProps<T extends { id: string }> {
@@ -74,7 +75,17 @@ export function GenericCrudTable<T extends { id: string }>({
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <div
+            key={i}
+            className="border-border/40 bg-muted/20 flex items-center gap-4 rounded-lg border p-4"
+          >
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-8 w-20" />
+          </div>
         ))}
       </div>
     );
@@ -82,72 +93,103 @@ export function GenericCrudTable<T extends { id: string }>({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="border-border/60 bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+        <div className="bg-muted/50 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+          <div className="bg-muted h-6 w-6 rounded-full" />
+        </div>
         <p className="text-muted-foreground text-sm">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="border-border/60 overflow-hidden rounded-lg border">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-border/60 bg-muted/30 hover:bg-muted/30">
             {columns.map((column) => (
-              <TableHead key={String(column.key)}>{column.header}</TableHead>
+              <TableHead
+                key={String(column.key)}
+                className={`text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase ${column.className || ""}`}
+              >
+                {column.header}
+              </TableHead>
             ))}
-            <TableHead className="w-20">Actions</TableHead>
+            <TableHead className="text-muted-foreground/70 w-24 text-right text-xs font-semibold tracking-wider uppercase">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
+          {items.map((item, index) => (
+            <TableRow
+              key={item.id}
+              className={`border-border/40 hover:bg-muted/30 transition-colors ${
+                index % 2 === 0 ? "bg-background" : "bg-muted/10"
+              }`}
+            >
               {columns.map((column) => (
-                <TableCell key={String(column.key)}>
+                <TableCell
+                  key={String(column.key)}
+                  className={`py-4 ${column.className || ""}`}
+                >
                   {column.render
                     ? column.render(item[column.key], item)
                     : String(item[column.key] ?? "")}
                 </TableCell>
               ))}
-              <TableCell className="space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(item)}
-                  className="h-8 w-8"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hover:bg-destructive/10 hover:text-destructive h-8 w-8"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete {itemName}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this {itemName}? This
-                        action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <TableCell className="py-4 text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(item)}
+                    className="text-muted-foreground hover:bg-primary/10 hover:text-primary h-8 w-8"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span className="sr-only">Edit {itemName}</span>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8"
                       >
-                        {deletingId === item.id ? "Deleting..." : "Delete"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete {itemName}</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3">
+                          <div className="bg-destructive/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <AlertTriangle className="text-destructive h-5 w-5" />
+                          </div>
+                          <AlertDialogTitle className="font-display text-lg font-semibold">
+                            Delete {itemName}
+                          </AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-muted-foreground pl-13">
+                          Are you sure you want to delete this {itemName}? This
+                          action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2 sm:gap-0">
+                        <AlertDialogCancel className="border-border/60">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deletingId === item.id}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {deletingId === item.id ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </TableCell>
             </TableRow>
           ))}
