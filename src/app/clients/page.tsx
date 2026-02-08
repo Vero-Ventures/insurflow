@@ -49,10 +49,14 @@ export default function ClientsPage() {
             throw new Error("Please sign in to view your clients");
           }
           if (response.status === 500) {
-            throw new Error("Server error. Please try again later.");
+            throw new Error(
+              "Server error. Please try again later or contact support.",
+            );
           }
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch clients");
+          throw new Error(
+            errorData.error || `Failed to fetch clients (${response.status})`,
+          );
         }
 
         const data = await response.json();
