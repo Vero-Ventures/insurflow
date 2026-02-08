@@ -206,3 +206,74 @@ The gross insurance need was determined to be $1,843,000. From this amount, we d
 Your stated goals of funding your children's education and ensuring your mortgage is fully paid off in the event of your passing were factored into this analysis. The recommended coverage amount of $1,523,000 is designed to address these objectives while providing your spouse with the financial means to maintain your family's current lifestyle.
 
 This recommendation is based solely on the financial information you have provided and the assumptions outlined above. I encourage you to review this analysis periodically, particularly following any significant life changes such as income adjustments, the birth of additional dependents, or material changes in your asset or liability profile. Should your circumstances change, a revised analysis would be appropriate to ensure your coverage remains adequate.`;
+
+/**
+ * Additional demo clients for the portfolio view.
+ * Shows variety of client statuses and stages.
+ */
+export const demoClients: Client[] = [
+  demoClient, // Alex Thompson - Active, calculated
+  {
+    id: "demo-client-002",
+    firstName: "Sarah",
+    lastName: "Chen",
+    dateOfBirth: "1988-03-22", // 37 years old
+    state: "NY",
+    sex: "F",
+    smoker: false,
+    healthRating: "preferred_plus",
+    hasSpouse: true,
+    spouseAge: 39,
+    clientIncome: "175000.00",
+    spouseIncome: "120000.00",
+    incomeReplacementPercent: "60",
+    replacementDurationYears: 20,
+    existingLifeInsuranceCoverage: "500000.00",
+    additionalGoals:
+      "Planning for early retirement at 55. Want to ensure spouse and future children are protected.",
+    status: "active",
+    updatedAt: "2026-02-05T09:30:00.000Z",
+  },
+  {
+    id: "demo-client-003",
+    firstName: "Michael",
+    lastName: "Roberts",
+    dateOfBirth: "1975-11-08", // 50 years old
+    state: "TX",
+    sex: "M",
+    smoker: false,
+    healthRating: "standard",
+    hasSpouse: true,
+    spouseAge: 48,
+    clientIncome: "95000.00",
+    spouseIncome: "65000.00",
+    incomeReplacementPercent: "75",
+    replacementDurationYears: 10,
+    existingLifeInsuranceCoverage: "100000.00",
+    additionalGoals:
+      "Kids are almost independent. Focus on spouse protection and final expenses.",
+    status: "draft",
+    updatedAt: "2026-02-03T14:15:00.000Z",
+  },
+  {
+    id: "demo-client-004",
+    firstName: "Emily",
+    lastName: "Patel",
+    dateOfBirth: "1992-07-30", // 33 years old
+    state: "WA",
+    sex: "F",
+    smoker: false,
+    healthRating: "preferred",
+    hasSpouse: false,
+    spouseAge: undefined,
+    clientIncome: "140000.00",
+    spouseIncome: undefined,
+    incomeReplacementPercent: "50",
+    replacementDurationYears: 25,
+    existingLifeInsuranceCoverage: "0.00",
+    additionalGoals:
+      "Single, no dependents. Want basic coverage for parents and student loans.",
+    status: "active",
+    updatedAt: "2026-01-28T11:00:00.000Z",
+  },
+];

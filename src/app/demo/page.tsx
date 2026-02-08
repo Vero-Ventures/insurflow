@@ -3,23 +3,50 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Sparkles, ArrowRight } from "lucide-react";
-import { ClientReportView } from "@/components/clients/client-report-view";
 import {
-  demoClient,
-  demoAssets,
-  demoDebts,
-  demoInsuranceResult,
-  demoLetter,
-} from "@/lib/demo-data";
+  ArrowLeft,
+  Sparkles,
+  ArrowRight,
+  UserPlus,
+  Calculator,
+  FileText,
+  Wand2,
+} from "lucide-react";
 
 /**
- * Demo page showing a pre-populated sample client report.
- * Allows prospects to explore the app without authentication.
+ * Demo landing page - overview of what the demo covers.
+ * Entry point for the comprehensive demo experience.
  */
 export default function DemoPage() {
+  const journeySteps = [
+    {
+      step: 1,
+      icon: <UserPlus className="h-5 w-5" />,
+      title: "Add a Client",
+      description: "Enter client details and financial information",
+    },
+    {
+      step: 2,
+      icon: <Calculator className="h-5 w-5" />,
+      title: "See the Analysis",
+      description: "Watch our engine calculate exact coverage needs",
+    },
+    {
+      step: 3,
+      icon: <Wand2 className="h-5 w-5" />,
+      title: "Generate AI Letter",
+      description: "Create a compliant 'Reasons Why' letter in seconds",
+    },
+    {
+      step: 4,
+      icon: <FileText className="h-5 w-5" />,
+      title: "Export Report",
+      description: "Get a polished, print-ready client deliverable",
+    },
+  ];
+
   return (
-    <div className="min-h-[calc(100vh-3.5rem)]">
+    <div className="min-h-screen">
       {/* Background gradient mesh */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-[oklch(0.35_0.08_250_/_0.06)] to-transparent blur-3xl" />
@@ -27,57 +54,96 @@ export default function DemoPage() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8 lg:px-8">
-        {/* Demo Header */}
-        <div className="animate-fade-up mb-8">
-          {/* Back button */}
-          <Button variant="ghost" asChild className="mb-6 -ml-2">
-            <Link
-              href="/"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Link>
-          </Button>
+        {/* Back button */}
+        <Button variant="ghost" asChild className="mb-8 -ml-2">
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
 
-          {/* Title section */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="mb-3 flex items-center gap-3">
-                <h1 className="font-display text-foreground text-3xl font-semibold tracking-tight lg:text-4xl">
-                  Interactive Demo
-                </h1>
-                <Badge
-                  variant="outline"
-                  className="border-emerald bg-emerald/5 text-emerald flex items-center gap-1.5 px-3 py-1"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Sample Data
-                </Badge>
+        {/* Hero Section */}
+        <div className="animate-fade-up mx-auto max-w-3xl text-center">
+          <Badge
+            variant="outline"
+            className="border-emerald/30 bg-emerald/5 text-emerald mb-6 inline-flex items-center gap-1.5 px-3 py-1"
+          >
+            <Sparkles className="h-3 w-3" />
+            Interactive Demo
+          </Badge>
+
+          <h1 className="font-display text-foreground mb-4 text-4xl font-semibold tracking-tight lg:text-5xl">
+            Experience InsurFlow
+          </h1>
+
+          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-lg leading-relaxed">
+            Follow the journey of creating a complete insurance needs analysis.
+            See exactly how InsurFlow transforms your financial analysis process
+            in just a few steps.
+          </p>
+        </div>
+
+        {/* Journey Steps */}
+        <div className="animate-fade-up animation-delay-200 mx-auto mt-8 max-w-4xl">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {journeySteps.map((item) => (
+              <div
+                key={item.step}
+                className="border-border/60 bg-card/50 group relative rounded-xl border p-5"
+              >
+                {/* Step number */}
+                <div className="text-muted-foreground/40 absolute top-3 right-3 text-xs font-medium">
+                  Step {item.step}
+                </div>
+                <div className="bg-primary/5 mb-3 flex h-10 w-10 items-center justify-center rounded-lg">
+                  <div className="text-primary">{item.icon}</div>
+                </div>
+                <h3 className="text-foreground mb-1 font-medium">
+                  {item.title}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {item.description}
+                </p>
               </div>
-              <p className="text-muted-foreground max-w-2xl text-base leading-relaxed">
-                Explore a complete financial needs analysis report for a typical
-                mid-career professional. This demo showcases how InsurFlow
-                calculates insurance needs and generates compliance documents.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Demo Report View */}
-        <div className="animate-fade-up animation-delay-200">
-          <ClientReportView
-            client={demoClient}
-            clientId={demoClient.id}
-            demoAssets={demoAssets}
-            demoDebts={demoDebts}
-            demoInsuranceResult={demoInsuranceResult}
-            demoLetter={demoLetter}
-          />
+        {/* Primary CTA with Tooltip */}
+        <div className="animate-fade-up animation-delay-300 mx-auto mt-12 max-w-lg text-center">
+          <div className="relative inline-block">
+            {/* Animated tooltip */}
+            <div className="absolute -top-14 left-1/2 -translate-x-1/2 animate-bounce">
+              <div className="bg-foreground text-background relative rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap shadow-lg">
+                Try adding a new client
+                {/* Tooltip arrow */}
+                <div className="bg-foreground absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45" />
+              </div>
+            </div>
+
+            <Button
+              asChild
+              size="lg"
+              className="bg-emerald hover:bg-emerald/90 gap-2 text-white shadow-lg"
+            >
+              <Link href="/demo/add-client">
+                <UserPlus className="h-4 w-4" />
+                Add Your First Client
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <p className="text-muted-foreground mt-4 text-sm">
+            Takes about 2 minutes. No sign-up required.
+          </p>
         </div>
 
         {/* CTA Section */}
-        <div className="animate-fade-up animation-delay-300 relative mt-12 overflow-hidden rounded-2xl print:hidden">
+        <div className="animate-fade-up animation-delay-400 relative mx-auto mt-16 max-w-3xl overflow-hidden rounded-2xl">
           {/* Gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.22_0.05_250)] to-[oklch(0.28_0.06_240)]" />
 
@@ -88,11 +154,11 @@ export default function DemoPage() {
           {/* Content */}
           <div className="relative z-10 px-8 py-10 text-center sm:py-12">
             <h2 className="font-display mb-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Ready to create your own analyses?
+              Ready to get started?
             </h2>
             <p className="mx-auto mb-8 max-w-lg text-white/70">
-              Sign up for free and start building professional financial needs
-              reports for your clients in minutes.
+              Skip the demo and dive right in. Sign up free and start creating
+              professional analyses for your clients today.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button
