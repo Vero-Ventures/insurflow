@@ -61,7 +61,7 @@ export function AppNavigationMenu() {
               quality={90}
               priority
             />
-            <span className="text-foreground font-[family-name:var(--font-display)] text-lg font-normal tracking-tight">
+            <span className="text-foreground font-display text-lg font-normal tracking-tight">
               InsurFlow
             </span>
           </Link>

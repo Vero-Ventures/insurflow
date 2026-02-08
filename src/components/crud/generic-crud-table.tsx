@@ -170,7 +170,7 @@ export function GenericCrudTable<T extends { id: string }>({
                             Delete {itemName}
                           </AlertDialogTitle>
                         </div>
-                        <AlertDialogDescription className="text-muted-foreground pl-13">
+                        <AlertDialogDescription className="text-muted-foreground pl-[52px]">
                           Are you sure you want to delete this {itemName}? This
                           action cannot be undone.
                         </AlertDialogDescription>

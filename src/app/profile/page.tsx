@@ -39,9 +39,7 @@ function SignedOutView() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <User className="text-primary h-6 w-6" />
           </div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl font-medium">
-            Sign in Required
-          </h2>
+          <h2 className="font-display text-xl font-medium">Sign in Required</h2>
           <p className="text-muted-foreground mt-2 mb-4 text-sm">
             Please sign in to view your profile.
           </p>
@@ -136,7 +134,7 @@ export default function ProfilePage() {
                       </>
                     ) : (
                       <>
-                        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-white">
+                        <h1 className="font-display text-2xl font-medium text-white">
                           {user?.name ?? "User"}
                         </h1>
                         <p className="mt-1 text-sm text-white/70">

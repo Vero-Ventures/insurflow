@@ -47,7 +47,7 @@ const jetbrainsMono = JetBrains_Mono({
 const dmSerifDisplay = DM_Serif_Display({
   subsets: ["latin"],
   weight: "400",
-  variable: "--font-display",
+  variable: "--font-dm-serif-display",
   display: "swap",
 });
 

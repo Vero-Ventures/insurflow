@@ -63,7 +63,7 @@ function SettingsSection({
         <div>
           <h2
             className={cn(
-              "font-[family-name:var(--font-display)] text-lg font-medium",
+              "font-display text-lg font-medium",
               isDanger && "text-destructive",
             )}
           >
@@ -97,6 +97,7 @@ function ThemeOption({
 
   return (
     <button
+      type="button"
       onClick={() => onSelect(value)}
       className={cn(
         "group relative flex flex-1 flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
@@ -204,7 +205,7 @@ function SignedOutView() {
           <div className="bg-primary/10 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full">
             <User className="text-primary h-6 w-6" />
           </div>
-          <CardTitle className="font-[family-name:var(--font-display)] text-xl font-medium">
+          <CardTitle className="font-display text-xl font-medium">
             Sign in Required
           </CardTitle>
         </CardHeader>
@@ -257,7 +258,7 @@ export default function SettingsPage() {
                   </Link>
                 </Button>
               </div>
-              <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium tracking-tight md:text-3xl">
+              <h1 className="font-display text-2xl font-medium tracking-tight md:text-3xl">
                 Settings
               </h1>
               <p className="text-muted-foreground mt-1 text-sm">

@@ -25,7 +25,7 @@
     var(--font-jetbrains-mono), "SF Mono", "Roboto Mono", "Fira Code", Consolas,
     monospace;
   --font-display:
-    var(--font-display), "Georgia", "Cambria", "Times New Roman", serif;
+    var(--font-dm-serif-display), "Georgia", "Cambria", "Times New Roman", serif;
 }
 
 @theme inline {
@@ -327,14 +327,6 @@
     transition:
       background-color 0.15s ease-out,
       color 0.15s ease-out;
-  }
-
-  /* Disable transitions during initial page load to prevent flash */
-  html.no-transition,
-  html.no-transition *,
-  html.no-transition *::before,
-  html.no-transition *::after {
-    transition: none !important;
   }
 }
 

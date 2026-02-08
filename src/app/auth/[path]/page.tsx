@@ -110,7 +110,7 @@ export default async function AuthPage({
                 priority
               />
               <div>
-                <h1 className="font-[family-name:var(--font-display)] text-2xl font-normal lg:text-3xl">
+                <h1 className="font-display text-2xl font-normal lg:text-3xl">
                   InsurFlow
                 </h1>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -132,7 +132,7 @@ export default async function AuthPage({
           <div className="hidden gap-8 lg:flex">
             {stats.map((stat) => (
               <div key={stat.label}>
-                <div className="font-[family-name:var(--font-display)] text-3xl font-normal text-emerald-400">
+                <div className="font-display text-3xl font-normal text-emerald-400">
                   {stat.value}
                 </div>
                 <div className="text-sm text-white/70">{stat.label}</div>
@@ -193,7 +193,7 @@ export default async function AuthPage({
         <div className="relative z-10 w-full max-w-sm">
           {/* Welcome text */}
           <div className="mb-6 text-center lg:mb-8">
-            <h2 className="text-foreground font-[family-name:var(--font-display)] text-2xl font-normal lg:text-3xl">
+            <h2 className="text-foreground font-display text-2xl font-normal lg:text-3xl">
               {isSignUp ? "Join the Beta" : "Welcome Back"}
             </h2>
             <p className="text-muted-foreground mt-2 text-sm">

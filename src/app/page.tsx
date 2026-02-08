@@ -104,7 +104,7 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <h1 className="animate-fade-up animation-delay-100 text-foreground mb-6 font-[family-name:var(--font-display)] text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="animate-fade-up animation-delay-100 text-foreground font-display mb-6 text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Stop losing deals to{" "}
             <span className="relative">
               <span className="from-primary to-emerald relative z-10 bg-gradient-to-r via-[oklch(0.55_0.12_200)] bg-clip-text text-transparent">
@@ -177,7 +177,7 @@ export default function Home() {
 
         <div className="relative z-10 container mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="animate-fade-up font-[family-name:var(--font-display)] text-3xl font-normal tracking-tight sm:text-4xl">
+            <h2 className="animate-fade-up font-display text-3xl font-normal tracking-tight sm:text-4xl">
               Built for advisors who are tired of the old way
             </h2>
           </div>
@@ -235,7 +235,7 @@ export default function Home() {
             >
               Platform Capabilities
             </Badge>
-            <h2 className="animate-fade-up text-foreground font-[family-name:var(--font-display)] text-3xl font-normal tracking-tight sm:text-4xl">
+            <h2 className="animate-fade-up text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
               Everything you need to close deals faster
             </h2>
             <p className="animate-fade-up animation-delay-100 text-muted-foreground mx-auto mt-4 max-w-2xl">
@@ -259,7 +259,7 @@ export default function Home() {
                       <feature.icon className="h-6 w-6" />
                     </div>
                     <div className="text-right">
-                      <div className="text-primary font-[family-name:var(--font-display)] text-2xl font-normal">
+                      <div className="text-primary font-display text-2xl font-normal">
                         {feature.stat}
                       </div>
                       <div className="text-muted-foreground text-xs">
@@ -294,7 +294,7 @@ export default function Home() {
             />
           </div>
 
-          <h2 className="animate-fade-up animation-delay-100 text-foreground font-[family-name:var(--font-display)] text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
+          <h2 className="animate-fade-up animation-delay-100 text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
             Ready to modernize your practice?
           </h2>
 
