@@ -186,7 +186,7 @@ export function TourOverlay({
   if (!mounted || !isVisible || !step) return null;
 
   return createPortal(
-    <div className="pointer-events-none fixed inset-0 z-[100]">
+    <div className="pointer-events-none fixed inset-0 z-30">
       {/* Overlay with spotlight cutout */}
       <svg
         className="pointer-events-auto absolute inset-0 h-full w-full"
