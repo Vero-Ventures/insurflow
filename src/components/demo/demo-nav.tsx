@@ -91,7 +91,7 @@ export function DemoNav({ className }: DemoNavProps) {
   return (
     <div
       className={cn(
-        "border-border/40 bg-background/80 sticky top-14 z-40 border-b backdrop-blur-sm",
+        "border-border/40 bg-background/80 border-b backdrop-blur-sm",
         className,
       )}
     >
