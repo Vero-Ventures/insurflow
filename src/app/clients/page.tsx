@@ -77,7 +77,6 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSeeding, setIsSeeding] = useState(false);
 
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -201,38 +200,6 @@ export default function ClientsPage() {
       prev.filter((client) => client.id !== optimisticId),
     );
   }, []);
-
-  const handleSeedClients = async () => {
-    try {
-      setIsSeeding(true);
-      const response = await fetch("/api/clients/seed", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to seed clients");
-      }
-
-      const data = await response.json();
-      toast.success(data.message);
-
-      // Refresh the client list
-      const refreshResponse = await fetch("/api/clients", {
-        credentials: "include",
-      });
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        setClients(refreshData.clients || []);
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to seed clients",
-      );
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   return (
     <>
@@ -378,9 +345,6 @@ export default function ClientsPage() {
                           ? `No clients match "${searchQuery}"`
                           : "Start building your client portfolio"
                       }
-                      showSeedButton={!searchQuery && clients.length === 0}
-                      onSeed={handleSeedClients}
-                      isSeeding={isSeeding}
                     />
                   </div>
                 )}

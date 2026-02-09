@@ -1,19 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Users, Plus, Sparkles } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 
 interface ClientsEmptyStateProps {
   readonly message: string;
-  readonly showSeedButton?: boolean;
-  readonly onSeed?: () => void;
-  readonly isSeeding?: boolean;
 }
 
-export function ClientsEmptyState({
-  message,
-  showSeedButton,
-  onSeed,
-  isSeeding,
-}: ClientsEmptyStateProps) {
+export function ClientsEmptyState({ message }: ClientsEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       {/* Decorative icon with gradient background */}
@@ -31,24 +22,10 @@ export function ClientsEmptyState({
         {message}
       </p>
 
-      {showSeedButton && (
-        <div className="flex flex-col items-center gap-3 sm:flex-row">
-          <Button
-            onClick={onSeed}
-            disabled={isSeeding}
-            variant="outline"
-            className="border-border/60 gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            {isSeeding ? "Generating..." : "Generate Demo Clients"}
-          </Button>
-          <span className="text-muted-foreground/60 text-xs">or</span>
-          <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
-            <Plus className="h-4 w-4" />
-            Create your first client above
-          </p>
-        </div>
-      )}
+      <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+        <Plus className="h-4 w-4" />
+        Create your first client above
+      </p>
     </div>
   );
 }
