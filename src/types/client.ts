@@ -19,5 +19,10 @@ export type Client = {
   incomeReplacementPercent?: string;
   replacementDurationYears?: number;
   existingLifeInsuranceCoverage?: string;
+  retirementAge?: number;
+  youngestChildAge?: number;
+  govSurvivorBenefit?: string;
+  investmentIncome?: string;
+  otherIncome?: string;
   additionalGoals?: string;
 };

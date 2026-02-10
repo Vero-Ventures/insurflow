@@ -57,7 +57,7 @@ const updateClientSchema = z
     hasSpouse: z.boolean().optional(),
     spouseAge: z.number().int().min(18).max(120).optional(),
     clientIncome: decimalString("income").optional(),
-    spouseIncome: decimalString("spouse income").optional(),
+    spouseIncome: decimalString("spouse income").nullable().optional(),
     incomeReplacementPercent: decimalString("replacement percent")
       .refine(
         (val) => {
@@ -69,7 +69,12 @@ const updateClientSchema = z
       .optional(),
     replacementDurationYears: z.number().int().min(0).max(50).optional(),
     existingLifeInsuranceCoverage: decimalString("coverage amount").optional(),
-    additionalGoals: z.string().max(2000).optional(),
+    retirementAge: z.number().int().min(18).max(120).optional().nullable(),
+    youngestChildAge: z.number().int().min(0).max(17).optional().nullable(),
+    govSurvivorBenefit: decimalString("government survivor benefit").optional(),
+    investmentIncome: decimalString("investment income").optional(),
+    otherIncome: decimalString("other income").optional(),
+    additionalGoals: z.string().max(2000).nullable().optional(),
     status: z.enum(["draft", "active", "archived"]).optional(),
   })
   .strict()

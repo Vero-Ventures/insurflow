@@ -47,10 +47,12 @@ import { FinancialInputsForm } from "@/components/clients/financial-inputs-form"
 import { DebtsSection } from "@/components/clients/debts-section";
 import { AssetsSection } from "@/components/clients/assets-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
+import { useAdvancedIncomeReplacement } from "@/lib/hooks/use-advanced-income-replacement";
 import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
 import {
   InsuranceNeedsCard,
   InsuranceNeedsChart,
+  AdvancedIncomeReplacementCard,
 } from "@/components/clients/insurance-needs";
 import {
   SettlingRequirementsCard,
@@ -88,6 +90,12 @@ function ClientDetailContent() {
     recalculate: recalculateInsurance,
     calculatedAt: insuranceCalculatedAt,
   } = useInsuranceNeeds({
+    clientId,
+    enabled: !!client,
+  });
+
+  // Advanced income replacement hook
+  const advancedIncomeReplacement = useAdvancedIncomeReplacement({
     clientId,
     enabled: !!client,
   });
@@ -431,6 +439,15 @@ function ClientDetailContent() {
               />
             </div>
           </div>
+
+          {/* Advanced Income Replacement */}
+          <AdvancedIncomeReplacementCard
+            hook={advancedIncomeReplacement}
+            youngestChildAge={client.youngestChildAge}
+            retirementAge={client.retirementAge}
+            currentAge={calculateAge(client.dateOfBirth)}
+            hasSpouse={client.hasSpouse}
+          />
         </TabsContent>
 
         {/* Report Tab */}

@@ -50,6 +50,13 @@ const createClientSchema = z
     replacementDurationYears: z.number().int().min(0).max(50).default(10),
     existingLifeInsuranceCoverage:
       decimalString("coverage amount").default("0"),
+    retirementAge: z.number().int().min(18).max(120).optional(),
+    youngestChildAge: z.number().int().min(0).max(17).optional(),
+    govSurvivorBenefit: decimalString("government survivor benefit").default(
+      "0",
+    ),
+    investmentIncome: decimalString("investment income").default("0"),
+    otherIncome: decimalString("other income").default("0"),
     additionalGoals: z.string().max(2000).optional(),
     status: z.enum(["draft", "active", "archived"]).default("draft"),
   })

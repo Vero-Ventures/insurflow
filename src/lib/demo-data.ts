@@ -31,6 +31,11 @@ export const demoClient: Client = {
   incomeReplacementPercent: "70",
   replacementDurationYears: 15,
   existingLifeInsuranceCoverage: "250000.00",
+  retirementAge: 65,
+  youngestChildAge: 8,
+  govSurvivorBenefit: "24000.00",
+  investmentIncome: "8000.00",
+  otherIncome: "0.00",
   additionalGoals:
     "Fund children's education (2 kids, ages 8 and 12). Want to ensure mortgage is paid off and spouse can maintain lifestyle if something happens.",
   status: "active",

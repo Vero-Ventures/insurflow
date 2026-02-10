@@ -93,12 +93,13 @@ export function useFinancialInputs(client: Client) {
         return;
       }
 
-      const updatePayload = {
+      const updatePayload: Record<string, unknown> = {
         clientIncome: formData.clientIncome,
-        spouseIncome: formData.spouseIncome || null,
         incomeReplacementPercent: formData.incomeReplacementPercent,
         replacementDurationYears: formData.replacementDurationYears,
         existingLifeInsuranceCoverage: formData.existingLifeInsuranceCoverage,
+        // Send null to clear previously saved values, or the string value to update.
+        spouseIncome: formData.spouseIncome || null,
         additionalGoals: formData.additionalGoals || null,
       };
 
