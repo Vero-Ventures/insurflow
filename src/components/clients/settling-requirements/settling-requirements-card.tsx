@@ -20,6 +20,7 @@ import {
   Briefcase,
   Heart,
   MapPin,
+  type LucideIcon,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/client-utils";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,83 @@ interface SettlingRequirementsCardProps {
   calculatedAt: string | null;
   /** When true, hides action buttons for read-only contexts like reports */
   isReadOnly?: boolean;
+}
+
+/**
+ * Shared card header component
+ */
+function SettlingCardHeader({
+  icon: Icon,
+  iconBgClass,
+  iconClass,
+  title,
+  description,
+}: {
+  icon: LucideIcon;
+  iconBgClass: string;
+  iconClass: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-lg",
+          iconBgClass,
+        )}
+      >
+        <Icon className={cn("h-5 w-5", iconClass)} />
+      </div>
+      <div>
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Styled metric box for displaying fees/taxes
+ */
+function MetricBox({
+  icon: Icon,
+  iconBgClass,
+  iconClass,
+  label,
+  value,
+  description,
+  children,
+}: {
+  icon: LucideIcon;
+  iconBgClass: string;
+  iconClass: string;
+  label: string;
+  value: number;
+  description: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="bg-muted/30 rounded-xl border p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <div
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg",
+            iconBgClass,
+          )}
+        >
+          <Icon className={cn("h-3.5 w-3.5", iconClass)} />
+        </div>
+        <p className="text-muted-foreground text-sm font-medium">{label}</p>
+      </div>
+      <p className="font-currency text-lg font-semibold">
+        {formatCurrency(value)}
+      </p>
+      {children || (
+        <p className="text-muted-foreground mt-1 text-xs">{description}</p>
+      )}
+    </div>
+  );
 }
 
 export function SettlingRequirementsCard({
@@ -51,17 +129,13 @@ export function SettlingRequirementsCard({
     return (
       <Card className="border-border/60">
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="bg-destructive/10 flex h-10 w-10 items-center justify-center rounded-lg">
-              <FileText className="text-destructive h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Estate Settling Costs</CardTitle>
-              <CardDescription>
-                Error loading settling requirements calculation
-              </CardDescription>
-            </div>
-          </div>
+          <SettlingCardHeader
+            icon={FileText}
+            iconBgClass="bg-destructive/10"
+            iconClass="text-destructive"
+            title="Estate Settling Costs"
+            description="Error loading settling requirements calculation"
+          />
         </CardHeader>
         <CardContent>
           <div className="border-destructive/20 bg-destructive/5 flex flex-col gap-3 rounded-xl border p-4">
@@ -91,17 +165,13 @@ export function SettlingRequirementsCard({
     return (
       <Card className="border-border/60">
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <FileText className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Estate Settling Costs</CardTitle>
-              <CardDescription>
-                Calculate costs to settle the estate
-              </CardDescription>
-            </div>
-          </div>
+          <SettlingCardHeader
+            icon={FileText}
+            iconBgClass="bg-primary/5"
+            iconClass="text-primary"
+            title="Estate Settling Costs"
+            description="Calculate costs to settle the estate"
+          />
         </CardHeader>
         <CardContent>
           <div className="text-muted-foreground py-6 text-center">
@@ -136,17 +206,13 @@ export function SettlingRequirementsCard({
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between pb-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-            <FileText className="text-primary h-5 w-5" />
-          </div>
-          <div>
-            <CardTitle className="text-lg">Estate Settling Costs</CardTitle>
-            <CardDescription>
-              Breakdown of costs to settle the estate
-            </CardDescription>
-          </div>
-        </div>
+        <SettlingCardHeader
+          icon={FileText}
+          iconBgClass="bg-primary/5"
+          iconClass="text-primary"
+          title="Estate Settling Costs"
+          description="Breakdown of costs to settle the estate"
+        />
         {!isReadOnly && (
           <Button
             variant="ghost"
@@ -180,77 +246,46 @@ export function SettlingRequirementsCard({
             Government Fees & Taxes
           </h4>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-1/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Scale className="text-chart-1 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Probate Fees
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(probateFees)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {inputsUsed.stateName} court costs & fees
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-2/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Calculator className="text-chart-2 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Final Income Tax
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(finalIncomeTax)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                On {formatCurrency(inputsUsed.finalYearIncome)} income
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-3/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Landmark className="text-chart-3 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Federal Estate Tax
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(federalEstateTax)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {federalEstateTax === 0
+            <MetricBox
+              icon={Scale}
+              iconBgClass="bg-chart-1/10"
+              iconClass="text-chart-1"
+              label="Probate Fees"
+              value={probateFees}
+              description={`${inputsUsed.stateName} court costs & fees`}
+            />
+            <MetricBox
+              icon={Calculator}
+              iconBgClass="bg-chart-2/10"
+              iconClass="text-chart-2"
+              label="Final Income Tax"
+              value={finalIncomeTax}
+              description={`On ${formatCurrency(inputsUsed.finalYearIncome)} income`}
+            />
+            <MetricBox
+              icon={Landmark}
+              iconBgClass="bg-chart-3/10"
+              iconClass="text-chart-3"
+              label="Federal Estate Tax"
+              value={federalEstateTax}
+              description={
+                federalEstateTax === 0
                   ? "Below $13.61M exemption"
-                  : "40% on amount over exemption"}
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-4/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Building2 className="text-chart-4 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  State Estate Tax
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(stateEstateTax)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {stateEstateTax === 0
+                  : "40% on amount over exemption"
+              }
+            />
+            <MetricBox
+              icon={Building2}
+              iconBgClass="bg-chart-4/10"
+              iconClass="text-chart-4"
+              label="State Estate Tax"
+              value={stateEstateTax}
+              description={
+                stateEstateTax === 0
                   ? "No state estate/inheritance tax"
-                  : `${inputsUsed.stateName} estate/inheritance tax`}
-              </p>
-            </div>
+                  : `${inputsUsed.stateName} estate/inheritance tax`
+              }
+            />
           </div>
         </div>
 
@@ -260,18 +295,14 @@ export function SettlingRequirementsCard({
             Professional Fees & Expenses
           </h4>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-5/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Briefcase className="text-chart-5 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Professional Fees
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(professionalFees.total)}
-              </p>
+            <MetricBox
+              icon={Briefcase}
+              iconBgClass="bg-chart-5/10"
+              iconClass="text-chart-5"
+              label="Professional Fees"
+              value={professionalFees.total}
+              description=""
+            >
               <div className="text-muted-foreground mt-2 space-y-0.5 text-xs">
                 <p>Legal: {formatCurrency(professionalFees.legalFees)}</p>
                 <p>
@@ -279,24 +310,15 @@ export function SettlingRequirementsCard({
                 </p>
                 <p>Executor: {formatCurrency(professionalFees.executorFees)}</p>
               </div>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-insurance/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Heart className="text-insurance h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Funeral Expenses
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(funeralExpenses)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Estimated funeral & burial costs
-              </p>
-            </div>
+            </MetricBox>
+            <MetricBox
+              icon={Heart}
+              iconBgClass="bg-insurance/10"
+              iconClass="text-insurance"
+              label="Funeral Expenses"
+              value={funeralExpenses}
+              description="Estimated funeral & burial costs"
+            />
           </div>
         </div>
 

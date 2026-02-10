@@ -14,7 +14,6 @@ import {
   US_DEFAULT_FUNERAL_EXPENSES,
   US_STATE_NAMES,
   type USState,
-  type USAssetForSettling,
   type USProfessionalFeesConfig,
   type USSettlingRequirementsInput,
 } from "../settling-requirements-us";

@@ -41,6 +41,47 @@ export interface UseSettlingRequirementsReturn {
 }
 
 /**
+ * Extract the core result fields from the API response
+ */
+function extractResultFromResponse(
+  data: CalculateSettlingResponse,
+): USSettlingRequirementsResult {
+  return {
+    probateFees: data.probateFees,
+    federalEstateTax: data.federalEstateTax,
+    stateEstateTax: data.stateEstateTax,
+    finalIncomeTax: data.finalIncomeTax,
+    professionalFees: data.professionalFees,
+    funeralExpenses: data.funeralExpenses,
+    totalSettlingRequirements: data.totalSettlingRequirements,
+    notes: data.notes,
+    inputsUsed: data.inputsUsed,
+  };
+}
+
+/**
+ * Map HTTP status codes to user-friendly error messages
+ */
+function getErrorMessageForStatus(
+  status: number,
+  errorData?: { error?: string },
+): string {
+  switch (status) {
+    case 404:
+      return "Client not found";
+    case 401:
+      return "Unauthorized";
+    case 400:
+      return (
+        errorData?.error ||
+        "Invalid state. Please ensure client has a valid US state."
+      );
+    default:
+      return "Failed to calculate settling requirements";
+  }
+}
+
+/**
  * Hook to manage settling requirements calculation for a US client
  *
  * Automatically fetches calculation results when enabled and clientId is provided.
@@ -89,48 +130,22 @@ export function useSettlingRequirements(
         `/api/clients/${clientId}/calculate-settling`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({}),
         },
       );
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Client not found");
-        }
-        if (response.status === 401) {
-          throw new Error("Unauthorized");
-        }
-        if (response.status === 400) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.error ||
-              "Invalid state. Please ensure client has a valid US state.",
-          );
-        }
-        throw new Error("Failed to calculate settling requirements");
+        const errorData =
+          response.status === 400 ? await response.json() : undefined;
+        throw new Error(getErrorMessageForStatus(response.status, errorData));
       }
 
       const responseData = await response.json();
-
-      // Handle both { data: ... } and direct response formats
       const data: CalculateSettlingResponse = responseData.data ?? responseData;
 
-      setResult({
-        probateFees: data.probateFees,
-        federalEstateTax: data.federalEstateTax,
-        stateEstateTax: data.stateEstateTax,
-        finalIncomeTax: data.finalIncomeTax,
-        professionalFees: data.professionalFees,
-        funeralExpenses: data.funeralExpenses,
-        totalSettlingRequirements: data.totalSettlingRequirements,
-        notes: data.notes,
-        inputsUsed: data.inputsUsed,
-      });
-
+      setResult(extractResultFromResponse(data));
       setCalculatedAt(data.calculatedAt);
       return true;
     } catch (err) {

@@ -21,44 +21,35 @@ import {
 } from "@/lib/financial/settling-requirements-us";
 
 /**
+ * Reusable Zod schemas for fee configuration types
+ */
+const fixedFeeSchema = z.object({
+  type: z.literal("fixed"),
+  amount: z.number().min(0).max(1000000),
+});
+
+const percentageFeeSchema = z.object({
+  type: z.literal("percentage"),
+  rate: z.number().min(0).max(100),
+});
+
+const waivedFeeSchema = z.object({
+  type: z.literal("waived"),
+});
+
+/**
  * Zod schema for professional fees configuration
  */
 const professionalFeesSchema = z
   .object({
     legal: z
-      .discriminatedUnion("type", [
-        z.object({
-          type: z.literal("fixed"),
-          amount: z.number().min(0).max(1000000),
-        }),
-        z.object({
-          type: z.literal("percentage"),
-          rate: z.number().min(0).max(100),
-        }),
-      ])
+      .discriminatedUnion("type", [fixedFeeSchema, percentageFeeSchema])
       .optional(),
     accounting: z
-      .discriminatedUnion("type", [
-        z.object({
-          type: z.literal("fixed"),
-          amount: z.number().min(0).max(1000000),
-        }),
-        z.object({
-          type: z.literal("percentage"),
-          rate: z.number().min(0).max(100),
-        }),
-      ])
+      .discriminatedUnion("type", [fixedFeeSchema, percentageFeeSchema])
       .optional(),
     executor: z
-      .discriminatedUnion("type", [
-        z.object({
-          type: z.literal("percentage"),
-          rate: z.number().min(0).max(100),
-        }),
-        z.object({
-          type: z.literal("waived"),
-        }),
-      ])
+      .discriminatedUnion("type", [percentageFeeSchema, waivedFeeSchema])
       .optional(),
   })
   .optional();

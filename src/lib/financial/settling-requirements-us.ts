@@ -588,6 +588,21 @@ export function calculateUSFinalIncomeTax(finalYearIncome: number): number {
 }
 
 /**
+ * Calculate a fee based on fixed amount or percentage of estate value
+ */
+function calculateFee(
+  feeConfig:
+    | { type: "fixed"; amount: number }
+    | { type: "percentage"; rate: number },
+  estateValue: number,
+): number {
+  if (feeConfig.type === "fixed") {
+    return feeConfig.amount;
+  }
+  return Math.round(estateValue * (feeConfig.rate / 100));
+}
+
+/**
  * Calculate professional fees
  */
 export function calculateUSProfessionalFees(
@@ -596,31 +611,12 @@ export function calculateUSProfessionalFees(
 ): USProfessionalFeesBreakdown {
   const safeEstateValue = Math.max(0, estateValue);
 
-  // Legal fees
-  let legalFees: number;
-  if (config.legal.type === "fixed") {
-    legalFees = config.legal.amount;
-  } else {
-    legalFees = Math.round(safeEstateValue * (config.legal.rate / 100));
-  }
-
-  // Accounting fees
-  let accountingFees: number;
-  if (config.accounting.type === "fixed") {
-    accountingFees = config.accounting.amount;
-  } else {
-    accountingFees = Math.round(
-      safeEstateValue * (config.accounting.rate / 100),
-    );
-  }
-
-  // Executor fees
-  let executorFees: number;
-  if (config.executor.type === "waived") {
-    executorFees = 0;
-  } else {
-    executorFees = Math.round(safeEstateValue * (config.executor.rate / 100));
-  }
+  const legalFees = calculateFee(config.legal, safeEstateValue);
+  const accountingFees = calculateFee(config.accounting, safeEstateValue);
+  const executorFees =
+    config.executor.type === "waived"
+      ? 0
+      : Math.round(safeEstateValue * (config.executor.rate / 100));
 
   return {
     legalFees,

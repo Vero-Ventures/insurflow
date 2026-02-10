@@ -30,68 +30,68 @@ interface ChartData {
   color: string;
 }
 
+// Colors matching our design system - using distinct colors for each category
+// Hardcoded hex colors are required because Recharts sets `fill` via
+// SVG DOM attributes, where CSS `var()` functions don't resolve.
+const CHART_COLORS = {
+  probate: "#1E3A5F", // Deep navy (chart-1)
+  incomeTax: "#5B8C5A", // Sage green (chart-2)
+  federalEstate: "#2D8C9E", // Teal (chart-3)
+  stateEstate: "#C4A35A", // Gold (chart-4)
+  professional: "#8B5CF6", // Purple
+  funeral: "#10B981", // Emerald (chart-5)
+} as const;
+
 /**
- * Empty/loading state card for the chart component.
- * Extracts the repeated card structure to reduce code duplication.
+ * Shared card header for chart component
  */
-function ChartPlaceholderCard({
-  description,
-  message,
-  submessage,
-}: {
-  description?: string;
-  message: string;
-  submessage?: string;
-}) {
+function ChartCardHeader({ description }: { description: string }) {
   return (
-    <Card className="border-border/60 shadow-sm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-            <PieChartIcon className="text-primary h-5 w-5" />
-          </div>
-          <div>
-            <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-            <CardDescription>
-              {description ?? "Visual breakdown of estate settling costs"}
-            </CardDescription>
-          </div>
+    <CardHeader className="pb-4">
+      <div className="flex items-center gap-3">
+        <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
+          <PieChartIcon className="text-primary h-5 w-5" />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
-          <p className="text-muted-foreground px-4 text-center">
-            {message}
-            {submessage && (
-              <>
-                <br />
-                <span className="text-sm">{submessage}</span>
-              </>
-            )}
-          </p>
+        <div>
+          <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CardHeader>
   );
 }
 
 /**
- * Client-only chart component that imports Recharts.
- * This component should only be loaded dynamically with ssr: false
- * to prevent Recharts from being included in the server/worker bundle.
+ * Empty/loading state content for the chart
  */
-export function SettlingRequirementsChartClient({
-  result,
-  isLoading = false,
-}: SettlingRequirementsChartClientProps) {
-  if (isLoading) {
-    return <ChartPlaceholderCard message="Loading chart..." />;
-  }
+function ChartPlaceholderContent({
+  message,
+  submessage,
+}: {
+  message: string;
+  submessage?: string;
+}) {
+  return (
+    <CardContent>
+      <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
+        <p className="text-muted-foreground px-4 text-center">
+          {message}
+          {submessage && (
+            <>
+              <br />
+              <span className="text-sm">{submessage}</span>
+            </>
+          )}
+        </p>
+      </div>
+    </CardContent>
+  );
+}
 
-  if (!result) {
-    return <ChartPlaceholderCard message="No data available" />;
-  }
-
+/**
+ * Build chart data from result
+ */
+function buildChartData(result: USSettlingRequirementsResult): ChartData[] {
   const {
     probateFees,
     federalEstateTax,
@@ -99,37 +99,10 @@ export function SettlingRequirementsChartClient({
     finalIncomeTax,
     professionalFees,
     funeralExpenses,
-    totalSettlingRequirements,
   } = result;
 
-  // Don't show chart if there are no costs
-  if (totalSettlingRequirements <= 0) {
-    return (
-      <ChartPlaceholderCard
-        message="No settling costs to display."
-        submessage="Add assets or income data to see the breakdown."
-      />
-    );
-  }
-
-  // Colors matching our design system - using distinct colors for each category
-  // Hardcoded hex colors are required because Recharts sets `fill` via
-  // SVG DOM attributes, where CSS `var()` functions don't resolve.
-  const CHART_COLORS = {
-    probate: "#1E3A5F", // Deep navy (chart-1)
-    incomeTax: "#5B8C5A", // Sage green (chart-2)
-    federalEstate: "#2D8C9E", // Teal (chart-3)
-    stateEstate: "#C4A35A", // Gold (chart-4)
-    professional: "#8B5CF6", // Purple
-    funeral: "#10B981", // Emerald (chart-5)
-  } as const;
-
-  const data: ChartData[] = [
-    {
-      name: "Probate Fees",
-      value: probateFees,
-      color: CHART_COLORS.probate,
-    },
+  return [
+    { name: "Probate Fees", value: probateFees, color: CHART_COLORS.probate },
     {
       name: "Final Income Tax",
       value: finalIncomeTax,
@@ -156,26 +129,67 @@ export function SettlingRequirementsChartClient({
       color: CHART_COLORS.funeral,
     },
   ].filter((item) => item.value > 0);
+}
+
+/**
+ * Client-only chart component that imports Recharts.
+ * This component should only be loaded dynamically with ssr: false
+ * to prevent Recharts from being included in the server/worker bundle.
+ */
+export function SettlingRequirementsChartClient({
+  result,
+  isLoading = false,
+}: SettlingRequirementsChartClientProps) {
+  const defaultDescription = "Visual breakdown of estate settling costs";
+
+  if (isLoading) {
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <ChartCardHeader description={defaultDescription} />
+        <ChartPlaceholderContent message="Loading chart..." />
+      </Card>
+    );
+  }
+
+  if (!result) {
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <ChartCardHeader description={defaultDescription} />
+        <ChartPlaceholderContent message="No data available" />
+      </Card>
+    );
+  }
+
+  const { totalSettlingRequirements } = result;
+
+  if (totalSettlingRequirements <= 0) {
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <ChartCardHeader description={defaultDescription} />
+        <ChartPlaceholderContent
+          message="No settling costs to display."
+          submessage="Add assets or income data to see the breakdown."
+        />
+      </Card>
+    );
+  }
+
+  const data = buildChartData(result);
 
   if (data.length === 0) {
-    return <ChartPlaceholderCard message="No breakdown available" />;
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <ChartCardHeader description={defaultDescription} />
+        <ChartPlaceholderContent message="No breakdown available" />
+      </Card>
+    );
   }
 
   return (
     <Card className="border-border/60 shadow-sm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-            <PieChartIcon className="text-primary h-5 w-5" />
-          </div>
-          <div>
-            <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-            <CardDescription>
-              Total costs: {formatCurrency(totalSettlingRequirements)}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+      <ChartCardHeader
+        description={`Total costs: ${formatCurrency(totalSettlingRequirements)}`}
+      />
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
