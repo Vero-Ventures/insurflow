@@ -80,7 +80,7 @@ test.describe("Insurance Needs Calculation", () => {
             lastName: "Insurance",
             dateOfBirth: "1985-05-15",
             sex: "M",
-            state: "ON",
+            state: "CA",
             smoker: false,
             healthRating: "standard",
             hasSpouse: false,
@@ -154,7 +154,9 @@ test.describe("Insurance Needs Calculation", () => {
     await page.getByRole("tab", { name: "Insurance" }).click();
 
     // Verify the card title is visible
-    await expect(page.getByText("Insurance Needs Analysis")).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: "Insurance Needs Analysis" }),
+    ).toBeVisible({
       timeout: 10000,
     });
 

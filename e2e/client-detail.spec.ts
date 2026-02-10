@@ -77,7 +77,7 @@ test.describe("Client Detail Page", () => {
             lastName: "Detail",
             dateOfBirth: "1985-06-15",
             sex: "F",
-            state: "BC",
+            state: "CA",
             smoker: false,
             healthRating: "preferred",
             hasSpouse: false,
@@ -156,7 +156,7 @@ test.describe("Client Detail Page", () => {
     // Verify state is displayed in the profile section
     const profileContent = page.locator('[role="tabpanel"]').first();
     await expect(profileContent.getByText("State")).toBeVisible();
-    await expect(profileContent.getByText("BC")).toBeVisible();
+    await expect(profileContent.getByText("CA", { exact: true })).toBeVisible();
   });
 
   test("should display client details correctly", async ({ page }) => {
@@ -214,12 +214,15 @@ test.describe("Client Detail Page", () => {
     await page.getByRole("tab", { name: "Insurance" }).click();
     // Insurance tab shows InsuranceNeedsCard which has different states
     // We just verify the tab title is visible since calculation might fail
-    await expect(page.getByText("Insurance Needs Analysis")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Insurance Needs Analysis" }),
+    ).toBeVisible();
 
     // Navigate to Report tab
     await page.getByRole("tab", { name: "Report" }).click();
+    // Report tab shows the ClientReportView with a Print Report button
     await expect(
-      page.getByText("Financial Needs Analysis Report"),
+      page.getByRole("button", { name: "Print Report" }),
     ).toBeVisible();
 
     // Navigate back to Profile tab
@@ -276,7 +279,7 @@ test.describe("Client Detail Page", () => {
 
     // Verify we're on the clients list page
     await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
+      page.getByRole("heading", { name: "Client Portfolio", exact: true }),
     ).toBeVisible({ timeout: 10000 });
   });
 

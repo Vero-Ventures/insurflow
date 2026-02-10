@@ -95,7 +95,7 @@ test.describe("Client Create UI", () => {
   async function navigateToClientsPage(page: Page) {
     await page.goto("/clients");
     await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
+      page.getByRole("heading", { name: "Client Portfolio", exact: true }),
     ).toBeVisible();
   }
 
@@ -103,7 +103,7 @@ test.describe("Client Create UI", () => {
    * Helper to open the create client dialog
    */
   async function openCreateClientDialog(page: Page) {
-    await page.getByRole("button", { name: /create client/i }).click();
+    await page.getByRole("button", { name: /new client/i }).click();
     await expect(
       page.getByRole("heading", { name: "Create New Client" }),
     ).toBeVisible();
@@ -190,7 +190,7 @@ test.describe("Client Create UI", () => {
   async function verifyClientInTable(page: Page, clientName: string) {
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
+      page.getByRole("heading", { name: "Client Portfolio", exact: true }),
     ).toBeVisible();
     await expect(page.getByText(clientName)).toBeVisible({ timeout: 5000 });
   }
@@ -223,7 +223,7 @@ test.describe("Client Create UI", () => {
       lastName: "Doe",
       dateOfBirth: "1985-06-15",
       sex: "F",
-      state: "BC",
+      state: "CA",
       healthRating: "preferred",
     });
 
@@ -246,7 +246,7 @@ test.describe("Client Create UI", () => {
       lastName: "Smith",
       dateOfBirth: "1990-03-20",
       sex: "M",
-      state: "ON",
+      state: "TX",
       healthRating: "standard",
     });
 
@@ -288,7 +288,7 @@ test.describe("Client Create UI", () => {
       lastName: "Test",
       dateOfBirth: "1995-12-10",
       sex: "M",
-      state: "AB",
+      state: "FL",
       healthRating: "standard_plus",
     });
 
@@ -312,7 +312,7 @@ test.describe("Client Create UI", () => {
       lastName: "Dialog",
       dateOfBirth: "1988-08-08",
       sex: "F",
-      state: "QC",
+      state: "NY",
       healthRating: "preferred_plus",
     });
 

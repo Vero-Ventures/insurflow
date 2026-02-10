@@ -47,10 +47,15 @@ import { FinancialInputsForm } from "@/components/clients/financial-inputs-form"
 import { DebtsSection } from "@/components/clients/debts-section";
 import { AssetsSection } from "@/components/clients/assets-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
+import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
 import {
   InsuranceNeedsCard,
   InsuranceNeedsChart,
 } from "@/components/clients/insurance-needs";
+import {
+  SettlingRequirementsCard,
+  SettlingRequirementsChart,
+} from "@/components/clients/settling-requirements";
 import { ClientReportView } from "@/components/clients/client-report-view";
 
 function ClientDetailContent() {
@@ -83,6 +88,18 @@ function ClientDetailContent() {
     recalculate: recalculateInsurance,
     calculatedAt: insuranceCalculatedAt,
   } = useInsuranceNeeds({
+    clientId,
+    enabled: !!client,
+  });
+
+  // Settling requirements calculation hook
+  const {
+    result: settlingResult,
+    isLoading: isSettlingLoading,
+    error: settlingError,
+    recalculate: recalculateSettling,
+    calculatedAt: settlingCalculatedAt,
+  } = useSettlingRequirements({
     clientId,
     enabled: !!client,
   });
@@ -374,19 +391,45 @@ function ClientDetailContent() {
         </TabsContent>
 
         {/* Insurance Needs Tab */}
-        <TabsContent value="insurance" className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <InsuranceNeedsCard
-              result={insuranceResult}
-              isLoading={isInsuranceLoading}
-              error={insuranceError}
-              onRecalculate={recalculateInsurance}
-              calculatedAt={insuranceCalculatedAt}
-            />
-            <InsuranceNeedsChart
-              result={insuranceResult}
-              isLoading={isInsuranceLoading}
-            />
+        <TabsContent value="insurance" className="space-y-6">
+          {/* Insurance Needs Analysis Section */}
+          <div>
+            <h3 className="text-foreground mb-4 text-lg font-semibold">
+              Insurance Needs Analysis
+            </h3>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <InsuranceNeedsCard
+                result={insuranceResult}
+                isLoading={isInsuranceLoading}
+                error={insuranceError}
+                onRecalculate={recalculateInsurance}
+                calculatedAt={insuranceCalculatedAt}
+              />
+              <InsuranceNeedsChart
+                result={insuranceResult}
+                isLoading={isInsuranceLoading}
+              />
+            </div>
+          </div>
+
+          {/* Settling Requirements Section */}
+          <div>
+            <h3 className="text-foreground mb-4 text-lg font-semibold">
+              Estate Settling Requirements
+            </h3>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SettlingRequirementsCard
+                result={settlingResult}
+                isLoading={isSettlingLoading}
+                error={settlingError}
+                onRecalculate={recalculateSettling}
+                calculatedAt={settlingCalculatedAt}
+              />
+              <SettlingRequirementsChart
+                result={settlingResult}
+                isLoading={isSettlingLoading}
+              />
+            </div>
           </div>
         </TabsContent>
 
