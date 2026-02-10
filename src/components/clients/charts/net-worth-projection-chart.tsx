@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -20,108 +26,136 @@ interface NetWorthProjectionChartProps {
   assets: Asset[];
   debts: Debt[];
   clientIncome?: number;
-  inflationRate?: number; // Default 2.5%
 }
+
+// Hardcoded hex colors — Recharts SVG attributes don't resolve CSS var()
+const COLORS = {
+  assets: "#10B981",
+  debts: "#EF4444",
+  netWorth: "#1E3A5F",
+};
 
 export function NetWorthProjectionChart({
   assets,
   debts,
-  clientIncome = 0,
-  inflationRate = 0.025,
 }: NetWorthProjectionChartProps) {
   const projectionData = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const years = 10; // Project 10 years
+    const years = 10;
 
     const totalAssets = assets.reduce(
-      (sum, a) => sum + Number(a.currentValue),
+      (sum, a) => sum + (Number(a.currentValue) || 0),
       0,
     );
-    const totalDebts = debts.reduce((sum, d) => sum + Number(d.balance), 0);
-    const currentNetWorth = totalAssets - totalDebts;
+    const totalDebts = debts.reduce(
+      (sum, d) => sum + (Number(d.currentBalance) || 0),
+      0,
+    );
+
+    if (totalAssets === 0 && totalDebts === 0) return [];
 
     return Array.from({ length: years + 1 }, (_, i) => {
-      const year = currentYear + i;
-
-      // Project asset growth (conservative 5% avg)
       const projectedAssets = totalAssets * Math.pow(1.05, i);
-
-      // Project debt reduction (assume 10-year payoff)
       const projectedDebts = Math.max(0, totalDebts * (1 - i / years));
 
-      const projectedNetWorth = projectedAssets - projectedDebts;
-
       return {
-        year,
+        year: currentYear + i,
         assets: Math.round(projectedAssets),
         debts: Math.round(projectedDebts),
-        netWorth: Math.round(projectedNetWorth),
+        netWorth: Math.round(projectedAssets - projectedDebts),
       };
     });
   }, [assets, debts]);
 
+  if (projectionData.length === 0) {
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">
+            Net Worth Projection (10 Years)
+          </CardTitle>
+          <CardDescription>
+            Projected growth based on current assets and debts
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
+            <p className="text-muted-foreground px-4 text-center">
+              No assets or debts to project.
+              <br />
+              <span className="text-sm">
+                Add assets or debts to see projections.
+              </span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="border-border/60">
-      <CardHeader>
+    <Card className="border-border/60 shadow-sm">
+      <CardHeader className="pb-4">
         <CardTitle className="text-lg">
           Net Worth Projection (10 Years)
         </CardTitle>
+        <CardDescription>
+          Projected growth based on current assets and debts
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={projectionData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="year" className="text-xs" tick={{ fontSize: 12 }} />
-            <YAxis
-              className="text-xs"
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload) return null;
-                return (
-                  <div className="bg-background rounded-lg border p-3 shadow-lg">
-                    <p className="mb-2 font-semibold">
-                      {payload[0]?.payload.year}
-                    </p>
-                    {payload.map((entry, index) => (
-                      <p
-                        key={index}
-                        className="text-sm"
-                        style={{ color: entry.color }}
-                      >
-                        {entry.name}: {formatCurrency(entry.value as number)}
-                      </p>
-                    ))}
-                  </div>
-                );
-              }}
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="assets"
-              stroke="oklch(0.696 0.17 162.48)"
-              name="Assets"
-              strokeWidth={2}
-            />
-            <Line
-              type="monotone"
-              dataKey="debts"
-              stroke="oklch(0.557 0.204 27.33)"
-              name="Debts"
-              strokeWidth={2}
-            />
-            <Line
-              type="monotone"
-              dataKey="netWorth"
-              stroke="oklch(0.35 0.08 250)"
-              name="Net Worth"
-              strokeWidth={3}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={projectionData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => {
+                  if (value >= 1_000_000)
+                    return `$${(value / 1_000_000).toFixed(1)}M`;
+                  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}k`;
+                  return `$${value}`;
+                }}
+              />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(0, 0, 0, 0.1)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  padding: "8px 12px",
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="assets"
+                stroke={COLORS.assets}
+                name="Assets"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="debts"
+                stroke={COLORS.debts}
+                name="Debts"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="netWorth"
+                stroke={COLORS.netWorth}
+                name="Net Worth"
+                strokeWidth={3}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

@@ -112,12 +112,22 @@ export function ClientReportView({
 
         if (assetsResponse.ok) {
           const data = await assetsResponse.json();
-          setAssets(data.assets || []);
+          const assetsList =
+            data.items ||
+            data.assets ||
+            data.data ||
+            (Array.isArray(data) ? data : []);
+          setAssets(assetsList);
         }
 
         if (debtsResponse.ok) {
           const data = await debtsResponse.json();
-          setDebts(data.debts || []);
+          const debtsList =
+            data.items ||
+            data.debts ||
+            data.data ||
+            (Array.isArray(data) ? data : []);
+          setDebts(debtsList);
         }
       } catch {
         // Silently handle error - summary will show $0
@@ -136,6 +146,18 @@ export function ClientReportView({
     (sum, d) => sum + Number(d.currentBalance),
     0,
   );
+
+  // DEBUG: Remove after fixing
+  console.log("=== CHART DEBUG ===");
+  console.log("Assets count:", assets.length);
+  console.log("Assets sample:", assets[0]);
+  console.log("Asset keys:", assets[0] ? Object.keys(assets[0]) : "no assets");
+  console.log("Debts count:", debts.length);
+  console.log("Debts sample:", debts[0]);
+  console.log("Debt keys:", debts[0] ? Object.keys(debts[0]) : "no debts");
+  console.log("totalAssets:", totalAssets);
+  console.log("totalDebts:", totalDebts);
+  console.log("===================");
 
   const handlePrint = () => {
     window.print();
@@ -435,7 +457,7 @@ export function ClientReportView({
 
       {/* Interactive Charts Section */}
       <div className="space-y-6 print:hidden">
-        <h3 className="font-display text-foreground text-xl font-semibold">
+        <h3 className="font-display text-foreground text-xl font-semibold tracking-tight">
           Financial Analysis & Projections
         </h3>
 
@@ -473,17 +495,23 @@ export function ClientReportView({
               {
                 name: "Children's Education",
                 targetAmount: 100000,
-                currentFunding: 42000,
+                currentFunding: client.clientIncome
+                  ? Number(client.clientIncome) * 0.1
+                  : 0,
               },
               {
                 name: "Retirement Savings",
                 targetAmount: 2000000,
-                currentFunding: 850000,
+                currentFunding: totalAssets * 0.6,
               },
               {
                 name: "Emergency Fund",
                 targetAmount: 50000,
-                currentFunding: 25000,
+                currentFunding: assets
+                  .filter((a) =>
+                    ["checking", "savings", "emergency_fund"].includes(a.type),
+                  )
+                  .reduce((sum, a) => sum + (Number(a.currentValue) || 0), 0),
               },
             ]}
           />

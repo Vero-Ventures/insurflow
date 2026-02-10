@@ -1,8 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { formatCurrency } from "@/lib/client-utils";
 import type { Asset } from "@/types/asset";
 
@@ -10,109 +23,123 @@ interface AssetDiversificationChartProps {
   assets: Asset[];
 }
 
-function generateColorFromString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  const hue = Math.abs(hash) % 360;
-  const lightness = 0.5 + (Math.abs(hash) % 30) / 100;
-  const chroma = 0.1 + (Math.abs(hash) % 10) / 100;
-  return `oklch(${lightness} ${chroma} ${hue})`;
+// Hardcoded hex colors — Recharts SVG attributes don't resolve CSS var()
+const CHART_COLORS = [
+  "#1E3A5F", // Deep navy
+  "#10B981", // Emerald
+  "#2D8C9E", // Teal
+  "#F59E0B", // Amber
+  "#8B5CF6", // Purple
+  "#EF4444", // Red
+  "#5B8C5A", // Sage green
+  "#C4A35A", // Gold
+];
+
+/**
+ * Get a human-readable label for an asset type slug
+ */
+function formatAssetType(type: string): string {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 export function AssetDiversificationChart({
   assets,
 }: AssetDiversificationChartProps) {
   const diversificationData = useMemo(() => {
+    if (assets.length === 0) return [];
+
     const assetsByClass = assets.reduce(
       (acc, asset) => {
-        const className = asset.assetType;
+        const className = asset.type || "other";
         if (!acc[className]) {
           acc[className] = 0;
         }
-        acc[className] += Number(asset.currentValue);
+        acc[className] += Number(asset.currentValue) || 0;
         return acc;
       },
       {} as Record<string, number>,
     );
 
-    return Object.entries(assetsByClass).map(([name, value]) => ({
-      name: name.replace(/([A-Z])/g, " $1").trim(),
-      size: value,
-      fill: generateColorFromString(name),
-    }));
+    return Object.entries(assetsByClass)
+      .filter(([, value]) => value > 0)
+      .map(([name, value]) => ({
+        name: formatAssetType(name),
+        value: Math.round(value),
+      }));
   }, [assets]);
 
+  if (diversificationData.length === 0) {
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Asset Diversification</CardTitle>
+          <CardDescription>Distribution across asset classes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
+            <p className="text-muted-foreground px-4 text-center">
+              No assets to display.
+              <br />
+              <span className="text-sm">
+                Add assets to see diversification.
+              </span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const total = diversificationData.reduce((sum, d) => sum + d.value, 0);
+
   return (
-    <Card className="border-border/60">
-      <CardHeader>
+    <Card className="border-border/60 shadow-sm">
+      <CardHeader className="pb-4">
         <CardTitle className="text-lg">Asset Diversification</CardTitle>
+        <CardDescription>Total: {formatCurrency(total)}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <Treemap
-            data={diversificationData}
-            dataKey="size"
-            aspectRatio={4 / 3}
-            stroke="#fff"
-            fill="#8884d8"
-            content={({ x, y, width, height, name, size }) => {
-              if (width < 50 || height < 30) return null;
-              return (
-                <g>
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    style={{
-                      fill: generateColorFromString(name as string),
-                      stroke: "#fff",
-                      strokeWidth: 2,
-                    }}
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={diversificationData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={3}
+                dataKey="value"
+                strokeWidth={0}
+              >
+                {diversificationData.map((_, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={CHART_COLORS[index % CHART_COLORS.length]}
                   />
-                  <text
-                    x={x + width / 2}
-                    y={y + height / 2 - 7}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={12}
-                    fontWeight="bold"
-                  >
-                    {name}
-                  </text>
-                  <text
-                    x={x + width / 2}
-                    y={y + height / 2 + 7}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={10}
-                  >
-                    {formatCurrency(size as number)}
-                  </text>
-                </g>
-              );
-            }}
-          >
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload || !payload[0]) return null;
-                return (
-                  <div className="bg-background rounded-lg border p-3 shadow-lg">
-                    <p className="mb-1 font-semibold">
-                      {payload[0].payload.name}
-                    </p>
-                    <p className="text-sm">
-                      {formatCurrency(payload[0].payload.size)}
-                    </p>
-                  </div>
-                );
-              }}
-            />
-          </Treemap>
-        </ResponsiveContainer>
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(0, 0, 0, 0.1)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  padding: "8px 12px",
+                }}
+              />
+              <Legend
+                verticalAlign="bottom"
+                height={40}
+                iconType="circle"
+                formatter={(value) => (
+                  <span className="text-foreground text-sm">{value}</span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

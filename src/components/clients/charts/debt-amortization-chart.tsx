@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   AreaChart,
   Area,
@@ -19,39 +25,42 @@ interface DebtAmortizationChartProps {
   debts: Debt[];
 }
 
+// Hardcoded hex colors required — Recharts SVG attributes don't resolve CSS var()
+const COLORS = {
+  debt: "#EF4444",
+  paid: "#10B981",
+};
+
 export function DebtAmortizationChart({ debts }: DebtAmortizationChartProps) {
   const amortizationData = useMemo(() => {
-    if (debts.length === 0) return [];
-
     const totalDebt = debts.reduce(
-      (sum, d) => sum + Number(d.currentBalance),
+      (sum, d) => sum + (Number(d.currentBalance) || 0),
       0,
     );
 
-    // Project debt paydown over 30 years (typical mortgage)
+    if (totalDebt === 0) return [];
+
     const years = 30;
-    const annualPaydown = totalDebt / years;
 
     return Array.from({ length: years + 1 }, (_, i) => {
-      const year = new Date().getFullYear() + i;
-      const remainingDebt = Math.max(0, totalDebt - annualPaydown * i);
-
+      const remainingDebt = Math.max(0, totalDebt * (1 - i / years));
       return {
-        year,
+        year: new Date().getFullYear() + i,
         debt: Math.round(remainingDebt),
         paid: Math.round(totalDebt - remainingDebt),
       };
     });
   }, [debts]);
 
-  if (debts.length === 0) {
+  if (amortizationData.length === 0) {
     return (
-      <Card className="border-border/60">
-        <CardHeader>
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
           <CardTitle className="text-lg">Debt Amortization Timeline</CardTitle>
+          <CardDescription>Projected debt payoff over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted/50 flex h-[300px] items-center justify-center rounded-lg">
+          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
             <p className="text-muted-foreground">No debts to display</p>
           </div>
         </CardContent>
@@ -60,57 +69,56 @@ export function DebtAmortizationChart({ debts }: DebtAmortizationChartProps) {
   }
 
   return (
-    <Card className="border-border/60">
-      <CardHeader>
+    <Card className="border-border/60 shadow-sm">
+      <CardHeader className="pb-4">
         <CardTitle className="text-lg">Debt Amortization Timeline</CardTitle>
+        <CardDescription>Projected debt payoff over 30 years</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={amortizationData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="year" className="text-xs" tick={{ fontSize: 12 }} />
-            <YAxis
-              className="text-xs"
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload) return null;
-                return (
-                  <div className="bg-background rounded-lg border p-3 shadow-lg">
-                    <p className="mb-2 font-semibold">
-                      {payload[0]?.payload.year}
-                    </p>
-                    <p className="text-destructive text-sm">
-                      Remaining: {formatCurrency(payload[0]?.value as number)}
-                    </p>
-                    <p className="text-emerald text-sm">
-                      Paid: {formatCurrency(payload[1]?.value as number)}
-                    </p>
-                  </div>
-                );
-              }}
-            />
-            <Legend />
-            <Area
-              type="monotone"
-              dataKey="debt"
-              stackId="1"
-              stroke="oklch(0.557 0.204 27.33)"
-              fill="oklch(0.557 0.204 27.33)"
-              name="Remaining Debt"
-            />
-            <Area
-              type="monotone"
-              dataKey="paid"
-              stackId="1"
-              stroke="oklch(0.696 0.17 162.48)"
-              fill="oklch(0.696 0.17 162.48)"
-              name="Amount Paid"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={amortizationData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => {
+                  if (value >= 1_000_000)
+                    return `$${(value / 1_000_000).toFixed(1)}M`;
+                  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}k`;
+                  return `$${value}`;
+                }}
+              />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(0, 0, 0, 0.1)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  padding: "8px 12px",
+                }}
+              />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="debt"
+                stackId="1"
+                stroke={COLORS.debt}
+                fill={COLORS.debt}
+                name="Remaining Debt"
+              />
+              <Area
+                type="monotone"
+                dataKey="paid"
+                stackId="1"
+                stroke={COLORS.paid}
+                fill={COLORS.paid}
+                name="Amount Paid"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
