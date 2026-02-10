@@ -271,6 +271,40 @@ export const client = pgTable(
       .notNull()
       .default("0"),
 
+    // -------------------------------------------------------------------------
+    // Advanced Income Replacement (Phase 2)
+    // -------------------------------------------------------------------------
+
+    /** Target retirement age for duration scenarios */
+    retirementAge: integer("retirement_age"),
+
+    /** Age of youngest child (for "child turns 18" scenario) */
+    youngestChildAge: integer("youngest_child_age"),
+
+    /** Annual government survivor benefit (e.g., Social Security, CPP) */
+    govSurvivorBenefit: decimal("gov_survivor_benefit", {
+      precision: 14,
+      scale: 2,
+    })
+      .notNull()
+      .default("0"),
+
+    /** Annual investment income available to the survivor */
+    investmentIncome: decimal("investment_income", {
+      precision: 14,
+      scale: 2,
+    })
+      .notNull()
+      .default("0"),
+
+    /** Annual other income (rental, pension, etc.) */
+    otherIncome: decimal("other_income", {
+      precision: 14,
+      scale: 2,
+    })
+      .notNull()
+      .default("0"),
+
     /** Additional goals or notes (informational only) */
     additionalGoals: text("additional_goals"),
 

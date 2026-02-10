@@ -69,6 +69,11 @@ const updateClientSchema = z
       .optional(),
     replacementDurationYears: z.number().int().min(0).max(50).optional(),
     existingLifeInsuranceCoverage: decimalString("coverage amount").optional(),
+    retirementAge: z.number().int().min(18).max(120).optional().nullable(),
+    youngestChildAge: z.number().int().min(0).max(17).optional().nullable(),
+    govSurvivorBenefit: decimalString("government survivor benefit").optional(),
+    investmentIncome: decimalString("investment income").optional(),
+    otherIncome: decimalString("other income").optional(),
     additionalGoals: z.string().max(2000).optional(),
     status: z.enum(["draft", "active", "archived"]).optional(),
   })

@@ -8,6 +8,13 @@
       "when": 1770587090019,
       "tag": "0000_happy_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770694711078,
+      "tag": "0001_right_pride",
+      "breakpoints": true
     }
   ]
 }
