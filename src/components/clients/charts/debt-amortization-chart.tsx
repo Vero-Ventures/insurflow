@@ -20,7 +20,7 @@ import {
   Cell,
 } from "recharts";
 import { formatCurrency } from "@/lib/client-utils";
-import { classifyLiquidity } from "@/lib/calculations/liquidity-analysis";
+import { classifyLiquidity } from "@/components/clients/charts/liquidity-analysis-chart";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
 
