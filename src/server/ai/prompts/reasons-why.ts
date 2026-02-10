@@ -5,7 +5,7 @@
  * This is a regulatory requirement for life insurance advisors in the United States.
  */
 
-import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
+import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 
 /**
  * Client data needed for letter generation

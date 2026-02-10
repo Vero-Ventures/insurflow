@@ -165,7 +165,7 @@ test.describe("Client CRUD API", () => {
           lastName: "Doe",
           dateOfBirth: "1980-01-15",
           sex: "M",
-          state: "ON",
+          state: "CA",
           smoker: false,
           healthRating: "standard",
           hasSpouse: true,
@@ -280,7 +280,7 @@ test.describe("Client CRUD API", () => {
         lastName: "Smith",
         dateOfBirth: "1990-05-20",
         sex: "F",
-        state: "BC",
+        state: "NY",
       },
     });
 
@@ -301,7 +301,7 @@ test.describe("Client CRUD API", () => {
         lastName: "Doe",
         dateOfBirth: "invalid-date", // Invalid format
         sex: "M",
-        state: "ON",
+        state: "TX",
       },
     });
 
@@ -361,7 +361,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Validation",
       dateOfBirth: "1985-03-10",
       sex: "F",
-      state: "AB",
+      state: "FL",
     });
     const { client } = createBody;
 
@@ -388,7 +388,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Auth",
       dateOfBirth: "1985-03-10",
       sex: "M",
-      state: "BC",
+      state: "WA",
     });
     const { client } = createBody;
 
@@ -410,7 +410,7 @@ test.describe("Client CRUD API", () => {
       lastName: "Delete",
       dateOfBirth: "1985-03-10",
       sex: "F",
-      state: "AB",
+      state: "FL",
     });
     const { client } = createBody;
 
