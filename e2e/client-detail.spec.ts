@@ -1,100 +1,40 @@
 import { expect, test, type Page } from "@playwright/test";
-import { randomBytes } from "node:crypto";
+import {
+  setAuthContext,
+  generateTestCredentials,
+  signUpAndSignIn,
+  cleanupClients,
+  createTestClient,
+} from "./helpers/auth";
 
 test.describe("Client Detail Page", () => {
   let authCookie: string;
-  let testEmail: string;
-  let testPassword: string;
   let testClientId: string;
   const createdClientIds: string[] = [];
 
   test.beforeAll(async ({ request }) => {
-    // Generate unique credentials
-    testPassword = `Test${randomBytes(8).toString("base64url")}${Date.now()}!`;
-    testEmail = `test-detail-${Date.now()}-${randomBytes(4).toString("hex")}@example.com`;
+    const { email, password } = generateTestCredentials("test-detail");
 
     try {
-      // Sign up
-      const signUpResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-up/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-            name: "Test User",
-          },
-        },
-      );
-
-      if (!signUpResponse.ok()) {
-        const errorText = await signUpResponse.text();
-        console.error("Sign up failed:", errorText);
-        throw new Error(`Sign up failed: ${errorText}`);
-      }
-
-      // Sign in
-      const signInResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-in/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-          },
-        },
-      );
-
-      if (!signInResponse.ok()) {
-        const errorText = await signInResponse.text();
-        console.error("Sign in failed:", errorText);
-        throw new Error(`Sign in failed: ${errorText}`);
-      }
-
-      const cookies = signInResponse.headers()["set-cookie"];
-      if (cookies) {
-        authCookie = cookies;
-      } else {
-        throw new Error("No auth cookie received");
-      }
+      authCookie = await signUpAndSignIn(request, {
+        email,
+        password,
+        name: "Test User",
+      });
 
       // Create a test client
-      const createClientResponse = await request.post(
-        "http://localhost:3000/api/clients",
-        {
-          headers: {
-            Cookie: authCookie,
-            "Content-Type": "application/json",
-          },
-          data: {
-            firstName: "Test",
-            lastName: "Detail",
-            dateOfBirth: "1985-06-15",
-            sex: "F",
-            state: "BC",
-            smoker: false,
-            healthRating: "preferred",
-            hasSpouse: false,
-            clientIncome: "75000.00",
-            status: "draft",
-          },
-        },
-      );
-
-      if (!createClientResponse.ok()) {
-        const errorText = await createClientResponse.text();
-        console.error("Failed to create test client:", errorText);
-        throw new Error(`Failed to create test client: ${errorText}`);
-      }
-
-      const clientData = await createClientResponse.json();
-      testClientId = clientData.client.id;
+      testClientId = await createTestClient(request, authCookie, {
+        firstName: "Test",
+        lastName: "Detail",
+        dateOfBirth: "1985-06-15",
+        sex: "F",
+        state: "CA",
+        smoker: false,
+        healthRating: "preferred",
+        hasSpouse: false,
+        clientIncome: "75000.00",
+        status: "draft",
+      });
       createdClientIds.push(testClientId);
     } catch (error) {
       console.error("Test setup failed:", error);
@@ -103,36 +43,8 @@ test.describe("Client Detail Page", () => {
   });
 
   test.afterAll(async ({ request }) => {
-    // Clean up: delete the test clients
-    for (const id of createdClientIds) {
-      try {
-        await request.delete(`http://localhost:3000/api/clients/${id}`, {
-          headers: {
-            Cookie: authCookie,
-          },
-        });
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
+    await cleanupClients(request, authCookie, createdClientIds);
   });
-
-  async function setAuthContext(page: Page) {
-    // Parse the cookie string and set it in the browser context
-    if (authCookie) {
-      const cookieParts = authCookie.split(";")[0]?.split("=");
-      if (cookieParts && cookieParts.length >= 2) {
-        await page.context().addCookies([
-          {
-            name: cookieParts[0]!,
-            value: cookieParts.slice(1).join("="),
-            domain: "localhost",
-            path: "/",
-          },
-        ]);
-      }
-    }
-  }
 
   async function waitForClientDetailPage(page: Page) {
     // Wait for the page to fully load by checking for the heading
@@ -142,7 +54,7 @@ test.describe("Client Detail Page", () => {
   }
 
   test("should display profile information", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -156,11 +68,11 @@ test.describe("Client Detail Page", () => {
     // Verify state is displayed in the profile section
     const profileContent = page.locator('[role="tabpanel"]').first();
     await expect(profileContent.getByText("State")).toBeVisible();
-    await expect(profileContent.getByText("BC")).toBeVisible();
+    await expect(profileContent.getByText("CA", { exact: true })).toBeVisible();
   });
 
   test("should display client details correctly", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -176,7 +88,7 @@ test.describe("Client Detail Page", () => {
   });
 
   test("should allow copying client ID", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -199,7 +111,7 @@ test.describe("Client Detail Page", () => {
   });
 
   test("should navigate between tabs", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -214,12 +126,15 @@ test.describe("Client Detail Page", () => {
     await page.getByRole("tab", { name: "Insurance" }).click();
     // Insurance tab shows InsuranceNeedsCard which has different states
     // We just verify the tab title is visible since calculation might fail
-    await expect(page.getByText("Insurance Needs Analysis")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Insurance Needs Analysis" }),
+    ).toBeVisible();
 
     // Navigate to Report tab
     await page.getByRole("tab", { name: "Report" }).click();
+    // Report tab shows the ClientReportView with a Print Report button
     await expect(
-      page.getByText("Financial Needs Analysis Report"),
+      page.getByRole("button", { name: "Print Report" }),
     ).toBeVisible();
 
     // Navigate back to Profile tab
@@ -228,7 +143,7 @@ test.describe("Client Detail Page", () => {
   });
 
   test("should show delete confirmation dialog", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -263,7 +178,7 @@ test.describe("Client Detail Page", () => {
   });
 
   test("should navigate back to clients list", async ({ page }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     await waitForClientDetailPage(page);
@@ -276,7 +191,7 @@ test.describe("Client Detail Page", () => {
 
     // Verify we're on the clients list page
     await expect(
-      page.getByRole("heading", { name: "Clients", exact: true }),
+      page.getByRole("heading", { name: "Client Portfolio", exact: true }),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -287,7 +202,7 @@ test.describe("Client Detail Page", () => {
     // suggesting a CSS visibility issue under sequential execution after many other tests.
     // The "should require authentication" test covers similar error-handling logic,
     // so this is not a critical path regression.
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     const fakeId = "00000000-0000-0000-0000-000000000000";
 
     // Navigate to non-existent client

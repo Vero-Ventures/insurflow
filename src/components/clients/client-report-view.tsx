@@ -26,7 +26,7 @@ import {
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
-import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
+import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
 import {
   calculateAge,
   calculateAssetTotals,
