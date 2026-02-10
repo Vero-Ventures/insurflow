@@ -42,6 +42,16 @@ import {
 import { AssetsSummary } from "@/components/clients/assets-summary";
 import { DebtsSummary } from "@/components/clients/debts-summary";
 import { AISummaryCard } from "@/components/clients/ai-summary-card";
+import { NetWorthProjectionChart } from "@/components/clients/charts/net-worth-projection-chart";
+import { TaxBurdenChart } from "@/components/clients/charts/tax-burden-chart";
+import { LiquidityAnalysisChart } from "@/components/clients/charts/liquidity-analysis-chart";
+import { BeneficiaryDistributionChart } from "@/components/clients/charts/beneficiary-distribution-chart";
+import { AssetDiversificationChart } from "@/components/clients/charts/asset-diversification-chart";
+import { DebtAmortizationChart } from "@/components/clients/charts/debt-amortization-chart";
+import { GoalsProgressChart } from "@/components/clients/charts/goals-progress-chart";
+
+/** Default settling costs fallback when no insurance result is available */
+const DEFAULT_SETTLING_COSTS = 15000;
 
 interface ClientReportViewProps {
   client: Client;
@@ -105,12 +115,22 @@ export function ClientReportView({
 
         if (assetsResponse.ok) {
           const data = await assetsResponse.json();
-          setAssets(data.assets || []);
+          const assetsList =
+            data.items ||
+            data.assets ||
+            data.data ||
+            (Array.isArray(data) ? data : []);
+          setAssets(assetsList);
         }
 
         if (debtsResponse.ok) {
           const data = await debtsResponse.json();
-          setDebts(data.debts || []);
+          const debtsList =
+            data.items ||
+            data.debts ||
+            data.data ||
+            (Array.isArray(data) ? data : []);
+          setDebts(debtsList);
         }
       } catch {
         // Silently handle error - summary will show $0
@@ -123,6 +143,12 @@ export function ClientReportView({
 
   // Calculate totals using shared utility
   const { total: totalAssets } = calculateAssetTotals(assets);
+
+  // Calculate total debts
+  const totalDebts = debts.reduce(
+    (sum, d) => sum + Number(d.currentBalance),
+    0,
+  );
 
   const handlePrint = () => {
     window.print();
@@ -418,6 +444,73 @@ export function ClientReportView({
       {/* AI Recommendation Letter */}
       <div className="print:break-before-page">
         <AISummaryCard clientId={clientId} demoLetter={demoLetter} />
+      </div>
+
+      {/* Interactive Charts Section */}
+      <div className="space-y-6 print:hidden">
+        <h3 className="font-display text-foreground text-xl font-semibold tracking-tight">
+          Financial Analysis & Projections
+        </h3>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <NetWorthProjectionChart
+            assets={assets}
+            debts={debts}
+            clientIncome={Number(client.clientIncome || 0)}
+          />
+
+          <TaxBurdenChart assets={assets} state={client.state} />
+        </div>
+
+        <LiquidityAnalysisChart
+          assets={assets}
+          debts={debts}
+          settlingCosts={
+            insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
+          }
+        />
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AssetDiversificationChart assets={assets} />
+
+          <BeneficiaryDistributionChart
+            assets={assets}
+            debts={totalDebts}
+            settlingCosts={
+              insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
+            }
+          />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DebtAmortizationChart debts={debts} />
+
+          <GoalsProgressChart
+            goals={[
+              {
+                name: "Children's Education",
+                targetAmount: 100000,
+                currentFunding: client.clientIncome
+                  ? Number(client.clientIncome) * 0.1
+                  : 0,
+              },
+              {
+                name: "Retirement Savings",
+                targetAmount: 2000000,
+                currentFunding: totalAssets * 0.6,
+              },
+              {
+                name: "Emergency Fund",
+                targetAmount: 50000,
+                currentFunding: assets
+                  .filter((a) =>
+                    ["checking", "savings", "emergency_fund"].includes(a.type),
+                  )
+                  .reduce((sum, a) => sum + (Number(a.currentValue) || 0), 0),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Report Footer */}
