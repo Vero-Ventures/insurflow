@@ -96,6 +96,10 @@ function ClientDetailContent() {
 
   // Advanced income replacement hook
   const advancedIncomeReplacement = useAdvancedIncomeReplacement({
+    clientId,
+    enabled: !!client,
+  });
+
   // Settling requirements calculation hook
   const {
     result: settlingResult,
