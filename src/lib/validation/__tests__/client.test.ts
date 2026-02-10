@@ -121,3 +121,33 @@ describe("decimalString", () => {
     expect(MAX_MONEY_VALUE).toBe(999_999_999_999.99);
   });
 });
+
+// ============================================================================
+// decimalString — nullable() support for PATCH clearing behaviour
+// ============================================================================
+
+describe("decimalString with nullable()", () => {
+  const nullableDecimal = decimalString("spouse income").nullable();
+
+  it("accepts null to clear a previously saved value", () => {
+    const result = nullableDecimal.safeParse(null);
+    expect(result.success).toBe(true);
+    expect(result.data).toBeNull();
+  });
+
+  it("still accepts valid decimal strings", () => {
+    expect(nullableDecimal.safeParse("50000").success).toBe(true);
+    expect(nullableDecimal.safeParse("0").success).toBe(true);
+    expect(nullableDecimal.safeParse("100.50").success).toBe(true);
+  });
+
+  it("still rejects invalid formats", () => {
+    expect(nullableDecimal.safeParse("abc").success).toBe(false);
+    expect(nullableDecimal.safeParse("-100").success).toBe(false);
+    expect(nullableDecimal.safeParse("").success).toBe(false);
+  });
+
+  it("rejects undefined (nullable ≠ optional)", () => {
+    expect(nullableDecimal.safeParse(undefined).success).toBe(false);
+  });
+});

@@ -98,16 +98,10 @@ export function useFinancialInputs(client: Client) {
         incomeReplacementPercent: formData.incomeReplacementPercent,
         replacementDurationYears: formData.replacementDurationYears,
         existingLifeInsuranceCoverage: formData.existingLifeInsuranceCoverage,
+        // Send null to clear previously saved values, or the string value to update.
+        spouseIncome: formData.spouseIncome || null,
+        additionalGoals: formData.additionalGoals || null,
       };
-
-      // Only include optional fields when they have a value
-      // (Zod .strict() + .optional() rejects null — omitting the key is correct)
-      if (formData.spouseIncome) {
-        updatePayload.spouseIncome = formData.spouseIncome;
-      }
-      if (formData.additionalGoals) {
-        updatePayload.additionalGoals = formData.additionalGoals;
-      }
 
       const response = await fetch(`/api/clients/${client.id}`, {
         method: "PATCH",

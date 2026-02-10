@@ -38,7 +38,7 @@ export interface AdvancedIncomeReplacementResponse extends IncomeReplacementResu
 
 export interface UseAdvancedIncomeReplacementOptions {
   clientId: string;
-  /** If false the hook won't fire automatically on mount. Default: true */
+  /** Reserved for future auto-fetch behaviour. Does not block manual `calculate()` calls. */
   enabled?: boolean;
 }
 
@@ -65,15 +65,16 @@ export interface UseAdvancedIncomeReplacementReturn {
  * Hook for the advanced (PV-based) income replacement calculator.
  *
  * Unlike `useInsuranceNeeds`, this hook does **not** auto-fetch on mount.
- * The calculation must be triggered manually by calling `calculate()`.
+ * The calculation must always be triggered manually via `calculate()`.
  *
- * The `enabled` flag only acts as a guard — when `false`, calls to
- * `calculate()` are no-ops. It does **not** trigger an automatic fetch.
+ * `calculate()` only requires a valid `clientId` and that no other
+ * request is in-flight. The `enabled` option is reserved for future
+ * auto-fetch behaviour and does not block manual calls.
  */
 export function useAdvancedIncomeReplacement(
   options: UseAdvancedIncomeReplacementOptions,
 ): UseAdvancedIncomeReplacementReturn {
-  const { clientId, enabled = true } = options;
+  const { clientId } = options;
 
   const [result, setResult] =
     useState<AdvancedIncomeReplacementResponse | null>(null);
@@ -85,7 +86,7 @@ export function useAdvancedIncomeReplacement(
 
   const calculate = useCallback(
     async (params?: AdvancedIncomeReplacementParams): Promise<boolean> => {
-      if (!clientId || !enabled || isFetchingRef.current) return false;
+      if (!clientId || isFetchingRef.current) return false;
 
       isFetchingRef.current = true;
       setIsLoading(true);
@@ -136,7 +137,7 @@ export function useAdvancedIncomeReplacement(
         isFetchingRef.current = false;
       }
     },
-    [clientId, enabled],
+    [clientId],
   );
 
   return {
