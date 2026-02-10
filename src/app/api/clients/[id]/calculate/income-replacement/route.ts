@@ -12,9 +12,12 @@ import { calculateAge } from "@/lib/client-utils";
 import {
   calculateAdvancedIncomeReplacement,
   type IncomeReplacementInput,
-  type DurationScenario,
   type SurvivorResources,
 } from "@/lib/financial/income-replacement";
+import {
+  decimalToNumber,
+  buildDurationScenario,
+} from "@/lib/financial/income-replacement-helpers";
 
 // ============================================================================
 // Validation
@@ -57,61 +60,6 @@ const advancedIncomeReplacementSchema = z
   })
   .strict()
   .optional();
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-/** Safely convert a decimal string (from Drizzle) to a number. */
-function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
-
-/**
- * Build the DurationScenario from the request + client data.
- *
- * Defaults:
- *  - If `durationScenario` is omitted → "custom" with the client's
- *    `replacementDurationYears` (or 10 if not set).
- *  - "childTurns18" requires `youngestChildAge` on the client record.
- *  - "retirement" uses `retirementAge` on the client record (default 65).
- *  - "lifetime" needs `currentAge` derived from `dateOfBirth`.
- */
-function buildDurationScenario(
-  scenarioType: string | undefined,
-  customYears: number | undefined,
-  currentAge: number,
-  clientRetirementAge: number | null,
-  clientYoungestChildAge: number | null,
-  clientReplacementDurationYears: number,
-): DurationScenario {
-  switch (scenarioType) {
-    case "childTurns18":
-      return {
-        type: "childTurns18",
-        youngestChildAge: clientYoungestChildAge ?? 0,
-      };
-    case "retirement":
-      return {
-        type: "retirement",
-        currentAge,
-        retirementAge: clientRetirementAge ?? 65,
-      };
-    case "lifetime":
-      return {
-        type: "lifetime",
-        currentAge,
-      };
-    case "custom":
-    default:
-      return {
-        type: "custom",
-        years: customYears ?? clientReplacementDurationYears,
-      };
-  }
-}
 
 // ============================================================================
 // Route handler

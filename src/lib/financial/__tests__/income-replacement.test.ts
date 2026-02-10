@@ -600,4 +600,323 @@ describe("calculateAdvancedIncomeReplacement", () => {
       expect(result.netCoverageNeededPV).toBe(r(result.netCoverageNeededPV));
     });
   });
+
+  // --------------------------------------------------------------------------
+  // PV identity: netCoverage = gross − resources
+  // --------------------------------------------------------------------------
+
+  describe("PV identity invariants", () => {
+    it("netCoverageNeededPV = presentValueTotal − survivorResourcesPV when positive", () => {
+      const result = calculateAdvancedIncomeReplacement({
+        baseAnnualIncome: 120_000,
+        replacementRatio: 0.7,
+        inflationRate: 0.02,
+        discountRate: 0.05,
+        duration: { type: "custom", years: 20 },
+        survivorResources: {
+          govSurvivorBenefit: 12_000,
+          existingInsurance: 100_000,
+          investmentIncome: 3_000,
+          otherIncome: 2_000,
+        },
+      });
+
+      const expectedNet = Math.max(
+        0,
+        result.presentValueTotal - result.survivorResourcesPV,
+      );
+      // Allow 1 cent tolerance for rounding
+      expect(result.netCoverageNeededPV).toBeCloseTo(expectedNet, 1);
+    });
+
+    it("netCoverageNeededPV is never negative", () => {
+      const result = calculateAdvancedIncomeReplacement({
+        baseAnnualIncome: 30_000,
+        replacementRatio: 0.5,
+        inflationRate: 0.02,
+        discountRate: 0.05,
+        duration: { type: "custom", years: 10 },
+        survivorResources: {
+          govSurvivorBenefit: 50_000,
+          existingInsurance: 500_000,
+          investmentIncome: 20_000,
+          otherIncome: 10_000,
+        },
+      });
+
+      expect(result.netCoverageNeededPV).toBe(0);
+      expect(result.survivorResourcesPV).toBeGreaterThan(
+        result.presentValueTotal,
+      );
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Equal inflation & discount rate (real growth = 0)
+  // --------------------------------------------------------------------------
+
+  describe("equal inflation and discount rate", () => {
+    it("PV of each year is identical when inflation = discount", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+          inflationRate: 0.04,
+          discountRate: 0.04,
+          duration: { type: "custom", years: 5 },
+        }),
+      );
+
+      // When inflation = discount, each year's PV should equal the
+      // base amount (100000 * 0.7 = 70000). Net PV = 70000 per year.
+      // (1+inf)^n / (1+disc)^n = 1 for all n
+      const perYear = 100_000 * 0.7;
+      expect(result.presentValueTotal).toBeCloseTo(perYear * 5, 0);
+
+      for (const entry of result.annualSchedule) {
+        expect(entry.netNeedPV).toBeCloseTo(perYear, 0);
+      }
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Combined survivor resources with inflation
+  // --------------------------------------------------------------------------
+
+  describe("combined survivor resources with inflation", () => {
+    it("all annual resource types are summed and inflated together", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 200_000,
+          replacementRatio: 1.0,
+          inflationRate: 0.03,
+          discountRate: 0,
+          duration: { type: "custom", years: 2 },
+          survivorResources: {
+            govSurvivorBenefit: 10_000,
+            existingInsurance: 0,
+            investmentIncome: 5_000,
+            otherIncome: 3_000,
+          },
+        }),
+      );
+
+      // annualBase = 10000 + 5000 + 3000 = 18000
+      // Year 1: 18000 * 1.03 = 18540
+      expect(result.annualSchedule[0]!.survivorOffset).toBeCloseTo(18_540, 2);
+      // Year 2: 18000 * 1.03^2 = 19096.20
+      expect(result.annualSchedule[1]!.survivorOffset).toBeCloseTo(19_096.2, 1);
+    });
+
+    it("lump-sum insurance + annual resources in year 1", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 100_000,
+          replacementRatio: 1.0,
+          inflationRate: 0.02,
+          discountRate: 0,
+          duration: { type: "custom", years: 3 },
+          survivorResources: {
+            govSurvivorBenefit: 5_000,
+            existingInsurance: 50_000,
+            investmentIncome: 2_000,
+            otherIncome: 1_000,
+          },
+        }),
+      );
+
+      // annualBase = 5000 + 2000 + 1000 = 8000
+      // Year 1: annual * 1.02 + lump-sum = 8160 + 50000 = 58160
+      expect(result.annualSchedule[0]!.survivorOffset).toBeCloseTo(58_160, 0);
+
+      // Year 2: annual * 1.02^2 = 8323.20 (no lump-sum)
+      expect(result.annualSchedule[1]!.survivorOffset).toBeCloseTo(8_323.2, 1);
+
+      // Year 3: annual * 1.02^3 = 8489.66
+      expect(result.annualSchedule[2]!.survivorOffset).toBeCloseTo(8_489.66, 0);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Rate clamping
+  // --------------------------------------------------------------------------
+
+  describe("rate clamping", () => {
+    it("clamps inflation rate to [0, 0.5]", () => {
+      const high = calculateAdvancedIncomeReplacement(
+        makeInput({ inflationRate: 0.8 }),
+      );
+      expect(high.resolvedInputs.inflationRate).toBe(0.5);
+
+      const low = calculateAdvancedIncomeReplacement(
+        makeInput({ inflationRate: -0.1 }),
+      );
+      expect(low.resolvedInputs.inflationRate).toBe(0);
+    });
+
+    it("clamps discount rate to [0, 0.5]", () => {
+      const high = calculateAdvancedIncomeReplacement(
+        makeInput({ discountRate: 0.9 }),
+      );
+      expect(high.resolvedInputs.discountRate).toBe(0.5);
+
+      const low = calculateAdvancedIncomeReplacement(
+        makeInput({ discountRate: -0.05 }),
+      );
+      expect(low.resolvedInputs.discountRate).toBe(0);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Full replacement ratio (100%)
+  // --------------------------------------------------------------------------
+
+  describe("100% replacement ratio", () => {
+    it("income need equals full income when ratio = 1", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 80_000,
+          replacementRatio: 1.0,
+          inflationRate: 0,
+          discountRate: 0,
+          duration: { type: "custom", years: 3 },
+        }),
+      );
+
+      for (const entry of result.annualSchedule) {
+        expect(entry.incomeNeed).toBe(80_000);
+      }
+      expect(result.presentValueTotal).toBe(240_000);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Max-duration clamping through the engine
+  // --------------------------------------------------------------------------
+
+  describe("max duration clamping end-to-end", () => {
+    it("clamps lifetime scenario at young age to MAX_DURATION_YEARS", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          duration: { type: "lifetime", currentAge: 10 },
+        }),
+      );
+
+      const expectedYears = Math.min(LIFETIME_AGE_CAP - 10, MAX_DURATION_YEARS);
+      expect(result.durationYears).toBe(expectedYears);
+      expect(result.annualSchedule).toHaveLength(expectedYears);
+    });
+
+    it("clamps excessive custom years to MAX_DURATION_YEARS", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          duration: { type: "custom", years: 150 },
+        }),
+      );
+
+      expect(result.durationYears).toBe(MAX_DURATION_YEARS);
+      expect(result.annualSchedule).toHaveLength(MAX_DURATION_YEARS);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Partial survivor resources
+  // --------------------------------------------------------------------------
+
+  describe("partial survivor resources", () => {
+    it("handles only govSurvivorBenefit set, rest default to 0", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          inflationRate: 0,
+          discountRate: 0,
+          duration: { type: "custom", years: 1 },
+          survivorResources: {
+            govSurvivorBenefit: 10_000,
+            existingInsurance: 0,
+            investmentIncome: 0,
+            otherIncome: 0,
+          },
+        }),
+      );
+
+      expect(result.annualSchedule[0]!.survivorOffset).toBe(10_000);
+    });
+
+    it("handles only existingInsurance set", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          inflationRate: 0,
+          discountRate: 0,
+          duration: { type: "custom", years: 2 },
+          survivorResources: {
+            govSurvivorBenefit: 0,
+            existingInsurance: 100_000,
+            investmentIncome: 0,
+            otherIncome: 0,
+          },
+        }),
+      );
+
+      // Year 1 gets lump sum, year 2 gets nothing
+      expect(result.annualSchedule[0]!.survivorOffset).toBe(100_000);
+      expect(result.annualSchedule[1]!.survivorOffset).toBe(0);
+    });
+
+    it("handles only investmentIncome and otherIncome set", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          inflationRate: 0,
+          discountRate: 0,
+          duration: { type: "custom", years: 2 },
+          survivorResources: {
+            govSurvivorBenefit: 0,
+            existingInsurance: 0,
+            investmentIncome: 5_000,
+            otherIncome: 3_000,
+          },
+        }),
+      );
+
+      for (const entry of result.annualSchedule) {
+        expect(entry.survivorOffset).toBe(8_000);
+      }
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Stress test — high rates over long duration
+  // --------------------------------------------------------------------------
+
+  describe("stress tests", () => {
+    it("produces finite results with high inflation over long duration", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+          inflationRate: 0.1,
+          discountRate: 0.12,
+          duration: { type: "custom", years: 50 },
+        }),
+      );
+
+      expect(result.durationYears).toBe(50);
+      expect(result.annualSchedule).toHaveLength(50);
+      expect(Number.isFinite(result.presentValueTotal)).toBe(true);
+      expect(Number.isFinite(result.netCoverageNeededPV)).toBe(true);
+      expect(result.presentValueTotal).toBeGreaterThan(0);
+    });
+
+    it("works at maximum allowed rates (0.5)", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          inflationRate: 0.5,
+          discountRate: 0.5,
+          duration: { type: "custom", years: 10 },
+        }),
+      );
+
+      expect(result.durationYears).toBe(10);
+      expect(Number.isFinite(result.presentValueTotal)).toBe(true);
+    });
+  });
 });
