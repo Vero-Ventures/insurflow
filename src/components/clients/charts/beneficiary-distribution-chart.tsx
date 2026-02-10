@@ -101,7 +101,7 @@ export function BeneficiaryDistributionChart({
                 dataKey="value"
                 strokeWidth={0}
                 label={({ name, percent }) =>
-                  `${name}: ${(percent * 100).toFixed(0)}%`
+                  `${name}: ${(percent! * 100).toFixed(0)}%`
                 }
               >
                 {distributionData.map((_, index) => (
@@ -112,7 +112,7 @@ export function BeneficiaryDistributionChart({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value) => formatCurrency(value as number)}
                 contentStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.95)",
                   borderRadius: "8px",

@@ -119,7 +119,7 @@ export function NetWorthProjectionChart({
                 }}
               />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value) => formatCurrency(value as number)}
                 contentStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.95)",
                   borderRadius: "8px",
