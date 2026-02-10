@@ -155,13 +155,15 @@ export function AdvancedIncomeReplacementCard({
                     <SelectItem value="childTurns18">
                       Until Youngest Child Turns 18
                       {youngestChildAge != null &&
-                        ` (${18 - youngestChildAge} yrs)`}
+                        /* Clamp to 0 — mirrors backend resolveDuration() */
+                        ` (${Math.max(0, 18 - youngestChildAge)} yrs)`}
                     </SelectItem>
                     <SelectItem value="retirement">
                       Until Retirement
                       {retirementAge != null &&
                         currentAge != null &&
-                        ` (${retirementAge - currentAge} yrs)`}
+                        /* Clamp to 0 — mirrors backend resolveDuration() */
+                        ` (${Math.max(0, retirementAge - currentAge)} yrs)`}
                     </SelectItem>
                     <SelectItem value="lifetime">
                       Lifetime

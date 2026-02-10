@@ -64,13 +64,11 @@ export interface UseAdvancedIncomeReplacementReturn {
 /**
  * Hook for the advanced (PV-based) income replacement calculator.
  *
- * Unlike `useInsuranceNeeds`, this hook does **not** auto-fetch on mount —
- * the advanced calculation typically requires the user to choose a duration
- * scenario first.  Call `calculate()` explicitly when ready.
+ * Unlike `useInsuranceNeeds`, this hook does **not** auto-fetch on mount.
+ * The calculation must be triggered manually by calling `calculate()`.
  *
- * If you want auto-fetch on mount, pass `enabled: true` and the hook will
- * fire once immediately (same guard-against-double-calls pattern as the
- * basic hook).
+ * The `enabled` flag only acts as a guard — when `false`, calls to
+ * `calculate()` are no-ops. It does **not** trigger an automatic fetch.
  */
 export function useAdvancedIncomeReplacement(
   options: UseAdvancedIncomeReplacementOptions,
