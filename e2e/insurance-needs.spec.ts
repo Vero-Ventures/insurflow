@@ -1,106 +1,46 @@
-import { expect, test, type Page } from "@playwright/test";
-import { randomBytes } from "node:crypto";
+import { expect, test } from "@playwright/test";
+import {
+  setAuthContext,
+  generateTestCredentials,
+  signUpAndSignIn,
+  cleanupClients,
+  createTestClient,
+} from "./helpers/auth";
 
 test.describe("Insurance Needs Calculation", () => {
   // Configure this describe block to run tests serially
   test.describe.configure({ mode: "serial" });
 
   let authCookie: string;
-  let testEmail: string;
-  let testPassword: string;
   let testClientId: string;
   const createdClientIds: string[] = [];
 
   test.beforeAll(async ({ request }) => {
-    // Generate unique credentials
-    testPassword = `Test${randomBytes(8).toString("base64url")}${Date.now()}!`;
-    testEmail = `test-insurance-${Date.now()}-${randomBytes(4).toString("hex")}@example.com`;
+    const { email, password } = generateTestCredentials("test-insurance");
 
     try {
-      // Sign up
-      const signUpResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-up/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-            name: "Test Insurance User",
-          },
-        },
-      );
-
-      if (!signUpResponse.ok()) {
-        const errorText = await signUpResponse.text();
-        console.error("Sign up failed:", errorText);
-        throw new Error(`Sign up failed: ${errorText}`);
-      }
-
-      // Sign in
-      const signInResponse = await request.post(
-        "http://localhost:3000/api/auth/sign-in/email",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "http://localhost:3000",
-          },
-          data: {
-            email: testEmail,
-            password: testPassword,
-          },
-        },
-      );
-
-      if (!signInResponse.ok()) {
-        const errorText = await signInResponse.text();
-        console.error("Sign in failed:", errorText);
-        throw new Error(`Sign in failed: ${errorText}`);
-      }
-
-      const cookies = signInResponse.headers()["set-cookie"];
-      if (cookies) {
-        authCookie = cookies;
-      } else {
-        throw new Error("No auth cookie received");
-      }
+      authCookie = await signUpAndSignIn(request, {
+        email,
+        password,
+        name: "Test Insurance User",
+      });
 
       // Create a test client with financial data
-      const createClientResponse = await request.post(
-        "http://localhost:3000/api/clients",
-        {
-          headers: {
-            Cookie: authCookie,
-            "Content-Type": "application/json",
-          },
-          data: {
-            firstName: "Test",
-            lastName: "Insurance",
-            dateOfBirth: "1985-05-15",
-            sex: "M",
-            state: "CA",
-            smoker: false,
-            healthRating: "standard",
-            hasSpouse: false,
-            clientIncome: "100000.00",
-            incomeReplacementPercent: "70.00",
-            replacementDurationYears: 10,
-            existingLifeInsuranceCoverage: "50000.00",
-            status: "draft",
-          },
-        },
-      );
-
-      if (!createClientResponse.ok()) {
-        const errorText = await createClientResponse.text();
-        console.error("Failed to create test client:", errorText);
-        throw new Error(`Failed to create test client: ${errorText}`);
-      }
-
-      const clientData = await createClientResponse.json();
-      testClientId = clientData.client.id;
+      testClientId = await createTestClient(request, authCookie, {
+        firstName: "Test",
+        lastName: "Insurance",
+        dateOfBirth: "1985-05-15",
+        sex: "M",
+        state: "CA",
+        smoker: false,
+        healthRating: "standard",
+        hasSpouse: false,
+        clientIncome: "100000.00",
+        incomeReplacementPercent: "70.00",
+        replacementDurationYears: 10,
+        existingLifeInsuranceCoverage: "50000.00",
+        status: "draft",
+      });
       createdClientIds.push(testClientId);
     } catch (error) {
       console.error("Test setup failed:", error);
@@ -109,40 +49,13 @@ test.describe("Insurance Needs Calculation", () => {
   });
 
   test.afterAll(async ({ request }) => {
-    // Clean up: delete the test clients
-    for (const id of createdClientIds) {
-      try {
-        await request.delete(`http://localhost:3000/api/clients/${id}`, {
-          headers: {
-            Cookie: authCookie,
-          },
-        });
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
+    await cleanupClients(request, authCookie, createdClientIds);
   });
-
-  async function setAuthContext(page: Page) {
-    if (authCookie) {
-      const cookieParts = authCookie.split(";")[0]?.split("=");
-      if (cookieParts && cookieParts.length >= 2) {
-        await page.context().addCookies([
-          {
-            name: cookieParts[0]!,
-            value: cookieParts.slice(1).join("="),
-            domain: "localhost",
-            path: "/",
-          },
-        ]);
-      }
-    }
-  }
 
   test("should display insurance needs card and chart on Insurance tab", async ({
     page,
   }) => {
-    await setAuthContext(page);
+    await setAuthContext(page, authCookie);
     await page.goto(`/clients/${testClientId}`);
 
     // Wait for page to load

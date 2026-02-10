@@ -2,58 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import type { USState } from "@/lib/financial/settling-requirements-us";
+import type { USSettlingRequirementsResult } from "@/lib/financial/settling-requirements-us";
+
+// Re-export for consumers who import from this hook
+export type { USSettlingRequirementsResult };
 
 /**
- * Result shape for US settling requirements calculation
+ * API response shape (extends the base result with additional metadata)
  */
-export interface USSettlingRequirementsResult {
-  probateFees: number;
-  federalEstateTax: number;
-  stateEstateTax: number;
-  finalIncomeTax: number;
-  professionalFees: {
-    legalFees: number;
-    accountingFees: number;
-    executorFees: number;
-    total: number;
-  };
-  funeralExpenses: number;
-  totalSettlingRequirements: number;
-  notes: string[];
-  inputsUsed: {
-    state: USState;
-    stateName: string;
-    estateValue: number;
-    finalYearIncome: number;
-    assetCount: number;
-  };
-}
-
-/**
- * API response shape
- */
-interface CalculateSettlingResponse {
-  probateFees: number;
-  federalEstateTax: number;
-  stateEstateTax: number;
-  finalIncomeTax: number;
-  professionalFees: {
-    legalFees: number;
-    accountingFees: number;
-    executorFees: number;
-    total: number;
-  };
-  funeralExpenses: number;
-  totalSettlingRequirements: number;
-  notes: string[];
-  inputsUsed: {
-    state: USState;
-    stateName: string;
-    estateValue: number;
-    finalYearIncome: number;
-    assetCount: number;
-  };
+interface CalculateSettlingResponse extends USSettlingRequirementsResult {
   clientId: string;
   clientName: string;
   calculatedAt: string;

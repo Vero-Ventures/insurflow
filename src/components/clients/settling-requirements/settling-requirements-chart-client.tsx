@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/client-utils";
 import { PieChartIcon } from "lucide-react";
-import type { USSettlingRequirementsResult } from "@/lib/hooks/use-settling-requirements";
+import type { USSettlingRequirementsResult } from "@/lib/financial/settling-requirements-us";
 
 interface SettlingRequirementsChartClientProps {
   result: USSettlingRequirementsResult | null;
@@ -31,6 +31,51 @@ interface ChartData {
 }
 
 /**
+ * Empty/loading state card for the chart component.
+ * Extracts the repeated card structure to reduce code duplication.
+ */
+function ChartPlaceholderCard({
+  description,
+  message,
+  submessage,
+}: {
+  description?: string;
+  message: string;
+  submessage?: string;
+}) {
+  return (
+    <Card className="border-border/60 shadow-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
+            <PieChartIcon className="text-primary h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+            <CardDescription>
+              {description ?? "Visual breakdown of estate settling costs"}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
+          <p className="text-muted-foreground px-4 text-center">
+            {message}
+            {submessage && (
+              <>
+                <br />
+                <span className="text-sm">{submessage}</span>
+              </>
+            )}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
  * Client-only chart component that imports Recharts.
  * This component should only be loaded dynamically with ssr: false
  * to prevent Recharts from being included in the server/worker bundle.
@@ -40,53 +85,11 @@ export function SettlingRequirementsChartClient({
   isLoading = false,
 }: SettlingRequirementsChartClientProps) {
   if (isLoading) {
-    return (
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <PieChartIcon className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-              <CardDescription>
-                Visual breakdown of estate settling costs
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
-            <p className="text-muted-foreground">Loading chart...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ChartPlaceholderCard message="Loading chart..." />;
   }
 
   if (!result) {
-    return (
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <PieChartIcon className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-              <CardDescription>
-                Visual breakdown of estate settling costs
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
-            <p className="text-muted-foreground">No data available</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ChartPlaceholderCard message="No data available" />;
   }
 
   const {
@@ -102,32 +105,10 @@ export function SettlingRequirementsChartClient({
   // Don't show chart if there are no costs
   if (totalSettlingRequirements <= 0) {
     return (
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <PieChartIcon className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-              <CardDescription>
-                Visual breakdown of estate settling costs
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
-            <p className="text-muted-foreground px-4 text-center">
-              No settling costs to display.
-              <br />
-              <span className="text-sm">
-                Add assets or income data to see the breakdown.
-              </span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <ChartPlaceholderCard
+        message="No settling costs to display."
+        submessage="Add assets or income data to see the breakdown."
+      />
     );
   }
 
@@ -177,28 +158,7 @@ export function SettlingRequirementsChartClient({
   ].filter((item) => item.value > 0);
 
   if (data.length === 0) {
-    return (
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <PieChartIcon className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-              <CardDescription>
-                Visual breakdown of estate settling costs
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 flex h-[300px] items-center justify-center rounded-xl border">
-            <p className="text-muted-foreground">No breakdown available</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ChartPlaceholderCard message="No breakdown available" />;
   }
 
   return (
