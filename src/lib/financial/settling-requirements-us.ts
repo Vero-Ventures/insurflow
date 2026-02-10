@@ -120,8 +120,6 @@ export interface USSettlingRequirementsInput {
   professionalFees?: Partial<USProfessionalFeesConfig>;
   /** Funeral and burial expenses estimate */
   funeralExpenses?: number;
-  /** Whether the decedent was married (affects portability) */
-  isMarried?: boolean;
 }
 
 /**
@@ -541,7 +539,16 @@ export function calculateStateEstateTax(
   if (stateInfo.type === "inheritance") {
     // Inheritance tax is paid by beneficiaries, estimate based on estate value
     // Actual tax depends on relationship of beneficiaries
-    const estimatedTax = Math.round(estateValue * stateInfo.topRate * 0.5); // 50% estimate
+    // Apply exemption if defined (e.g., Nebraska has $100,000 exemption)
+    const taxableAmount = Math.max(0, estateValue - stateInfo.exemption);
+    if (taxableAmount <= 0) {
+      notes.push(
+        `Estate below ${US_STATE_NAMES[state]} inheritance tax exemption of $${stateInfo.exemption.toLocaleString()}`,
+      );
+      return { tax: 0, type: "inheritance", notes };
+    }
+    // Use 50% estimate since actual tax depends on beneficiary relationships
+    const estimatedTax = Math.round(taxableAmount * stateInfo.topRate * 0.5);
     notes.push(
       `${US_STATE_NAMES[state]} has an inheritance tax (paid by beneficiaries)`,
     );

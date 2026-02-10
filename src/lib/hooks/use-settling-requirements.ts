@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import type { USSettlingRequirementsResult } from "@/lib/financial/settling-requirements-us";
+import type {
+  USSettlingRequirementsResult,
+  USProfessionalFeesConfig,
+} from "@/lib/financial/settling-requirements-us";
 
 // Re-export for consumers who import from this hook
 export type { USSettlingRequirementsResult };
@@ -15,7 +18,7 @@ interface CalculateSettlingResponse extends USSettlingRequirementsResult {
   clientName: string;
   calculatedAt: string;
   defaultsUsed?: {
-    professionalFees?: unknown;
+    professionalFees?: USProfessionalFeesConfig;
     funeralExpenses?: number;
   };
 }
@@ -115,6 +118,20 @@ export function useSettlingRequirements(
 
   // Use a ref to track if we're currently fetching to prevent double calls
   const isFetchingRef = useRef(false);
+
+  // Track previous clientId to detect changes
+  const prevClientIdRef = useRef(clientId);
+
+  // Reset isInitialLoad when clientId changes to enable auto-fetch for new client
+  useEffect(() => {
+    if (prevClientIdRef.current !== clientId) {
+      prevClientIdRef.current = clientId;
+      setIsInitialLoad(true);
+      setResult(null);
+      setError(null);
+      setCalculatedAt(null);
+    }
+  }, [clientId]);
 
   const calculate = useCallback(async (): Promise<boolean> => {
     if (!clientId || !enabled || isFetchingRef.current) {

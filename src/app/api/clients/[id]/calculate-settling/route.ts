@@ -16,7 +16,6 @@ import {
   US_STATE_NAMES,
   type USSettlingRequirementsInput,
   type USAssetForSettling,
-  type USProfessionalFeesConfig,
   type USState,
 } from "@/lib/financial/settling-requirements-us";
 
@@ -214,9 +213,11 @@ export const POST = withApiHandler(
       overrides?.finalYearIncome ?? decimalToNumber(clientData.clientIncome);
 
     // Build assets for calculation
+    // If assets is explicitly provided (even empty), use it; otherwise use client assets
     let assetsForCalculation: USAssetForSettling[];
 
-    if (overrides?.assets && overrides.assets.length > 0) {
+    if (overrides?.assets !== undefined) {
+      // Use provided assets (allows intentionally empty array for no-asset calculations)
       assetsForCalculation = overrides.assets;
     } else {
       // Use client assets with 0 cost basis
@@ -229,28 +230,14 @@ export const POST = withApiHandler(
       }));
     }
 
-    // Build professional fees config
-    const professionalFeesConfig: Partial<USProfessionalFeesConfig> = {};
-    if (overrides?.professionalFees?.legal) {
-      professionalFeesConfig.legal = overrides.professionalFees.legal;
-    }
-    if (overrides?.professionalFees?.accounting) {
-      professionalFeesConfig.accounting = overrides.professionalFees.accounting;
-    }
-    if (overrides?.professionalFees?.executor) {
-      professionalFeesConfig.executor = overrides.professionalFees.executor;
-    }
-
     // Build calculation input
+    // Note: calculateUSSettlingRequirements handles merging partial fees with defaults
     const calculationInput: USSettlingRequirementsInput = {
       state,
       estateValue,
       finalYearIncome,
       assets: assetsForCalculation,
-      professionalFees:
-        Object.keys(professionalFeesConfig).length > 0
-          ? professionalFeesConfig
-          : undefined,
+      professionalFees: overrides?.professionalFees,
       funeralExpenses: overrides?.funeralExpenses,
     };
 
@@ -271,10 +258,9 @@ export const POST = withApiHandler(
         calculatedAt: new Date().toISOString(),
         // Include defaults used for transparency
         defaultsUsed: {
-          professionalFees:
-            Object.keys(professionalFeesConfig).length === 0
-              ? US_DEFAULT_PROFESSIONAL_FEES
-              : undefined,
+          professionalFees: !overrides?.professionalFees
+            ? US_DEFAULT_PROFESSIONAL_FEES
+            : undefined,
           funeralExpenses:
             overrides?.funeralExpenses === undefined
               ? US_DEFAULT_FUNERAL_EXPENSES

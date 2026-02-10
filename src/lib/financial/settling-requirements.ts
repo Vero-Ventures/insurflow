@@ -372,15 +372,15 @@ const PROBATE_FEE_STRUCTURES: Record<CanadianProvince, ProbateFeeStructure> = {
     description: "Progressive rate schedule",
   },
 
-  // Nova Scotia: $89.15 up to $10,000, then $16.82 per $1,000 over $10,000, plus $25,000 cap
+  // Nova Scotia: $89.15 up to $10,000, then $16.82 per $1,000 over $10,000, capped at $1,044.35
   NS: {
     calculate: (value) => {
       if (value <= 10000) return 89.15;
       const over10k = value - 10000;
       const fee = 89.15 + Math.ceil(over10k / 1000) * 16.82;
-      return Math.min(fee, 1044.35); // Capped at approximately this amount
+      return Math.min(fee, 1044.35); // Capped at $1,044.35
     },
-    description: "$89.15 base + $16.82 per $1,000 over $10,000",
+    description: "$89.15 base + $16.82 per $1,000, capped at $1,044.35",
   },
 
   // Northwest Territories: $15 up to $10,000, then sliding scale
@@ -420,16 +420,17 @@ const PROBATE_FEE_STRUCTURES: Record<CanadianProvince, ProbateFeeStructure> = {
     description: "$5 per $1,000 on first $50,000, $15 per $1,000 thereafter",
   },
 
-  // Prince Edward Island: $50 up to $10,000, then $4 per $1,000 over $10,000 (capped at $400)
+  // Prince Edward Island: $50 up to $10,000, then $4 per $1,000, capped at $400 for estates over $100,000
   PE: {
     calculate: (value) => {
       if (value <= 10000) return 50;
       if (value <= 25000) return 50 + Math.ceil((value - 10000) / 1000) * 4;
       if (value <= 50000) return 110 + Math.ceil((value - 25000) / 1000) * 4;
       if (value <= 100000) return 210 + Math.ceil((value - 50000) / 1000) * 4;
-      return 400; // Capped at $400
+      return 400; // Capped at $400 for estates over $100,000
     },
-    description: "$50 base + $4 per $1,000 (capped at $400)",
+    description:
+      "$50 base + $4 per $1,000, capped at $400 for estates over $100,000",
   },
 
   // Quebec: No probate fees (notarial wills don't require probate)

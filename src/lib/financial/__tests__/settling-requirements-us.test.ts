@@ -390,9 +390,19 @@ describe("calculateStateEstateTax", () => {
 
     it("Nebraska (NE) - inheritance tax estimated", () => {
       const result = calculateStateEstateTax(1_000_000, "NE");
-      // 18% top rate * 50% estimate = 9% of estate
-      expect(result.tax).toBe(90_000);
+      // Nebraska has $100,000 exemption
+      // Taxable: $1,000,000 - $100,000 = $900,000
+      // 18% top rate * 50% estimate = 9% of taxable = $81,000
+      expect(result.tax).toBe(81_000);
       expect(result.type).toBe("inheritance");
+    });
+
+    it("Nebraska (NE) - returns 0 for estates under exemption", () => {
+      const result = calculateStateEstateTax(50_000, "NE");
+      // Nebraska has $100,000 exemption, so $50,000 estate has no tax
+      expect(result.tax).toBe(0);
+      expect(result.type).toBe("inheritance");
+      expect(result.notes.some((n) => n.includes("exemption"))).toBe(true);
     });
   });
 
