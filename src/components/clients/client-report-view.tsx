@@ -42,6 +42,13 @@ import {
 import { AssetsSummary } from "@/components/clients/assets-summary";
 import { DebtsSummary } from "@/components/clients/debts-summary";
 import { AISummaryCard } from "@/components/clients/ai-summary-card";
+import { NetWorthProjectionChart } from "@/components/clients/charts/net-worth-projection-chart";
+import { TaxBurdenChart } from "@/components/clients/charts/tax-burden-chart";
+import { LiquidityAnalysisChart } from "@/components/clients/charts/liquidity-analysis-chart";
+import { BeneficiaryDistributionChart } from "@/components/clients/charts/beneficiary-distribution-chart";
+import { AssetDiversificationChart } from "@/components/clients/charts/asset-diversification-chart";
+import { DebtAmortizationChart } from "@/components/clients/charts/debt-amortization-chart";
+import { GoalsProgressChart } from "@/components/clients/charts/goals-progress-chart";
 
 interface ClientReportViewProps {
   client: Client;
@@ -123,6 +130,12 @@ export function ClientReportView({
 
   // Calculate totals using shared utility
   const { total: totalAssets } = calculateAssetTotals(assets);
+
+  // Calculate total debts
+  const totalDebts = debts.reduce(
+    (sum, d) => sum + Number(d.currentBalance),
+    0,
+  );
 
   const handlePrint = () => {
     window.print();
@@ -418,6 +431,63 @@ export function ClientReportView({
       {/* AI Recommendation Letter */}
       <div className="print:break-before-page">
         <AISummaryCard clientId={clientId} demoLetter={demoLetter} />
+      </div>
+
+      {/* Interactive Charts Section */}
+      <div className="space-y-6 print:hidden">
+        <h3 className="font-display text-foreground text-xl font-semibold">
+          Financial Analysis & Projections
+        </h3>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <NetWorthProjectionChart
+            assets={assets}
+            debts={debts}
+            clientIncome={Number(client.clientIncome || 0)}
+          />
+
+          <TaxBurdenChart assets={assets} state={client.state} />
+        </div>
+
+        <LiquidityAnalysisChart
+          assets={assets}
+          debts={debts}
+          settlingCosts={insuranceResult?.estateBufferNeeds || 15000}
+        />
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AssetDiversificationChart assets={assets} />
+
+          <BeneficiaryDistributionChart
+            assets={assets}
+            debts={totalDebts}
+            settlingCosts={insuranceResult?.estateBufferNeeds || 15000}
+          />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DebtAmortizationChart debts={debts} />
+
+          <GoalsProgressChart
+            goals={[
+              {
+                name: "Children's Education",
+                targetAmount: 100000,
+                currentFunding: 42000,
+              },
+              {
+                name: "Retirement Savings",
+                targetAmount: 2000000,
+                currentFunding: 850000,
+              },
+              {
+                name: "Emergency Fund",
+                targetAmount: 50000,
+                currentFunding: 25000,
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Report Footer */}
