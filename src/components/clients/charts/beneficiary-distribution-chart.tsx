@@ -50,10 +50,15 @@ export function BeneficiaryDistributionChart({
     if (netEstate <= 0) return [];
 
     // Illustrative distribution (in a real app, beneficiary data would come from client record)
+    // Calculate last share as remainder to avoid rounding drift
+    const spouseValue = Math.round(netEstate * 0.5);
+    const child1Value = Math.round(netEstate * 0.25);
+    const child2Value = netEstate - spouseValue - child1Value;
+
     return [
-      { name: "Spouse", value: Math.round(netEstate * 0.5) },
-      { name: "Child 1", value: Math.round(netEstate * 0.25) },
-      { name: "Child 2", value: Math.round(netEstate * 0.25) },
+      { name: "Spouse", value: spouseValue },
+      { name: "Child 1", value: child1Value },
+      { name: "Child 2", value: child2Value },
     ];
   }, [assets, debts, settlingCosts]);
 

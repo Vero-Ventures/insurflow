@@ -9,21 +9,27 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 import { formatCurrency } from "@/lib/client-utils";
+import { classifyLiquidity } from "@/lib/calculations/liquidity-analysis";
+import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
 
 interface DebtAmortizationChartProps {
   debts: Debt[];
 }
+
+/** Number of years for the debt amortization projection */
+const PROJECTION_YEARS = 30;
 
 // Hardcoded hex colors required — Recharts SVG attributes don't resolve CSS var()
 const COLORS = {
@@ -40,10 +46,8 @@ export function DebtAmortizationChart({ debts }: DebtAmortizationChartProps) {
 
     if (totalDebt === 0) return [];
 
-    const years = 30;
-
-    return Array.from({ length: years + 1 }, (_, i) => {
-      const remainingDebt = Math.max(0, totalDebt * (1 - i / years));
+    return Array.from({ length: PROJECTION_YEARS + 1 }, (_, i) => {
+      const remainingDebt = Math.max(0, totalDebt * (1 - i / PROJECTION_YEARS));
       return {
         year: new Date().getFullYear() + i,
         debt: Math.round(remainingDebt),
@@ -72,12 +76,14 @@ export function DebtAmortizationChart({ debts }: DebtAmortizationChartProps) {
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Debt Amortization Timeline</CardTitle>
-        <CardDescription>Projected debt payoff over 30 years</CardDescription>
+        <CardDescription>
+          Projected debt payoff over {PROJECTION_YEARS} years
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={amortizationData}>
+            <BarChart data={amortizationData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis
@@ -100,23 +106,19 @@ export function DebtAmortizationChart({ debts }: DebtAmortizationChartProps) {
                 }}
               />
               <Legend />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="debt"
-                stackId="1"
-                stroke={COLORS.debt}
+                isAnimationActive={false}
                 fill={COLORS.debt}
                 name="Remaining Debt"
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="paid"
-                stackId="1"
-                stroke={COLORS.paid}
+                isAnimationActive={false}
                 fill={COLORS.paid}
                 name="Amount Paid"
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

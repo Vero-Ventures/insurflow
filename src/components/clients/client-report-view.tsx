@@ -50,6 +50,9 @@ import { AssetDiversificationChart } from "@/components/clients/charts/asset-div
 import { DebtAmortizationChart } from "@/components/clients/charts/debt-amortization-chart";
 import { GoalsProgressChart } from "@/components/clients/charts/goals-progress-chart";
 
+/** Default settling costs fallback when no insurance result is available */
+const DEFAULT_SETTLING_COSTS = 15000;
+
 interface ClientReportViewProps {
   client: Client;
   clientId: string;
@@ -146,18 +149,6 @@ export function ClientReportView({
     (sum, d) => sum + Number(d.currentBalance),
     0,
   );
-
-  // DEBUG: Remove after fixing
-  console.log("=== CHART DEBUG ===");
-  console.log("Assets count:", assets.length);
-  console.log("Assets sample:", assets[0]);
-  console.log("Asset keys:", assets[0] ? Object.keys(assets[0]) : "no assets");
-  console.log("Debts count:", debts.length);
-  console.log("Debts sample:", debts[0]);
-  console.log("Debt keys:", debts[0] ? Object.keys(debts[0]) : "no debts");
-  console.log("totalAssets:", totalAssets);
-  console.log("totalDebts:", totalDebts);
-  console.log("===================");
 
   const handlePrint = () => {
     window.print();
@@ -474,7 +465,9 @@ export function ClientReportView({
         <LiquidityAnalysisChart
           assets={assets}
           debts={debts}
-          settlingCosts={insuranceResult?.estateBufferNeeds || 15000}
+          settlingCosts={
+            insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
+          }
         />
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -483,7 +476,9 @@ export function ClientReportView({
           <BeneficiaryDistributionChart
             assets={assets}
             debts={totalDebts}
-            settlingCosts={insuranceResult?.estateBufferNeeds || 15000}
+            settlingCosts={
+              insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
+            }
           />
         </div>
 

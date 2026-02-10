@@ -29,12 +29,14 @@ interface LiquidityAnalysisChartProps {
 }
 
 /**
- * Classify asset liquidity using the `type` field from the Asset schema.
+ * Classify asset liquidity based on its type string and optional isLiquid flag.
+ *
+ * Single source of truth for liquidity classification across the app.
  * Matches slugs used in demo data and the asset form:
  * "checking", "savings", "brokerage", "401k", "ira", "roth_ira",
  * "primary_residence", "term_life", "whole_life", etc.
  */
-function classifyLiquidity(
+export function classifyLiquidity(
   type: string,
   isLiquid?: boolean,
 ): "liquid" | "semi-liquid" | "illiquid" {
@@ -81,17 +83,20 @@ export function LiquidityAnalysisChart({
   settlingCosts = 0,
 }: LiquidityAnalysisChartProps) {
   const liquidityData = useMemo(() => {
-    let liquidAssets = 0;
-    let semiLiquidAssets = 0;
-    let illiquidAssets = 0;
-
-    assets.forEach((asset) => {
-      const value = Number(asset.currentValue) || 0;
-      const classification = classifyLiquidity(asset.type, asset.isLiquid);
-      if (classification === "liquid") liquidAssets += value;
-      else if (classification === "semi-liquid") semiLiquidAssets += value;
-      else illiquidAssets += value;
-    });
+    const {
+      liquid: liquidAssets,
+      semiLiquid: semiLiquidAssets,
+      illiquid: illiquidAssets,
+    } = assets.reduce(
+      (acc, asset) => {
+        const value = Number(asset.currentValue) || 0;
+        const classification = classifyLiquidity(asset.type, asset.isLiquid);
+        acc[classification === "semi-liquid" ? "semiLiquid" : classification] +=
+          value;
+        return acc;
+      },
+      { liquid: 0, semiLiquid: 0, illiquid: 0 },
+    );
 
     const totalDebts = debts.reduce(
       (sum, d) => sum + (Number(d.currentBalance) || 0),
