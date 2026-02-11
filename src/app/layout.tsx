@@ -6,6 +6,7 @@ import { Inter, JetBrains_Mono, DM_Serif_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AppNavigationMenu } from "@/components/navigation-menu";
 import { Providers } from "./providers";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "InsurFlow",
@@ -60,6 +61,15 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} ${dmSerifDisplay.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <Script
+          id="vtag-ai-js"
+          src="https://r2.leadsy.ai/tag.js"
+          data-pid="5qMJdgcChCsGA9gE"
+          data-version="062024"
+          strategy="lazyOnload"
+        />
+      </head>
       <body>
         <Providers>
           <AppNavigationMenu />
