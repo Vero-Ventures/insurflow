@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { client } from "@/server/db/schema";
+import { business, client } from "@/server/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { UUID_REGEX } from "@/lib/validation/client";
@@ -36,4 +36,25 @@ export async function verifyClientOwnership(clientId: string, userId: string) {
   });
 
   return foundClient;
+}
+
+/**
+ * Verifies that a business exists and belongs to the specified client
+ * @returns The business if found, null otherwise
+ */
+export async function verifyBusinessOwnership(
+  businessId: string,
+  clientId: string,
+) {
+  const db = getDb();
+
+  const foundBusiness = await db.query.business.findFirst({
+    where: and(
+      eq(business.id, businessId),
+      eq(business.clientId, clientId),
+      isNull(business.deletedAt),
+    ),
+  });
+
+  return foundBusiness;
 }
