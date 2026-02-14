@@ -24,11 +24,6 @@ CREATE TABLE "beneficiary" (
 	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
-ALTER TABLE "client" ADD COLUMN "retirement_age" integer;--> statement-breakpoint
-ALTER TABLE "client" ADD COLUMN "youngest_child_age" integer;--> statement-breakpoint
-ALTER TABLE "client" ADD COLUMN "gov_survivor_benefit" numeric(14, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
-ALTER TABLE "client" ADD COLUMN "investment_income" numeric(14, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
-ALTER TABLE "client" ADD COLUMN "other_income" numeric(14, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
 ALTER TABLE "asset_allocation" ADD CONSTRAINT "asset_allocation_beneficiary_id_beneficiary_id_fk" FOREIGN KEY ("beneficiary_id") REFERENCES "public"."beneficiary"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "asset_allocation" ADD CONSTRAINT "asset_allocation_asset_id_asset_id_fk" FOREIGN KEY ("asset_id") REFERENCES "public"."asset"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "beneficiary" ADD CONSTRAINT "beneficiary_client_id_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."client"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
