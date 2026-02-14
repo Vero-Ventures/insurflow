@@ -27,8 +27,12 @@ export function buildShareholderAnalysisInput(
 ): ShareholderAnalysisInput {
   const businessValuation = parseFloat(business.valuation) || 0;
 
+  // Convert each shareholder's ownership to integer basis points first,
+  // then derive the percentage from that to avoid IEEE-754 rounding issues
+  // (e.g., 33.33 + 33.33 + 33.34 producing 99.99999… instead of 100).
   const stakes: ShareholderStake[] = shareholders.map((s) => {
-    const pct = parseFloat(s.ownershipPercentage) || 0;
+    const bps = Math.round(Number(s.ownershipPercentage) * 100) || 0;
+    const pct = bps / 100;
     return {
       id: s.id,
       name: s.name,
@@ -37,8 +41,9 @@ export function buildShareholderAnalysisInput(
     };
   });
 
-  const totalOwnership = stakes.reduce(
-    (sum, s) => sum + s.ownershipPercentage,
+  // Sum in basis points (integers) then convert back once.
+  const totalBps = stakes.reduce(
+    (sum, s) => sum + Math.round(s.ownershipPercentage * 100),
     0,
   );
 
@@ -47,7 +52,7 @@ export function buildShareholderAnalysisInput(
     businessName: business.name,
     businessValuation,
     shareholders: stakes,
-    totalOwnership,
+    totalOwnership: totalBps / 100,
   };
 }
 

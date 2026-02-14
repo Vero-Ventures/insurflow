@@ -163,6 +163,27 @@ describe("buildShareholderAnalysisInput", () => {
     expect(result.totalOwnership).toBe(100);
   });
 
+  it("produces exactly 100 for three-way decimal split (no float artifacts)", () => {
+    const result = buildShareholderAnalysisInput(makeBusiness(), [
+      makeShareholder("s1", "Alice", "33.33"),
+      makeShareholder("s2", "Bob", "33.33"),
+      makeShareholder("s3", "Charlie", "33.34"),
+    ]);
+
+    // Must be exactly 100, not 99.99999… or 100.00000…01
+    expect(result.totalOwnership).toBe(100);
+    expect(result.totalOwnership).toStrictEqual(100);
+  });
+
+  it("produces exactly 50 for two equal shareholders (no float artifacts)", () => {
+    const result = buildShareholderAnalysisInput(makeBusiness(), [
+      makeShareholder("s1", "Alice", "25.01"),
+      makeShareholder("s2", "Bob", "24.99"),
+    ]);
+
+    expect(result.totalOwnership).toBe(50);
+  });
+
   // ---- Preserves business metadata ----------------------------------------
 
   it("passes through business ID and name unchanged", () => {
