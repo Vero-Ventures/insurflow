@@ -144,6 +144,50 @@ export const POST = withApiHandler(
       );
     }
 
+    // Validate total allocation percentages do not exceed 100%
+    const existingAllocations = await db.query.assetAllocation.findMany({
+      where: eq(assetAllocation.assetId, validationResult.data.assetId),
+    });
+
+    const totalDesiredPercent = existingAllocations.reduce((sum, a) => {
+      const percent = parseFloat(a.desiredPercent || "0");
+      return sum + (isNaN(percent) ? 0 : percent);
+    }, 0);
+
+    const totalActualPercent = existingAllocations.reduce((sum, a) => {
+      const percent = parseFloat(a.actualPercent || "0");
+      return sum + (isNaN(percent) ? 0 : percent);
+    }, 0);
+
+    const newDesiredPercent = parseFloat(
+      validationResult.data.desiredPercent || "0",
+    );
+    const newActualPercent = parseFloat(
+      validationResult.data.actualPercent || "0",
+    );
+
+    if (totalDesiredPercent + newDesiredPercent > 100) {
+      await logger.warn("Desired allocation exceeds 100%", {
+        totalDesiredPercent,
+        newDesiredPercent,
+      });
+      return NextResponse.json(
+        { error: "Total desired allocation cannot exceed 100%" },
+        { status: 400 },
+      );
+    }
+
+    if (totalActualPercent + newActualPercent > 100) {
+      await logger.warn("Actual allocation exceeds 100%", {
+        totalActualPercent,
+        newActualPercent,
+      });
+      return NextResponse.json(
+        { error: "Total actual allocation cannot exceed 100%" },
+        { status: 400 },
+      );
+    }
+
     // Create new allocation
     const [newAllocation] = await db
       .insert(assetAllocation)

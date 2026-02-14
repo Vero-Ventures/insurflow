@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
 import { assetAllocation } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetAllocationSchema } from "@/lib/validation/beneficiary";
 import {
@@ -65,6 +65,65 @@ export const PATCH = withApiHandler(
 
     if (!verificationResult.success) {
       return verificationResult.error;
+    }
+
+    // Validate total allocation percentages do not exceed 100% on update
+    if (
+      validationResult.data.desiredPercent !== undefined ||
+      validationResult.data.actualPercent !== undefined
+    ) {
+      const db = getDb();
+      const currentAllocation = verificationResult.allocation;
+
+      // Get all other allocations for the same asset (excluding current allocation)
+      const otherAllocations = await db.query.assetAllocation.findMany({
+        where: and(
+          eq(assetAllocation.assetId, currentAllocation.assetId),
+          eq(assetAllocation.beneficiaryId, beneficiaryId),
+        ),
+      });
+
+      const totalOtherDesiredPercent = otherAllocations.reduce((sum, a) => {
+        const percent = parseFloat(a.desiredPercent || "0");
+        return sum + (isNaN(percent) ? 0 : percent);
+      }, 0);
+
+      const totalOtherActualPercent = otherAllocations.reduce((sum, a) => {
+        const percent = parseFloat(a.actualPercent || "0");
+        return sum + (isNaN(percent) ? 0 : percent);
+      }, 0);
+
+      const newDesiredPercent =
+        validationResult.data.desiredPercent !== undefined
+          ? parseFloat(validationResult.data.desiredPercent || "0")
+          : parseFloat(currentAllocation.desiredPercent || "0");
+
+      const newActualPercent =
+        validationResult.data.actualPercent !== undefined
+          ? parseFloat(validationResult.data.actualPercent || "0")
+          : parseFloat(currentAllocation.actualPercent || "0");
+
+      if (totalOtherDesiredPercent + newDesiredPercent > 100) {
+        await logger.warn("Desired allocation exceeds 100% on update", {
+          totalOtherDesiredPercent,
+          newDesiredPercent,
+        });
+        return NextResponse.json(
+          { error: "Total desired allocation cannot exceed 100%" },
+          { status: 400 },
+        );
+      }
+
+      if (totalOtherActualPercent + newActualPercent > 100) {
+        await logger.warn("Actual allocation exceeds 100% on update", {
+          totalOtherActualPercent,
+          newActualPercent,
+        });
+        return NextResponse.json(
+          { error: "Total actual allocation cannot exceed 100%" },
+          { status: 400 },
+        );
+      }
     }
 
     // Update the allocation
