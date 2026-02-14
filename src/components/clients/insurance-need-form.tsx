@@ -1,18 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { GenericCrudForm } from "@/components/crud/generic-crud-form";
 import { toast } from "sonner";
+import {
+  EntityForm,
+  type EntityFormField,
+} from "@/components/crud/entity-form";
 import type { CorporateInsuranceNeed } from "@/types/business";
 import {
   INSURANCE_NEED_TYPES,
@@ -27,6 +19,38 @@ interface InsuranceNeedFormProps {
   onCancel: () => void;
 }
 
+const fields: EntityFormField[] = [
+  {
+    name: "insuranceType",
+    label: "Insurance Type *",
+    type: "select",
+    required: true,
+    placeholder: "Select insurance type",
+    htmlId: "in-type",
+    options: INSURANCE_NEED_TYPES.map((t) => ({
+      value: t,
+      label: INSURANCE_NEED_TYPE_LABELS[t],
+    })),
+  },
+  {
+    name: "coverageAmount",
+    label: "Coverage Amount",
+    type: "number",
+    step: "0.01",
+    min: "0",
+    placeholder: "0.00",
+    htmlId: "in-coverage",
+  },
+  {
+    name: "notes",
+    label: "Notes",
+    type: "textarea",
+    placeholder: "Additional details or justification...",
+    rows: 3,
+    htmlId: "in-notes",
+  },
+];
+
 export function InsuranceNeedForm({
   clientId,
   businessId,
@@ -34,132 +58,62 @@ export function InsuranceNeedForm({
   onSuccess,
   onCancel,
 }: InsuranceNeedFormProps) {
-  const [insuranceType, setInsuranceType] = useState(item?.insuranceType || "");
-  const [coverageAmount, setCoverageAmount] = useState(
-    item?.coverageAmount ? String(item.coverageAmount) : "",
-  );
-  const [notes, setNotes] = useState(item?.notes || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const defaultValues = {
+    insuranceType: item?.insuranceType || "",
+    coverageAmount: item?.coverageAmount ? String(item.coverageAmount) : "",
+    notes: item?.notes || "",
+  };
 
-  useEffect(() => {
-    setInsuranceType(item?.insuranceType || "");
-    setCoverageAmount(item?.coverageAmount ? String(item.coverageAmount) : "");
-    setNotes(item?.notes || "");
-  }, [item]);
+  const handleSubmit = async (values: Record<string, string>) => {
+    const payload: Record<string, unknown> = {
+      insuranceType: values.insuranceType,
+    };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!insuranceType) {
-      toast.error("Please select an insurance type");
-      return;
+    if (values.coverageAmount) {
+      payload.coverageAmount = values.coverageAmount.replace(/,/g, "");
     }
 
-    try {
-      setIsSubmitting(true);
+    // Always include notes so users can clear them (send null for empty)
+    payload.notes = (values.notes ?? "").trim() || null;
 
-      const payload: Record<string, unknown> = {
-        insuranceType,
-      };
+    const url = item
+      ? `/api/clients/${clientId}/businesses/${businessId}/insurance-needs/${item.id}`
+      : `/api/clients/${clientId}/businesses/${businessId}/insurance-needs`;
 
-      if (coverageAmount) {
-        payload.coverageAmount = String(coverageAmount).replace(/,/g, "");
+    const response = await fetch(url, {
+      method: item ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let message = `Failed to ${item ? "update" : "create"} insurance need`;
+      try {
+        const error = await response.json();
+        message = error.error || error.message || message;
+      } catch {
+        // ignore
       }
-
-      // Always include notes so users can clear them (send null for empty)
-      payload.notes = notes.trim() || null;
-
-      const url = item
-        ? `/api/clients/${clientId}/businesses/${businessId}/insurance-needs/${item.id}`
-        : `/api/clients/${clientId}/businesses/${businessId}/insurance-needs`;
-
-      const method = item ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        let message = `Failed to ${item ? "update" : "create"} insurance need`;
-        try {
-          const error = await response.json();
-          message = error.error || error.message || message;
-        } catch {
-          // ignore
-        }
-        throw new Error(message);
-      }
-
-      toast.success(
-        item
-          ? "Insurance need updated successfully"
-          : "Insurance need created successfully",
-      );
-      onSuccess();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
-    } finally {
-      setIsSubmitting(false);
+      throw new Error(message);
     }
+
+    toast.success(
+      item
+        ? "Insurance need updated successfully"
+        : "Insurance need created successfully",
+    );
+    onSuccess();
   };
 
   return (
-    <GenericCrudForm
+    <EntityForm
+      fields={fields}
+      defaultValues={defaultValues}
+      resetKey={item?.id ?? "new"}
       onSubmit={handleSubmit}
       onCancel={onCancel}
-      isSubmitting={isSubmitting}
       submitLabel={item ? "Update" : "Create"}
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="in-type">Insurance Type *</Label>
-          <Select
-            value={insuranceType}
-            onValueChange={setInsuranceType}
-            disabled={isSubmitting}
-          >
-            <SelectTrigger id="in-type">
-              <SelectValue placeholder="Select insurance type" />
-            </SelectTrigger>
-            <SelectContent>
-              {INSURANCE_NEED_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {INSURANCE_NEED_TYPE_LABELS[t]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="in-coverage">Coverage Amount</Label>
-          <Input
-            id="in-coverage"
-            type="number"
-            step="0.01"
-            min="0"
-            value={coverageAmount}
-            onChange={(e) => setCoverageAmount(e.target.value)}
-            placeholder="0.00"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="in-notes">Notes</Label>
-          <Textarea
-            id="in-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional details or justification..."
-            rows={3}
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-    </GenericCrudForm>
+    />
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { GenericCrudForm } from "@/components/crud/generic-crud-form";
 import { toast } from "sonner";
+import {
+  EntityForm,
+  type EntityFormField,
+} from "@/components/crud/entity-form";
 import type { Shareholder } from "@/types/shareholder";
 
 interface ShareholderFormProps {
@@ -15,6 +15,28 @@ interface ShareholderFormProps {
   onCancel: () => void;
 }
 
+const fields: EntityFormField[] = [
+  {
+    name: "name",
+    label: "Shareholder Name *",
+    type: "text",
+    required: true,
+    placeholder: "e.g., John Doe",
+    htmlId: "sh-name",
+  },
+  {
+    name: "ownershipPercentage",
+    label: "Ownership % *",
+    type: "number",
+    required: true,
+    step: "0.01",
+    min: "0",
+    max: "100",
+    placeholder: "0.00",
+    htmlId: "sh-ownership",
+  },
+];
+
 export function ShareholderForm({
   clientId,
   businessId,
@@ -22,110 +44,61 @@ export function ShareholderForm({
   onSuccess,
   onCancel,
 }: ShareholderFormProps) {
-  const [name, setName] = useState(item?.name || "");
-  const [ownershipPercentage, setOwnershipPercentage] = useState(
-    item?.ownershipPercentage ? String(item.ownershipPercentage) : "",
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const defaultValues = {
+    name: item?.name || "",
+    ownershipPercentage: item?.ownershipPercentage
+      ? String(item.ownershipPercentage)
+      : "",
+  };
 
-  useEffect(() => {
-    setName(item?.name || "");
-    setOwnershipPercentage(
-      item?.ownershipPercentage ? String(item.ownershipPercentage) : "",
-    );
-  }, [item]);
+  const handleSubmit = async (values: Record<string, string>) => {
+    const payload = {
+      name: (values.name ?? "").trim(),
+      ownershipPercentage: String(values.ownershipPercentage ?? ""),
+    };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    const url = item
+      ? `/api/clients/${clientId}/businesses/${businessId}/shareholders/${item.id}`
+      : `/api/clients/${clientId}/businesses/${businessId}/shareholders`;
 
-    if (!name.trim() || !ownershipPercentage) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
+    const response = await fetch(url, {
+      method: item ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
 
-    try {
-      setIsSubmitting(true);
-
-      const payload = {
-        name: name.trim(),
-        ownershipPercentage: String(ownershipPercentage),
-      };
-
-      const url = item
-        ? `/api/clients/${clientId}/businesses/${businessId}/shareholders/${item.id}`
-        : `/api/clients/${clientId}/businesses/${businessId}/shareholders`;
-
-      const method = item ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        let message = `Failed to ${item ? "update" : "create"} shareholder`;
-        try {
-          const error = await response.json();
-          message =
-            error.details?.ownershipPercentage ||
-            error.error ||
-            error.message ||
-            message;
-        } catch {
-          // ignore
-        }
-        throw new Error(message);
+    if (!response.ok) {
+      let message = `Failed to ${item ? "update" : "create"} shareholder`;
+      try {
+        const error = await response.json();
+        message =
+          error.details?.ownershipPercentage ||
+          error.error ||
+          error.message ||
+          message;
+      } catch {
+        // ignore
       }
-
-      toast.success(
-        item
-          ? "Shareholder updated successfully"
-          : "Shareholder created successfully",
-      );
-      onSuccess();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
-    } finally {
-      setIsSubmitting(false);
+      throw new Error(message);
     }
+
+    toast.success(
+      item
+        ? "Shareholder updated successfully"
+        : "Shareholder created successfully",
+    );
+    onSuccess();
   };
 
   return (
-    <GenericCrudForm
+    <EntityForm
+      fields={fields}
+      defaultValues={defaultValues}
+      resetKey={item?.id ?? "new"}
       onSubmit={handleSubmit}
       onCancel={onCancel}
-      isSubmitting={isSubmitting}
       submitLabel={item ? "Update" : "Create"}
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="sh-name">Shareholder Name *</Label>
-          <Input
-            id="sh-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., John Doe"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="sh-ownership">Ownership % *</Label>
-          <Input
-            id="sh-ownership"
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            value={ownershipPercentage}
-            onChange={(e) => setOwnershipPercentage(e.target.value)}
-            placeholder="0.00"
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-    </GenericCrudForm>
+    />
   );
 }
