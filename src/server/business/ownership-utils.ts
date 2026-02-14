@@ -8,8 +8,8 @@
  * @module ownership-utils
  */
 
-import { business, shareholder } from "@/server/db/schema";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { shareholder } from "@/server/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { computeCurrentOwnership } from "@/lib/calculations/shareholder-analysis";
 import type { getDb } from "@/server/db";
@@ -33,14 +33,6 @@ export async function validateShareholderOwnershipTotal(
   logger: Logger,
   existingId?: string,
 ): Promise<NextResponse | null> {
-  // Acquire a row-level lock on the business row to serialise concurrent
-  // shareholder mutations.  This prevents TOCTOU races where two requests
-  // both read the current total, pass validation, and then both insert,
-  // resulting in a total > 100%.  Only effective within a transaction.
-  await db.execute(
-    sql`SELECT id FROM ${business} WHERE id = ${businessId} FOR UPDATE`,
-  );
-
   const existingShareholders = await db.query.shareholder.findMany({
     where: and(
       eq(shareholder.businessId, businessId),

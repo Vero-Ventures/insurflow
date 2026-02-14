@@ -17,6 +17,7 @@ export const { PUT, DELETE } = createItemHandlers({
   resourceName: "Shareholder",
   responseKey: "shareholder",
   updateSchema: updateShareholderSchema,
+  withBusinessLock: true,
   beforeUpdate: async ({
     businessId,
     resourceId,

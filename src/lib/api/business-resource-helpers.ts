@@ -9,12 +9,13 @@
  */
 
 import { getDb } from "@/server/db";
-import type {
-  keyPerson,
-  shareholder,
-  corporateInsuranceNeed,
+import {
+  business,
+  type keyPerson,
+  type shareholder,
+  type corporateInsuranceNeed,
 } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import {
@@ -121,13 +122,22 @@ interface CollectionConfig {
   createSchema: z.ZodType;
   /** Optional hook called before insert (e.g., ownership % check) */
   beforeCreate?: MutationHook;
+  /** Lock the business row (SELECT … FOR UPDATE) inside a transaction before mutation */
+  withBusinessLock?: boolean;
 }
 
 /**
  * Creates GET (list) and POST (create) handlers for a business sub-resource.
  */
 export function createCollectionHandlers(config: CollectionConfig) {
-  const { table, resourceName, endpoint, createSchema, beforeCreate } = config;
+  const {
+    table,
+    resourceName,
+    endpoint,
+    createSchema,
+    beforeCreate,
+    withBusinessLock,
+  } = config;
 
   // Use `any` to bypass Drizzle union-type constraints on table operations.
   // Column references (id, businessId, deletedAt) exist on all sub-resource tables.
@@ -189,32 +199,41 @@ export function createCollectionHandlers(config: CollectionConfig) {
       const db = getDb();
       const validatedData = validationResult.data as Record<string, unknown>;
 
-      // Wrap hook + insert in a transaction so pre-mutation checks
-      // (e.g., shareholder ownership %) are serialised with the write,
-      // preventing TOCTOU race conditions.
+      // When a hook or business lock is configured, wrap in a transaction
+      // so pre-mutation checks (e.g., shareholder ownership %) are
+      // serialised with the write, preventing TOCTOU race conditions.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txResult = await (db as any).transaction(async (tx: any) => {
+      const performCreate = async (conn: any) => {
+        if (withBusinessLock) {
+          await conn.execute(
+            sql`SELECT id FROM ${business} WHERE id = ${access.businessId} FOR UPDATE`,
+          );
+        }
         if (beforeCreate) {
           const hookResult = await beforeCreate({
             businessId: access.businessId,
             validatedData,
-            db: tx as ReturnType<typeof getDb>,
+            db: conn as ReturnType<typeof getDb>,
             logger,
           });
           if (hookResult) return hookResult;
         }
-
-        const results = (await tx
+        const results = (await conn
           .insert(t)
           .values({ businessId: access.businessId, ...validatedData })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .returning()) as any[];
         return results[0] as Record<string, unknown> | undefined;
-      });
+      };
 
-      // Hook returned an error response — propagate it
-      if (txResult instanceof NextResponse) return txResult;
-      const newItem = txResult as Record<string, unknown> | undefined;
+      const needsTx = !!beforeCreate || !!withBusinessLock;
+      const createResult = needsTx
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (db as any).transaction(performCreate)
+        : await performCreate(db);
+
+      if (createResult instanceof NextResponse) return createResult;
+      const newItem = createResult as Record<string, unknown> | undefined;
 
       if (!newItem) {
         await logger.error(
@@ -256,6 +275,8 @@ interface ItemConfig {
   updateSchema: z.ZodType;
   /** Optional hook called before update (after existence check) */
   beforeUpdate?: MutationHook;
+  /** Lock the business row (SELECT … FOR UPDATE) inside a transaction before mutation */
+  withBusinessLock?: boolean;
 }
 
 /**
@@ -270,6 +291,7 @@ export function createItemHandlers(config: ItemConfig) {
     endpoint,
     updateSchema,
     beforeUpdate,
+    withBusinessLock,
   } = config;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -311,23 +333,28 @@ export function createItemHandlers(config: ItemConfig) {
 
       const db = getDb();
 
-      // Wrap hook + update in a transaction so pre-mutation checks are
-      // serialised with the write, preventing TOCTOU race conditions
-      // (e.g., shareholder ownership %).
+      // When a hook or business lock is configured, wrap in a transaction
+      // so pre-mutation checks are serialised with the write, preventing
+      // TOCTOU race conditions (e.g., shareholder ownership %).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txResult = await (db as any).transaction(async (tx: any) => {
+      const performUpdate = async (conn: any) => {
+        if (withBusinessLock) {
+          await conn.execute(
+            sql`SELECT id FROM ${business} WHERE id = ${access.businessId} FOR UPDATE`,
+          );
+        }
         if (beforeUpdate) {
           const hookResult = await beforeUpdate({
             businessId: access.businessId,
             resourceId: access.resourceId,
             validatedData: data,
-            db: tx as ReturnType<typeof getDb>,
+            db: conn as ReturnType<typeof getDb>,
             logger,
           });
           if (hookResult) return hookResult;
         }
 
-        const [updated] = await tx
+        const [updated] = await conn
           .update(t)
           .set({ ...data, updatedAt: new Date() })
           .where(
@@ -340,7 +367,13 @@ export function createItemHandlers(config: ItemConfig) {
           .returning();
 
         return updated;
-      });
+      };
+
+      const needsTx = !!beforeUpdate || !!withBusinessLock;
+      const txResult = needsTx
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (db as any).transaction(performUpdate)
+        : await performUpdate(db);
 
       // Hook returned an error response
       if (txResult instanceof NextResponse) return txResult;

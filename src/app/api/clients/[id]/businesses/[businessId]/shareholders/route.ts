@@ -14,6 +14,7 @@ export const { GET, POST } = createCollectionHandlers({
   table: shareholder,
   resourceName: "Shareholder",
   createSchema: createShareholderSchema,
+  withBusinessLock: true,
   beforeCreate: async ({ businessId, validatedData, db, logger }) =>
     validateShareholderOwnershipTotal(
       db,
