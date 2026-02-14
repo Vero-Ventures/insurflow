@@ -1,9 +1,7 @@
 import { shareholder } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { updateShareholderSchema } from "@/lib/validation/shareholder";
 import { createItemHandlers } from "@/lib/api/business-resource-helpers";
-import { computeCurrentOwnership } from "@/lib/calculations/shareholder-analysis";
+import { validateShareholderOwnershipTotal } from "@/server/business/ownership-utils";
 
 /**
  * PUT    /api/clients/[id]/businesses/[businessId]/shareholders/[shareholderId] - Update
@@ -26,39 +24,13 @@ export const { PUT, DELETE } = createItemHandlers({
     db,
     logger,
   }) => {
-    // If ownership percentage is being updated, check the total constraint
-    if (validatedData.ownershipPercentage !== undefined) {
-      const allShareholders = await db.query.shareholder.findMany({
-        where: and(
-          eq(shareholder.businessId, businessId),
-          isNull(shareholder.deletedAt),
-        ),
-        columns: { id: true, ownershipPercentage: true },
-      });
-
-      // Compute total excluding the current shareholder, then add the new value
-      const othersTotal = computeCurrentOwnership(allShareholders, resourceId);
-      const newPercentage =
-        parseFloat(validatedData.ownershipPercentage as string) || 0;
-
-      if (othersTotal + newPercentage > 100) {
-        await logger.warn("Total ownership percentage would exceed 100%", {
-          othersTotal,
-          newPercentage,
-          wouldBeTotal: othersTotal + newPercentage,
-        });
-        return NextResponse.json(
-          {
-            error: "Validation failed",
-            details: {
-              ownershipPercentage: `Total ownership would be ${othersTotal + newPercentage}%, which exceeds 100%. Other shareholders total ${othersTotal}%.`,
-            },
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    return null;
+    if (validatedData.ownershipPercentage === undefined) return null;
+    return validateShareholderOwnershipTotal(
+      db,
+      businessId,
+      validatedData.ownershipPercentage as string,
+      logger,
+      resourceId,
+    );
   },
 });
