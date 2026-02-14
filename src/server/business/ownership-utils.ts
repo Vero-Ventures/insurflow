@@ -11,7 +11,7 @@
 import { shareholder } from "@/server/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { computeCurrentOwnership } from "@/lib/calculations/shareholder-analysis";
+import { computeCurrentOwnershipBps } from "@/lib/calculations/shareholder-analysis";
 import type { getDb } from "@/server/db";
 import type { Logger } from "@/server/axiom";
 
@@ -41,31 +41,31 @@ export async function validateShareholderOwnershipTotal(
     columns: { id: true, ownershipPercentage: true },
   });
 
-  const currentTotal = computeCurrentOwnership(
+  const currentTotalBps = computeCurrentOwnershipBps(
     existingShareholders,
     existingId,
   );
-  const parsed =
-    typeof newPercentage === "number"
-      ? newPercentage
-      : parseFloat(newPercentage) || 0;
+  const newBps = Math.round(Number(newPercentage) * 100) || 0;
+  const wouldBeTotalBps = currentTotalBps + newBps;
 
-  if (currentTotal + parsed > 100) {
+  if (wouldBeTotalBps > 10_000) {
+    const currentPct = (currentTotalBps / 100).toFixed(2);
+    const wouldBePct = (wouldBeTotalBps / 100).toFixed(2);
     const contextLabel = existingId
-      ? `Other shareholders total ${currentTotal}%`
-      : `Current total is ${currentTotal}%`;
+      ? `Other shareholders total ${currentPct}%`
+      : `Current total is ${currentPct}%`;
 
     await logger.warn("Total ownership percentage would exceed 100%", {
-      currentTotal,
-      newPercentage: parsed,
-      wouldBeTotal: currentTotal + parsed,
+      currentTotal: currentPct,
+      newPercentage: (newBps / 100).toFixed(2),
+      wouldBeTotal: wouldBePct,
     });
 
     return NextResponse.json(
       {
         error: "Validation failed",
         details: {
-          ownershipPercentage: `Total ownership would be ${currentTotal + parsed}%, which exceeds 100%. ${contextLabel}.`,
+          ownershipPercentage: `Total ownership would be ${wouldBePct}%, which exceeds 100%. ${contextLabel}.`,
         },
       },
       { status: 400 },

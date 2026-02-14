@@ -52,6 +52,31 @@ export function buildShareholderAnalysisInput(
 }
 
 /**
+ * Computes the current total ownership in **basis points** (100ths of a percent)
+ * for a business's shareholders, optionally excluding a specific shareholder.
+ *
+ * Using integer basis points avoids IEEE-754 floating-point rounding errors
+ * (e.g., 33.33 + 33.33 + 33.34 !== 100 in float arithmetic).
+ *
+ * @param shareholders - Current active shareholders with IDs
+ * @param excludeId - Shareholder ID to exclude (for update scenarios)
+ * @returns The total ownership in basis points (10 000 = 100.00%)
+ */
+export function computeCurrentOwnershipBps(
+  shareholders: { id: string; ownershipPercentage: string }[],
+  excludeId?: string,
+): number {
+  return shareholders
+    .filter((s) => s.id !== excludeId)
+    .reduce(
+      (sum, s) => sum + Math.round(Number(s.ownershipPercentage) * 100),
+      0,
+    );
+}
+
+/**
+ * @deprecated Use {@link computeCurrentOwnershipBps} for precision-safe arithmetic.
+ *
  * Computes the current total ownership percentage for a business's shareholders,
  * optionally excluding a specific shareholder (for update scenarios).
  *
