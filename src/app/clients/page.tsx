@@ -350,11 +350,13 @@ export default function ClientsPage() {
                 )}
 
                 {!isLoading && !error && filteredClients.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <ClientsTable
-                      clients={filteredClients}
-                      onRowClick={handleRowClick}
-                    />
+                  <div className="-mx-6 overflow-x-auto sm:-mx-0 sm:overflow-x-visible">
+                    <div className="min-w-[600px] px-6 sm:min-w-0 sm:px-0">
+                      <ClientsTable
+                        clients={filteredClients}
+                        onRowClick={handleRowClick}
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>

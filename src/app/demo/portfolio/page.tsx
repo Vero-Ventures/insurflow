@@ -126,11 +126,11 @@ export default function DemoPortfolioPage() {
           <div className="relative">
             {/* Post-tour tooltip - shows after tour completes */}
             {showNextStepTooltip && (
-              <div className="absolute right-0 -bottom-14">
+              <div className="absolute top-full left-0 z-[100] mt-2 sm:right-0 sm:left-auto">
                 <div className="bg-foreground text-background relative rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap shadow-lg">
                   Try adding a new client
-                  {/* Tooltip arrow pointing up */}
-                  <div className="bg-foreground absolute -top-1.5 right-6 h-3 w-3 rotate-45" />
+                  {/* Tooltip arrow - points up */}
+                  <div className="bg-foreground absolute -top-1.5 left-4 h-3 w-3 rotate-45 sm:right-4 sm:left-auto" />
                 </div>
               </div>
             )}
@@ -213,25 +213,25 @@ export default function DemoPortfolioPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-border/60 hover:bg-transparent">
-                <TableHead className="text-muted-foreground w-[280px] font-medium">
+                <TableHead className="text-muted-foreground w-[180px] min-w-[180px] font-medium sm:w-[200px] md:w-[240px] lg:w-[280px]">
                   Client
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground w-12 font-medium">
                   Age
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground w-16 font-medium">
                   State
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
-                  Last Updated
+                <TableHead className="text-muted-foreground hidden w-24 font-medium md:table-cell">
+                  Updated
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground hidden w-28 font-medium lg:table-cell">
                   Insurance Needs
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground w-20 font-medium">
                   Status
                 </TableHead>
-                <TableHead className="w-10" />
+                <TableHead className="w-8" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -282,12 +282,12 @@ export default function DemoPortfolioPage() {
                         {client.state}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <span className="text-muted-foreground text-sm">
                         {formatDate(client.updatedAt)}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {insuranceNeeds ? (
                         <span className="text-emerald font-currency text-sm font-medium">
                           {insuranceNeeds}

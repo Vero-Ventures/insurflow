@@ -74,25 +74,25 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
     <Table>
       <TableHeader>
         <TableRow className="border-border/60 hover:bg-transparent">
-          <TableHead className="text-muted-foreground w-[280px] font-medium">
+          <TableHead className="text-muted-foreground w-[180px] min-w-[180px] font-medium sm:w-[200px] md:w-[240px] lg:w-[280px]">
             Client
           </TableHead>
-          <TableHead className="text-muted-foreground font-medium">
+          <TableHead className="text-muted-foreground w-12 font-medium">
             Age
           </TableHead>
-          <TableHead className="text-muted-foreground font-medium">
+          <TableHead className="text-muted-foreground w-16 font-medium">
             State
           </TableHead>
-          <TableHead className="text-muted-foreground font-medium">
-            Last Updated
+          <TableHead className="text-muted-foreground hidden w-24 font-medium md:table-cell">
+            Updated
           </TableHead>
-          <TableHead className="text-muted-foreground font-medium">
+          <TableHead className="text-muted-foreground hidden w-28 font-medium lg:table-cell">
             Insurance Needs
           </TableHead>
-          <TableHead className="text-muted-foreground font-medium">
+          <TableHead className="text-muted-foreground w-20 font-medium">
             Status
           </TableHead>
-          <TableHead className="w-10" />
+          <TableHead className="w-8" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -155,15 +155,15 @@ export function ClientsTable({ clients, onRowClick }: ClientsTableProps) {
                 </span>
               </TableCell>
 
-              {/* Last Updated */}
-              <TableCell>
+              {/* Last Updated - hidden on mobile */}
+              <TableCell className="hidden md:table-cell">
                 <span className="text-muted-foreground text-sm">
                   {formatDate(client.updatedAt)}
                 </span>
               </TableCell>
 
-              {/* Insurance Needs */}
-              <TableCell>
+              {/* Insurance Needs - hidden on mobile/tablet */}
+              <TableCell className="hidden lg:table-cell">
                 <span className="text-muted-foreground/60 text-sm">
                   Not calculated
                 </span>
