@@ -47,6 +47,7 @@ import { FinancialInputsForm } from "@/components/clients/financial-inputs-form"
 import { DebtsSection } from "@/components/clients/debts-section";
 import { AssetsSection } from "@/components/clients/assets-section";
 import { BeneficiariesSection } from "@/components/clients/beneficiaries-section";
+import { BusinessesSection } from "@/components/clients/businesses-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
 import { useAdvancedIncomeReplacement } from "@/lib/hooks/use-advanced-income-replacement";
 import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
@@ -392,6 +393,14 @@ function ClientDetailContent() {
 
           {/* Debts Section */}
           <DebtsSection clientId={clientId} totalAssets={totalAssets} />
+
+          {/* Businesses Section */}
+          <BusinessesSection
+            clientId={clientId}
+            onBusinessSelect={(business) =>
+              router.push(`/clients/${clientId}/businesses/${business.id}`)
+            }
+          />
         </TabsContent>
 
         {/* Financial Inputs Tab */}
