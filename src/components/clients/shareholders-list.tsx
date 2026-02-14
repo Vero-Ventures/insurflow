@@ -19,10 +19,10 @@ const columns: ColumnDef<Shareholder>[] = [
     header: "Ownership %",
     className: "text-right",
     render: (value): React.ReactNode => {
-      const pct = typeof value === "string" ? parseFloat(value) : value;
+      const bps = Math.round(Number(value) * 100);
       return (
         <span className="font-currency text-foreground font-semibold">
-          {isNaN(pct as number) ? "0" : String(pct)}%
+          {(bps / 100).toFixed(2)}%
         </span>
       );
     },
@@ -57,11 +57,13 @@ export function ShareholdersList({
     if (!response.ok) throw new Error("Failed to delete shareholder");
   };
 
-  // Calculate total ownership for display
-  const totalOwnership = items.reduce((sum, s) => {
-    const pct = parseFloat(s.ownershipPercentage) || 0;
-    return sum + pct;
-  }, 0);
+  // Calculate total ownership for display using integer basis points
+  // (percent × 100) to avoid IEEE-754 floating-point rounding errors.
+  const totalBasisPoints = items.reduce(
+    (sum, s) => sum + Math.round(Number(s.ownershipPercentage) * 100),
+    0,
+  );
+  const totalDisplay = (totalBasisPoints / 100).toFixed(2);
 
   return (
     <div className="space-y-3">
@@ -79,9 +81,9 @@ export function ShareholdersList({
         <div className="flex items-center justify-end gap-2 text-sm">
           <span className="text-muted-foreground">Total Ownership:</span>
           <span
-            className={`font-semibold ${totalOwnership > 100 ? "text-destructive" : "text-foreground"}`}
+            className={`font-semibold ${totalBasisPoints > 10_000 ? "text-destructive" : "text-foreground"}`}
           >
-            {totalOwnership}%
+            {totalDisplay}%
           </span>
         </div>
       )}
