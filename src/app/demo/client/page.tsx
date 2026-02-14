@@ -117,7 +117,7 @@ export default function DemoClientPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="animate-fade-up animation-delay-100 mb-8 grid gap-4 sm:grid-cols-4">
+        <div className="animate-fade-up animation-delay-100 mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card className="border-border/60 p-4">
             <p className="text-muted-foreground text-sm">Annual Income</p>
             <p className="text-foreground font-currency text-xl font-semibold">
@@ -155,7 +155,7 @@ export default function DemoClientPage() {
           className="animate-fade-up animation-delay-150"
         >
           <TabsList
-            className="mb-6 grid w-full grid-cols-4"
+            className="mb-6 flex w-full flex-wrap justify-start gap-1 sm:grid sm:grid-cols-4 sm:flex-nowrap sm:gap-0"
             data-tour="client-tabs"
           >
             <TabsTrigger value="profile" className="gap-2">
