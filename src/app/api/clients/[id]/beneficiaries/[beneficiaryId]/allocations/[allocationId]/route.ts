@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
-import { assetAllocation, beneficiary } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { assetAllocation } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetAllocationSchema } from "@/lib/validation/beneficiary";
 import {
@@ -8,6 +8,7 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
+import { verifyAllocationOwnership } from "@/lib/api/allocation-helpers";
 
 /**
  * PATCH /api/clients/[id]/beneficiaries/[beneficiaryId]/allocations/[allocationId]
@@ -54,42 +55,20 @@ export const PATCH = withApiHandler(
       );
     }
 
-    const db = getDb();
-
-    // Verify beneficiary belongs to this client
-    const foundBeneficiary = await db.query.beneficiary.findFirst({
-      where: and(
-        eq(beneficiary.id, beneficiaryId),
-        eq(beneficiary.clientId, clientId!),
-        isNull(beneficiary.deletedAt),
-      ),
+    // Verify ownership chain: client -> beneficiary -> allocation
+    const verificationResult = await verifyAllocationOwnership({
+      clientId: clientId!,
+      beneficiaryId,
+      allocationId,
+      logger,
     });
 
-    if (!foundBeneficiary) {
-      await logger.info("Beneficiary not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Beneficiary not found" },
-        { status: 404 },
-      );
-    }
-
-    // Verify allocation belongs to this beneficiary
-    const existingAllocation = await db.query.assetAllocation.findFirst({
-      where: and(
-        eq(assetAllocation.id, allocationId),
-        eq(assetAllocation.beneficiaryId, beneficiaryId),
-      ),
-    });
-
-    if (!existingAllocation) {
-      await logger.info("Allocation not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Allocation not found" },
-        { status: 404 },
-      );
+    if (!verificationResult.success) {
+      return verificationResult.error;
     }
 
     // Update the allocation
+    const db = getDb();
     const [updatedAllocation] = await db
       .update(assetAllocation)
       .set({
@@ -130,42 +109,20 @@ export const DELETE = withApiHandler(
       );
     }
 
-    const db = getDb();
-
-    // Verify beneficiary belongs to this client
-    const foundBeneficiary = await db.query.beneficiary.findFirst({
-      where: and(
-        eq(beneficiary.id, beneficiaryId),
-        eq(beneficiary.clientId, clientId!),
-        isNull(beneficiary.deletedAt),
-      ),
+    // Verify ownership chain: client -> beneficiary -> allocation
+    const verificationResult = await verifyAllocationOwnership({
+      clientId: clientId!,
+      beneficiaryId,
+      allocationId,
+      logger,
     });
 
-    if (!foundBeneficiary) {
-      await logger.info("Beneficiary not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Beneficiary not found" },
-        { status: 404 },
-      );
-    }
-
-    // Verify allocation belongs to this beneficiary
-    const existingAllocation = await db.query.assetAllocation.findFirst({
-      where: and(
-        eq(assetAllocation.id, allocationId),
-        eq(assetAllocation.beneficiaryId, beneficiaryId),
-      ),
-    });
-
-    if (!existingAllocation) {
-      await logger.info("Allocation not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Allocation not found" },
-        { status: 404 },
-      );
+    if (!verificationResult.success) {
+      return verificationResult.error;
     }
 
     // Hard delete the allocation
+    const db = getDb();
     await db
       .delete(assetAllocation)
       .where(eq(assetAllocation.id, allocationId));

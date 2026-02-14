@@ -28,6 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ASSET_TYPE_LABELS, type AssetType } from "@/lib/validation/asset";
 
 interface BeneficiariesSectionProps {
   clientId: string;
@@ -330,7 +331,8 @@ function GapAnalysisCard({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{asset.assetName}</span>
                       <Badge variant="outline" className="text-xs">
-                        {asset.assetType.replace(/_/g, " ")}
+                        {ASSET_TYPE_LABELS[asset.assetType as AssetType] ||
+                          asset.assetType}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
