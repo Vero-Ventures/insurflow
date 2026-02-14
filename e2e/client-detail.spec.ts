@@ -66,8 +66,11 @@ test.describe("Client Detail Page", () => {
     ).toBeVisible();
 
     // Verify state is displayed in the profile section
+    // Use exact match to avoid collision with "estate" text in BeneficiariesSection
     const profileContent = page.locator('[role="tabpanel"]').first();
-    await expect(profileContent.getByText("State")).toBeVisible();
+    await expect(
+      profileContent.getByText("State", { exact: true }),
+    ).toBeVisible();
     await expect(profileContent.getByText("CA", { exact: true })).toBeVisible();
   });
 

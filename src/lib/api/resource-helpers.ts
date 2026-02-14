@@ -1,10 +1,10 @@
 import { getDb } from "@/server/db";
-import { asset, client, debt } from "@/server/db/schema";
+import { asset, beneficiary, client, debt } from "@/server/db/schema";
 import { and, eq, exists, isNull, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { Logger } from "@/server/axiom";
 
-type ResourceTable = typeof asset | typeof debt;
+type ResourceTable = typeof asset | typeof debt | typeof beneficiary;
 
 /**
  * Creates the ownership verification EXISTS subquery.
@@ -40,7 +40,7 @@ export interface ResourceConfig {
   /** Display name for error messages (e.g., "Asset", "Debt") */
   resourceName: string;
   /** Query key for db.query (e.g., "asset", "debt") */
-  queryKey: "asset" | "debt";
+  queryKey: "asset" | "debt" | "beneficiary";
 }
 
 /**
@@ -70,15 +70,18 @@ function createBaseWhere(
  */
 async function resourceExists(
   db: ReturnType<typeof getDb>,
-  queryKey: "asset" | "debt",
+  queryKey: "asset" | "debt" | "beneficiary",
   where: SQL,
 ): Promise<boolean> {
   // Use separate calls to avoid TypeScript union type callable issue
   if (queryKey === "asset") {
     const result = await db.query.asset.findFirst({ where });
     return !!result;
-  } else {
+  } else if (queryKey === "debt") {
     const result = await db.query.debt.findFirst({ where });
+    return !!result;
+  } else {
+    const result = await db.query.beneficiary.findFirst({ where });
     return !!result;
   }
 }
@@ -271,4 +274,10 @@ export const debtConfig: ResourceConfig = {
   table: debt,
   resourceName: "Debt",
   queryKey: "debt",
+};
+
+export const beneficiaryConfig: ResourceConfig = {
+  table: beneficiary,
+  resourceName: "Beneficiary",
+  queryKey: "beneficiary",
 };

@@ -46,6 +46,7 @@ import { COPY_FEEDBACK_DURATION_MS } from "@/lib/constants";
 import { FinancialInputsForm } from "@/components/clients/financial-inputs-form";
 import { DebtsSection } from "@/components/clients/debts-section";
 import { AssetsSection } from "@/components/clients/assets-section";
+import { BeneficiariesSection } from "@/components/clients/beneficiaries-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
 import { useAdvancedIncomeReplacement } from "@/lib/hooks/use-advanced-income-replacement";
 import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
@@ -385,6 +386,9 @@ function ClientDetailContent() {
 
           {/* Assets Section */}
           <AssetsSection clientId={clientId} onTotalsChange={setTotalAssets} />
+
+          {/* Beneficiaries Section */}
+          <BeneficiariesSection clientId={clientId} />
 
           {/* Debts Section */}
           <DebtsSection clientId={clientId} totalAssets={totalAssets} />

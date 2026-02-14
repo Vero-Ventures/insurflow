@@ -24,6 +24,32 @@ export const ASSET_TYPES = [
   "other",
 ] as const;
 
+export type AssetType = (typeof ASSET_TYPES)[number];
+
+/**
+ * Human-readable labels for asset types
+ */
+export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
+  "401k": "401(k)",
+  "403b": "403(b)",
+  ira_traditional: "Traditional IRA",
+  ira_roth: "Roth IRA",
+  sep_ira: "SEP IRA",
+  simple_ira: "SIMPLE IRA",
+  brokerage: "Brokerage Account",
+  hsa: "HSA",
+  "529_plan": "529 Plan",
+  real_estate: "Real Estate",
+  life_insurance: "Life Insurance",
+  business_interest: "Business Interest",
+  pension: "Pension",
+  stock_options: "Stock Options",
+  cryptocurrency: "Cryptocurrency",
+  collectibles: "Collectibles",
+  savings: "Savings Account",
+  other: "Other",
+};
+
 /**
  * Validation schema for asset type enum
  */
