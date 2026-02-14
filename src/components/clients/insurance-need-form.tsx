@@ -66,9 +66,8 @@ export function InsuranceNeedForm({
         payload.coverageAmount = String(coverageAmount).replace(/,/g, "");
       }
 
-      if (notes.trim()) {
-        payload.notes = notes.trim();
-      }
+      // Always include notes so users can clear them (send null for empty)
+      payload.notes = notes.trim() || null;
 
       const url = item
         ? `/api/clients/${clientId}/businesses/${businessId}/insurance-needs/${item.id}`

@@ -50,7 +50,7 @@ function BusinessDetailContent() {
         }
 
         const data = await response.json();
-        setBusiness(data.data?.business || data.business || data);
+        setBusiness(data.business);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
