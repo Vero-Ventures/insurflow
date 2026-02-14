@@ -311,32 +311,11 @@ export function createItemHandlers(config: ItemConfig) {
 
       const db = getDb();
 
-      // Wrap existence check + hook + update in a transaction so
-      // pre-mutation checks are serialised with the write, preventing
-      // TOCTOU race conditions (e.g., shareholder ownership %).
+      // Wrap hook + update in a transaction so pre-mutation checks are
+      // serialised with the write, preventing TOCTOU race conditions
+      // (e.g., shareholder ownership %).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const txResult = await (db as any).transaction(async (tx: any) => {
-        // Existence check
-        const [existing] = await tx
-          .select()
-          .from(t)
-          .where(
-            and(
-              eq(t.id, access.resourceId),
-              eq(t.businessId, access.businessId),
-              isNull(t.deletedAt),
-            ),
-          )
-          .limit(1);
-
-        if (!existing) {
-          await logger.info(`${resourceName} not found`, { statusCode: 404 });
-          return NextResponse.json(
-            { error: `${resourceName} not found` },
-            { status: 404 },
-          );
-        }
-
         if (beforeUpdate) {
           const hookResult = await beforeUpdate({
             businessId: access.businessId,
@@ -363,15 +342,15 @@ export function createItemHandlers(config: ItemConfig) {
         return updated;
       });
 
-      // Hook or existence check returned an error response
+      // Hook returned an error response
       if (txResult instanceof NextResponse) return txResult;
       const updated = txResult as Record<string, unknown> | undefined;
 
       if (!updated) {
-        await logger.error(`Failed to update ${resourceName.toLowerCase()}`);
+        await logger.info(`${resourceName} not found`, { statusCode: 404 });
         return NextResponse.json(
-          { error: `Failed to update ${resourceName.toLowerCase()}` },
-          { status: 500 },
+          { error: `${resourceName} not found` },
+          { status: 404 },
         );
       }
 
