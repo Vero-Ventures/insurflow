@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   date,
   decimal,
   index,
@@ -723,6 +724,11 @@ export const shareholder = pgTable(
     index("shareholder_business_id_deleted_at_idx").on(
       t.businessId,
       t.deletedAt,
+    ),
+    // Ensure ownership percentage stays within 0–100 at the DB level
+    check(
+      "shareholder_ownership_pct_range",
+      sql`${t.ownershipPercentage} >= 0 AND ${t.ownershipPercentage} <= 100`,
     ),
   ],
 );
