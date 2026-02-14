@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { assetAllocation, asset, beneficiary } from "@/server/db/schema";
+import { assetAllocation, asset } from "@/server/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { createAssetAllocationSchema } from "@/lib/validation/beneficiary";
@@ -8,6 +8,7 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
+import { verifyBeneficiaryOwnership } from "@/lib/api/allocation-helpers";
 
 /**
  * GET /api/clients/[id]/beneficiaries/[beneficiaryId]/allocations
@@ -29,26 +30,19 @@ export const GET = withApiHandler(
       );
     }
 
-    const db = getDb();
-
     // Verify beneficiary belongs to this client
-    const foundBeneficiary = await db.query.beneficiary.findFirst({
-      where: and(
-        eq(beneficiary.id, beneficiaryId),
-        eq(beneficiary.clientId, clientId!),
-        isNull(beneficiary.deletedAt),
-      ),
+    const verificationResult = await verifyBeneficiaryOwnership({
+      clientId: clientId!,
+      beneficiaryId,
+      logger,
     });
 
-    if (!foundBeneficiary) {
-      await logger.info("Beneficiary not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Beneficiary not found" },
-        { status: 404 },
-      );
+    if (!verificationResult.success) {
+      return verificationResult.error;
     }
 
     // Fetch allocations with asset details
+    const db = getDb();
     const allocations = await db.query.assetAllocation.findMany({
       where: eq(assetAllocation.beneficiaryId, beneficiaryId),
       with: {
@@ -102,24 +96,18 @@ export const POST = withApiHandler(
       return handleValidationError(logger, validationResult.error);
     }
 
-    const db = getDb();
-
     // Verify beneficiary belongs to this client
-    const foundBeneficiary = await db.query.beneficiary.findFirst({
-      where: and(
-        eq(beneficiary.id, beneficiaryId),
-        eq(beneficiary.clientId, clientId!),
-        isNull(beneficiary.deletedAt),
-      ),
+    const verificationResult = await verifyBeneficiaryOwnership({
+      clientId: clientId!,
+      beneficiaryId,
+      logger,
     });
 
-    if (!foundBeneficiary) {
-      await logger.info("Beneficiary not found", { statusCode: 404 });
-      return NextResponse.json(
-        { error: "Beneficiary not found" },
-        { status: 404 },
-      );
+    if (!verificationResult.success) {
+      return verificationResult.error;
     }
+
+    const db = getDb();
 
     // Verify asset belongs to this client
     const foundAsset = await db.query.asset.findFirst({

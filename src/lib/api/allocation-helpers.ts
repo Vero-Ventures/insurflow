@@ -9,6 +9,19 @@ type BeneficiaryRow = InferSelectModel<typeof beneficiary>;
 type AssetAllocationRow = InferSelectModel<typeof assetAllocation>;
 
 /**
+ * Result type for beneficiary ownership verification
+ */
+export type BeneficiaryVerificationResult =
+  | {
+      success: true;
+      beneficiary: BeneficiaryRow;
+    }
+  | {
+      success: false;
+      error: NextResponse;
+    };
+
+/**
  * Result type for allocation ownership verification
  */
 export type AllocationVerificationResult =
@@ -23,25 +36,22 @@ export type AllocationVerificationResult =
     };
 
 /**
- * Verifies that a beneficiary belongs to a client and an allocation belongs to that beneficiary.
- * This helper consolidates the ownership verification logic used across allocation PATCH and DELETE handlers.
+ * Verifies that a beneficiary belongs to a client.
+ * Used by GET and POST handlers that only need beneficiary verification.
  *
  * @param params.clientId - The client ID to verify ownership against
  * @param params.beneficiaryId - The beneficiary ID to verify
- * @param params.allocationId - The allocation ID to verify
  * @param params.logger - Logger instance for audit trail
- * @returns Either the found entities or an error response
+ * @returns Either the found beneficiary or an error response
  */
-export async function verifyAllocationOwnership(params: {
+export async function verifyBeneficiaryOwnership(params: {
   clientId: string;
   beneficiaryId: string;
-  allocationId: string;
   logger: Logger;
-}): Promise<AllocationVerificationResult> {
-  const { clientId, beneficiaryId, allocationId, logger } = params;
+}): Promise<BeneficiaryVerificationResult> {
+  const { clientId, beneficiaryId, logger } = params;
   const db = getDb();
 
-  // Verify beneficiary belongs to this client
   const foundBeneficiary = await db.query.beneficiary.findFirst({
     where: and(
       eq(beneficiary.id, beneficiaryId),
@@ -61,7 +71,43 @@ export async function verifyAllocationOwnership(params: {
     };
   }
 
-  // Verify allocation belongs to this beneficiary
+  return {
+    success: true,
+    beneficiary: foundBeneficiary,
+  };
+}
+
+/**
+ * Verifies that a beneficiary belongs to a client and an allocation belongs to that beneficiary.
+ * This helper consolidates the ownership verification logic used across allocation PATCH and DELETE handlers.
+ *
+ * @param params.clientId - The client ID to verify ownership against
+ * @param params.beneficiaryId - The beneficiary ID to verify
+ * @param params.allocationId - The allocation ID to verify
+ * @param params.logger - Logger instance for audit trail
+ * @returns Either the found entities or an error response
+ */
+export async function verifyAllocationOwnership(params: {
+  clientId: string;
+  beneficiaryId: string;
+  allocationId: string;
+  logger: Logger;
+}): Promise<AllocationVerificationResult> {
+  const { clientId, beneficiaryId, allocationId, logger } = params;
+
+  // First verify beneficiary ownership
+  const beneficiaryResult = await verifyBeneficiaryOwnership({
+    clientId,
+    beneficiaryId,
+    logger,
+  });
+
+  if (!beneficiaryResult.success) {
+    return beneficiaryResult;
+  }
+
+  // Then verify allocation belongs to this beneficiary
+  const db = getDb();
   const existingAllocation = await db.query.assetAllocation.findFirst({
     where: and(
       eq(assetAllocation.id, allocationId),
@@ -82,7 +128,7 @@ export async function verifyAllocationOwnership(params: {
 
   return {
     success: true,
-    beneficiary: foundBeneficiary,
+    beneficiary: beneficiaryResult.beneficiary,
     allocation: existingAllocation,
   };
 }
