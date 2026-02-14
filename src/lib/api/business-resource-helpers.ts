@@ -189,22 +189,32 @@ export function createCollectionHandlers(config: CollectionConfig) {
       const db = getDb();
       const validatedData = validationResult.data as Record<string, unknown>;
 
-      if (beforeCreate) {
-        const hookResult = await beforeCreate({
-          businessId: access.businessId,
-          validatedData,
-          db,
-          logger,
-        });
-        if (hookResult) return hookResult;
-      }
+      // Wrap hook + insert in a transaction so pre-mutation checks
+      // (e.g., shareholder ownership %) are serialised with the write,
+      // preventing TOCTOU race conditions.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const txResult = await (db as any).transaction(async (tx: any) => {
+        if (beforeCreate) {
+          const hookResult = await beforeCreate({
+            businessId: access.businessId,
+            validatedData,
+            db: tx as ReturnType<typeof getDb>,
+            logger,
+          });
+          if (hookResult) return hookResult;
+        }
 
-      const results = (await db
-        .insert(t)
-        .values({ businessId: access.businessId, ...validatedData })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .returning()) as any[];
-      const newItem = results[0] as Record<string, unknown> | undefined;
+        const results = (await tx
+          .insert(t)
+          .values({ businessId: access.businessId, ...validatedData })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .returning()) as any[];
+        return results[0] as Record<string, unknown> | undefined;
+      });
+
+      // Hook returned an error response — propagate it
+      if (txResult instanceof NextResponse) return txResult;
+      const newItem = txResult as Record<string, unknown> | undefined;
 
       if (!newItem) {
         await logger.error(
@@ -301,49 +311,61 @@ export function createItemHandlers(config: ItemConfig) {
 
       const db = getDb();
 
-      // Existence check
-      const [existing] = await db
-        .select()
-        .from(t)
-        .where(
-          and(
-            eq(t.id, access.resourceId),
-            eq(t.businessId, access.businessId),
-            isNull(t.deletedAt),
-          ),
-        )
-        .limit(1);
+      // Wrap existence check + hook + update in a transaction so
+      // pre-mutation checks are serialised with the write, preventing
+      // TOCTOU race conditions (e.g., shareholder ownership %).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const txResult = await (db as any).transaction(async (tx: any) => {
+        // Existence check
+        const [existing] = await tx
+          .select()
+          .from(t)
+          .where(
+            and(
+              eq(t.id, access.resourceId),
+              eq(t.businessId, access.businessId),
+              isNull(t.deletedAt),
+            ),
+          )
+          .limit(1);
 
-      if (!existing) {
-        await logger.info(`${resourceName} not found`, { statusCode: 404 });
-        return NextResponse.json(
-          { error: `${resourceName} not found` },
-          { status: 404 },
-        );
-      }
+        if (!existing) {
+          await logger.info(`${resourceName} not found`, { statusCode: 404 });
+          return NextResponse.json(
+            { error: `${resourceName} not found` },
+            { status: 404 },
+          );
+        }
 
-      if (beforeUpdate) {
-        const hookResult = await beforeUpdate({
-          businessId: access.businessId,
-          resourceId: access.resourceId,
-          validatedData: data,
-          db,
-          logger,
-        });
-        if (hookResult) return hookResult;
-      }
+        if (beforeUpdate) {
+          const hookResult = await beforeUpdate({
+            businessId: access.businessId,
+            resourceId: access.resourceId,
+            validatedData: data,
+            db: tx as ReturnType<typeof getDb>,
+            logger,
+          });
+          if (hookResult) return hookResult;
+        }
 
-      const [updated] = await db
-        .update(t)
-        .set({ ...data, updatedAt: new Date() })
-        .where(
-          and(
-            eq(t.id, access.resourceId),
-            eq(t.businessId, access.businessId),
-            isNull(t.deletedAt),
-          ),
-        )
-        .returning();
+        const [updated] = await tx
+          .update(t)
+          .set({ ...data, updatedAt: new Date() })
+          .where(
+            and(
+              eq(t.id, access.resourceId),
+              eq(t.businessId, access.businessId),
+              isNull(t.deletedAt),
+            ),
+          )
+          .returning();
+
+        return updated;
+      });
+
+      // Hook or existence check returned an error response
+      if (txResult instanceof NextResponse) return txResult;
+      const updated = txResult as Record<string, unknown> | undefined;
 
       if (!updated) {
         await logger.error(`Failed to update ${resourceName.toLowerCase()}`);
@@ -354,7 +376,7 @@ export function createItemHandlers(config: ItemConfig) {
       }
 
       await logger.info(`${resourceName} updated successfully`, {
-        resourceId: (updated as Record<string, unknown>).id,
+        resourceId: updated.id,
       });
 
       return { data: { [responseKey]: updated } };
