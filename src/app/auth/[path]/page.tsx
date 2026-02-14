@@ -158,7 +158,7 @@ export default async function AuthPage({
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="group flex items-start gap-3 rounded-lg bg-white/5 p-3 transition-colors hover:bg-white/10 sm:space-x-2 lg:space-x-3 lg:p-3"
+                className="group flex items-start gap-3 rounded-lg bg-white/5 p-3 transition-colors hover:bg-white/10"
               >
                 <div className="bg-emerald/20 text-emerald flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg lg:h-10 lg:w-10">
                   <feature.icon className="h-4 w-4 lg:h-5 lg:w-5" />
@@ -167,7 +167,7 @@ export default async function AuthPage({
                   <h3 className="text-sm leading-tight font-semibold text-white lg:text-base">
                     {feature.title}
                   </h3>
-                  <p className="mt-1 hidden text-xs leading-relaxed text-white/70 sm:line-clamp-2">
+                  <p className="mt-1 hidden text-xs leading-relaxed text-white/70 sm:line-clamp-2 sm:block">
                     {feature.description}
                   </p>
                 </div>

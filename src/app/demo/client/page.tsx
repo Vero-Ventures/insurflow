@@ -155,7 +155,7 @@ export default function DemoClientPage() {
           className="animate-fade-up animation-delay-150"
         >
           <TabsList
-            className="mb-6 flex w-full flex-wrap justify-start gap-1 sm:grid sm:grid-cols-4 sm:flex-nowrap sm:gap-0"
+            className="mb-6 flex w-full flex-wrap justify-start gap-1 sm:grid sm:grid-cols-4"
             data-tour="client-tabs"
           >
             <TabsTrigger value="profile" className="gap-2">
