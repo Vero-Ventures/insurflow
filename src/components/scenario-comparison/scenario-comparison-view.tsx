@@ -127,6 +127,7 @@ export function ScenarioComparisonView({
             key={scenario.id}
             scenario={scenario}
             onNameChange={handleNameChange}
+            onCoverageChange={handleCoverageChange}
           />
         ))}
       </div>
