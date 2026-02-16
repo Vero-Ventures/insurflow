@@ -43,6 +43,12 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+const PREMIUM_FACTORS = {
+  life: 0.002,
+  criticalIllness: 0.003,
+  disability: 0.01,
+} as const;
+
 function calculateScenarioResults(c: ScenarioCoverage) {
   const disabilityAnnual = c.disability * 12;
 
@@ -50,7 +56,9 @@ function calculateScenarioResults(c: ScenarioCoverage) {
 
   // Placeholder math (easy to swap later)
   const estimatedAnnualPremium =
-    c.life * 0.002 + c.criticalIllness * 0.003 + disabilityAnnual * 0.01;
+    c.life * PREMIUM_FACTORS.life +
+    c.criticalIllness * PREMIUM_FACTORS.criticalIllness +
+    disabilityAnnual * PREMIUM_FACTORS.disability;
 
   return { totalCoverage, estimatedAnnualPremium };
 }
