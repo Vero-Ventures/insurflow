@@ -42,16 +42,78 @@ function formatCurrency(value: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// SliderRow sub-component
+// ---------------------------------------------------------------------------
+
+import { Slider } from "@/components/ui/slider";
+
+interface SliderRowProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  ariaLabel: string;
+  currencyFormat?: "monthly";
+}
+
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  ariaLabel,
+  currencyFormat,
+}: SliderRowProps) {
+  // Accessible currency formatting
+  const formatted =
+    currencyFormat === "monthly"
+      ? `${formatCurrency(value)}/mo`
+      : formatCurrency(value);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium" htmlFor={ariaLabel}>
+          {label}
+        </label>
+        <span className="font-currency text-sm" aria-live="polite">
+          {formatted}
+        </span>
+      </div>
+      <Slider
+        value={[value]}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={(vals: number[]) =>
+          onChange(typeof vals[0] === "number" ? vals[0] : value)
+        }
+        aria-label={ariaLabel}
+        className="w-full"
+      />
+      <div className="text-muted-foreground flex justify-between text-xs">
+        <span>{formatCurrency(min)}</span>
+        <span>{formatCurrency(max)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Controlled coverage state
+  const [coverage, setCoverage] = useState<ScenarioCoverage>(scenario.coverage);
 
   function handleEditStart() {
     setIsEditing(true);
-    // Focus after React renders the input
     requestAnimationFrame(() => inputRef.current?.select());
   }
 
@@ -63,10 +125,13 @@ export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
     }
   }
 
+  // Slider change handler
+  function handleCoverageChange(field: keyof ScenarioCoverage, value: number) {
+    setCoverage((prev) => ({ ...prev, [field]: value }));
+  }
+
   const totalCoverage =
-    scenario.coverage.life +
-    scenario.coverage.disability +
-    scenario.coverage.criticalIllness;
+    coverage.life + coverage.disability + coverage.criticalIllness;
 
   return (
     <Card className="flex h-full flex-col">
@@ -106,15 +171,15 @@ export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
           <div className="grid gap-2">
             <SummaryRow
               label="Life Insurance"
-              value={formatCurrency(scenario.coverage.life)}
+              value={formatCurrency(coverage.life)}
             />
             <SummaryRow
               label="Disability"
-              value={formatCurrency(scenario.coverage.disability)}
+              value={formatCurrency(coverage.disability)}
             />
             <SummaryRow
               label="Critical Illness"
-              value={formatCurrency(scenario.coverage.criticalIllness)}
+              value={formatCurrency(coverage.criticalIllness)}
             />
           </div>
         </div>
@@ -134,10 +199,35 @@ export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
           <h4 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
             Adjustments
           </h4>
-          <div className="bg-muted/40 flex items-center justify-center rounded-lg border border-dashed p-6">
-            <span className="text-muted-foreground text-sm">
-              Sliders coming soon
-            </span>
+          <div className="flex flex-col gap-6">
+            <SliderRow
+              label="Life Insurance"
+              value={coverage.life}
+              min={0}
+              max={2000000}
+              step={10000}
+              onChange={(v) => handleCoverageChange("life", v)}
+              ariaLabel="Life Insurance Coverage"
+            />
+            <SliderRow
+              label="Disability (Monthly)"
+              value={coverage.disability}
+              min={0}
+              max={20000}
+              step={500}
+              onChange={(v) => handleCoverageChange("disability", v)}
+              ariaLabel="Disability Coverage"
+              currencyFormat="monthly"
+            />
+            <SliderRow
+              label="Critical Illness"
+              value={coverage.criticalIllness}
+              min={0}
+              max={500000}
+              step={5000}
+              onChange={(v) => handleCoverageChange("criticalIllness", v)}
+              ariaLabel="Critical Illness Coverage"
+            />
           </div>
         </div>
       </CardContent>
