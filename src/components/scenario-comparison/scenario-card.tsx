@@ -43,6 +43,18 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function calculateScenarioResults(c: ScenarioCoverage) {
+  const disabilityAnnual = c.disability * 12;
+
+  const totalCoverage = c.life + c.criticalIllness + disabilityAnnual;
+
+  // Placeholder math (easy to swap later)
+  const estimatedAnnualPremium =
+    c.life * 0.002 + c.criticalIllness * 0.003 + disabilityAnnual * 0.01;
+
+  return { totalCoverage, estimatedAnnualPremium };
+}
+
 // ---------------------------------------------------------------------------
 // SliderRow sub-component
 // ---------------------------------------------------------------------------
@@ -134,8 +146,8 @@ export function ScenarioCard({
     onCoverageChange(scenario.id, { ...scenario.coverage, [field]: value });
   }
 
-  const totalCoverage =
-    coverage.life + coverage.disability + coverage.criticalIllness;
+  const { totalCoverage, estimatedAnnualPremium } =
+    calculateScenarioResults(coverage);
 
   return (
     <Card className="flex h-full flex-col">
@@ -188,12 +200,19 @@ export function ScenarioCard({
           </div>
         </div>
 
-        {/* Total */}
+        {/* Totals */}
         <div className="border-t pt-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Total Coverage</span>
             <Badge variant="secondary" className="font-currency text-sm">
               {formatCurrency(totalCoverage)}
+            </Badge>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm font-medium">Est. Annual Premium</span>
+            <Badge variant="secondary" className="font-currency text-sm">
+              {formatCurrency(estimatedAnnualPremium)}
             </Badge>
           </div>
         </div>
