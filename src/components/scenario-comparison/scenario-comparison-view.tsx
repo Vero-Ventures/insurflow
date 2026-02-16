@@ -42,7 +42,7 @@ interface ScenarioComparisonViewProps {
 }
 
 export function ScenarioComparisonView({
-  clientId: _clientId,
+  clientId,
 }: ScenarioComparisonViewProps) {
   const [scenarios, setScenarios] = useState<Scenario[]>(() => [
     createScenario(0),
