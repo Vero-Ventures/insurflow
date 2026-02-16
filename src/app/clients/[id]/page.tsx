@@ -61,6 +61,7 @@ import {
   SettlingRequirementsChart,
 } from "@/components/clients/settling-requirements";
 import { ClientReportView } from "@/components/clients/client-report-view";
+import { ScenarioComparisonView } from "@/components/scenario-comparison/scenario-comparison-view";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -461,6 +462,11 @@ function ClientDetailContent() {
             currentAge={calculateAge(client.dateOfBirth)}
             hasSpouse={client.hasSpouse}
           />
+
+          {/* Scenario Comparison */}
+          <div>
+            <ScenarioComparisonView clientId={clientId} />
+          </div>
         </TabsContent>
 
         {/* Report Tab */}
