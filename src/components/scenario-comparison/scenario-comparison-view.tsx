@@ -19,7 +19,7 @@ const MAX_SCENARIOS = 3;
 
 const DEFAULT_COVERAGE = {
   life: 500_000,
-  disability: 60_000,
+  disability: 5_000, // monthly
   criticalIllness: 100_000,
 };
 
