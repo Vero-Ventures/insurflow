@@ -42,12 +42,9 @@ export default function ScenarioComparisonPage() {
               <p className="text-muted-foreground mb-4">
                 Please sign in to view scenario comparison.
               </p>
-              <Link
-                href="/auth/sign-in"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
-              >
-                Sign In
-              </Link>
+              <Button asChild>
+                <Link href="/auth/sign-in">Sign In</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
