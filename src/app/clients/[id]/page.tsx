@@ -465,6 +465,10 @@ function ClientDetailContent() {
 
           {/* Scenario Comparison */}
           <div>
+            <h3 className="text-foreground mb-4 text-lg font-semibold">
+              Scenario Comparison
+            </h3>
+
             <ScenarioComparisonView clientId={clientId} />
           </div>
         </TabsContent>
