@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,6 +27,7 @@ export interface Scenario {
 interface ScenarioCardProps {
   scenario: Scenario;
   onNameChange: (id: string, name: string) => void;
+  onCoverageChange: (id: string, coverage: ScenarioCoverage) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -44,8 +46,6 @@ function formatCurrency(value: number): string {
 // ---------------------------------------------------------------------------
 // SliderRow sub-component
 // ---------------------------------------------------------------------------
-
-import { Slider } from "@/components/ui/slider";
 
 interface SliderRowProps {
   label: string;
@@ -106,11 +106,15 @@ function SliderRow({
 // Component
 // ---------------------------------------------------------------------------
 
-export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
+export function ScenarioCard({
+  scenario,
+  onNameChange,
+  onCoverageChange,
+}: ScenarioCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   // Controlled coverage state
-  const [coverage, setCoverage] = useState<ScenarioCoverage>(scenario.coverage);
+  const coverage = scenario.coverage;
 
   function handleEditStart() {
     setIsEditing(true);
@@ -127,7 +131,7 @@ export function ScenarioCard({ scenario, onNameChange }: ScenarioCardProps) {
 
   // Slider change handler
   function handleCoverageChange(field: keyof ScenarioCoverage, value: number) {
-    setCoverage((prev) => ({ ...prev, [field]: value }));
+    onCoverageChange(scenario.id, { ...scenario.coverage, [field]: value });
   }
 
   const totalCoverage =

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   ScenarioCard,
   type Scenario,
+  type ScenarioCoverage,
 } from "@/components/scenario-comparison/scenario-card";
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,15 @@ export function ScenarioComparisonView({
   const handleNameChange = useCallback((id: string, name: string) => {
     setScenarios((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
   }, []);
+
+  const handleCoverageChange = useCallback(
+    (id: string, coverage: ScenarioCoverage) => {
+      setScenarios((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, coverage } : s)),
+      );
+    },
+    [],
+  );
 
   const addScenario = useCallback(() => {
     setScenarios((prev) => {
