@@ -3,7 +3,6 @@
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, FileDown } from "lucide-react";
-import { toast } from "sonner";
 import {
   ScenarioCard,
   type Scenario,
@@ -80,8 +79,7 @@ export function ScenarioComparisonView({
   }, []);
 
   const handleExportPdf = useCallback(() => {
-    // TODO: integrate PDF export
-    toast.info("PDF export coming soon");
+    window.print();
   }, []);
 
   // ---- Render -------------------------------------------------------------
