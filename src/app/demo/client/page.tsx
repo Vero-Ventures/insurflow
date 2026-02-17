@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +11,9 @@ import {
   Calculator,
   Sparkles,
   FileText,
-  Printer,
+  Download,
   ArrowRight,
 } from "lucide-react";
-import Link from "next/link";
 import {
   demoClient,
   demoAssets,
@@ -103,14 +103,16 @@ export default function DemoClientPage() {
             </div>
             <div className="flex gap-2">
               <Button
+                asChild
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                onClick={() => window.print()}
                 data-tour="print-button"
               >
-                <Printer className="h-4 w-4" />
-                Print Report
+                <a href="/api/demo/report-pdf" download>
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </a>
               </Button>
             </div>
           </div>
@@ -166,11 +168,19 @@ export default function DemoClientPage() {
               <Calculator className="h-4 w-4" />
               <span className="hidden sm:inline">Insurance</span>
             </TabsTrigger>
-            <TabsTrigger value="letter" className="gap-2">
+            <TabsTrigger
+              value="letter"
+              className="gap-2"
+              data-tour="ai-letter-tab"
+            >
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI Letter</span>
             </TabsTrigger>
-            <TabsTrigger value="report" className="gap-2">
+            <TabsTrigger
+              value="report"
+              className="gap-2"
+              data-tour="report-tab"
+            >
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Report</span>
             </TabsTrigger>
@@ -387,6 +397,7 @@ export default function DemoClientPage() {
               <ClientReportView
                 client={demoClient}
                 clientId={demoClient.id}
+                pdfDownloadUrl="/api/demo/report-pdf"
                 demoAssets={demoAssets}
                 demoDebts={demoDebts}
                 demoInsuranceResult={demoInsuranceResult}

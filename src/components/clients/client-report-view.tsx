@@ -18,11 +18,12 @@ import {
   Heart,
   Cigarette,
   FileText,
-  Printer,
+  Download,
   DollarSign,
   Clock,
   Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
@@ -56,6 +57,8 @@ const DEFAULT_SETTLING_COSTS = 15000;
 interface ClientReportViewProps {
   client: Client;
   clientId: string;
+  /** API URL that returns the generated PDF document */
+  pdfDownloadUrl?: string;
   /** Pre-loaded assets for demo mode (skips API fetch) */
   demoAssets?: Asset[];
   /** Pre-loaded debts for demo mode (skips API fetch) */
@@ -76,6 +79,7 @@ interface ClientReportViewProps {
 export function ClientReportView({
   client,
   clientId,
+  pdfDownloadUrl,
   demoAssets,
   demoDebts,
   demoInsuranceResult,
@@ -85,6 +89,7 @@ export function ClientReportView({
   const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
   const [debts, setDebts] = useState<Debt[]>(demoDebts || []);
   const [isLoadingData, setIsLoadingData] = useState(!isDemo);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Insurance needs calculation (skipped in demo mode)
   const {
@@ -150,8 +155,41 @@ export function ClientReportView({
     0,
   );
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    if (!pdfDownloadUrl || isDownloadingPdf) return;
+
+    try {
+      setIsDownloadingPdf(true);
+      const response = await fetch(pdfDownloadUrl, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate report PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      
+      // Sanitize filename by removing special characters
+      const safeFirstName = client.firstName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const safeLastName = client.lastName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      anchor.download = `${safeFirstName}-${safeLastName}-report.pdf`;
+      
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Report downloaded successfully");
+    } catch (error) {
+      console.error("Failed to download PDF:", error);
+      toast.error("Failed to download report. Please try again.");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   };
 
   // Generate initials for avatar
@@ -201,14 +239,17 @@ export function ClientReportView({
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handlePrint}
-              variant="secondary"
-              className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print Report
-            </Button>
+            {pdfDownloadUrl && (
+              <Button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                variant="secondary"
+                className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
+              </Button>
+            )}
           </div>
         </div>
       </Card>

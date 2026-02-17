@@ -282,3 +282,63 @@ export const demoClients: Client[] = [
     updatedAt: "2026-01-28T11:00:00.000Z",
   },
 ];
+
+export interface DemoScenario {
+  id: "young-family" | "business-succession" | "high-net-worth-estate";
+  name: string;
+  headline: string;
+  profile: string;
+  goals: string[];
+  recommendedCoverage: number;
+  estimatedAnnualPremium: number;
+  analysisTimeMinutes: number;
+  icon: "family" | "briefcase" | "landmark";
+}
+
+export const demoScenarios: DemoScenario[] = [
+  {
+    id: "young-family",
+    name: "Young Family Protection",
+    headline: "Protect income and education goals for a growing household",
+    profile: "Sarah, 32, dual-income family with two young children.",
+    goals: [
+      "Income replacement for surviving spouse",
+      "Mortgage and debt continuity",
+      "Education funding protection",
+    ],
+    recommendedCoverage: 2500000,
+    estimatedAnnualPremium: 3200,
+    analysisTimeMinutes: 3,
+    icon: "family",
+  },
+  {
+    id: "business-succession",
+    name: "Business Succession",
+    headline: "Model buy-sell funding and key-person risk in one flow",
+    profile: "Michael, 58, owner-operator with business loan exposure.",
+    goals: [
+      "Buy-sell agreement funding",
+      "Key-person replacement runway",
+      "Estate liquidity and tax planning",
+    ],
+    recommendedCoverage: 4100000,
+    estimatedAnnualPremium: 7400,
+    analysisTimeMinutes: 4,
+    icon: "briefcase",
+  },
+  {
+    id: "high-net-worth-estate",
+    name: "High Net Worth Estate",
+    headline: "Quantify estate liquidity and legacy transfer risk clearly",
+    profile: "Jennifer, 67, retired executive with multi-asset estate.",
+    goals: [
+      "Estate tax liquidity strategy",
+      "Property and investment preservation",
+      "Charitable and family legacy balance",
+    ],
+    recommendedCoverage: 6200000,
+    estimatedAnnualPremium: 10100,
+    analysisTimeMinutes: 5,
+    icon: "landmark",
+  },
+];

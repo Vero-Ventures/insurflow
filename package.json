@@ -47,6 +47,7 @@
     "@radix-ui/react-slider": "^1.3.6",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "file:./stubs/react-email-components",
+    "@react-pdf/renderer": "^4.3.2",
     "@t3-oss/env-nextjs": "0.13.10",
     "better-auth": "^1.4.17",
     "class-variance-authority": "^0.7.1",
