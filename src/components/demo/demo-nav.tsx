@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type DemoSegment = "landing" | "portfolio" | "add-client" | "client";
+type DemoSegment = "landing" | "intake" | "estimate" | "handoff";
 
 interface SegmentInfo {
   path: string;
@@ -27,42 +27,42 @@ interface SegmentInfo {
 const SEGMENTS: Record<DemoSegment, SegmentInfo> = {
   landing: {
     path: "/demo",
-    label: "Demo Overview",
+    label: "Journey Overview",
     shortLabel: "Start",
     icon: <Home className="h-4 w-4" />,
   },
-  portfolio: {
-    path: "/demo/portfolio",
-    label: "Client Portfolio",
-    shortLabel: "Portfolio",
+  intake: {
+    path: "/demo/intake",
+    label: "Client Intake",
+    shortLabel: "Intake",
     icon: <Users className="h-4 w-4" />,
   },
-  "add-client": {
-    path: "/demo/add-client",
-    label: "Add New Client",
-    shortLabel: "Add Client",
+  estimate: {
+    path: "/demo/estimate",
+    label: "Estimate Snapshot",
+    shortLabel: "Estimate",
     icon: <UserPlus className="h-4 w-4" />,
   },
-  client: {
-    path: "/demo/client",
-    label: "Client Analysis",
-    shortLabel: "Analysis",
+  handoff: {
+    path: "/demo/handoff",
+    label: "Advisor Handoff",
+    shortLabel: "Handoff",
     icon: <FileText className="h-4 w-4" />,
   },
 };
 
 const SEGMENT_ORDER: DemoSegment[] = [
   "landing",
-  "portfolio",
-  "add-client",
-  "client",
+  "intake",
+  "estimate",
+  "handoff",
 ];
 
 function getCurrentSegment(pathname: string): DemoSegment {
   if (pathname === "/demo") return "landing";
-  if (pathname.startsWith("/demo/portfolio")) return "portfolio";
-  if (pathname.startsWith("/demo/add-client")) return "add-client";
-  if (pathname.startsWith("/demo/client")) return "client";
+  if (pathname.startsWith("/demo/intake")) return "intake";
+  if (pathname.startsWith("/demo/estimate")) return "estimate";
+  if (pathname.startsWith("/demo/handoff")) return "handoff";
   return "landing";
 }
 
