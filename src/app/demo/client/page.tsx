@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,6 @@ import {
   Download,
   ArrowRight,
 } from "lucide-react";
-import Link from "next/link";
 import {
   demoClient,
   demoAssets,
@@ -103,16 +103,16 @@ export default function DemoClientPage() {
             </div>
             <div className="flex gap-2">
               <Button
+                asChild
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                asChild
                 data-tour="print-button"
               >
-                <Link href="/api/demo/report-pdf">
+                <a href="/api/demo/report-pdf" download>
                   <Download className="h-4 w-4" />
                   Download PDF
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
