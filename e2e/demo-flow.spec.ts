@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Demo Client Journey", () => {
-  test("landing page frames the 3-step client journey", async ({ page }) => {
+  test("full client journey carries intake state to estimate and handoff", async ({
+    page,
+  }) => {
     await page.goto("/demo");
 
     await expect(
@@ -11,16 +13,8 @@ test.describe("Demo Client Journey", () => {
     await expect(page.getByText(/estimate snapshot/i)).toBeVisible();
     await expect(page.getByText(/advisor handoff/i)).toBeVisible();
 
-    const startJourneyButton = page.getByRole("link", {
-      name: /start client journey/i,
-    });
-    await expect(startJourneyButton).toHaveAttribute("href", "/demo/intake");
-  });
-
-  test("intake flow collects inputs and moves to estimate", async ({
-    page,
-  }) => {
-    await page.goto("/demo/intake");
+    await page.getByRole("link", { name: /start client journey/i }).click();
+    await expect(page).toHaveURL(/\/demo\/intake$/);
 
     await expect(
       page.getByRole("heading", { name: /tell us about your household/i }),
@@ -28,6 +22,8 @@ test.describe("Demo Client Journey", () => {
     await expect(page.getByText(/about 5-7 minutes/i)).toBeVisible();
     await expect(page.getByText(/household status/i)).toBeVisible();
 
+    await page.getByRole("combobox").first().click();
+    await page.getByRole("option", { name: /single parent/i }).click();
     await page.getByLabel(/annual household income/i).fill("180000");
     await page.getByLabel(/total debts/i).fill("320000");
     await page.getByLabel(/current life insurance coverage/i).fill("250000");
@@ -37,12 +33,6 @@ test.describe("Demo Client Journey", () => {
 
     await page.getByRole("button", { name: /see estimate/i }).click();
     await expect(page).toHaveURL(/\/demo\/estimate$/);
-  });
-
-  test("estimate screen shows recommendation and plain-language sections", async ({
-    page,
-  }) => {
-    await page.goto("/demo/estimate");
 
     await expect(
       page.getByRole("heading", { name: /your estimated coverage need/i }),
@@ -59,10 +49,14 @@ test.describe("Demo Client Journey", () => {
     await expect(
       page.getByText(/this is an estimate, not final advice/i),
     ).toBeVisible();
-  });
 
-  test("handoff screen ends with clear advisor CTA", async ({ page }) => {
-    await page.goto("/demo/handoff");
+    await expect(page.getByText("$1,905,000")).toBeVisible();
+    await expect(page.getByText("$1,655,000")).toBeVisible();
+
+    await page
+      .getByRole("button", { name: /continue to advisor handoff/i })
+      .click();
+    await expect(page).toHaveURL(/\/demo\/handoff$/);
 
     await expect(
       page.getByRole("heading", {

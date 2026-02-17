@@ -9,9 +9,9 @@ import {
   ArrowRight,
   Home,
   Sparkles,
-  UserPlus,
-  Users,
-  FileText,
+  ClipboardList,
+  Calculator,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,19 +35,19 @@ const SEGMENTS: Record<DemoSegment, SegmentInfo> = {
     path: "/demo/intake",
     label: "Client Intake",
     shortLabel: "Intake",
-    icon: <Users className="h-4 w-4" />,
+    icon: <ClipboardList className="h-4 w-4" />,
   },
   estimate: {
     path: "/demo/estimate",
     label: "Estimate Snapshot",
     shortLabel: "Estimate",
-    icon: <UserPlus className="h-4 w-4" />,
+    icon: <Calculator className="h-4 w-4" />,
   },
   handoff: {
     path: "/demo/handoff",
     label: "Advisor Handoff",
     shortLabel: "Handoff",
-    icon: <FileText className="h-4 w-4" />,
+    icon: <Handshake className="h-4 w-4" />,
   },
 };
 

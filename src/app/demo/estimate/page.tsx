@@ -14,6 +14,10 @@ import { formatCurrency } from "@/lib/client-utils";
 
 const TOTAL_STEPS = 3;
 const CURRENT_STEP = 2;
+const DEMO_INCOME_REPLACEMENT_PERCENT = 70;
+const DEMO_REPLACEMENT_DURATION_YEARS = 15;
+const DEMO_LIQUID_ASSETS = 70000;
+const DEMO_TOTAL_ASSETS = 1277000;
 
 function toNumber(value: string): number {
   const normalized = value.replace(/[^\d.]/g, "");
@@ -34,12 +38,12 @@ export default function DemoEstimatePage() {
       clientIncome: householdIncome,
       spouseIncome: 0,
       includeSpouseIncome: false,
-      incomeReplacementPercent: 70,
-      replacementDurationYears: 15,
+      incomeReplacementPercent: DEMO_INCOME_REPLACEMENT_PERCENT,
+      replacementDurationYears: DEMO_REPLACEMENT_DURATION_YEARS,
       existingLifeInsuranceCoverage: currentCoverage,
       totalDebts,
-      liquidAssets: 70000,
-      totalAssets: 1277000,
+      liquidAssets: DEMO_LIQUID_ASSETS,
+      totalAssets: DEMO_TOTAL_ASSETS,
       estateBuffer: DEFAULT_ESTATE_BUFFER,
     });
   }, [
