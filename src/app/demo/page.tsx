@@ -71,13 +71,13 @@ export default function DemoPage() {
           </Badge>
 
           <h1 className="font-display text-foreground mb-4 text-4xl font-semibold tracking-tight lg:text-5xl">
-            See Your Life Insurance Estimate
+            Experience the Client Journey
           </h1>
 
           <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-lg leading-relaxed">
-            Take the same simple journey your clients will see: a short intake,
-            a transparent estimate snapshot, and a clear handoff to a human
-            advisor.
+            This walkthrough is designed for advisors to preview exactly what a
+            client sees: a short intake, clear estimate snapshot, and advisor
+            handoff.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function DemoPage() {
           >
             <Link href="/demo/intake">
               <Play className="h-4 w-4" />
-              Start Client Journey
+              Start Client Demo
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
