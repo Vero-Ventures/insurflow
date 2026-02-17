@@ -475,7 +475,11 @@ function ClientDetailContent() {
 
         {/* Report Tab */}
         <TabsContent value="report" className="space-y-4">
-          <ClientReportView client={client} clientId={clientId} />
+          <ClientReportView
+            client={client}
+            clientId={clientId}
+            pdfDownloadUrl={`/api/clients/${clientId}/report-pdf`}
+          />
         </TabsContent>
       </Tabs>
     </div>

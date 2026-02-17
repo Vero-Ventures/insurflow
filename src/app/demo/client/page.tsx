@@ -10,7 +10,7 @@ import {
   Calculator,
   Sparkles,
   FileText,
-  Printer,
+  Download,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -106,16 +106,13 @@ export default function DemoClientPage() {
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                onClick={() => {
-                  setActiveTab("report");
-                  setTimeout(() => {
-                    window.dispatchEvent(new Event("insurflow:print-report"));
-                  }, 150);
-                }}
+                asChild
                 data-tour="print-button"
               >
-                <Printer className="h-4 w-4" />
-                Print Report
+                <Link href="/api/demo/report-pdf">
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Link>
               </Button>
             </div>
           </div>
@@ -400,6 +397,7 @@ export default function DemoClientPage() {
               <ClientReportView
                 client={demoClient}
                 clientId={demoClient.id}
+                pdfDownloadUrl="/api/demo/report-pdf"
                 demoAssets={demoAssets}
                 demoDebts={demoDebts}
                 demoInsuranceResult={demoInsuranceResult}

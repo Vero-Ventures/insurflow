@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,7 +18,7 @@ import {
   Heart,
   Cigarette,
   FileText,
-  Printer,
+  Download,
   DollarSign,
   Clock,
   Shield,
@@ -56,6 +56,8 @@ const DEFAULT_SETTLING_COSTS = 15000;
 interface ClientReportViewProps {
   client: Client;
   clientId: string;
+  /** API URL that returns the generated PDF document */
+  pdfDownloadUrl?: string;
   /** Pre-loaded assets for demo mode (skips API fetch) */
   demoAssets?: Asset[];
   /** Pre-loaded debts for demo mode (skips API fetch) */
@@ -76,6 +78,7 @@ interface ClientReportViewProps {
 export function ClientReportView({
   client,
   clientId,
+  pdfDownloadUrl,
   demoAssets,
   demoDebts,
   demoInsuranceResult,
@@ -85,7 +88,7 @@ export function ClientReportView({
   const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
   const [debts, setDebts] = useState<Debt[]>(demoDebts || []);
   const [isLoadingData, setIsLoadingData] = useState(!isDemo);
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Insurance needs calculation (skipped in demo mode)
   const {
@@ -151,73 +154,39 @@ export function ClientReportView({
     0,
   );
 
-  const handlePrint = useCallback(() => {
-    const reportElement = reportRef.current;
-    if (!reportElement) {
-      window.print();
-      return;
+  const handleDownloadPdf = async () => {
+    if (!pdfDownloadUrl || isDownloadingPdf) return;
+
+    try {
+      setIsDownloadingPdf(true);
+      const response = await fetch(pdfDownloadUrl, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate report PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${client.firstName.toLowerCase()}-${client.lastName.toLowerCase()}-report.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsDownloadingPdf(false);
     }
-
-    const printWindow = window.open("", "_blank", "noopener,noreferrer");
-    if (!printWindow) {
-      window.print();
-      return;
-    }
-
-    const styles = Array.from(
-      document.querySelectorAll("link[rel='stylesheet'], style"),
-    )
-      .map((node) => node.outerHTML)
-      .join("\n");
-
-    const reportHtml = reportElement.outerHTML;
-
-    printWindow.document.write(`
-      <!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>InsurFlow Report</title>
-          ${styles}
-        </head>
-        <body>
-          ${reportHtml}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-
-    printWindow.addEventListener("load", () => {
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }, 150);
-    });
-  }, []);
-
-  useEffect(() => {
-    const handleReportPrintEvent = () => {
-      handlePrint();
-    };
-
-    window.addEventListener("insurflow:print-report", handleReportPrintEvent);
-
-    return () => {
-      window.removeEventListener(
-        "insurflow:print-report",
-        handleReportPrintEvent,
-      );
-    };
-  }, [handlePrint]);
+  };
 
   // Generate initials for avatar
   const initials =
     `${client.firstName.charAt(0)}${client.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <div ref={reportRef} className="space-y-8 print:space-y-4">
+    <div className="space-y-8 print:space-y-4">
       {/* Report Header */}
       <Card className="border-border/60 overflow-hidden py-0 shadow-sm print:border-gray-300 print:shadow-none">
         {/* Use explicit deep navy color for consistent branding across themes */}
@@ -259,14 +228,17 @@ export function ClientReportView({
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handlePrint}
-              variant="secondary"
-              className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print Report
-            </Button>
+            {pdfDownloadUrl && (
+              <Button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                variant="secondary"
+                className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
+              </Button>
+            )}
           </div>
         </div>
       </Card>
