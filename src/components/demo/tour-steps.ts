@@ -5,6 +5,45 @@ import type { TourStep } from "./tour-overlay";
  * These guide users through the key features of each page.
  */
 
+export const demoLandingTourSteps: TourStep[] = [
+  {
+    target: "[data-tour='demo-hero']",
+    title: "Welcome to the Interactive Demo",
+    content:
+      "This walkthrough shows how advisors move from client inputs to recommendation-ready outputs in minutes.",
+    placement: "bottom",
+  },
+  {
+    target: "[data-tour='scenario-selector']",
+    title: "Choose a Real-World Scenario",
+    content:
+      "Select a persona to explore common planning contexts: family protection, business succession, or estate planning.",
+    placement: "top",
+  },
+  {
+    target: "[data-tour='live-calc-preview']",
+    title: "Preview Interactive Calculations",
+    content:
+      "See how changing assumptions can impact recommended coverage before entering the full demo flow.",
+    placement: "top",
+  },
+  {
+    target: "[data-tour='mock-ai-preview']",
+    title: "Mock AI Showcase",
+    content:
+      "The demo includes a mock AI recommendation experience now, with production endpoint integration tracked in a follow-up issue.",
+    placement: "left",
+  },
+  {
+    target: "[data-tour='start-demo']",
+    title: "Start the Guided Journey",
+    content:
+      "Continue into the portfolio flow to experience the full analysis lifecycle and report output.",
+    placement: "top",
+    actionHint: "Click Start Demo to continue",
+  },
+];
+
 export const portfolioTourSteps: TourStep[] = [
   {
     target: "[data-tour='portfolio-header']",
