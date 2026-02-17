@@ -171,11 +171,19 @@ export default function DemoClientPage() {
               <Calculator className="h-4 w-4" />
               <span className="hidden sm:inline">Insurance</span>
             </TabsTrigger>
-            <TabsTrigger value="letter" className="gap-2">
+            <TabsTrigger
+              value="letter"
+              className="gap-2"
+              data-tour="ai-letter-tab"
+            >
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI Letter</span>
             </TabsTrigger>
-            <TabsTrigger value="report" className="gap-2">
+            <TabsTrigger
+              value="report"
+              className="gap-2"
+              data-tour="report-tab"
+            >
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Report</span>
             </TabsTrigger>

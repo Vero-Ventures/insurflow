@@ -151,19 +151,20 @@ export const clientDetailTourSteps: TourStep[] = [
     placement: "left",
   },
   {
-    target: "[data-tour='ai-letter']",
+    target: "[data-tour='ai-letter-tab']",
     title: "AI-Powered Compliance",
     content:
       "Generate a professional 'Reasons Why' letter with one click. Our AI creates compliant documentation explaining your recommendation.",
-    placement: "top",
-    actionHint: "Watch the AI generate a letter",
+    placement: "bottom",
+    actionHint: "Click the AI Letter tab to view it",
   },
   {
-    target: "[data-tour='report-section']",
+    target: "[data-tour='report-tab']",
     title: "Professional Reports",
     content:
       "Export a polished, print-ready report to share with your client. Everything they need in one beautiful document.",
-    placement: "top",
+    placement: "bottom",
+    actionHint: "Click the Report tab to view it",
   },
 ];
 
