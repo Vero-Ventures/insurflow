@@ -16,7 +16,6 @@ import {
   index,
   pgTable,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -24,6 +23,11 @@ import {
 import { asset } from "./assets-schema";
 import { client } from "./clients-schema";
 import { beneficiaryRelationshipEnum } from "./enums-schema";
+import {
+  primaryId,
+  timestamps,
+  timestampsNoSoftDelete,
+} from "./schema-helpers";
 
 // ============================================================================
 // BENEFICIARY ENTITY (PRD §4)
@@ -38,7 +42,7 @@ import { beneficiaryRelationshipEnum } from "./enums-schema";
 export const beneficiary = pgTable(
   "beneficiary",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links beneficiary to the client
     clientId: uuid("client_id")
@@ -58,14 +62,7 @@ export const beneficiary = pgTable(
     notes: text("notes"),
 
     // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("beneficiary_client_id_idx").on(t.clientId),
@@ -89,7 +86,7 @@ export const beneficiary = pgTable(
 export const assetAllocation = pgTable(
   "asset_allocation",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Links to beneficiary and asset
     beneficiaryId: uuid("beneficiary_id")
@@ -118,14 +115,8 @@ export const assetAllocation = pgTable(
     /** Notes about this allocation (e.g., "Needs to update beneficiary form") */
     notes: text("notes"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
+    // Timestamps (no deletedAt - allocations are hard-deleted)
+    ...timestampsNoSoftDelete(),
   },
   (t) => [
     index("asset_allocation_beneficiary_id_idx").on(t.beneficiaryId),

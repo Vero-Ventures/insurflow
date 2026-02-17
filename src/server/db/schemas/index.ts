@@ -1,4 +1,4 @@
-/**
+/*
  * @fileoverview Barrel export for all database schemas.
  *
  * This file re-exports all schemas from individual domain files to maintain

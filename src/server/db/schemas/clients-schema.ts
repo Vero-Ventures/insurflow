@@ -16,8 +16,6 @@ import {
   integer,
   pgTable,
   text,
-  timestamp,
-  uuid,
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth-schema";
@@ -27,6 +25,7 @@ import {
   sexEnum,
   stateEnum,
 } from "./enums-schema";
+import { primaryId, timestamps } from "./schema-helpers";
 
 // Forward references for relations (imported in index.ts to avoid circular deps)
 // These are resolved at runtime by Drizzle
@@ -44,7 +43,7 @@ import {
 export const client = pgTable(
   "client",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links client to the advisor who created them
     userId: text("user_id")
@@ -145,14 +144,7 @@ export const client = pgTable(
     // -------------------------------------------------------------------------
     // Timestamps
     // -------------------------------------------------------------------------
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("client_user_id_idx").on(t.userId),

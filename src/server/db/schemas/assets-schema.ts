@@ -11,12 +11,12 @@ import {
   index,
   pgTable,
   text,
-  timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
 
 import { client } from "./clients-schema";
 import { assetTypeEnum } from "./enums-schema";
+import { primaryId, timestamps } from "./schema-helpers";
 
 // ============================================================================
 // ASSET ENTITY (Issue #53)
@@ -31,7 +31,7 @@ import { assetTypeEnum } from "./enums-schema";
 export const asset = pgTable(
   "asset",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links asset to the client
     clientId: uuid("client_id")
@@ -50,15 +50,7 @@ export const asset = pgTable(
     /** Whether this asset can be easily liquidated */
     isLiquid: boolean("is_liquid").notNull().default(false),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("asset_client_id_idx").on(t.clientId),

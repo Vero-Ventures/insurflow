@@ -11,17 +11,17 @@
 import { relations, sql } from "drizzle-orm";
 import {
   check,
+  date,
   decimal,
   index,
   pgTable,
   text,
-  timestamp,
   uuid,
-  date,
 } from "drizzle-orm/pg-core";
 
 import { client } from "./clients-schema";
 import { businessTypeEnum, insuranceNeedTypeEnum } from "./enums-schema";
+import { primaryId, timestamps } from "./schema-helpers";
 
 // ============================================================================
 // BUSINESS ENTITY (Issue #146, PRD §3)
@@ -36,7 +36,7 @@ import { businessTypeEnum, insuranceNeedTypeEnum } from "./enums-schema";
 export const business = pgTable(
   "business",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links business to the client
     clientId: uuid("client_id")
@@ -55,15 +55,7 @@ export const business = pgTable(
     /** Fiscal year end date (month/day reference) */
     fiscalYearEnd: date("fiscal_year_end"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("business_client_id_idx").on(t.clientId),
@@ -86,7 +78,7 @@ export const business = pgTable(
 export const keyPerson = pgTable(
   "key_person",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links key person to the business
     businessId: uuid("business_id")
@@ -110,15 +102,7 @@ export const keyPerson = pgTable(
       .notNull()
       .default("0"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("key_person_business_id_idx").on(t.businessId),
@@ -143,7 +127,7 @@ export const keyPerson = pgTable(
 export const shareholder = pgTable(
   "shareholder",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links shareholder to the business
     businessId: uuid("business_id")
@@ -161,15 +145,7 @@ export const shareholder = pgTable(
       .notNull()
       .default("0"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("shareholder_business_id_idx").on(t.businessId),
@@ -200,7 +176,7 @@ export const shareholder = pgTable(
 export const corporateInsuranceNeed = pgTable(
   "corporate_insurance_need",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links insurance need to the business
     businessId: uuid("business_id")
@@ -218,15 +194,7 @@ export const corporateInsuranceNeed = pgTable(
     /** Additional notes or justification */
     notes: text("notes"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("corporate_insurance_need_business_id_idx").on(t.businessId),

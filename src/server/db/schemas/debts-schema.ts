@@ -6,17 +6,11 @@
  */
 
 import { relations } from "drizzle-orm";
-import {
-  decimal,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { decimal, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 
 import { client } from "./clients-schema";
 import { debtTypeEnum } from "./enums-schema";
+import { primaryId, timestamps } from "./schema-helpers";
 
 // ============================================================================
 // DEBT ENTITY (Issue #54)
@@ -31,7 +25,7 @@ import { debtTypeEnum } from "./enums-schema";
 export const debt = pgTable(
   "debt",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: primaryId(),
 
     // Ownership - links debt to the client
     clientId: uuid("client_id")
@@ -47,15 +41,7 @@ export const debt = pgTable(
       .notNull()
       .default("0"),
 
-    // Timestamps
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps(),
   },
   (t) => [
     index("debt_client_id_idx").on(t.clientId),

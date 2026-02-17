@@ -222,7 +222,7 @@ Drizzle ORM uses two different workflows:
 
 - Drizzle schemas are in `src/server/db/schemas/` directory; import from `@/server/db/schemas`
 - Each domain has its own schema file (e.g., `clients-schema.ts`, `assets-schema.ts`)
-- The barrel export (`index.ts`) maintains backward compatibility
+- The barrel export (`index.ts`) organizes schema exports. Note: the legacy import path `@/server/db/schema` has been removed update imports to `@/server/db/schemas` (breaking change).
 - Rerun `bun run db:generate` after schema edits
 - Local Postgres defaults come from `docker-compose.yml` (port 5432)
 - `DATABASE_URL` should point to local Docker instance for development, Neon for production
