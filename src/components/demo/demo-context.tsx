@@ -9,15 +9,29 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-export type DemoSegment = "landing" | "portfolio" | "add-client" | "client";
+export type DemoSegment = "landing" | "intake" | "estimate" | "handoff";
+
+export type HouseholdStatus =
+  | "single"
+  | "married"
+  | "partnered"
+  | "single_parent";
+
+export interface DemoIntakeData {
+  householdStatus: HouseholdStatus;
+  annualHouseholdIncome: string;
+  totalDebts: string;
+  currentCoverage: string;
+  primaryGoal: string;
+}
 
 interface DemoState {
   currentSegment: DemoSegment;
   currentTourStep: number;
-  hasCompletedClientCreation: boolean;
   showTour: boolean;
   tourCompletedForSegment: DemoSegment | null;
   isTransitioning: boolean;
+  intakeData: DemoIntakeData;
 }
 
 interface DemoContextValue {
@@ -29,18 +43,28 @@ interface DemoContextValue {
   toggleTour: () => void;
   setShowTour: (show: boolean) => void;
   completeTour: () => void;
-  simulateClientCreation: () => void;
+  updateIntakeData: (updates: Partial<DemoIntakeData>) => void;
+  resetIntakeData: () => void;
   setCurrentSegment: (segment: DemoSegment) => void;
   setIsTransitioning: (transitioning: boolean) => void;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
 
+export const DEFAULT_DEMO_INTAKE_DATA: DemoIntakeData = {
+  householdStatus: "married",
+  annualHouseholdIncome: "210000",
+  totalDebts: "515500",
+  currentCoverage: "250000",
+  primaryGoal:
+    "Protect monthly cash flow and keep the mortgage manageable for my family.",
+};
+
 const SEGMENT_ORDER: DemoSegment[] = [
   "landing",
-  "portfolio",
-  "add-client",
-  "client",
+  "intake",
+  "estimate",
+  "handoff",
 ];
 
 export function getSegmentIndex(segment: DemoSegment): number {
@@ -61,20 +85,20 @@ export function getSegmentPath(segment: DemoSegment): string {
   switch (segment) {
     case "landing":
       return "/demo";
-    case "portfolio":
-      return "/demo/portfolio";
-    case "add-client":
-      return "/demo/add-client";
-    case "client":
-      return "/demo/client";
+    case "intake":
+      return "/demo/intake";
+    case "estimate":
+      return "/demo/estimate";
+    case "handoff":
+      return "/demo/handoff";
   }
 }
 
 function getSegmentFromPath(pathname: string): DemoSegment {
   if (pathname === "/demo") return "landing";
-  if (pathname.startsWith("/demo/portfolio")) return "portfolio";
-  if (pathname.startsWith("/demo/add-client")) return "add-client";
-  if (pathname.startsWith("/demo/client")) return "client";
+  if (pathname.startsWith("/demo/intake")) return "intake";
+  if (pathname.startsWith("/demo/estimate")) return "estimate";
+  if (pathname.startsWith("/demo/handoff")) return "handoff";
   return "landing";
 }
 
@@ -94,10 +118,10 @@ export function DemoProvider({
   const [state, setState] = useState<DemoState>({
     currentSegment: initialSegment,
     currentTourStep: 0,
-    hasCompletedClientCreation: false,
     showTour: true,
     tourCompletedForSegment: null,
     isTransitioning: false,
+    intakeData: DEFAULT_DEMO_INTAKE_DATA,
   });
 
   // Track previous segment to reset tour when navigating
@@ -164,10 +188,20 @@ export function DemoProvider({
     }));
   }, []);
 
-  const simulateClientCreation = useCallback(() => {
+  const updateIntakeData = useCallback((updates: Partial<DemoIntakeData>) => {
     setState((prev) => ({
       ...prev,
-      hasCompletedClientCreation: true,
+      intakeData: {
+        ...prev.intakeData,
+        ...updates,
+      },
+    }));
+  }, []);
+
+  const resetIntakeData = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      intakeData: DEFAULT_DEMO_INTAKE_DATA,
     }));
   }, []);
 
@@ -197,7 +231,8 @@ export function DemoProvider({
         toggleTour,
         setShowTour,
         completeTour,
-        simulateClientCreation,
+        updateIntakeData,
+        resetIntakeData,
         setCurrentSegment,
         setIsTransitioning,
       }}
