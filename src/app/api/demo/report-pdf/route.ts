@@ -50,7 +50,7 @@ export async function GET() {
 
     const doc = createClientReportPdfDocument({
       title: "InsurFlow Demo Financial Needs Report",
-      generatedAt: new Date().toLocaleString(),
+      generatedAt: new Date().toISOString(),
       clientName,
       profile: [
         {
@@ -116,6 +116,8 @@ export async function GET() {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
+        "Cache-Control": "private, no-store",
+        "Pragma": "no-cache",
       },
     });
   } catch (error) {

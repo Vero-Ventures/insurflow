@@ -31,7 +31,7 @@ export const GET = withApiHandler(
   {
     endpoint: "/api/clients/[id]/report-pdf",
     method: "GET",
-    requireClient: true,
+    requireClient: false,
   },
   async (_request, { clientId, session }) => {
     const db = getDb();
@@ -88,7 +88,7 @@ export const GET = withApiHandler(
 
     const doc = createClientReportPdfDocument({
       title: "InsurFlow Financial Needs Report",
-      generatedAt: new Date().toLocaleString(),
+      generatedAt: new Date().toISOString(),
       clientName: fullName,
       profile: [
         {
@@ -150,6 +150,8 @@ export const GET = withApiHandler(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
+        "Cache-Control": "private, no-store",
+        "Pragma": "no-cache",
       },
     });
   },
