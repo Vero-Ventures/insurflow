@@ -97,6 +97,8 @@ export default function DemoPage() {
           <section
             className="grid gap-4 md:grid-cols-3"
             data-tour="scenario-selector"
+            role="radiogroup"
+            aria-label="Select a scenario"
           >
             {demoScenarios.map((scenario) => {
               const Icon = scenarioIconMap[scenario.icon];
@@ -108,6 +110,8 @@ export default function DemoPage() {
                   type="button"
                   onClick={() => setSelectedScenarioId(scenario.id)}
                   className="text-left"
+                  role="radio"
+                  aria-checked={selected}
                 >
                   <Card
                     className={`border-border/60 h-full p-5 transition ${
@@ -172,6 +176,7 @@ export default function DemoPage() {
                     max={90}
                     step={5}
                     className="accent-primary w-full"
+                    aria-label="Income replacement percentage"
                   />
                 </div>
 
@@ -192,6 +197,7 @@ export default function DemoPage() {
                     max={30}
                     step={1}
                     className="accent-primary w-full"
+                    aria-label="Coverage duration in years"
                   />
                 </div>
 
@@ -204,7 +210,7 @@ export default function DemoPage() {
                   </p>
                   <p className="text-muted-foreground mt-1 text-sm">
                     Baseline:{" "}
-                    {formatCurrency(selectedScenario.recommendedCoverage)}(
+                    {formatCurrency(selectedScenario.recommendedCoverage)}{" ("}
                     {coverageDelta >= 0 ? "+" : ""}
                     {formatCurrency(coverageDelta)})
                   </p>

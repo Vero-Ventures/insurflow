@@ -23,6 +23,7 @@ import {
   Clock,
   Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
@@ -171,11 +172,21 @@ export function ClientReportView({
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `${client.firstName.toLowerCase()}-${client.lastName.toLowerCase()}-report.pdf`;
+      
+      // Sanitize filename by removing special characters
+      const safeFirstName = client.firstName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const safeLastName = client.lastName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      anchor.download = `${safeFirstName}-${safeLastName}-report.pdf`;
+      
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       window.URL.revokeObjectURL(url);
+      
+      toast.success("Report downloaded successfully");
+    } catch (error) {
+      console.error("Failed to download PDF:", error);
+      toast.error("Failed to download report. Please try again.");
     } finally {
       setIsDownloadingPdf(false);
     }
