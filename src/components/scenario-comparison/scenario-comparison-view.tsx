@@ -37,13 +37,7 @@ function createScenario(index: number): Scenario {
 // Component
 // ---------------------------------------------------------------------------
 
-interface ScenarioComparisonViewProps {
-  clientId: string;
-}
-
-export function ScenarioComparisonView({
-  clientId,
-}: ScenarioComparisonViewProps) {
+export function ScenarioComparisonView() {
   const [scenarios, setScenarios] = useState<Scenario[]>(() => [
     createScenario(0),
     createScenario(1),

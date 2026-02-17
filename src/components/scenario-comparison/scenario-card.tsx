@@ -96,9 +96,7 @@ function SliderRow({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium" htmlFor={ariaLabel}>
-          {label}
-        </label>
+        <span className="text-sm font-medium">{label}</span>
         <span className="font-currency text-sm" aria-live="polite">
           {formatted}
         </span>
@@ -198,8 +196,8 @@ export function ScenarioCard({
               value={formatCurrency(coverage.life)}
             />
             <SummaryRow
-              label="Disability"
-              value={formatCurrency(coverage.disability)}
+              label="Disability (Annual)"
+              value={formatCurrency(coverage.disability * 12)}
             />
             <SummaryRow
               label="Critical Illness"

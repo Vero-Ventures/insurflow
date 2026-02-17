@@ -24,7 +24,7 @@ function ScenarioComparisonContent() {
         </Button>
       </div>
 
-      <ScenarioComparisonView clientId={clientId} />
+      <ScenarioComparisonView />
     </div>
   );
 }

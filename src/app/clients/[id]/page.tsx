@@ -469,7 +469,7 @@ function ClientDetailContent() {
               Scenario Comparison
             </h3>
 
-            <ScenarioComparisonView clientId={clientId} />
+            <ScenarioComparisonView />
           </div>
         </TabsContent>
 
