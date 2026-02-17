@@ -1,5 +1,11 @@
 import { getDb } from "@/server/db";
-import { asset, beneficiary, business, client, debt } from "@/server/db/schema";
+import {
+  asset,
+  beneficiary,
+  business,
+  client,
+  debt,
+} from "@/server/db/schemas";
 import { and, eq, exists, isNull, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { Logger } from "@/server/axiom";

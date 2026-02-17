@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { assetAllocation, beneficiary } from "@/server/db/schema";
+import { assetAllocation, beneficiary } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { Logger } from "@/server/axiom";

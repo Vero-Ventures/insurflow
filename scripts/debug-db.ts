@@ -4,7 +4,7 @@
 
 import { getDb } from "../src/server/db";
 import type { InferSelectModel } from "drizzle-orm";
-import type { user, client } from "../src/server/db/schema";
+import type { user, client } from "../src/server/db/schemas";
 
 type User = InferSelectModel<typeof user>;
 type Client = InferSelectModel<typeof client>;

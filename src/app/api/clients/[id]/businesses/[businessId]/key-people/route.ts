@@ -1,4 +1,4 @@
-import { keyPerson } from "@/server/db/schema";
+import { keyPerson } from "@/server/db/schemas";
 import { createKeyPersonSchema } from "@/lib/validation/key-person";
 import { createCollectionHandlers } from "@/lib/api/business-resource-helpers";
 

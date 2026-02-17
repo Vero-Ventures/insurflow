@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { asset, client, debt } from "@/server/db/schema";
+import { asset, client, debt } from "@/server/db/schemas";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { withApiHandler } from "@/lib/api/route-helpers";

@@ -14,7 +14,7 @@ import {
   type keyPerson,
   type shareholder,
   type corporateInsuranceNeed,
-} from "@/server/db/schema";
+} from "@/server/db/schemas";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { z } from "zod";

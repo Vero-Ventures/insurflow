@@ -4,7 +4,7 @@
  */
 
 import { getDb } from "../src/server/db";
-import { client } from "../src/server/db/schema";
+import { client } from "../src/server/db/schemas";
 
 async function cleanClients() {
   try {

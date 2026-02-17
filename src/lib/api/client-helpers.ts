@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { business, client } from "@/server/db/schema";
+import { business, client } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { UUID_REGEX } from "@/lib/validation/client";

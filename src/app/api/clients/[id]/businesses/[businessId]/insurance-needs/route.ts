@@ -1,4 +1,4 @@
-import { corporateInsuranceNeed } from "@/server/db/schema";
+import { corporateInsuranceNeed } from "@/server/db/schemas";
 import { createInsuranceNeedSchema } from "@/lib/validation/insurance-need";
 import { createCollectionHandlers } from "@/lib/api/business-resource-helpers";
 

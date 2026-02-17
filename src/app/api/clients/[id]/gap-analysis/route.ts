@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { asset, beneficiary } from "@/server/db/schema";
+import { asset, beneficiary } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { withApiHandler } from "@/lib/api/route-helpers";
 import type { AssetGapAnalysis, GapAnalysisSummary } from "@/types/beneficiary";

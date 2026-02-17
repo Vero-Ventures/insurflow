@@ -10,7 +10,7 @@ import { neon } from "@neondatabase/serverless";
 import postgres from "postgres";
 import { cache } from "react";
 
-import * as schema from "./schema";
+import * as schema from "./schemas";
 
 type Database =
   | PostgresJsDatabase<typeof schema>

@@ -1,0 +1,179 @@
+/**
+ * @fileoverview Enumeration definitions for the InsurFlow database schema.
+ *
+ * Contains all pgEnum definitions used across the application including:
+ * - Geographic enums (US states)
+ * - Insurance underwriting enums (sex, health rating)
+ * - Entity status enums (client status)
+ * - Asset and debt classification enums
+ * - Relationship enums (beneficiary relationships)
+ * - Business enums (business type, insurance need type)
+ */
+
+import { pgEnum } from "drizzle-orm/pg-core";
+
+// ============================================================================
+// GEOGRAPHIC ENUMS
+// ============================================================================
+
+/** US states and District of Columbia */
+export const stateEnum = pgEnum("state", [
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
+  "DC",
+]);
+
+// ============================================================================
+// INSURANCE UNDERWRITING ENUMS
+// ============================================================================
+
+/** Biological sex for insurance underwriting */
+export const sexEnum = pgEnum("sex", ["M", "F"]);
+
+/** Health rating for insurance classification */
+export const healthRatingEnum = pgEnum("health_rating", [
+  "preferred_plus",
+  "preferred",
+  "standard_plus",
+  "standard",
+  "substandard",
+]);
+
+// ============================================================================
+// CLIENT STATUS ENUMS
+// ============================================================================
+
+/** Client status in the system */
+export const clientStatusEnum = pgEnum("client_status", [
+  "draft",
+  "active",
+  "archived",
+]);
+
+// ============================================================================
+// ASSET & DEBT ENUMS
+// ============================================================================
+
+/** Asset type classification (US market) */
+export const assetTypeEnum = pgEnum("asset_type", [
+  "401k",
+  "403b",
+  "ira_traditional",
+  "ira_roth",
+  "sep_ira",
+  "simple_ira",
+  "brokerage",
+  "hsa",
+  "529_plan",
+  "real_estate",
+  "life_insurance",
+  "business_interest",
+  "pension",
+  "stock_options",
+  "cryptocurrency",
+  "collectibles",
+  "savings",
+  "other",
+]);
+
+/** Debt type classification */
+export const debtTypeEnum = pgEnum("debt_type", [
+  "mortgage",
+  "heloc",
+  "car_loan",
+  "student_loan",
+  "personal_loan",
+  "credit_card",
+  "line_of_credit",
+  "business_loan",
+  "other",
+]);
+
+// ============================================================================
+// RELATIONSHIP ENUMS
+// ============================================================================
+
+/** Beneficiary relationship types */
+export const beneficiaryRelationshipEnum = pgEnum("beneficiary_relationship", [
+  "spouse",
+  "child",
+  "parent",
+  "sibling",
+  "grandchild",
+  "grandparent",
+  "trust",
+  "charity",
+  "estate",
+  "business_partner",
+  "other",
+]);
+
+// ============================================================================
+// BUSINESS ENUMS
+// ============================================================================
+
+/** Business entity type classification */
+export const businessTypeEnum = pgEnum("business_type", [
+  "corporation",
+  "partnership",
+  "sole_proprietorship",
+  "trust",
+  "other",
+]);
+
+/** Corporate insurance need type classification */
+export const insuranceNeedTypeEnum = pgEnum("insurance_need_type", [
+  "key_person",
+  "buy_sell",
+  "debt_coverage",
+  "succession",
+  "other",
+]);
