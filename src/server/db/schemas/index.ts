@@ -76,7 +76,7 @@ export {
 // ============================================================================
 
 // Import tables for relation definitions
-import { user } from "./auth-schema";
+import { user, account, session } from "./auth-schema";
 import { client } from "./clients-schema";
 import { asset } from "./assets-schema";
 import { debt } from "./debts-schema";
@@ -93,9 +93,6 @@ export const userRelations = relations(user, ({ many }) => ({
   session: many(session),
   clients: many(client),
 }));
-
-// Re-import account and session for the relations above
-import { account, session } from "./auth-schema";
 
 /**
  * Complete client relations with all child entities.

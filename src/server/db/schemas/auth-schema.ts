@@ -98,11 +98,7 @@ export const verification = pgTable("verification", {
 // AUTH RELATIONS
 // ============================================================================
 
-// Note: User relations to clients defined in clients-schema.ts to avoid circular imports
-export const userRelations = relations(user, ({ many }) => ({
-  account: many(account),
-  session: many(session),
-}));
+// Note: Complete user relations defined in index.ts to include cross-domain entities
 
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, { fields: [account.userId], references: [user.id] }),

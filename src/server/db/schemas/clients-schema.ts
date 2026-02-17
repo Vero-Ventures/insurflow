@@ -8,7 +8,6 @@
  * - Advanced income replacement fields (Phase 2)
  */
 
-import { relations } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -168,8 +167,4 @@ export const client = pgTable(
 // CLIENT RELATIONS
 // ============================================================================
 
-// Note: Full client relations defined in index.ts to avoid circular imports
-// This partial relation connects client back to user
-export const clientRelations = relations(client, ({ one }) => ({
-  user: one(user, { fields: [client.userId], references: [user.id] }),
-}));
+// Note: Complete client relations defined in index.ts to include all child entities

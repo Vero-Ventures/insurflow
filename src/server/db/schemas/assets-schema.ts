@@ -5,7 +5,6 @@
  * Can be extended later with cost basis, growth rate, beneficiary allocations, etc.
  */
 
-import { relations } from "drizzle-orm";
 import {
   boolean,
   decimal,
@@ -73,7 +72,4 @@ export const asset = pgTable(
 // ASSET RELATIONS
 // ============================================================================
 
-// Note: Full asset relations defined in index.ts to avoid circular imports
-export const assetRelations = relations(asset, ({ one }) => ({
-  client: one(client, { fields: [asset.clientId], references: [client.id] }),
-}));
+// Note: Complete asset relations defined in index.ts to include allocations
