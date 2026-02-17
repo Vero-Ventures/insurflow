@@ -14,8 +14,9 @@ import {
   Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDemoContextOptional } from "./demo-context";
 
-type DemoSegment = "landing" | "intake" | "estimate" | "handoff";
+type DemoSegment = "landing" | "intake" | "estimate" | "showcase" | "handoff";
 
 interface SegmentInfo {
   path: string;
@@ -43,6 +44,12 @@ const SEGMENTS: Record<DemoSegment, SegmentInfo> = {
     shortLabel: "Estimate",
     icon: <Calculator className="h-4 w-4" />,
   },
+  showcase: {
+    path: "/demo/showcase",
+    label: "AI + Report Showcase",
+    shortLabel: "Showcase",
+    icon: <Sparkles className="h-4 w-4" />,
+  },
   handoff: {
     path: "/demo/handoff",
     label: "Advisor Handoff",
@@ -55,6 +62,7 @@ const SEGMENT_ORDER: DemoSegment[] = [
   "landing",
   "intake",
   "estimate",
+  "showcase",
   "handoff",
 ];
 
@@ -62,6 +70,7 @@ function getCurrentSegment(pathname: string): DemoSegment {
   if (pathname === "/demo") return "landing";
   if (pathname.startsWith("/demo/intake")) return "intake";
   if (pathname.startsWith("/demo/estimate")) return "estimate";
+  if (pathname.startsWith("/demo/showcase")) return "showcase";
   if (pathname.startsWith("/demo/handoff")) return "handoff";
   return "landing";
 }
@@ -76,6 +85,7 @@ interface DemoNavProps {
 
 export function DemoNav({ className }: DemoNavProps) {
   const pathname = usePathname();
+  const context = useDemoContextOptional();
   const currentSegment = getCurrentSegment(pathname);
   const currentIndex = getSegmentIndex(currentSegment);
 
@@ -110,7 +120,9 @@ export function DemoNav({ className }: DemoNavProps) {
               className="border-emerald/30 bg-emerald/5 text-emerald hidden items-center gap-1.5 sm:flex"
             >
               <Sparkles className="h-3 w-3" />
-              Demo Mode
+              {context?.state.demoMode === "quick"
+                ? "Quick Demo"
+                : "Guided Demo"}
             </Badge>
           </div>
 

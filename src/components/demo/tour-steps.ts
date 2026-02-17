@@ -37,15 +37,15 @@ export const demoLandingTourSteps: TourStep[] = createTourSteps([
     "top",
   ],
   [
-    "[data-tour='live-calc-preview']",
-    "Preview Interactive Calculations",
-    "See how changing assumptions can impact recommended coverage before entering the full demo flow.",
+    "[data-tour='mode-selector']",
+    "Choose Guided or Quick Pace",
+    "Guided mode is the default and showcases the full advisor workflow end-to-end.",
     "top",
   ],
   [
-    "[data-tour='mock-ai-preview']",
-    "Mock AI Showcase",
-    "The demo includes a mock AI recommendation experience now, with production endpoint integration tracked in a follow-up issue.",
+    "[data-tour='live-calc-preview']",
+    "Journey Preview",
+    "You will move from intake to interactive analysis, then into AI and report previews before handoff.",
     "left",
   ],
   [
@@ -57,125 +57,67 @@ export const demoLandingTourSteps: TourStep[] = createTourSteps([
   ],
 ]);
 
-export const portfolioTourSteps: TourStep[] = createTourSteps([
+export const demoIntakeTourSteps: TourStep[] = createTourSteps([
   [
-    "[data-tour='portfolio-header']",
-    "Your Client Portfolio",
-    "This is your command center. View all your clients, their status, and quickly access their analyses.",
+    "[data-tour='intake-heading']",
+    "Capture Core Inputs",
+    "This section captures household and financial context to drive a first-pass recommendation.",
     "bottom",
   ],
   [
-    "[data-tour='search-clients']",
-    "Find Clients Quickly",
-    "Search by name to instantly find any client in your portfolio. Great for advisors with many clients.",
-    "bottom",
-  ],
-  [
-    "[data-tour='new-client-button']",
-    "Add New Clients",
-    "Start a new financial analysis with one click. We'll guide you through gathering all the necessary information.",
-    "left",
-  ],
-  [
-    "[data-tour='client-row']",
-    "Client Overview",
-    "Each row shows key details at a glance: age, location, last update, and current status. Click any client to view their full analysis.",
+    "[data-tour='intake-form']",
+    "Structured Intake",
+    "The guided form keeps data entry lightweight while still collecting enough signal for meaningful analysis.",
     "bottom",
   ],
 ]);
 
-export const addClientTourSteps: TourStep[] = createTourSteps([
+export const demoEstimateTourSteps: TourStep[] = createTourSteps([
   [
-    "[data-tour='client-form']",
-    "Simple Data Entry",
-    "Enter your client's basic information. Our smart form validates as you type and only asks for what's truly needed.",
-    "right",
-  ],
-  [
-    "[data-tour='name-fields']",
-    "Client Identity",
-    "Start with the basics. First and last name are all you need to begin.",
+    "[data-tour='estimate-heading']",
+    "Interactive Estimate",
+    "This recommendation responds immediately to assumption changes so advisors can model scenarios live.",
     "bottom",
   ],
   [
-    "[data-tour='demographics-fields']",
-    "Demographics",
-    "Date of birth and state are used for accurate insurance calculations based on actuarial tables and state regulations.",
+    "[data-tour='assumptions-controls']",
+    "Assumption Controls",
+    "Adjust income replacement, duration, and liquid asset offsets to pressure-test outcomes.",
     "bottom",
   ],
   [
-    "[data-tour='health-fields']",
-    "Health Profile",
-    "Health information helps determine insurance eligibility and premium estimates. This affects the final recommendation.",
-    "bottom",
-  ],
-  [
-    "[data-tour='spouse-fields']",
-    "Family Situation",
-    "If your client has a spouse, their income factors into the insurance needs calculation for comprehensive planning.",
-    "bottom",
-  ],
-  [
-    "[data-tour='submit-button']",
-    "Create & Continue",
-    "Once you submit, the client is created and you can immediately start their financial analysis.",
-    "top",
-    "Click Create Client to continue",
-  ],
-]);
-
-export const clientDetailTourSteps: TourStep[] = createTourSteps([
-  [
-    "[data-tour='client-header']",
-    "Client Profile",
-    "View and edit all client details from this central hub. The tabs below organize different aspects of their analysis.",
-    "bottom",
-  ],
-  [
-    "[data-tour='client-tabs']",
-    "Analysis Sections",
-    "Navigate between Profile, Financial inputs, Insurance calculation, and the final Report. Each builds on the previous.",
-    "bottom",
-  ],
-  [
-    "[data-tour='insurance-needs']",
-    "The Magic Happens Here",
-    "Our engine calculates exactly how much life insurance coverage your client needs based on their complete financial picture.",
+    "[data-tour='estimate-kpis']",
+    "Coverage Snapshot",
+    "Recommended coverage and coverage gap are presented side by side for clear conversation framing.",
     "top",
   ],
   [
-    "[data-tour='insurance-chart']",
-    "Visual Breakdown",
-    "See how income replacement, debt payoff, and existing coverage combine. Makes it easy to explain to clients.",
-    "left",
-  ],
-  [
-    "[data-tour='ai-letter-tab']",
-    "AI-Powered Compliance",
-    "Generate a professional 'Reasons Why' letter with one click. Our AI creates compliant documentation explaining your recommendation.",
-    "bottom",
-    "Click the AI Letter tab to view it",
-  ],
-  [
-    "[data-tour='report-tab']",
-    "Professional Reports",
-    "Export a polished, print-ready report to share with your client. Everything they need in one beautiful document.",
-    "bottom",
-    "Click the Report tab to view it",
+    "[data-tour='showcase-next']",
+    "Continue to Showcase",
+    "Next you will see AI and report deliverables generated from this analysis.",
+    "top",
+    "Click to continue",
   ],
 ]);
 
-export const reportTourSteps: TourStep[] = createTourSteps([
+export const demoShowcaseTourSteps: TourStep[] = createTourSteps([
   [
-    "[data-tour='report-header']",
-    "Client Report",
-    "This is the final deliverable - a comprehensive summary of your client's financial situation and insurance needs.",
+    "[data-tour='ai-letter-preview']",
+    "AI Narrative Output",
+    "The letter preview turns the numbers into recommendation reasoning advisors can refine before delivery.",
     "bottom",
   ],
   [
-    "[data-tour='print-button']",
-    "Export Options",
-    "Print directly or save as PDF. The report is designed to look professional in any format.",
-    "left",
+    "[data-tour='report-preview']",
+    "Client Report Preview",
+    "The report card condenses assumptions and recommendation values into an advisor-ready summary.",
+    "bottom",
+  ],
+  [
+    "[data-tour='showcase-handoff']",
+    "Advisor Handoff",
+    "Continue with confidence: both analysis and communication artifacts are now ready.",
+    "top",
+    "Click to continue",
   ],
 ]);

@@ -12,12 +12,17 @@ import {
   Calculator,
   Handshake,
 } from "lucide-react";
+import { useDemoContext } from "@/components/demo/demo-context";
+import { demoScenarios } from "@/lib/demo-data";
+import { formatCurrency } from "@/lib/client-utils";
 
 /**
  * Demo landing page - overview of what the demo covers.
  * Entry point for the comprehensive demo experience.
  */
 export default function DemoPage() {
+  const { state, setDemoMode, setSelectedScenarioId } = useDemoContext();
+
   const journeySteps = [
     {
       step: 1,
@@ -29,10 +34,16 @@ export default function DemoPage() {
       step: 2,
       icon: <Calculator className="h-5 w-5" />,
       title: "Estimate Snapshot",
-      description: "See your coverage estimate and potential gap right away.",
+      description: "Adjust assumptions and see estimate changes live.",
     },
     {
       step: 3,
+      icon: <Sparkles className="h-5 w-5" />,
+      title: "AI + Report Showcase",
+      description: "Review advisor-ready letter and report previews.",
+    },
+    {
+      step: 4,
       icon: <Handshake className="h-5 w-5" />,
       title: "Advisor Handoff",
       description:
@@ -61,7 +72,10 @@ export default function DemoPage() {
         </Button>
 
         {/* Hero Section */}
-        <div className="animate-fade-up mx-auto max-w-3xl text-center">
+        <div
+          className="animate-fade-up mx-auto max-w-3xl text-center"
+          data-tour="demo-hero"
+        >
           <Badge
             variant="outline"
             className="border-emerald/30 bg-emerald/5 text-emerald mb-6 inline-flex items-center gap-1.5 px-3 py-1"
@@ -76,14 +90,82 @@ export default function DemoPage() {
 
           <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-lg leading-relaxed">
             This walkthrough is designed for advisors to preview exactly what a
-            client sees: a short intake, clear estimate snapshot, and advisor
+            client sees: intake, live analysis, AI documentation, and advisor
             handoff.
           </p>
+
+          <div
+            className="mx-auto mb-8 flex w-fit rounded-full border p-1"
+            data-tour="mode-selector"
+          >
+            <button
+              type="button"
+              onClick={() => setDemoMode("guided")}
+              className={`rounded-full px-4 py-1.5 text-sm ${
+                state.demoMode === "guided"
+                  ? "bg-emerald text-white"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Guided mode (8-10 min)
+            </button>
+            <button
+              type="button"
+              onClick={() => setDemoMode("quick")}
+              className={`rounded-full px-4 py-1.5 text-sm ${
+                state.demoMode === "quick"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Quick mode (3-4 min)
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="animate-fade-up animation-delay-150 mx-auto mt-8 max-w-5xl"
+          data-tour="scenario-selector"
+        >
+          <h2 className="text-foreground mb-3 text-left text-xl font-semibold">
+            Choose a planning scenario
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {demoScenarios.map((scenario) => {
+              const selected = scenario.id === state.selectedScenarioId;
+
+              return (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() => setSelectedScenarioId(scenario.id)}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    selected
+                      ? "border-emerald bg-emerald/5"
+                      : "border-border/60 bg-card/50 hover:border-emerald/40"
+                  }`}
+                >
+                  <p className="text-foreground text-sm font-semibold">
+                    {scenario.name}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {scenario.profile}
+                  </p>
+                  <p className="text-foreground mt-3 text-xs font-medium">
+                    Typical need: {formatCurrency(scenario.recommendedCoverage)}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Journey Steps */}
         <div className="animate-fade-up animation-delay-200 mx-auto mt-8 max-w-4xl">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            data-tour="live-calc-preview"
+          >
             {journeySteps.map((item) => (
               <div
                 key={item.step}
@@ -114,15 +196,17 @@ export default function DemoPage() {
             size="lg"
             className="bg-emerald hover:bg-emerald/90 gap-2 text-white shadow-lg"
           >
-            <Link href="/demo/intake">
+            <Link href="/demo/intake" data-tour="start-demo">
               <Play className="h-4 w-4" />
-              Start Client Demo
+              Start Guided Demo
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
 
           <p className="text-muted-foreground mt-4 text-sm">
-            About 5-7 minutes. No sign-up required.
+            {state.demoMode === "guided"
+              ? "About 8-10 minutes. No sign-up required."
+              : "About 3-4 minutes. No sign-up required."}
           </p>
         </div>
 

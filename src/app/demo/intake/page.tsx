@@ -19,7 +19,7 @@ import {
   type HouseholdStatus,
 } from "@/components/demo/demo-context";
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 const CURRENT_STEP = 1;
 
 export default function DemoIntakePage() {
@@ -50,7 +50,10 @@ export default function DemoIntakePage() {
             </span>
           </div>
 
-          <h1 className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl">
+          <h1
+            className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl"
+            data-tour="intake-heading"
+          >
             Tell us about your household
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
@@ -59,7 +62,10 @@ export default function DemoIntakePage() {
           </p>
         </div>
 
-        <Card className="border-border/60 mx-auto max-w-3xl p-6">
+        <Card
+          className="border-border/60 mx-auto max-w-3xl p-6"
+          data-tour="intake-form"
+        >
           <form
             className="space-y-6"
             onSubmit={(event) => {
