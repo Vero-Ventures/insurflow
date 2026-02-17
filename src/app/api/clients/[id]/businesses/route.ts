@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { business } from "@/server/db/schema";
+import { business } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { createBusinessSchema } from "@/lib/validation/business";

@@ -44,7 +44,17 @@ src/
 ├── server/
 │   ├── axiom/              # Structured logging (Canonical Logging pattern)
 │   ├── better-auth/        # Auth configuration
-│   └── db/                 # Drizzle ORM schema and client
+│   └── db/                 # Drizzle ORM client and schemas
+│       ├── index.ts        # Database connection factory
+│       └── schemas/        # Modular schema definitions
+│           ├── index.ts    # Barrel exports (backward-compatible)
+│           ├── enums-schema.ts      # All pgEnum definitions
+│           ├── auth-schema.ts       # Better Auth tables
+│           ├── clients-schema.ts    # Client entity
+│           ├── assets-schema.ts     # Asset entity
+│           ├── debts-schema.ts      # Debt entity
+│           ├── beneficiaries-schema.ts # Beneficiary & allocation
+│           └── corporate-schema.ts  # Business, shareholders, key persons
 ├── types/                  # Shared TypeScript type definitions
 └── styles/globals.css      # Global styles with CSS variables
 
@@ -210,7 +220,10 @@ Drizzle ORM uses two different workflows:
 
 ### Configuration
 
-- Use Drizzle schema at `src/server/db/schema.ts`; rerun `bun run db:generate` after edits
+- Drizzle schemas are in `src/server/db/schemas/` directory; import from `@/server/db/schemas`
+- Each domain has its own schema file (e.g., `clients-schema.ts`, `assets-schema.ts`)
+- The barrel export (`index.ts`) maintains backward compatibility
+- Rerun `bun run db:generate` after schema edits
 - Local Postgres defaults come from `docker-compose.yml` (port 5432)
 - `DATABASE_URL` should point to local Docker instance for development, Neon for production
 - Restart dev server after schema or environment changes

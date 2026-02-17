@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { assetAllocation } from "@/server/db/schema";
+import { assetAllocation } from "@/server/db/schemas";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updateAssetAllocationSchema } from "@/lib/validation/beneficiary";

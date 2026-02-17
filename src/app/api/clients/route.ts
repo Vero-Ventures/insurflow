@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { client } from "@/server/db/schema";
+import { client } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
 import {
   decimalString,

@@ -8,7 +8,7 @@
  * @module ownership-utils
  */
 
-import { shareholder } from "@/server/db/schema";
+import { shareholder } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { computeCurrentOwnershipBps } from "@/lib/calculations/shareholder-analysis";

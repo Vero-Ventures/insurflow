@@ -11,7 +11,7 @@ import {
   businessConfig,
 } from "@/lib/api/resource-helpers";
 import { getDb } from "@/server/db";
-import { business } from "@/server/db/schema";
+import { business } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 
 /**

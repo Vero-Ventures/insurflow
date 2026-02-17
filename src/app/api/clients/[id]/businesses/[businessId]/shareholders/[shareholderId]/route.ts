@@ -1,4 +1,4 @@
-import { shareholder } from "@/server/db/schema";
+import { shareholder } from "@/server/db/schemas";
 import { updateShareholderSchema } from "@/lib/validation/shareholder";
 import { createItemHandlers } from "@/lib/api/business-resource-helpers";
 import { validateShareholderOwnershipTotal } from "@/server/business/ownership-utils";

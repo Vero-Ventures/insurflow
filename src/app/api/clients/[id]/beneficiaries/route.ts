@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { beneficiary } from "@/server/db/schema";
+import { beneficiary } from "@/server/db/schemas";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { createBeneficiarySchema } from "@/lib/validation/beneficiary";
