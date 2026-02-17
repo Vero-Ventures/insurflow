@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -85,6 +85,7 @@ export function ClientReportView({
   const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
   const [debts, setDebts] = useState<Debt[]>(demoDebts || []);
   const [isLoadingData, setIsLoadingData] = useState(!isDemo);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   // Insurance needs calculation (skipped in demo mode)
   const {
@@ -150,16 +151,73 @@ export function ClientReportView({
     0,
   );
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = useCallback(() => {
+    const reportElement = reportRef.current;
+    if (!reportElement) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const styles = Array.from(
+      document.querySelectorAll("link[rel='stylesheet'], style"),
+    )
+      .map((node) => node.outerHTML)
+      .join("\n");
+
+    const reportHtml = reportElement.outerHTML;
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>InsurFlow Report</title>
+          ${styles}
+        </head>
+        <body>
+          ${reportHtml}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    printWindow.addEventListener("load", () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }, 150);
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleReportPrintEvent = () => {
+      handlePrint();
+    };
+
+    window.addEventListener("insurflow:print-report", handleReportPrintEvent);
+
+    return () => {
+      window.removeEventListener(
+        "insurflow:print-report",
+        handleReportPrintEvent,
+      );
+    };
+  }, [handlePrint]);
 
   // Generate initials for avatar
   const initials =
     `${client.firstName.charAt(0)}${client.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <div className="space-y-8 print:space-y-4">
+    <div ref={reportRef} className="space-y-8 print:space-y-4">
       {/* Report Header */}
       <Card className="border-border/60 overflow-hidden py-0 shadow-sm print:border-gray-300 print:shadow-none">
         {/* Use explicit deep navy color for consistent branding across themes */}
