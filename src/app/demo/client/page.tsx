@@ -103,11 +103,11 @@ export default function DemoClientPage() {
             </div>
             <div className="flex gap-2">
               <Button
+                asChild
                 variant="outline"
                 size="sm"
                 className="gap-2"
                 data-tour="print-button"
-                asChild
               >
                 <a href="/api/demo/report-pdf" download>
                   <Download className="h-4 w-4" />
