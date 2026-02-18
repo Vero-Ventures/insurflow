@@ -23,34 +23,6 @@ function createTourSteps(inputs: TourStepInput[]): TourStep[] {
   }));
 }
 
-export const demoLandingTourSteps: TourStep[] = createTourSteps([
-  [
-    "[data-tour='demo-hero']",
-    "Demo Overview",
-    "This journey helps advisors preview the full client flow from intake through handoff.",
-    "bottom",
-  ],
-  [
-    "[data-tour='scenario-selector']",
-    "Choose a Real-World Scenario",
-    "Select a persona to explore common planning contexts: family protection, business succession, or estate planning.",
-    "top",
-  ],
-  [
-    "[data-tour='mode-selector']",
-    "Choose Guided or Quick Pace",
-    "Guided mode is the default and showcases the full advisor workflow end-to-end.",
-    "top",
-  ],
-  [
-    "[data-tour='start-demo']",
-    "Start the Guided Journey",
-    "Continue into the portfolio flow to experience the full analysis lifecycle and report output.",
-    "top",
-    "Click Start Demo to continue",
-  ],
-]);
-
 export const demoIntakeTourSteps: TourStep[] = createTourSteps([
   [
     "[data-tour='intake-heading']",

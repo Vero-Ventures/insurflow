@@ -7,12 +7,10 @@ import { TourOverlay, TourToggleButton } from "./tour-overlay";
 import {
   demoEstimateTourSteps,
   demoIntakeTourSteps,
-  demoLandingTourSteps,
   demoShowcaseTourSteps,
 } from "./tour-steps";
 
 function getStepsForPath(pathname: string) {
-  if (pathname === "/demo") return demoLandingTourSteps;
   if (pathname.startsWith("/demo/intake")) return demoIntakeTourSteps;
   if (pathname.startsWith("/demo/estimate")) return demoEstimateTourSteps;
   if (pathname.startsWith("/demo/showcase")) return demoShowcaseTourSteps;

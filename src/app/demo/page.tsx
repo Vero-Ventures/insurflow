@@ -35,18 +35,12 @@ export default function DemoPage() {
         </Button>
 
         {/* Hero Section */}
-        <div
-          className="animate-fade-up mx-auto max-w-3xl text-center"
-          data-tour="demo-hero"
-        >
+        <div className="animate-fade-up mx-auto max-w-3xl text-center">
           <h1 className="font-display text-foreground mb-4 text-4xl font-semibold tracking-tight lg:text-5xl">
             Experience the Client Journey
           </h1>
 
-          <div
-            className="mx-auto mb-8 flex w-fit rounded-full border p-1"
-            data-tour="mode-selector"
-          >
+          <div className="mx-auto mb-8 flex w-fit rounded-full border p-1">
             <button
               type="button"
               onClick={() => setDemoMode("guided")}
@@ -72,10 +66,7 @@ export default function DemoPage() {
           </div>
         </div>
 
-        <div
-          className="animate-fade-up animation-delay-150 mx-auto mt-8 max-w-5xl"
-          data-tour="scenario-selector"
-        >
+        <div className="animate-fade-up animation-delay-150 mx-auto mt-8 max-w-5xl">
           <h2 className="text-foreground mb-3 text-left text-xl font-semibold">
             Choose a planning scenario
           </h2>
@@ -116,7 +107,7 @@ export default function DemoPage() {
             size="lg"
             className="bg-emerald hover:bg-emerald/90 gap-2 text-white shadow-lg"
           >
-            <Link href="/demo/intake" data-tour="start-demo">
+            <Link href="/demo/intake">
               <Play className="h-4 w-4" />
               Start Guided Demo
               <ArrowRight className="h-4 w-4" />
