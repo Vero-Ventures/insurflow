@@ -8,7 +8,6 @@ import {
   SignedOut,
   AccountSettingsCards,
   SecuritySettingsCards,
-  DeleteAccountCard,
 } from "@daveyplate/better-auth-ui";
 import {
   User,
@@ -23,6 +22,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { cn } from "@/lib/utils";
 
 // Settings section component for consistent styling
