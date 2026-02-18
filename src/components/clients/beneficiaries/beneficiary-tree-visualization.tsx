@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useId } from "react";
 import {
   Card,
   CardContent,
@@ -35,6 +35,11 @@ export function BeneficiaryTreeVisualization({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+
+  // Unique IDs for SVG markers to avoid duplicate HTML IDs
+  const uniqueId = useId();
+  const arrowheadId = `arrowhead-${uniqueId}`;
+  const arrowheadGapId = `arrowhead-gap-${uniqueId}`;
 
   const tree = useBeneficiaryTreeLayout({
     client,
@@ -194,7 +199,7 @@ export function BeneficiaryTreeVisualization({
           onWheel={handleWheel}
           style={{ cursor: isPanning ? "grabbing" : "grab" }}
         >
-          {/* Single transform wrapper for both SVG edges and HTML nodes */}
+          {/* Single transform wrapper for both SVG and nodes */}
           <div
             className="absolute origin-top-left"
             style={{
@@ -212,7 +217,7 @@ export function BeneficiaryTreeVisualization({
             >
               <defs>
                 <marker
-                  id="arrowhead"
+                  id={arrowheadId}
                   markerWidth="10"
                   markerHeight="8"
                   refX="10"
@@ -222,7 +227,7 @@ export function BeneficiaryTreeVisualization({
                   <polygon points="0 0, 10 4, 0 8" fill="#94a3b8" />
                 </marker>
                 <marker
-                  id="arrowhead-gap"
+                  id={arrowheadGapId}
                   markerWidth="10"
                   markerHeight="8"
                   refX="10"
@@ -245,13 +250,14 @@ export function BeneficiaryTreeVisualization({
                       strokeWidth="2"
                       fill="none"
                       markerEnd={
-                        edge.hasGap ? "url(#arrowhead-gap)" : "url(#arrowhead)"
+                        edge.hasGap
+                          ? `url(#${arrowheadGapId})`
+                          : `url(#${arrowheadId})`
                       }
                       strokeDasharray={edge.hasGap ? "6,4" : undefined}
                     />
                     {edge.label && (
                       <g>
-                        {/* Background for label readability */}
                         <rect
                           x={labelPos.x - 30}
                           y={labelPos.y - 12}
@@ -279,7 +285,7 @@ export function BeneficiaryTreeVisualization({
               })}
             </svg>
 
-            {/* HTML nodes layer */}
+            {/* HTML nodes layer — NO extra transform, just absolute positioning */}
             {tree.nodes.map((node) => (
               <BeneficiaryTreeNode
                 key={node.id}
@@ -290,7 +296,6 @@ export function BeneficiaryTreeVisualization({
             ))}
           </div>
 
-          {/* Controls (outside transform) */}
           <BeneficiaryTreeControls
             zoom={zoom}
             onZoomIn={handleZoomIn}
