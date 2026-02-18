@@ -46,18 +46,7 @@ export async function GET() {
 
     return NextResponse.json({
       profile: onboardingData,
-      isComplete: isOnboardingProfileComplete(
-        profile
-          ? {
-              firstName: profile.firstName,
-              lastName: profile.lastName,
-              state: profile.state,
-              householdStatus: profile.householdStatus,
-              primaryGoal: profile.primaryGoal,
-              communicationPreference: profile.communicationPreference,
-            }
-          : undefined,
-      ),
+      isComplete: isOnboardingProfileComplete(profile),
       completedAt: profile?.onboardingCompletedAt ?? null,
     });
   } catch (error) {
@@ -100,6 +89,7 @@ export async function PUT(request: Request) {
 
     const data = validationResult.data;
     const fullName = `${data.firstName} ${data.lastName}`.trim();
+    const now = new Date();
     const db = getDb();
 
     await db
@@ -112,7 +102,7 @@ export async function PUT(request: Request) {
         householdStatus: data.householdStatus,
         primaryGoal: data.primaryGoal,
         communicationPreference: data.communicationPreference,
-        onboardingCompletedAt: new Date(),
+        onboardingCompletedAt: now,
       })
       .onConflictDoUpdate({
         target: userProfile.userId,
@@ -123,8 +113,8 @@ export async function PUT(request: Request) {
           householdStatus: data.householdStatus,
           primaryGoal: data.primaryGoal,
           communicationPreference: data.communicationPreference,
-          onboardingCompletedAt: new Date(),
-          updatedAt: new Date(),
+          onboardingCompletedAt: now,
+          updatedAt: now,
         },
       });
 
@@ -132,7 +122,7 @@ export async function PUT(request: Request) {
       .update(user)
       .set({
         name: fullName,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(eq(user.id, session.user.id));
 

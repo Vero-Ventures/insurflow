@@ -2,7 +2,12 @@ import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { user } from "./auth-schema";
-import { stateEnum } from "./enums-schema";
+import {
+  communicationPreferenceEnum,
+  householdStatusEnum,
+  primaryGoalEnum,
+  stateEnum,
+} from "./enums-schema";
 import { timestampsNoSoftDelete } from "./schema-helpers";
 
 export const userProfile = pgTable(
@@ -14,9 +19,11 @@ export const userProfile = pgTable(
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
     state: stateEnum("state").notNull(),
-    householdStatus: text("household_status").notNull(),
-    primaryGoal: text("primary_goal").notNull(),
-    communicationPreference: text("communication_preference").notNull(),
+    householdStatus: householdStatusEnum("household_status").notNull(),
+    primaryGoal: primaryGoalEnum("primary_goal").notNull(),
+    communicationPreference: communicationPreferenceEnum(
+      "communication_preference",
+    ).notNull(),
     onboardingCompletedAt: timestamp("onboarding_completed_at", {
       withTimezone: true,
     }).notNull(),

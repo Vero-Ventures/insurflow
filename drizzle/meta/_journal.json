@@ -36,6 +36,13 @@
       "when": 1771438937021,
       "tag": "0004_true_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771439246262,
+      "tag": "0005_chilly_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

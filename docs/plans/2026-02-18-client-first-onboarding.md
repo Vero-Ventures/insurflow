@@ -1,7 +1,5 @@
 # Client-First Onboarding Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Introduce a client-focused onboarding flow that captures essential profile context after authentication and redirects new users into a personalized experience.
 
 **Architecture:** Add a dedicated `user_profile` table keyed by `userId`, expose read/write onboarding APIs under `/api/onboarding/profile`, and route authenticated users through `/onboarding` before their first `/clients` session. Keep implementation small and backwards-compatible by preserving existing auth tables and only adding profile enrichment.
