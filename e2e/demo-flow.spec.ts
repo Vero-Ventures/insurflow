@@ -53,7 +53,7 @@ test.describe("Demo Client Journey", () => {
     await expect(
       page.getByRole("heading", { name: /estimated coverage gap/i }),
     ).toBeVisible();
-    await page.getByText(/income replacement %/i).isVisible();
+    await expect(page.getByText(/income replacement %/i)).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /what this means/i }),
     ).toBeVisible();

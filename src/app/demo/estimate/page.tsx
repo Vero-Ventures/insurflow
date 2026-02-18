@@ -1,63 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
-import {
-  calculateInsuranceNeedsRounded,
-  DEFAULT_ESTATE_BUFFER,
-} from "@/lib/financial/insurance-needs";
+import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
 import { formatCurrency } from "@/lib/client-utils";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
-const DEMO_TOTAL_ASSETS = 1277000;
-
-function toNumber(value: string): number {
-  const normalized = value.replace(/[^\d.]/g, "");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
 
-  const result = useMemo(() => {
-    const householdIncome = toNumber(state.intakeData.annualHouseholdIncome);
-    const totalDebts = toNumber(state.intakeData.totalDebts);
-    const currentCoverage = toNumber(state.intakeData.currentCoverage);
-
-    return calculateInsuranceNeedsRounded({
-      clientIncome: householdIncome,
-      spouseIncome: 0,
-      includeSpouseIncome: false,
-      incomeReplacementPercent:
-        state.analysisAssumptions.incomeReplacementPercent,
-      replacementDurationYears:
-        state.analysisAssumptions.replacementDurationYears,
-      existingLifeInsuranceCoverage: currentCoverage,
-      totalDebts,
-      liquidAssets: state.analysisAssumptions.liquidAssets,
-      totalAssets: DEMO_TOTAL_ASSETS,
-      estateBuffer: DEFAULT_ESTATE_BUFFER,
-    });
-  }, [
-    state.intakeData.annualHouseholdIncome,
-    state.intakeData.currentCoverage,
-    state.intakeData.totalDebts,
-    state.analysisAssumptions.incomeReplacementPercent,
-    state.analysisAssumptions.replacementDurationYears,
-    state.analysisAssumptions.liquidAssets,
-  ]);
-
-  const coverageGap = Math.max(
-    0,
-    result.totalInsuranceNeeds - result.existingCoverage,
-  );
+  const { result, coverageGap } = useDemoInsuranceNeeds({
+    annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
+    totalDebts: state.intakeData.totalDebts,
+    currentCoverage: state.intakeData.currentCoverage,
+    incomeReplacementPercent:
+      state.analysisAssumptions.incomeReplacementPercent,
+    replacementDurationYears:
+      state.analysisAssumptions.replacementDurationYears,
+    liquidAssets: state.analysisAssumptions.liquidAssets,
+  });
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">

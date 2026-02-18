@@ -1,59 +1,30 @@
 "use client";
 
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Sparkles } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
+import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
 import { demoLetter } from "@/lib/demo-data";
-import {
-  calculateInsuranceNeedsRounded,
-  DEFAULT_ESTATE_BUFFER,
-} from "@/lib/financial/insurance-needs";
 import { formatCurrency } from "@/lib/client-utils";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 3;
-const DEMO_TOTAL_ASSETS = 1277000;
-
-function toNumber(value: string): number {
-  const normalized = value.replace(/[^\d.]/g, "");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export default function DemoShowcasePage() {
   const router = useRouter();
   const { state } = useDemoContext();
 
-  const result = useMemo(() => {
-    const householdIncome = toNumber(state.intakeData.annualHouseholdIncome);
-    const totalDebts = toNumber(state.intakeData.totalDebts);
-    const currentCoverage = toNumber(state.intakeData.currentCoverage);
-
-    return calculateInsuranceNeedsRounded({
-      clientIncome: householdIncome,
-      spouseIncome: 0,
-      includeSpouseIncome: false,
-      incomeReplacementPercent:
-        state.analysisAssumptions.incomeReplacementPercent,
-      replacementDurationYears:
-        state.analysisAssumptions.replacementDurationYears,
-      existingLifeInsuranceCoverage: currentCoverage,
-      totalDebts,
-      liquidAssets: state.analysisAssumptions.liquidAssets,
-      totalAssets: DEMO_TOTAL_ASSETS,
-      estateBuffer: DEFAULT_ESTATE_BUFFER,
-    });
-  }, [
-    state.analysisAssumptions.incomeReplacementPercent,
-    state.analysisAssumptions.liquidAssets,
-    state.analysisAssumptions.replacementDurationYears,
-    state.intakeData.annualHouseholdIncome,
-    state.intakeData.currentCoverage,
-    state.intakeData.totalDebts,
-  ]);
+  const { result } = useDemoInsuranceNeeds({
+    annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
+    totalDebts: state.intakeData.totalDebts,
+    currentCoverage: state.intakeData.currentCoverage,
+    incomeReplacementPercent:
+      state.analysisAssumptions.incomeReplacementPercent,
+    replacementDurationYears:
+      state.analysisAssumptions.replacementDurationYears,
+    liquidAssets: state.analysisAssumptions.liquidAssets,
+  });
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
@@ -96,8 +67,8 @@ export default function DemoShowcasePage() {
               {demoLetter
                 .split("\n\n")
                 .slice(0, 3)
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 20)} className="mb-3 last:mb-0">
+                .map((paragraph, index) => (
+                  <p key={index} className="mb-3 last:mb-0">
                     {paragraph}
                   </p>
                 ))}
