@@ -8,6 +8,16 @@ The product direction is now **client-first**:
 - Turn advisor outreach traffic into a clear value moment in under 7 minutes.
 - Hand off cleanly to advisor workflows after the client-facing estimate snapshot.
 
+## Product Direction (Plain English)
+
+InsurFlow is the front door for life insurance planning:
+
+- Fast guided intake
+- Clear, explainable estimate (not a black box)
+- Strong advisor handoff and next steps
+
+Then we deepen the advisor workflow with saved sessions, recalculation, and compliance-ready outputs.
+
 ## Current Direction (2026)
 
 We are prioritizing two delivery phases:
@@ -26,6 +36,12 @@ Core MVP outcomes:
 - Advisor handoff step with clear next action.
 - Landing page path that drives traffic directly into the demo.
 - Updated roadmap/docs language using MVP and Post-MVP.
+
+What we are building next (tracked in GitHub issues):
+
+- Core journey upgrades (intake realism, confidence bands, meeting mode, shareable intake links)
+- Workflow bridge (save/resume, life-event recalculation, exports/webhooks)
+- Trust layer (assumption versioning, calculation traces, compliance-ready packet)
 
 ## What Exists Today
 
@@ -63,6 +79,7 @@ Useful commands:
 ## Documentation Index
 
 - Product direction and scope: `docs/PRD-InsurFlow-v2.md`
+- Team alignment (plain English): `docs/product-direction-alignment.md`
 - Client journey UX guide: `docs/insurflow-v2-design-guide.md`
 - Advisor research notes (trimmed): `docs/insurance-advisor-app-design-guide.md`
 - Data model status and source of truth: `docs/V2_ERD_DESIGN.md`

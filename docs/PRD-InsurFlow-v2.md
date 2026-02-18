@@ -20,6 +20,26 @@ The immediate goal is to give advisors a demo they can use in outreach and live 
 
 ---
 
+## Direction Snapshot (Plain English)
+
+InsurFlow is the **front door** for life insurance planning.
+
+It helps a prospect quickly:
+
+- Enter a small amount of information (guided intake)
+- Get an estimate they can understand (not a black box)
+- See clear next steps (advisor handoff)
+
+Then it helps the advisor continue the process with:
+
+- Structured client inputs (no double entry)
+- Explainable math and assumptions
+- Implementation support (documents, compliance, and follow-up workflows)
+
+We are **not** building a full wealth-planning platform.
+
+---
+
 ## Problem We Are Solving Right Now
 
 Current outreach relies on advisors sharing a demo. The old flow starts too deep in advisor tooling and does not quickly show value to a prospect.
@@ -48,16 +68,23 @@ MVP includes:
 - Landing page changes that drive traffic to `/demo`
 - Documentation and roadmap updates using MVP/Post-MVP language
 
+In addition, MVP work should improve estimate quality without slowing the first-time flow:
+
+- More realistic intake inputs (still fast)
+- Better estimate realism (beyond simple multipliers)
+- Recommendation bands + confidence context
+- Meeting-ready summary views
+- Shareable intake links
+
 ### Phase 2: Post-MVP
 
 **Goal:** deepen advisor workflows after the demo path proves traction.
 
 Post-MVP focus areas:
 
-- Richer analytics and dashboards
-- Additional automation and integrations
-- Advanced collaboration features
-- More robust compliance and document lifecycle features
+- Advisor workflow bridge (save/resume, recalculation triggers, exports)
+- Trust and control layer (assumption versioning, calculation traces, compliance packet)
+- Platform scale (teams, billing, documents, illustrations)
 
 ---
 
@@ -107,6 +134,12 @@ Operational verification:
 - New billing model work
 - Broad third-party integration layer
 
+Also out of scope for MVP:
+
+- Full wealth planning / retirement planning suite
+- Corporate succession planning modules
+- Carrier quoting / premium engine
+
 ---
 
 ## Technical Context
@@ -137,4 +170,5 @@ MVP work should reuse existing APIs/components where possible and avoid broad re
 - `README.md`
 - `docs/insurflow-v2-design-guide.md`
 - `docs/insurance-advisor-app-design-guide.md`
+- `docs/product-direction-alignment.md`
 - `docs/V2_ERD_DESIGN.md`
