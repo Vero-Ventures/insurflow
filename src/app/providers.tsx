@@ -15,6 +15,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light">
       <AuthUIProvider
         authClient={authClient}
+        redirectTo="/onboarding"
         navigate={router.push}
         replace={router.replace}
         onSessionChange={() => {

@@ -11,7 +11,7 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "InsurFlow",
   description:
-    "AI-powered financial needs analysis for life insurance advisors",
+    "Client-first life insurance planning with personalized financial guidance",
   icons: {
     icon: "/insurflow-logo.png",
     apple: "/insurflow-logo.png",

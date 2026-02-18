@@ -59,14 +59,14 @@ const painPoints = [
   "Spending 2+ hours on spreadsheets for each client analysis",
   "Manually calculating income replacement and estate requirements",
   "Writing compliance documents from scratch every time",
-  "Losing deals because analysis takes too long",
+  "Feeling unsure about your protection gaps and next steps",
 ];
 
 const solutions = [
   "Complete analysis in under 5 minutes with guided workflows",
   "Automatic calculations that update in real-time as you input data",
   "One-click AI generation of compliant 'Reasons Why' letters",
-  "Close deals faster with instant professional presentations",
+  "Leave with a clear action plan and confidence in your coverage",
 ];
 
 export default function Home() {
@@ -99,13 +99,13 @@ export default function Home() {
               className="border-emerald bg-emerald/5 text-emerald mb-8 px-4 py-1.5 text-sm font-medium"
             >
               <Zap className="mr-1.5 h-3.5 w-3.5" />
-              Private Beta
+              Client Preview
             </Badge>
           </div>
 
           {/* Headline */}
           <h1 className="animate-fade-up animation-delay-100 text-foreground font-display mb-6 text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Stop losing deals to{" "}
+            Stop guessing with{" "}
             <span className="relative">
               <span className="from-primary to-emerald relative z-10 bg-gradient-to-r via-[oklch(0.55_0.12_200)] bg-clip-text text-transparent">
                 slow spreadsheets
@@ -116,12 +116,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow is the AI-powered platform that helps life insurance
-            advisors complete financial needs analysis in{" "}
+            InsurFlow is the AI-powered platform that helps clients understand
+            their protection needs in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
             </span>{" "}
-            with instant compliance document generation.
+            with personalized recommendations and clear next steps.
           </p>
 
           {/* CTA Buttons */}
@@ -178,7 +178,7 @@ export default function Home() {
         <div className="relative z-10 container mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <h2 className="animate-fade-up font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              Built for advisors who are tired of the old way
+              Built for people who want clarity, not complexity
             </h2>
           </div>
 
@@ -236,7 +236,7 @@ export default function Home() {
               Platform Capabilities
             </Badge>
             <h2 className="animate-fade-up text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              Everything you need to close deals faster
+              Everything you need to make confident decisions
             </h2>
             <p className="animate-fade-up animation-delay-100 text-muted-foreground mx-auto mt-4 max-w-2xl">
               From client intake to compliance documentation, InsurFlow
@@ -295,12 +295,12 @@ export default function Home() {
           </div>
 
           <h2 className="animate-fade-up animation-delay-100 text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
-            Ready to modernize your practice?
+            Ready to take control of your plan?
           </h2>
 
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
-            Join the private beta and be among the first advisors to experience
-            the future of financial needs analysis.
+            Join the preview and experience a client-first insurance planning
+            workflow designed around your life goals.
           </p>
 
           <div className="animate-fade-up animation-delay-300 mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
