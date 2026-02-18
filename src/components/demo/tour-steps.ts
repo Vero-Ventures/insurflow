@@ -26,8 +26,8 @@ function createTourSteps(inputs: TourStepInput[]): TourStep[] {
 export const demoLandingTourSteps: TourStep[] = createTourSteps([
   [
     "[data-tour='demo-hero']",
-    "Welcome to the Interactive Demo",
-    "This walkthrough shows how advisors move from client inputs to recommendation-ready outputs in minutes.",
+    "Demo Overview",
+    "This journey helps advisors preview the full client flow from intake through handoff.",
     "bottom",
   ],
   [
@@ -41,12 +41,6 @@ export const demoLandingTourSteps: TourStep[] = createTourSteps([
     "Choose Guided or Quick Pace",
     "Guided mode is the default and showcases the full advisor workflow end-to-end.",
     "top",
-  ],
-  [
-    "[data-tour='live-calc-preview']",
-    "Journey Preview",
-    "You will move from intake to interactive analysis, then into AI and report previews before handoff.",
-    "left",
   ],
   [
     "[data-tour='start-demo']",

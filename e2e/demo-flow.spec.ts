@@ -18,11 +18,7 @@ test.describe("Demo Client Journey", () => {
       page.getByRole("heading", { name: /experience the client journey/i }),
     ).toBeVisible();
     await expect(page.getByText(/guided mode/i)).toBeVisible();
-    await expect(page.getByText(/client intake/i)).toBeVisible();
-    await expect(page.getByText(/ai \+ report showcase/i)).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /advisor handoff/i }),
-    ).toBeVisible();
+    await expect(page.getByText(/choose a planning scenario/i)).toBeVisible();
 
     await page.getByRole("link", { name: /start guided demo/i }).click();
     await expect(page).toHaveURL(/\/demo\/intake$/);
