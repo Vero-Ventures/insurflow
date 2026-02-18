@@ -145,7 +145,8 @@ export function BeneficiaryTreeVisualization({
   function buildEdgePath(points: { x: number; y: number }[]): string {
     if (points.length < 4) return "";
     const [start, cp1, cp2, end] = points;
-    return `M ${start.x},${start.y} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${end.x},${end.y}`;
+    if (!start || !cp1 || !cp2 || !end) return "";
+    return `M ${start.x},${start.y} C ${cp1!.x},${cp1!.y} ${cp2!.x},${cp2!.y} ${end.x},${end.y}`;
   }
 
   // Label position: midpoint of the bezier
@@ -158,15 +159,15 @@ export function BeneficiaryTreeVisualization({
     const t = 0.5;
     const [p0, p1, p2, p3] = points;
     const x =
-      (1 - t) ** 3 * p0.x +
-      3 * (1 - t) ** 2 * t * p1.x +
-      3 * (1 - t) * t ** 2 * p2.x +
-      t ** 3 * p3.x;
+      (1 - t) ** 3 * p0!.x +
+      3 * (1 - t) ** 2 * t * p1!.x +
+      3 * (1 - t) * t ** 2 * p2!.x +
+      t ** 3 * p3!.x;
     const y =
-      (1 - t) ** 3 * p0.y +
-      3 * (1 - t) ** 2 * t * p1.y +
-      3 * (1 - t) * t ** 2 * p2.y +
-      t ** 3 * p3.y;
+      (1 - t) ** 3 * p0!.y +
+      3 * (1 - t) ** 2 * t * p1!.y +
+      3 * (1 - t) * t ** 2 * p2!.y +
+      t ** 3 * p3!.y;
     return { x, y };
   }
 
