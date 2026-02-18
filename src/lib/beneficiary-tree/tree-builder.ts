@@ -39,7 +39,7 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
     sublabel: "Client",
     x: 0,
     y: 0,
-    width: 120,
+    width: 160,
     height: 80,
     children: [],
     entity: client,
@@ -55,7 +55,7 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
       sublabel: client.spouseAge ? `Age ${client.spouseAge}` : undefined,
       x: 0,
       y: 0,
-      width: 120,
+      width: 160,
       height: 80,
       children: [],
       entity: client,
@@ -72,7 +72,7 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
       sublabel: ben.relationship,
       x: 0,
       y: 0,
-      width: 120,
+      width: 160,
       height: 80,
       children: [],
       entity: ben,
@@ -86,6 +86,7 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
     const gapInfo = gapAnalysis?.assetAnalysis.find(
       (a) => a.assetId === asset.id,
     );
+    const hasAllocations = gapInfo && gapInfo.allocations.length > 0;
     const node: TreeNode = {
       id: `asset-${asset.id}`,
       type: "asset",
@@ -95,42 +96,74 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
       assetType: asset.type,
       x: 0,
       y: 0,
-      width: 140,
+      width: 160,
       height: 80,
       children: [],
       entity: asset,
-      coverageGap: gapInfo
+      coverageGap: !hasAllocations
         ? {
-            hasGap: gapInfo.hasGap,
-            severity: gapInfo.hasGap ? "major" : "none",
-            message: gapInfo.hasGap
-              ? "Allocation mismatch"
-              : "Properly allocated",
+            hasGap: true,
+            severity: "major",
+            message: "No beneficiary allocations",
           }
-        : undefined,
+        : gapInfo?.hasGap
+          ? {
+              hasGap: true,
+              severity: "major",
+              message: "Allocation mismatch",
+            }
+          : {
+              hasGap: false,
+              severity: "none",
+              message: "Properly allocated",
+            },
     };
     return node;
   });
   nodes.push(...assetNodes);
 
-  // 5. Create edges (asset → beneficiary flows)
+  // 5. Create edges: client → each asset (ownership flow)
+  assets.forEach((asset) => {
+    edges.push({
+      id: `edge-owner-${client.id}-${asset.id}`,
+      source: `client-${client.id}`,
+      target: `asset-${asset.id}`,
+      label: "Owns",
+      points: [], // Calculated during layout
+      hasGap: false,
+    });
+  });
+
+  // 6. Create edges: asset → beneficiaries (allocation flows)
   assets.forEach((asset) => {
     const gapInfo = gapAnalysis?.assetAnalysis.find(
       (a) => a.assetId === asset.id,
     );
 
-    if (gapInfo) {
+    if (gapInfo && gapInfo.allocations.length > 0) {
+      // Has specific allocations — draw edge per allocation
       gapInfo.allocations.forEach((alloc) => {
-        const edge: TreeEdge = {
-          id: `edge-${asset.id}-${alloc.beneficiaryId}`,
+        edges.push({
+          id: `edge-alloc-${asset.id}-${alloc.beneficiaryId}`,
           source: `asset-${asset.id}`,
           target: `beneficiary-${alloc.beneficiaryId}`,
           label: `${alloc.actualPercent}%`,
           percentage: alloc.actualPercent,
-          points: [], // Calculated during layout
+          points: [],
           hasGap: alloc.gapPercent !== 0,
-        };
-        edges.push(edge);
+        });
+      });
+    } else {
+      // No allocations — draw dashed edge to every beneficiary
+      beneficiaries.forEach((ben) => {
+        edges.push({
+          id: `edge-unalloc-${asset.id}-${ben.id}`,
+          source: `asset-${asset.id}`,
+          target: `beneficiary-${ben.id}`,
+          label: "Unallocated",
+          points: [],
+          hasGap: true,
+        });
       });
     }
   });

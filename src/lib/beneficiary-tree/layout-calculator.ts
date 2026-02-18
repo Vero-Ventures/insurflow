@@ -14,7 +14,7 @@ interface LayoutConfig {
 const DEFAULT_CONFIG: LayoutConfig = {
   horizontalSpacing: 200,
   verticalSpacing: 150,
-  nodeWidth: 120,
+  nodeWidth: 160,
   nodeHeight: 80,
 };
 
@@ -40,7 +40,7 @@ export function calculateTreeLayout(
   const layoutNodes: TreeNode[] = [];
 
   // Level 0: Client & Spouse (top center)
-  let currentY = 50; // Start with padding
+  let currentY = 50;
   const familyNodes = [...clientNodes, ...spouseNodes];
   const familyWidth =
     familyNodes.length * cfg.nodeWidth +
@@ -63,10 +63,12 @@ export function calculateTreeLayout(
   assetNodes.forEach((node, i) => {
     const row = Math.floor(i / assetsPerRow);
     const col = i % assetsPerRow;
+    const nodesInRow = Math.min(
+      assetsPerRow,
+      assetNodes.length - row * assetsPerRow,
+    );
     const rowWidth =
-      Math.min(assetsPerRow, assetNodes.length - row * assetsPerRow) *
-        (cfg.nodeWidth + cfg.horizontalSpacing) -
-      cfg.horizontalSpacing;
+      nodesInRow * cfg.nodeWidth + (nodesInRow - 1) * cfg.horizontalSpacing;
     const rowStartX = -rowWidth / 2;
 
     layoutNodes.push({
@@ -94,7 +96,19 @@ export function calculateTreeLayout(
     });
   });
 
-  // Calculate edge paths (curved lines)
+  // --- Normalize: shift all nodes so min x/y is PADDING ---
+  const PADDING = 50;
+  const rawMinX = Math.min(...layoutNodes.map((n) => n.x));
+  const rawMinY = Math.min(...layoutNodes.map((n) => n.y));
+  const offsetX = -rawMinX + PADDING;
+  const offsetY = -rawMinY + PADDING;
+
+  for (const node of layoutNodes) {
+    node.x += offsetX;
+    node.y += offsetY;
+  }
+
+  // Calculate edge paths AFTER normalization
   const layoutEdges = edges.map((edge) => {
     const sourceNode = layoutNodes.find((n) => n.id === edge.source);
     const targetNode = layoutNodes.find((n) => n.id === edge.target);
@@ -103,34 +117,33 @@ export function calculateTreeLayout(
       return { ...edge, points: [] };
     }
 
-    // Calculate bezier curve path
     const sourceX = sourceNode.x + sourceNode.width / 2;
     const sourceY = sourceNode.y + sourceNode.height;
     const targetX = targetNode.x + targetNode.width / 2;
     const targetY = targetNode.y;
 
-    const controlPointY = sourceY + (targetY - sourceY) / 2;
+    // Use two control points for a smooth cubic bezier
+    const midY = sourceY + (targetY - sourceY) / 2;
 
     return {
       ...edge,
       points: [
         { x: sourceX, y: sourceY },
-        { x: sourceX, y: controlPointY },
-        { x: targetX, y: controlPointY },
+        { x: sourceX, y: midY },
+        { x: targetX, y: midY },
         { x: targetX, y: targetY },
       ],
     };
   });
 
-  // Calculate bounds with padding
-  const PADDING = 100;
+  // Calculate bounds
   const allX = layoutNodes.map((n) => [n.x, n.x + n.width]).flat();
   const allY = layoutNodes.map((n) => [n.y, n.y + n.height]).flat();
 
   const bounds = {
-    minX: Math.min(...allX) - PADDING,
+    minX: 0,
     maxX: Math.max(...allX) + PADDING,
-    minY: Math.min(...allY) - PADDING,
+    minY: 0,
     maxY: Math.max(...allY) + PADDING,
   };
 
