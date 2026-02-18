@@ -57,6 +57,11 @@ Requirements:
 - Visual cues for risk/gap.
 - Optional detail reveal for advanced users.
 
+In MVP, the snapshot should evolve from a single number into:
+
+- Recommendation bands (low / target / high)
+- Confidence context (what inputs are missing and how that changes accuracy)
+
 ### Step 4: Advisor Handoff
 
 **User intent:** "What should I do now?"
@@ -111,6 +116,13 @@ Add only after MVP flow is stable:
 - Deeper advisor-facing analysis views
 - Extended collaboration and document workflows
 - Advanced customization and automation layers
+
+Also planned after MVP:
+
+- Save/resume intake sessions
+- Life-event recalculation flows
+- "Show your work" calculation trace views
+- Compliance-ready estimate packet exports
 
 Keep these out of MVP unless directly required for demo conversion.
 

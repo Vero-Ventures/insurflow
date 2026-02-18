@@ -5,6 +5,8 @@ import { Inter, JetBrains_Mono, DM_Serif_Display } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AppNavigationMenu } from "@/components/navigation-menu";
+import { env } from "@/env";
+import { getDefaultSocialProviderIds } from "@/server/better-auth/social-providers";
 import { Providers } from "./providers";
 import Script from "next/script";
 
@@ -55,6 +57,8 @@ const dmSerifDisplay = DM_Serif_Display({
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const socialProviderIds = getDefaultSocialProviderIds(env);
+
   return (
     <html
       lang="en"
@@ -71,7 +75,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>
+        <Providers socialProviderIds={socialProviderIds}>
           <AppNavigationMenu />
           {children}
           <Toaster />

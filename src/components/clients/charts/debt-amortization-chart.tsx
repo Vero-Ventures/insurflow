@@ -17,11 +17,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
 import { formatCurrency } from "@/lib/client-utils";
-import { classifyLiquidity } from "@/components/clients/charts/liquidity-analysis-chart";
-import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
 
 interface DebtAmortizationChartProps {
