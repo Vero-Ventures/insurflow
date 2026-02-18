@@ -70,15 +70,10 @@ export function buildSocialProviders(
 }
 
 export function getDefaultSocialProviderIds(env: OAuthEnv): Array<string> {
-  const ids: string[] = [];
-
-  if (env.BETTER_AUTH_GITHUB_CLIENT_ID && env.BETTER_AUTH_GITHUB_CLIENT_SECRET) {
-    ids.push("github");
+  const socialProviders = buildSocialProviders(env);
+  if (!socialProviders) {
+    return [];
   }
 
-  if (env.BETTER_AUTH_GOOGLE_CLIENT_ID && env.BETTER_AUTH_GOOGLE_CLIENT_SECRET) {
-    ids.push("google");
-  }
-
-  return ids;
+  return Object.keys(socialProviders);
 }
