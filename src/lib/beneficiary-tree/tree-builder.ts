@@ -92,7 +92,7 @@ export function buildBeneficiaryTree(input: BuildTreeInput): {
       type: "asset",
       label: asset.name,
       sublabel: asset.type,
-      assetValue: Number(asset.currentValue),
+      assetValue: Number(asset.currentValue) || 0,
       assetType: asset.type,
       x: 0,
       y: 0,

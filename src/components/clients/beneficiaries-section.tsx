@@ -90,8 +90,9 @@ export function BeneficiariesSection({
           // API returns { items: [...] } via withApiHandler
           setAssets(data.items || data.assets || []);
         }
-      } catch {
-        // Assets loading is optional
+      } catch (error) {
+        // Assets loading is optional, but log error for debugging
+        console.error("Failed to fetch assets:", error);
       }
     }
     fetchAssets();

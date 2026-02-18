@@ -108,10 +108,13 @@ export function calculateTreeLayout(
     node.y += offsetY;
   }
 
+  // Build a Map for O(1) node lookups by ID
+  const nodeMap = new Map(layoutNodes.map((node) => [node.id, node]));
+
   // Calculate edge paths AFTER normalization
   const layoutEdges = edges.map((edge) => {
-    const sourceNode = layoutNodes.find((n) => n.id === edge.source);
-    const targetNode = layoutNodes.find((n) => n.id === edge.target);
+    const sourceNode = nodeMap.get(edge.source);
+    const targetNode = nodeMap.get(edge.target);
 
     if (!sourceNode || !targetNode) {
       return { ...edge, points: [] };
