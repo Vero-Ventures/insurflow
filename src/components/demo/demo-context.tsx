@@ -9,7 +9,17 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-export type DemoSegment = "landing" | "intake" | "estimate" | "handoff";
+export type DemoSegment =
+  | "landing"
+  | "intake"
+  | "estimate"
+  | "showcase"
+  | "handoff";
+export type DemoMode = "guided" | "quick";
+export type DemoScenarioId =
+  | "young-family"
+  | "business-succession"
+  | "high-net-worth-estate";
 
 export type HouseholdStatus =
   | "single"
@@ -31,6 +41,13 @@ interface DemoState {
   showTour: boolean;
   tourCompletedForSegment: DemoSegment | null;
   isTransitioning: boolean;
+  demoMode: DemoMode;
+  selectedScenarioId: DemoScenarioId;
+  analysisAssumptions: {
+    incomeReplacementPercent: number;
+    replacementDurationYears: number;
+    liquidAssets: number;
+  };
   intakeData: DemoIntakeData;
 }
 
@@ -47,6 +64,11 @@ interface DemoContextValue {
   resetIntakeData: () => void;
   setCurrentSegment: (segment: DemoSegment) => void;
   setIsTransitioning: (transitioning: boolean) => void;
+  setDemoMode: (mode: DemoMode) => void;
+  setSelectedScenarioId: (scenarioId: DemoScenarioId) => void;
+  updateAnalysisAssumptions: (
+    updates: Partial<DemoState["analysisAssumptions"]>,
+  ) => void;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
@@ -64,6 +86,7 @@ const SEGMENT_ORDER: DemoSegment[] = [
   "landing",
   "intake",
   "estimate",
+  "showcase",
   "handoff",
 ];
 
@@ -89,6 +112,8 @@ export function getSegmentPath(segment: DemoSegment): string {
       return "/demo/intake";
     case "estimate":
       return "/demo/estimate";
+    case "showcase":
+      return "/demo/showcase";
     case "handoff":
       return "/demo/handoff";
   }
@@ -98,6 +123,7 @@ function getSegmentFromPath(pathname: string): DemoSegment {
   if (pathname === "/demo") return "landing";
   if (pathname.startsWith("/demo/intake")) return "intake";
   if (pathname.startsWith("/demo/estimate")) return "estimate";
+  if (pathname.startsWith("/demo/showcase")) return "showcase";
   if (pathname.startsWith("/demo/handoff")) return "handoff";
   return "landing";
 }
@@ -121,6 +147,13 @@ export function DemoProvider({
     showTour: true,
     tourCompletedForSegment: null,
     isTransitioning: false,
+    demoMode: "guided",
+    selectedScenarioId: "young-family",
+    analysisAssumptions: {
+      incomeReplacementPercent: 70,
+      replacementDurationYears: 15,
+      liquidAssets: 70000,
+    },
     intakeData: DEFAULT_DEMO_INTAKE_DATA,
   });
 
@@ -220,6 +253,33 @@ export function DemoProvider({
     }));
   }, []);
 
+  const setDemoMode = useCallback((mode: DemoMode) => {
+    setState((prev) => ({
+      ...prev,
+      demoMode: mode,
+    }));
+  }, []);
+
+  const setSelectedScenarioId = useCallback((scenarioId: DemoScenarioId) => {
+    setState((prev) => ({
+      ...prev,
+      selectedScenarioId: scenarioId,
+    }));
+  }, []);
+
+  const updateAnalysisAssumptions = useCallback(
+    (updates: Partial<DemoState["analysisAssumptions"]>) => {
+      setState((prev) => ({
+        ...prev,
+        analysisAssumptions: {
+          ...prev.analysisAssumptions,
+          ...updates,
+        },
+      }));
+    },
+    [],
+  );
+
   return (
     <DemoContext.Provider
       value={{
@@ -235,6 +295,9 @@ export function DemoProvider({
         resetIntakeData,
         setCurrentSegment,
         setIsTransitioning,
+        setDemoMode,
+        setSelectedScenarioId,
+        updateAnalysisAssumptions,
       }}
     >
       {children}

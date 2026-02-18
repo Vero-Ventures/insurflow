@@ -11,8 +11,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
-const TOTAL_STEPS = 3;
-const CURRENT_STEP = 3;
+const TOTAL_STEPS = 4;
+const CURRENT_STEP = 4;
 
 const nextSteps = [
   {
@@ -86,7 +86,8 @@ export default function DemoHandoffPage() {
             Advisor view note
           </Badge>
           <p className="mt-2 text-sm leading-relaxed">
-            Your prefilled intake is ready for advisor follow-up.
+            Your intake, interactive estimate, AI draft letter, and report
+            preview are ready for advisor follow-up.
           </p>
         </Card>
 

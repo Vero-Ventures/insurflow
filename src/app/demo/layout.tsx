@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DemoProvider } from "@/components/demo/demo-context";
 import { DemoNav } from "@/components/demo/demo-nav";
+import { DemoTour } from "@/components/demo/demo-tour";
 
 interface DemoLayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export default function DemoLayout({ children }: DemoLayoutProps) {
       <div className="min-h-screen">
         <DemoNav />
         {children}
+        <DemoTour />
       </div>
     </DemoProvider>
   );
