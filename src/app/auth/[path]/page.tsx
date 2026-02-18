@@ -38,7 +38,7 @@ const features = [
     icon: Smartphone,
     title: "Works Everywhere",
     description:
-      "Full functionality on iPad and mobile. Conduct meetings anywhere",
+      "Full functionality on iPad and mobile, so your plan is always with you",
   },
 ];
 
@@ -116,14 +116,14 @@ export default async function AuthPage({
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <Zap className="h-3 w-3 text-emerald-400" />
                   <span className="text-xs font-medium text-emerald-400">
-                    Private Beta
+                    Client Preview
                   </span>
                 </div>
               </div>
             </div>
             <p className="max-w-md text-base leading-relaxed font-medium text-white/90 lg:text-lg">
-              The AI-powered platform that turns client data into insurance
-              recommendations in{" "}
+              The AI-powered platform that turns your life details into clear
+              insurance recommendations in{" "}
               <span className="text-emerald-400">under 5 minutes</span>.
             </p>
           </div>
@@ -194,11 +194,11 @@ export default async function AuthPage({
           {/* Welcome text */}
           <div className="mb-6 text-center lg:mb-8">
             <h2 className="text-foreground font-display text-2xl font-normal lg:text-3xl">
-              {isSignUp ? "Join the Beta" : "Welcome Back"}
+              {isSignUp ? "Create your account" : "Welcome back"}
             </h2>
             <p className="text-muted-foreground mt-2 text-sm">
               {isSignUp
-                ? "Create your account to get early access"
+                ? "Start with a short profile setup for personalized guidance"
                 : "Sign in to continue to InsurFlow"}
             </p>
           </div>
@@ -218,7 +218,7 @@ export default async function AuthPage({
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="text-emerald h-3.5 w-3.5" />
-              <span>FINRA Aligned</span>
+              <span>Privacy-first</span>
             </div>
           </div>
         </div>

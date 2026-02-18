@@ -21,6 +21,7 @@ export function Providers({ children, socialProviderIds }: ProvidersProps) {
     <ThemeProvider attribute="class" defaultTheme="light">
       <AuthUIProvider
         authClient={authClient}
+        redirectTo="/onboarding"
         navigate={router.push}
         replace={router.replace}
         onSessionChange={() => {

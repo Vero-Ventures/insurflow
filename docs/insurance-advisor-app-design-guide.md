@@ -8,6 +8,22 @@ It is intentionally concise and focused on what helps advisors convert demo inte
 
 ---
 
+## What InsurFlow Is (and Is Not)
+
+InsurFlow is the front door for life insurance discovery:
+
+- A fast, guided way to collect key client context
+- A clear estimate snapshot with transparent assumptions
+- A clean handoff so an advisor can run the next conversation
+
+InsurFlow is not:
+
+- A full wealth-planning platform
+- A carrier quoting engine
+- A replacement for advisor judgment
+
+---
+
 ## Core Outreach Reality
 
 - Many first interactions are cold outreach.
@@ -39,6 +55,11 @@ Use this framing in demos and outbound:
 - "The goal is clarity and next steps, not a complicated report."
 
 Avoid promising long-tail features not in MVP.
+
+Suggested safe framing:
+
+- "This is a first snapshot to start the conversation."
+- "We can refine this once we confirm details together."
 
 ---
 
