@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { env } from "@/env";
 import { getDb } from "@/server/db";
+import { buildSocialProviders } from "@/server/better-auth/social-providers";
 
 /**
  * Better Auth configuration options factory.
@@ -20,15 +21,7 @@ function getAuthOptions(): BetterAuthOptions {
     emailAndPassword: {
       enabled: true,
     },
-    socialProviders:
-      env.BETTER_AUTH_GITHUB_CLIENT_ID && env.BETTER_AUTH_GITHUB_CLIENT_SECRET
-        ? {
-            github: {
-              clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
-              clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
-            },
-          }
-        : undefined,
+    socialProviders: buildSocialProviders(env),
   };
 }
 
