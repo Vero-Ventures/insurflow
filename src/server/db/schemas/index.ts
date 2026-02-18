@@ -25,6 +25,9 @@ export {
   sexEnum,
   healthRatingEnum,
   clientStatusEnum,
+  householdStatusEnum,
+  primaryGoalEnum,
+  communicationPreferenceEnum,
   assetTypeEnum,
   debtTypeEnum,
   beneficiaryRelationshipEnum,
@@ -38,6 +41,7 @@ export {
 
 // Auth tables
 export { user, session, account, verification } from "./auth-schema";
+export { userProfile } from "./user-profile-schema";
 
 // Domain tables
 export { client } from "./clients-schema";
@@ -57,6 +61,7 @@ export {
 
 // Auth relations
 export { accountRelations, sessionRelations } from "./auth-schema";
+export { userProfileRelations } from "./user-profile-schema";
 
 // Domain relations
 export { debtRelations } from "./debts-schema";
@@ -83,15 +88,20 @@ import { debt } from "./debts-schema";
 import { beneficiary } from "./beneficiaries-schema";
 import { business } from "./corporate-schema";
 import { assetAllocation } from "./beneficiaries-schema";
+import { userProfile } from "./user-profile-schema";
 
 /**
  * Complete user relations including clients.
  * Extends the base auth relations to include domain entities.
  */
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   account: many(account),
   session: many(session),
   clients: many(client),
+  profile: one(userProfile, {
+    fields: [user.id],
+    references: [userProfile.userId],
+  }),
 }));
 
 /**

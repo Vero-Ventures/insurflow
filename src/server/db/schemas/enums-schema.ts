@@ -98,6 +98,28 @@ export const clientStatusEnum = pgEnum("client_status", [
   "archived",
 ]);
 
+/** Onboarding household status */
+export const householdStatusEnum = pgEnum("household_status", [
+  "single",
+  "partnered",
+  "family",
+]);
+
+/** Onboarding primary goal */
+export const primaryGoalEnum = pgEnum("primary_goal", [
+  "family_protection",
+  "debt_coverage",
+  "retirement_security",
+  "estate_planning",
+]);
+
+/** Onboarding communication preference */
+export const communicationPreferenceEnum = pgEnum("communication_preference", [
+  "email",
+  "phone",
+  "sms",
+]);
+
 // ============================================================================
 // ASSET & DEBT ENUMS
 // ============================================================================
