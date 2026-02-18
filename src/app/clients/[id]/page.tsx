@@ -390,7 +390,7 @@ function ClientDetailContent() {
           <AssetsSection clientId={clientId} onTotalsChange={setTotalAssets} />
 
           {/* Beneficiaries Section */}
-          <BeneficiariesSection clientId={clientId} />
+          <BeneficiariesSection clientId={clientId} client={client} />
 
           {/* Debts Section */}
           <DebtsSection clientId={clientId} totalAssets={totalAssets} />
