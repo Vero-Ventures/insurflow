@@ -29,17 +29,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ASSET_TYPE_LABELS, type AssetType } from "@/lib/validation/asset";
+import { BeneficiaryTreeVisualization } from "@/components/clients/beneficiaries/beneficiary-tree-visualization";
+import type { Client } from "@/types/client";
+import type { Asset } from "@/types/asset";
 
 interface BeneficiariesSectionProps {
   clientId: string;
+  client: Client; // Make sure this exists
 }
 
-export function BeneficiariesSection({ clientId }: BeneficiariesSectionProps) {
+export function BeneficiariesSection({
+  clientId,
+  client, // Make sure this is destructured
+}: BeneficiariesSectionProps) {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisSummary | null>(
     null,
   );
   const [isLoadingGaps, setIsLoadingGaps] = useState(false);
+  const [assets, setAssets] = useState<Asset[]>([]);
 
   const handleBeneficiariesChange = useCallback((items: Beneficiary[]) => {
     setBeneficiaries(items);
@@ -71,6 +79,25 @@ export function BeneficiariesSection({ clientId }: BeneficiariesSectionProps) {
     }
   }, [beneficiaries.length, fetchGapAnalysis]);
 
+  useEffect(() => {
+    async function fetchAssets() {
+      try {
+        const response = await fetch(`/api/clients/${clientId}/assets`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          // API returns { items: [...] } via withApiHandler
+          setAssets(data.items || data.assets || []);
+        }
+      } catch (error) {
+        // Assets loading is optional, but log error for debugging
+        console.error("Failed to fetch assets:", error);
+      }
+    }
+    fetchAssets();
+  }, [clientId]);
+
   return (
     <>
       <GenericCrudSection<Beneficiary>
@@ -97,6 +124,16 @@ export function BeneficiariesSection({ clientId }: BeneficiariesSectionProps) {
           gapAnalysis={gapAnalysis}
           isLoading={isLoadingGaps}
           onRefresh={fetchGapAnalysis}
+        />
+      )}
+
+      {/* Estate Flow Visualization — ADD THIS BLOCK */}
+      {beneficiaries.length > 0 && assets.length > 0 && (
+        <BeneficiaryTreeVisualization
+          client={client}
+          beneficiaries={beneficiaries}
+          assets={assets}
+          gapAnalysis={gapAnalysis ?? undefined}
         />
       )}
     </>
