@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
 
 /** Recommendation band: low / target / high for a key value (re-exported for consumers) */
 export type RecommendationBand = {
@@ -49,6 +50,7 @@ interface CalculateResponse {
     estateBufferType: "fixed" | "percentage";
     estateBufferValue: number;
   };
+  confidence?: ConfidenceResult;
   clientId: string;
   clientName: string;
   calculatedAt: string;
@@ -61,6 +63,7 @@ export interface UseInsuranceNeedsOptions {
 
 export interface UseInsuranceNeedsReturn {
   result: InsuranceNeedsResult | null;
+  confidence: ConfidenceResult | null;
   isLoading: boolean;
   error: string | null;
   recalculate: () => Promise<void>;
@@ -80,6 +83,7 @@ export function useInsuranceNeeds(
   const { clientId, enabled = true } = options;
 
   const [result, setResult] = useState<InsuranceNeedsResult | null>(null);
+  const [confidence, setConfidence] = useState<ConfidenceResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calculatedAt, setCalculatedAt] = useState<string | null>(null);
@@ -133,6 +137,7 @@ export function useInsuranceNeeds(
         inputsUsed: data.inputsUsed,
       });
 
+      setConfidence(data.confidence ?? null);
       setCalculatedAt(data.calculatedAt);
       return true;
     } catch (err) {
@@ -166,6 +171,7 @@ export function useInsuranceNeeds(
 
   return {
     result,
+    confidence,
     isLoading,
     error,
     recalculate,

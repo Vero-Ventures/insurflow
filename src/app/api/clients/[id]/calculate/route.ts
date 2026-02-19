@@ -14,6 +14,11 @@ import {
   type InsuranceNeedsInput,
   type EstateBufferConfig,
 } from "@/lib/financial/insurance-needs";
+import {
+  computeEstimateConfidence,
+  type EstimateCompleteness,
+  type EstimateAssumptionsUsed,
+} from "@/lib/financial/confidence-scoring";
 
 /**
  * Zod schema for estate buffer configuration
@@ -52,6 +57,13 @@ function decimalToNumber(value: string | null | undefined): number {
   return isNaN(num) ? 0 : num;
 }
 
+/** True when client record has a non-empty value for a decimal/number field */
+function hasClientValue(value: string | number | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  const s = String(value).trim();
+  return s !== "";
+}
+
 /**
  * POST /api/clients/[id]/calculate - Calculate insurance needs for a client
  *
@@ -72,6 +84,7 @@ function decimalToNumber(value: string | null | undefined): number {
  * - liquidAssets: number
  * - totalInsuranceNeeds: number (the final recommendation; same as totalInsuranceNeedsBand.target)
  * - totalInsuranceNeedsBand: { low, target, high } recommendation band (target = totalInsuranceNeeds; ±10% MVP)
+ * - confidence: { score (0–100), label (High/Medium/Low), reasons[] } from data completeness and assumption stability
  * - inputsUsed: object (parameters used for calculation, for transparency)
  * - clientId, clientName, calculatedAt (envelope)
  */
@@ -175,6 +188,31 @@ export const POST = withApiHandler(
     // Run calculation
     const result = calculateInsuranceNeedsRounded(calculationInput);
 
+    // Confidence: data completeness + assumption stability
+    const completeness: EstimateCompleteness = {
+      clientIncome: hasClientValue(clientData.clientIncome),
+      spouseIncome: hasClientValue(clientData.spouseIncome),
+      incomeReplacementPercent: hasClientValue(
+        clientData.incomeReplacementPercent,
+      ),
+      replacementDurationYears: clientData.replacementDurationYears != null,
+      existingCoverage: hasClientValue(
+        clientData.existingLifeInsuranceCoverage,
+      ),
+      debtsData: totalDebts > 0,
+      assetsData: totalAssets > 0,
+      estateBuffer: overrides?.estateBuffer != null,
+    };
+    const assumptionsUsed: EstimateAssumptionsUsed = {
+      replacementDurationYears: clientData.replacementDurationYears == null,
+      estateBuffer: overrides?.estateBuffer == null,
+      includeSpouseIncome: overrides?.includeSpouseIncome === undefined,
+    };
+    const confidence = computeEstimateConfidence({
+      completeness,
+      assumptionsUsed,
+    });
+
     await logger.info("Insurance needs calculated successfully", {
       statusCode: 200,
       totalInsuranceNeeds: result.totalInsuranceNeeds,
@@ -184,6 +222,7 @@ export const POST = withApiHandler(
     return {
       data: {
         ...result,
+        confidence,
         clientId,
         clientName: `${clientData.firstName} ${clientData.lastName}`,
         calculatedAt: new Date().toISOString(),
