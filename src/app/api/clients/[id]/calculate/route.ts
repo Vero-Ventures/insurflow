@@ -70,8 +70,10 @@ function decimalToNumber(value: string | null | undefined): number {
  * - grossNeeds: number
  * - existingCoverage: number
  * - liquidAssets: number
- * - totalInsuranceNeeds: number (the final recommendation)
+ * - totalInsuranceNeeds: number (the final recommendation; same as totalInsuranceNeedsBand.target)
+ * - totalInsuranceNeedsBand: { low, target, high } recommendation band (target = totalInsuranceNeeds; ±10% MVP)
  * - inputsUsed: object (parameters used for calculation, for transparency)
+ * - clientId, clientName, calculatedAt (envelope)
  */
 export const POST = withApiHandler(
   {

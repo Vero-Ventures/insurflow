@@ -12,6 +12,32 @@
  * - Net Needs = max(Gross Needs - Existing Coverage - Liquid Assets, 0)
  */
 
+/** ±10% band around target for recommendation range (MVP rule) */
+const RECOMMENDATION_BAND_FRACTION = 0.1;
+
+/**
+ * Recommendation band: low / target / high range for a key value.
+ * Target is the single-number recommendation; low/high are derived (e.g. ±10%).
+ */
+export interface RecommendationBand {
+  low: number;
+  target: number;
+  high: number;
+}
+
+/**
+ * Derives a recommendation band from the target value (single place for MVP rule).
+ * target = existing recommendation; low = target −10%, high = target +10%, all rounded.
+ */
+export function deriveRecommendationBand(target: number): RecommendationBand {
+  const t = roundCurrency(target);
+  return {
+    low: roundCurrency(Math.max(0, t * (1 - RECOMMENDATION_BAND_FRACTION))),
+    target: t,
+    high: roundCurrency(t * (1 + RECOMMENDATION_BAND_FRACTION)),
+  };
+}
+
 /**
  * Configuration for estate buffer calculation
  */
@@ -63,6 +89,8 @@ export interface InsuranceNeedsResult {
   liquidAssets: number;
   /** Final total insurance needs (floored at 0) */
   totalInsuranceNeeds: number;
+  /** Recommendation band for total insurance needs: low / target / high (target = totalInsuranceNeeds; ±10% MVP) */
+  totalInsuranceNeedsBand?: RecommendationBand;
   /** Input parameters used for calculation (for audit trail) */
   inputsUsed: {
     clientIncome: number;
@@ -221,6 +249,7 @@ export function calculateInsuranceNeedsRounded(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsResult {
   const result = calculateInsuranceNeeds(input);
+  const totalInsuranceNeeds = roundCurrency(result.totalInsuranceNeeds);
 
   return {
     incomeReplacementNeeds: roundCurrency(result.incomeReplacementNeeds),
@@ -229,7 +258,8 @@ export function calculateInsuranceNeedsRounded(
     grossNeeds: roundCurrency(result.grossNeeds),
     existingCoverage: roundCurrency(result.existingCoverage),
     liquidAssets: roundCurrency(result.liquidAssets),
-    totalInsuranceNeeds: roundCurrency(result.totalInsuranceNeeds),
+    totalInsuranceNeeds,
+    totalInsuranceNeedsBand: deriveRecommendationBand(totalInsuranceNeeds),
     inputsUsed: result.inputsUsed,
   };
 }

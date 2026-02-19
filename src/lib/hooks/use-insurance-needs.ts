@@ -3,6 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
+/** Recommendation band: low / target / high for a key value (re-exported for consumers) */
+export type RecommendationBand = {
+  low: number;
+  target: number;
+  high: number;
+};
+
 export interface InsuranceNeedsResult {
   incomeReplacementNeeds: number;
   debtPayoffNeeds: number;
@@ -11,6 +18,8 @@ export interface InsuranceNeedsResult {
   existingCoverage: number;
   liquidAssets: number;
   totalInsuranceNeeds: number;
+  /** Recommendation band for total insurance needs: { low, target, high } */
+  totalInsuranceNeedsBand?: RecommendationBand;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -30,6 +39,7 @@ interface CalculateResponse {
   existingCoverage: number;
   liquidAssets: number;
   totalInsuranceNeeds: number;
+  totalInsuranceNeedsBand?: RecommendationBand;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -119,6 +129,7 @@ export function useInsuranceNeeds(
         existingCoverage: data.existingCoverage,
         liquidAssets: data.liquidAssets,
         totalInsuranceNeeds: data.totalInsuranceNeeds,
+        totalInsuranceNeedsBand: data.totalInsuranceNeedsBand,
         inputsUsed: data.inputsUsed,
       });
 

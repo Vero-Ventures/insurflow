@@ -4,6 +4,7 @@ import {
   calculateEstateBufferNeeds,
   calculateInsuranceNeeds,
   calculateInsuranceNeedsRounded,
+  deriveRecommendationBand,
   roundCurrency,
   DEFAULT_ESTATE_BUFFER,
   type InsuranceNeedsInput,
@@ -310,6 +311,29 @@ describe("roundCurrency", () => {
   });
 });
 
+describe("deriveRecommendationBand", () => {
+  it("derives low/target/high with ±10% from target", () => {
+    const band = deriveRecommendationBand(100000);
+    expect(band.target).toBe(100000);
+    expect(band.low).toBe(90000);
+    expect(band.high).toBe(110000);
+  });
+
+  it("floors low at 0 when target is zero", () => {
+    const band = deriveRecommendationBand(0);
+    expect(band.target).toBe(0);
+    expect(band.low).toBe(0);
+    expect(band.high).toBe(0);
+  });
+
+  it("rounds band values to 2 decimal places", () => {
+    const band = deriveRecommendationBand(100000.999);
+    expect(band.target).toBe(100001);
+    expect(Number.isInteger(band.low * 100)).toBe(true);
+    expect(Number.isInteger(band.high * 100)).toBe(true);
+  });
+});
+
 describe("calculateInsuranceNeedsRounded", () => {
   it("returns all values rounded to 2 decimal places", () => {
     const input: InsuranceNeedsInput = {
@@ -332,6 +356,34 @@ describe("calculateInsuranceNeedsRounded", () => {
     expect(Number.isInteger(result.estateBufferNeeds * 100)).toBe(true);
     expect(Number.isInteger(result.grossNeeds * 100)).toBe(true);
     expect(Number.isInteger(result.totalInsuranceNeeds * 100)).toBe(true);
+  });
+
+  it("includes totalInsuranceNeedsBand with target = totalInsuranceNeeds and ±10% low/high", () => {
+    const input: InsuranceNeedsInput = {
+      clientIncome: 100000,
+      spouseIncome: undefined,
+      includeSpouseIncome: false,
+      incomeReplacementPercent: 70,
+      replacementDurationYears: 10,
+      existingLifeInsuranceCoverage: 0,
+      totalDebts: 100000,
+      liquidAssets: 0,
+      totalAssets: 200000,
+      estateBuffer: { type: "fixed", amount: 15000 },
+    };
+
+    const result = calculateInsuranceNeedsRounded(input);
+
+    expect(result.totalInsuranceNeedsBand).toBeDefined();
+    expect(result.totalInsuranceNeedsBand!.target).toBe(
+      result.totalInsuranceNeeds,
+    );
+    expect(result.totalInsuranceNeedsBand!.low).toBe(
+      roundCurrency(result.totalInsuranceNeeds * 0.9),
+    );
+    expect(result.totalInsuranceNeedsBand!.high).toBe(
+      roundCurrency(result.totalInsuranceNeeds * 1.1),
+    );
   });
 });
 
