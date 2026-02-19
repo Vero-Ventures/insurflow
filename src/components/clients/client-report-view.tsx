@@ -94,6 +94,7 @@ export function ClientReportView({
   // Insurance needs calculation (skipped in demo mode)
   const {
     result: calculatedResult,
+    confidence: insuranceConfidence,
     isLoading: isInsuranceLoading,
     error: insuranceError,
     recalculate: recalculateInsurance,
@@ -172,17 +173,21 @@ export function ClientReportView({
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      
+
       // Sanitize filename by removing special characters
-      const safeFirstName = client.firstName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const safeLastName = client.lastName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const safeFirstName = client.firstName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
+      const safeLastName = client.lastName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
       anchor.download = `${safeFirstName}-${safeLastName}-report.pdf`;
-      
+
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       window.URL.revokeObjectURL(url);
-      
+
       toast.success("Report downloaded successfully");
     } catch (error) {
       console.error("Failed to download PDF:", error);
@@ -467,6 +472,7 @@ export function ClientReportView({
         <div className="grid gap-6 lg:grid-cols-2 print:block print:space-y-4">
           <InsuranceNeedsCard
             result={insuranceResult}
+            confidence={isDemo ? null : insuranceConfidence}
             isLoading={!isDemo && isInsuranceLoading}
             error={isDemo ? null : insuranceError}
             onRecalculate={isDemo ? undefined : recalculateInsurance}

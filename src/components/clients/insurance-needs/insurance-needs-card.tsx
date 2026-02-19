@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   RefreshCw,
   AlertCircle,
@@ -21,6 +22,7 @@ import {
 import { formatCurrency, formatDateTime } from "@/lib/client-utils";
 import { cn } from "@/lib/utils";
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
+import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
 
 interface InsuranceNeedsCardProps {
   result: InsuranceNeedsResult | null;
@@ -28,6 +30,8 @@ interface InsuranceNeedsCardProps {
   error: string | null;
   onRecalculate?: () => Promise<void>;
   calculatedAt: string | null;
+  /** Confidence metadata (score, label, reasons); optional when not yet calculated via API */
+  confidence?: ConfidenceResult | null;
   /** When true, hides action buttons for read-only contexts like reports */
   isReadOnly?: boolean;
 }
@@ -38,6 +42,7 @@ export function InsuranceNeedsCard({
   error,
   onRecalculate,
   calculatedAt,
+  confidence,
   isReadOnly = false,
 }: InsuranceNeedsCardProps) {
   if (isLoading) {
@@ -130,6 +135,7 @@ export function InsuranceNeedsCard({
     existingCoverage,
     liquidAssets,
     totalInsuranceNeeds,
+    totalInsuranceNeedsBand,
   } = result;
 
   return (
@@ -313,7 +319,57 @@ export function InsuranceNeedsCard({
               Existing resources are sufficient - no additional coverage needed
             </p>
           )}
+          {totalInsuranceNeedsBand && totalInsuranceNeeds > 0 && (
+            <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-4 text-sm">
+              <span className="font-medium">Recommendation range:</span>
+              <span>
+                Low {formatCurrency(totalInsuranceNeedsBand.low)}
+                <span className="mx-1.5">·</span>
+                Target {formatCurrency(totalInsuranceNeedsBand.target)}
+                <span className="mx-1.5">·</span>
+                High {formatCurrency(totalInsuranceNeedsBand.high)}
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Confidence */}
+        {confidence && (
+          <div className="border-border/60 bg-muted/20 rounded-xl border p-4">
+            <h4 className="text-foreground mb-2 text-sm font-semibold">
+              Confidence in this estimate
+            </h4>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge
+                variant={
+                  confidence.label === "High"
+                    ? "default"
+                    : confidence.label === "Medium"
+                      ? "secondary"
+                      : "outline"
+                }
+                className="font-medium"
+              >
+                {confidence.label}
+              </Badge>
+              <span className="text-muted-foreground text-sm">
+                Score: {confidence.score}/100
+              </span>
+            </div>
+            <p className="text-muted-foreground mb-3 text-xs">
+              Confidence reflects how complete your data is and whether we used
+              default assumptions; higher scores mean the estimate is based more
+              on your actual inputs.
+            </p>
+            {confidence.reasons.length > 0 && (
+              <ul className="text-muted-foreground list-inside list-disc space-y-0.5 text-xs">
+                {confidence.reasons.map((reason, i) => (
+                  <li key={i}>{reason}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Data Summary */}
         {(result.inputsUsed.clientIncome > 0 ||
