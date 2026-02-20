@@ -21,6 +21,10 @@ export interface InsuranceNeedsResult {
   totalInsuranceNeeds: number;
   /** Recommendation band for total insurance needs: { low, target, high } */
   totalInsuranceNeedsBand?: RecommendationBand;
+  /** Number of active policies (when coverageSource is "policies") */
+  policyCount?: number;
+  /** Source of existing coverage: "policies" (from policy records) or "legacy" (from scalar field) */
+  coverageSource?: "policies" | "legacy";
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -41,6 +45,8 @@ interface CalculateResponse {
   liquidAssets: number;
   totalInsuranceNeeds: number;
   totalInsuranceNeedsBand?: RecommendationBand;
+  policyCount?: number;
+  coverageSource?: "policies" | "legacy";
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -146,6 +152,8 @@ export function useInsuranceNeeds(
         liquidAssets: data.liquidAssets,
         totalInsuranceNeeds: data.totalInsuranceNeeds,
         totalInsuranceNeedsBand: data.totalInsuranceNeedsBand,
+        policyCount: data.policyCount,
+        coverageSource: data.coverageSource,
         inputsUsed: data.inputsUsed,
       });
 

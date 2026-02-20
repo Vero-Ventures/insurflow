@@ -48,6 +48,7 @@ import { DebtsSection } from "@/components/clients/debts-section";
 import { AssetsSection } from "@/components/clients/assets-section";
 import { BeneficiariesSection } from "@/components/clients/beneficiaries-section";
 import { BusinessesSection } from "@/components/clients/businesses-section";
+import { PoliciesSection } from "@/components/clients/policies-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
 import { useAdvancedIncomeReplacement } from "@/lib/hooks/use-advanced-income-replacement";
 import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
@@ -411,6 +412,9 @@ function ClientDetailContent() {
             client={client}
             onUpdate={async (updatedClient) => setClient(updatedClient)}
           />
+
+          {/* Existing Life Insurance Policies */}
+          <PoliciesSection clientId={clientId} />
         </TabsContent>
 
         {/* Insurance Needs Tab */}

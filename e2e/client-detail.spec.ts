@@ -135,9 +135,9 @@ test.describe("Client Detail Page", () => {
 
     // Navigate to Report tab
     await page.getByRole("tab", { name: "Report" }).click();
-    // Report tab shows the ClientReportView with a Print Report button
+    // Report tab shows the ClientReportView with a Download PDF button
     await expect(
-      page.getByRole("button", { name: "Print Report" }),
+      page.getByRole("button", { name: "Download PDF" }),
     ).toBeVisible();
 
     // Navigate back to Profile tab

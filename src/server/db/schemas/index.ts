@@ -33,6 +33,8 @@ export {
   beneficiaryRelationshipEnum,
   businessTypeEnum,
   insuranceNeedTypeEnum,
+  policyTypeEnum,
+  policyStatusEnum,
 } from "./enums-schema";
 
 // ============================================================================
@@ -54,6 +56,7 @@ export {
   shareholder,
   corporateInsuranceNeed,
 } from "./corporate-schema";
+export { policy } from "./policies-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -75,6 +78,7 @@ export {
   shareholderRelations,
   corporateInsuranceNeedRelations,
 } from "./corporate-schema";
+export { policyRelations } from "./policies-schema";
 
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
@@ -89,6 +93,7 @@ import { beneficiary } from "./beneficiaries-schema";
 import { business } from "./corporate-schema";
 import { assetAllocation } from "./beneficiaries-schema";
 import { userProfile } from "./user-profile-schema";
+import { policy } from "./policies-schema";
 
 /**
  * Complete user relations including clients.
@@ -106,7 +111,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
 
 /**
  * Complete client relations with all child entities.
- * Links clients to assets, debts, beneficiaries, and businesses.
+ * Links clients to assets, debts, beneficiaries, businesses, and policies.
  */
 export const clientRelations = relations(client, ({ one, many }) => ({
   user: one(user, { fields: [client.userId], references: [user.id] }),
@@ -114,6 +119,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   debts: many(debt),
   beneficiaries: many(beneficiary),
   businesses: many(business),
+  policies: many(policy),
 }));
 
 /**

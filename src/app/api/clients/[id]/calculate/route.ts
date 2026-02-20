@@ -1,5 +1,5 @@
 import { getDb } from "@/server/db";
-import { asset, client, debt } from "@/server/db/schemas";
+import { asset, client, debt, policy } from "@/server/db/schemas";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import {
   type EstimateCompleteness,
   type EstimateAssumptionsUsed,
 } from "@/lib/financial/confidence-scoring";
+import { resolveExistingCoverage } from "@/lib/policy-utils";
 
 /**
  * Zod schema for estate buffer configuration
@@ -155,16 +156,39 @@ export const POST = withApiHandler(
       .from(debt)
       .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt)));
 
+    // Fetch policy aggregates:
+    // - active coverage sum (for deduction amount)
+    // - total policy count (to determine coverage source)
+    const policyTotals = await db
+      .select({
+        totalActivePolicyCoverage: sql<string>`COALESCE(SUM(CASE WHEN ${policy.status} = 'active' THEN ${policy.faceAmount} ELSE 0 END), 0)`,
+        totalPolicyCount: sql<number>`COUNT(*)`,
+      })
+      .from(policy)
+      .where(and(eq(policy.clientId, clientId!), isNull(policy.deletedAt)));
+
     // Extract values
     const totalAssets = decimalToNumber(assetTotals[0]?.totalAssets);
     const liquidAssets = decimalToNumber(assetTotals[0]?.liquidAssets);
     const totalDebts = decimalToNumber(debtTotals[0]?.totalDebts);
+    const totalActivePolicyCoverage = decimalToNumber(
+      policyTotals[0]?.totalActivePolicyCoverage,
+    );
 
     const assetCount = Number(assetTotals[0]?.assetCount ?? 0);
     const debtCount = Number(debtTotals[0]?.debtCount ?? 0);
+    const policyCount = Number(policyTotals[0]?.totalPolicyCount ?? 0);
 
     const assetsProvided = assetCount > 0;
     const debtsProvided = debtCount > 0;
+    const { existingCoverage: existingLifeInsuranceCoverage, coverageSource } =
+      resolveExistingCoverage({
+        totalPolicyCount: policyCount,
+        activePolicyCoverage: totalActivePolicyCoverage,
+        legacyCoverage: decimalToNumber(
+          clientData.existingLifeInsuranceCoverage,
+        ),
+      });
 
     // Determine estate buffer config
     const estateBuffer: EstateBufferConfig =
@@ -184,9 +208,7 @@ export const POST = withApiHandler(
         clientData.incomeReplacementPercent,
       ),
       replacementDurationYears: clientData.replacementDurationYears ?? 10,
-      existingLifeInsuranceCoverage: decimalToNumber(
-        clientData.existingLifeInsuranceCoverage,
-      ),
+      existingLifeInsuranceCoverage,
       totalDebts,
       liquidAssets,
       totalAssets,
@@ -204,9 +226,9 @@ export const POST = withApiHandler(
         clientData.incomeReplacementPercent,
       ),
       replacementDurationYears: clientData.replacementDurationYears != null,
-      existingCoverage: hasClientValue(
-        clientData.existingLifeInsuranceCoverage,
-      ),
+      existingCoverage:
+        coverageSource === "policies" ||
+        hasClientValue(clientData.existingLifeInsuranceCoverage),
       debtsData: debtsProvided,
       assetsData: assetsProvided,
       estateBuffer: true,
@@ -231,6 +253,9 @@ export const POST = withApiHandler(
       data: {
         ...result,
         confidence,
+        // Policy-level coverage metadata
+        policyCount,
+        coverageSource,
         clientId,
         clientName: `${clientData.firstName} ${clientData.lastName}`,
         calculatedAt: new Date().toISOString(),
