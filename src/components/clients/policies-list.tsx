@@ -6,6 +6,7 @@ import {
 } from "@/components/crud/generic-crud-table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/constants";
+import { formatPolicyExpiryMonthYear } from "@/lib/policy-utils";
 import {
   POLICY_TYPE_LABELS,
   POLICY_STATUS_LABELS,
@@ -160,16 +161,14 @@ const columns: ColumnDef<Policy>[] = [
     key: "expiryDate",
     header: "Expires",
     render: (value): React.ReactNode => {
-      if (!value) return <span className="text-muted-foreground">—</span>;
-      const date = new Date(String(value));
-      return (
-        <span className="text-muted-foreground">
-          {date.toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-          })}
-        </span>
+      const formattedDate = formatPolicyExpiryMonthYear(
+        value ? String(value) : null,
       );
+      if (!formattedDate) {
+        return <span className="text-muted-foreground">—</span>;
+      }
+
+      return <span className="text-muted-foreground">{formattedDate}</span>;
     },
   },
 ];

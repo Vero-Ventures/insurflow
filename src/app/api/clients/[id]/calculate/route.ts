@@ -19,6 +19,7 @@ import {
   type EstimateCompleteness,
   type EstimateAssumptionsUsed,
 } from "@/lib/financial/confidence-scoring";
+import { resolveExistingCoverage } from "@/lib/policy-utils";
 
 /**
  * Zod schema for estate buffer configuration
@@ -155,41 +156,39 @@ export const POST = withApiHandler(
       .from(debt)
       .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt)));
 
-    // Fetch aggregated policy coverage (active policies only)
+    // Fetch policy aggregates:
+    // - active coverage sum (for deduction amount)
+    // - total policy count (to determine coverage source)
     const policyTotals = await db
       .select({
-        totalPolicyCoverage: sql<string>`COALESCE(SUM(${policy.faceAmount}), 0)`,
-        policyCount: sql<number>`COUNT(*)`,
+        totalActivePolicyCoverage: sql<string>`COALESCE(SUM(CASE WHEN ${policy.status} = 'active' THEN ${policy.faceAmount} ELSE 0 END), 0)`,
+        totalPolicyCount: sql<number>`COUNT(*)`,
       })
       .from(policy)
-      .where(
-        and(
-          eq(policy.clientId, clientId!),
-          eq(policy.status, "active"),
-          isNull(policy.deletedAt),
-        ),
-      );
+      .where(and(eq(policy.clientId, clientId!), isNull(policy.deletedAt)));
 
     // Extract values
     const totalAssets = decimalToNumber(assetTotals[0]?.totalAssets);
     const liquidAssets = decimalToNumber(assetTotals[0]?.liquidAssets);
     const totalDebts = decimalToNumber(debtTotals[0]?.totalDebts);
-    const totalPolicyCoverage = decimalToNumber(
-      policyTotals[0]?.totalPolicyCoverage,
+    const totalActivePolicyCoverage = decimalToNumber(
+      policyTotals[0]?.totalActivePolicyCoverage,
     );
 
     const assetCount = Number(assetTotals[0]?.assetCount ?? 0);
     const debtCount = Number(debtTotals[0]?.debtCount ?? 0);
-    const policyCount = Number(policyTotals[0]?.policyCount ?? 0);
+    const policyCount = Number(policyTotals[0]?.totalPolicyCount ?? 0);
 
     const assetsProvided = assetCount > 0;
     const debtsProvided = debtCount > 0;
-    const policiesProvided = policyCount > 0;
-
-    // Use aggregated policy coverage if policies exist, otherwise fall back to legacy scalar
-    const existingLifeInsuranceCoverage = policiesProvided
-      ? totalPolicyCoverage
-      : decimalToNumber(clientData.existingLifeInsuranceCoverage);
+    const { existingCoverage: existingLifeInsuranceCoverage, coverageSource } =
+      resolveExistingCoverage({
+        totalPolicyCount: policyCount,
+        activePolicyCoverage: totalActivePolicyCoverage,
+        legacyCoverage: decimalToNumber(
+          clientData.existingLifeInsuranceCoverage,
+        ),
+      });
 
     // Determine estate buffer config
     const estateBuffer: EstateBufferConfig =
@@ -228,7 +227,7 @@ export const POST = withApiHandler(
       ),
       replacementDurationYears: clientData.replacementDurationYears != null,
       existingCoverage:
-        policiesProvided ||
+        coverageSource === "policies" ||
         hasClientValue(clientData.existingLifeInsuranceCoverage),
       debtsData: debtsProvided,
       assetsData: assetsProvided,
@@ -254,9 +253,9 @@ export const POST = withApiHandler(
       data: {
         ...result,
         confidence,
-        // Policy-level coverage info
+        // Policy-level coverage metadata
         policyCount,
-        coverageSource: policiesProvided ? "policies" : "legacy",
+        coverageSource,
         clientId,
         clientName: `${clientData.firstName} ${clientData.lastName}`,
         calculatedAt: new Date().toISOString(),
