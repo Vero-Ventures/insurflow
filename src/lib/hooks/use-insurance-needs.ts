@@ -117,7 +117,18 @@ export function useInsuranceNeeds(
         if (response.status === 401) {
           throw new Error("Unauthorized");
         }
-        throw new Error("Failed to calculate insurance needs");
+        let serverMessage = "Failed to calculate insurance needs";
+        try {
+          const errJson = await response.json();
+          serverMessage =
+            errJson?.message ||
+            errJson?.error ||
+            errJson?.details?.message ||
+            serverMessage;
+        } catch {
+          // ignore parse errors
+        }
+        throw new Error(serverMessage);
       }
 
       const responseData = await response.json();
