@@ -27,6 +27,8 @@ import type {
   ConfidenceResult,
 } from "@/lib/financial/confidence-scoring";
 
+const MAX_CONFIDENCE_REASONS_TO_DISPLAY = 6;
+
 interface InsuranceNeedsCardProps {
   result: InsuranceNeedsResult | null;
   isLoading: boolean;
@@ -400,9 +402,11 @@ export function InsuranceNeedsCard({
 
             {confidence.reasons.length > 0 && confidence.label !== "High" && (
               <ul className="text-muted-foreground list-inside list-disc space-y-0.5 text-xs">
-                {confidence.reasons.slice(0, 6).map((reason, i) => (
-                  <li key={i}>{reason}</li>
-                ))}
+                {confidence.reasons
+                  .slice(0, MAX_CONFIDENCE_REASONS_TO_DISPLAY)
+                  .map((reason, i) => (
+                    <li key={i}>{reason}</li>
+                  ))}
               </ul>
             )}
 
