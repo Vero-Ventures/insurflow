@@ -14,6 +14,11 @@ import {
   type InsuranceNeedsInput,
   type EstateBufferConfig,
 } from "@/lib/financial/insurance-needs";
+import {
+  computeEstimateConfidence,
+  type EstimateCompleteness,
+  type EstimateAssumptionsUsed,
+} from "@/lib/financial/confidence-scoring";
 
 /**
  * Zod schema for estate buffer configuration
@@ -52,6 +57,13 @@ function decimalToNumber(value: string | null | undefined): number {
   return isNaN(num) ? 0 : num;
 }
 
+/** True when client record has a non-empty value for a decimal/number field */
+function hasClientValue(value: string | number | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  const s = String(value).trim();
+  return s !== "";
+}
+
 /**
  * POST /api/clients/[id]/calculate - Calculate insurance needs for a client
  *
@@ -70,8 +82,11 @@ function decimalToNumber(value: string | null | undefined): number {
  * - grossNeeds: number
  * - existingCoverage: number
  * - liquidAssets: number
- * - totalInsuranceNeeds: number (the final recommendation)
+ * - totalInsuranceNeeds: number (the final recommendation; same as totalInsuranceNeedsBand.target)
+ * - totalInsuranceNeedsBand: { low, target, high } recommendation band (target = totalInsuranceNeeds; ±10% MVP)
+ * - confidence: { score (0–100), label (High/Medium/Low), reasons[] } from data completeness and assumption stability
  * - inputsUsed: object (parameters used for calculation, for transparency)
+ * - clientId, clientName, calculatedAt (envelope)
  */
 export const POST = withApiHandler(
   {
@@ -121,19 +136,21 @@ export const POST = withApiHandler(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // Fetch aggregated asset totals (total and liquid)
+    // Fetch aggregated asset totals (total and liquid) + count (to detect provided data)
     const assetTotals = await db
       .select({
         totalAssets: sql<string>`COALESCE(SUM(${asset.currentValue}), 0)`,
         liquidAssets: sql<string>`COALESCE(SUM(CASE WHEN ${asset.isLiquid} THEN ${asset.currentValue} ELSE 0 END), 0)`,
+        assetCount: sql<number>`COUNT(*)`,
       })
       .from(asset)
       .where(and(eq(asset.clientId, clientId!), isNull(asset.deletedAt)));
 
-    // Fetch aggregated debt total
+    // Fetch aggregated debt total + count (to detect provided data)
     const debtTotals = await db
       .select({
         totalDebts: sql<string>`COALESCE(SUM(${debt.currentBalance}), 0)`,
+        debtCount: sql<number>`COUNT(*)`,
       })
       .from(debt)
       .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt)));
@@ -142,6 +159,12 @@ export const POST = withApiHandler(
     const totalAssets = decimalToNumber(assetTotals[0]?.totalAssets);
     const liquidAssets = decimalToNumber(assetTotals[0]?.liquidAssets);
     const totalDebts = decimalToNumber(debtTotals[0]?.totalDebts);
+
+    const assetCount = Number(assetTotals[0]?.assetCount ?? 0);
+    const debtCount = Number(debtTotals[0]?.debtCount ?? 0);
+
+    const assetsProvided = assetCount > 0;
+    const debtsProvided = debtCount > 0;
 
     // Determine estate buffer config
     const estateBuffer: EstateBufferConfig =
@@ -173,6 +196,31 @@ export const POST = withApiHandler(
     // Run calculation
     const result = calculateInsuranceNeedsRounded(calculationInput);
 
+    // Confidence: data completeness + assumption stability
+    const completeness: EstimateCompleteness = {
+      clientIncome: hasClientValue(clientData.clientIncome),
+      spouseIncome: hasClientValue(clientData.spouseIncome),
+      incomeReplacementPercent: hasClientValue(
+        clientData.incomeReplacementPercent,
+      ),
+      replacementDurationYears: clientData.replacementDurationYears != null,
+      existingCoverage: hasClientValue(
+        clientData.existingLifeInsuranceCoverage,
+      ),
+      debtsData: debtsProvided,
+      assetsData: assetsProvided,
+      estateBuffer: true,
+    };
+    const assumptionsUsed: EstimateAssumptionsUsed = {
+      replacementDurationYears: clientData.replacementDurationYears == null,
+      estateBuffer: overrides?.estateBuffer == null,
+      includeSpouseIncome: overrides?.includeSpouseIncome === undefined,
+    };
+    const confidence = computeEstimateConfidence({
+      completeness,
+      assumptionsUsed,
+    });
+
     await logger.info("Insurance needs calculated successfully", {
       statusCode: 200,
       totalInsuranceNeeds: result.totalInsuranceNeeds,
@@ -182,6 +230,7 @@ export const POST = withApiHandler(
     return {
       data: {
         ...result,
+        confidence,
         clientId,
         clientName: `${clientData.firstName} ${clientData.lastName}`,
         calculatedAt: new Date().toISOString(),

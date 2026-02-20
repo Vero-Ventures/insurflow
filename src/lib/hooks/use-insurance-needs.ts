@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
+
+/** Recommendation band: low / target / high for a key value (re-exported for consumers) */
+export type RecommendationBand = {
+  low: number;
+  target: number;
+  high: number;
+};
 
 export interface InsuranceNeedsResult {
   incomeReplacementNeeds: number;
@@ -11,6 +19,8 @@ export interface InsuranceNeedsResult {
   existingCoverage: number;
   liquidAssets: number;
   totalInsuranceNeeds: number;
+  /** Recommendation band for total insurance needs: { low, target, high } */
+  totalInsuranceNeedsBand?: RecommendationBand;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -30,6 +40,7 @@ interface CalculateResponse {
   existingCoverage: number;
   liquidAssets: number;
   totalInsuranceNeeds: number;
+  totalInsuranceNeedsBand?: RecommendationBand;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -39,6 +50,7 @@ interface CalculateResponse {
     estateBufferType: "fixed" | "percentage";
     estateBufferValue: number;
   };
+  confidence?: ConfidenceResult;
   clientId: string;
   clientName: string;
   calculatedAt: string;
@@ -51,6 +63,7 @@ export interface UseInsuranceNeedsOptions {
 
 export interface UseInsuranceNeedsReturn {
   result: InsuranceNeedsResult | null;
+  confidence: ConfidenceResult | null;
   isLoading: boolean;
   error: string | null;
   recalculate: () => Promise<void>;
@@ -70,6 +83,7 @@ export function useInsuranceNeeds(
   const { clientId, enabled = true } = options;
 
   const [result, setResult] = useState<InsuranceNeedsResult | null>(null);
+  const [confidence, setConfidence] = useState<ConfidenceResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calculatedAt, setCalculatedAt] = useState<string | null>(null);
@@ -93,6 +107,7 @@ export function useInsuranceNeeds(
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({}),
         credentials: "include",
       });
 
@@ -103,7 +118,18 @@ export function useInsuranceNeeds(
         if (response.status === 401) {
           throw new Error("Unauthorized");
         }
-        throw new Error("Failed to calculate insurance needs");
+        let serverMessage = "Failed to calculate insurance needs";
+        try {
+          const errJson = await response.json();
+          serverMessage =
+            errJson?.message ||
+            errJson?.error ||
+            errJson?.details?.message ||
+            serverMessage;
+        } catch {
+          // ignore parse errors
+        }
+        throw new Error(serverMessage);
       }
 
       const responseData = await response.json();
@@ -119,9 +145,11 @@ export function useInsuranceNeeds(
         existingCoverage: data.existingCoverage,
         liquidAssets: data.liquidAssets,
         totalInsuranceNeeds: data.totalInsuranceNeeds,
+        totalInsuranceNeedsBand: data.totalInsuranceNeedsBand,
         inputsUsed: data.inputsUsed,
       });
 
+      setConfidence(data.confidence ?? null);
       setCalculatedAt(data.calculatedAt);
       return true;
     } catch (err) {
@@ -155,6 +183,7 @@ export function useInsuranceNeeds(
 
   return {
     result,
+    confidence,
     isLoading,
     error,
     recalculate,

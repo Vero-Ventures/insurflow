@@ -174,6 +174,7 @@ export const demoDebts: Debt[] = [
  * - Liquid Assets: $70,000 (Brokerage $45,000 + Emergency Fund $25,000)
  * - Net Needs: $1,523,000
  */
+// Target 1,523,000 → band ±10%: low 1,370,700, high 1,675,300
 export const demoInsuranceResult: InsuranceNeedsResult = {
   incomeReplacementNeeds: 1312500,
   debtPayoffNeeds: 515500,
@@ -182,6 +183,11 @@ export const demoInsuranceResult: InsuranceNeedsResult = {
   existingCoverage: 250000,
   liquidAssets: 70000,
   totalInsuranceNeeds: 1523000,
+  totalInsuranceNeedsBand: {
+    low: 1370700,
+    target: 1523000,
+    high: 1675300,
+  },
   inputsUsed: {
     clientIncome: 125000,
     spouseIncome: 85000,

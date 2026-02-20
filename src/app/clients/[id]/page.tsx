@@ -88,6 +88,7 @@ function ClientDetailContent() {
   // Insurance needs calculation hook
   const {
     result: insuranceResult,
+    confidence: insuranceConfidence,
     isLoading: isInsuranceLoading,
     error: insuranceError,
     recalculate: recalculateInsurance,
@@ -422,6 +423,7 @@ function ClientDetailContent() {
             <div className="grid gap-4 lg:grid-cols-2">
               <InsuranceNeedsCard
                 result={insuranceResult}
+                confidence={insuranceConfidence}
                 isLoading={isInsuranceLoading}
                 error={insuranceError}
                 onRecalculate={recalculateInsurance}
