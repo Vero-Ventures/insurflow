@@ -136,19 +136,21 @@ export const POST = withApiHandler(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // Fetch aggregated asset totals (total and liquid)
+    // Fetch aggregated asset totals (total and liquid) + count (to detect provided data)
     const assetTotals = await db
       .select({
         totalAssets: sql<string>`COALESCE(SUM(${asset.currentValue}), 0)`,
         liquidAssets: sql<string>`COALESCE(SUM(CASE WHEN ${asset.isLiquid} THEN ${asset.currentValue} ELSE 0 END), 0)`,
+        assetCount: sql<number>`COUNT(*)`,
       })
       .from(asset)
       .where(and(eq(asset.clientId, clientId!), isNull(asset.deletedAt)));
 
-    // Fetch aggregated debt total
+    // Fetch aggregated debt total + count (to detect provided data)
     const debtTotals = await db
       .select({
         totalDebts: sql<string>`COALESCE(SUM(${debt.currentBalance}), 0)`,
+        debtCount: sql<number>`COUNT(*)`,
       })
       .from(debt)
       .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt)));
@@ -157,6 +159,12 @@ export const POST = withApiHandler(
     const totalAssets = decimalToNumber(assetTotals[0]?.totalAssets);
     const liquidAssets = decimalToNumber(assetTotals[0]?.liquidAssets);
     const totalDebts = decimalToNumber(debtTotals[0]?.totalDebts);
+
+    const assetCount = Number(assetTotals[0]?.assetCount ?? 0);
+    const debtCount = Number(debtTotals[0]?.debtCount ?? 0);
+
+    const assetsProvided = assetCount > 0;
+    const debtsProvided = debtCount > 0;
 
     // Determine estate buffer config
     const estateBuffer: EstateBufferConfig =
@@ -199,9 +207,9 @@ export const POST = withApiHandler(
       existingCoverage: hasClientValue(
         clientData.existingLifeInsuranceCoverage,
       ),
-      debtsData: totalDebts > 0,
-      assetsData: totalAssets > 0,
-      estateBuffer: overrides?.estateBuffer != null,
+      debtsData: debtsProvided,
+      assetsData: assetsProvided,
+      estateBuffer: true,
     };
     const assumptionsUsed: EstimateAssumptionsUsed = {
       replacementDurationYears: clientData.replacementDurationYears == null,
