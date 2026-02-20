@@ -77,11 +77,11 @@ export function PolicyForm({
         status,
       };
 
-      // Optional fields
-      if (carrierName.trim()) payload.carrierName = carrierName.trim();
-      if (policyNumber.trim()) payload.policyNumber = policyNumber.trim();
-      if (annualPremium) payload.annualPremium = annualPremium;
-      if (expiryDate) payload.expiryDate = expiryDate;
+      // Optional fields - always include so they can be cleared on update
+      payload.carrierName = carrierName.trim() || null;
+      payload.policyNumber = policyNumber.trim() || null;
+      payload.annualPremium = annualPremium || null;
+      payload.expiryDate = expiryDate || null;
 
       const url = policy
         ? `/api/clients/${clientId}/policies/${policy.id}`
