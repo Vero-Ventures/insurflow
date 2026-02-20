@@ -107,6 +107,7 @@ export function useInsuranceNeeds(
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({}),
         credentials: "include",
       });
 
