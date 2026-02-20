@@ -199,3 +199,26 @@ export const insuranceNeedTypeEnum = pgEnum("insurance_need_type", [
   "succession",
   "other",
 ]);
+
+// ============================================================================
+// POLICY ENUMS
+// ============================================================================
+
+/** Life insurance policy type classification */
+export const policyTypeEnum = pgEnum("policy_type", [
+  "term_life",
+  "whole_life",
+  "universal_life",
+  "variable_life",
+  "group_life",
+  "other",
+]);
+
+/** Policy status classification */
+export const policyStatusEnum = pgEnum("policy_status", [
+  "active",
+  "lapsed",
+  "surrendered",
+  "paid_up",
+  "pending",
+]);

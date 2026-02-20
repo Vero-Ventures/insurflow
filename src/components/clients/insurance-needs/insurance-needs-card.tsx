@@ -162,6 +162,8 @@ export function InsuranceNeedsCard({
     liquidAssets,
     totalInsuranceNeeds,
     totalInsuranceNeedsBand,
+    policyCount,
+    coverageSource,
   } = result;
 
   return (
@@ -279,6 +281,17 @@ export function InsuranceNeedsCard({
               <p className="font-currency text-lg font-semibold">
                 {formatCurrency(existingCoverage)}
               </p>
+              {coverageSource === "policies" && policyCount !== undefined && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  From {policyCount} active{" "}
+                  {policyCount === 1 ? "policy" : "policies"}
+                </p>
+              )}
+              {coverageSource === "legacy" && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Manual entry (no policies tracked)
+                </p>
+              )}
             </div>
 
             <div className="bg-muted/30 rounded-xl border p-4">
