@@ -59,6 +59,48 @@ function labelFromScore(score: number): ConfidenceLabel {
   return "Low";
 }
 
+type CompletenessCheck = {
+  key: keyof EstimateCompleteness;
+  reason: string;
+};
+
+type AssumptionCheck = {
+  key: keyof EstimateAssumptionsUsed;
+  reason: string;
+};
+
+const COMPLETENESS_CHECKS: CompletenessCheck[] = [
+  { key: "clientIncome", reason: "Client income is missing" },
+  { key: "spouseIncome", reason: "Spouse income is missing" },
+  {
+    key: "incomeReplacementPercent",
+    reason: "Income replacement percentage is missing",
+  },
+  {
+    key: "replacementDurationYears",
+    reason: "Replacement duration is missing",
+  },
+  {
+    key: "existingCoverage",
+    reason: "Existing life insurance coverage is missing",
+  },
+  { key: "debtsData", reason: "Debt information is missing" },
+  { key: "assetsData", reason: "Asset information is missing" },
+  { key: "estateBuffer", reason: "Estate buffer is missing" },
+];
+
+const ASSUMPTION_CHECKS: AssumptionCheck[] = [
+  {
+    key: "replacementDurationYears",
+    reason: "Using default replacement duration (10 years)",
+  },
+  { key: "estateBuffer", reason: "Using default estate buffer ($15,000)" },
+  {
+    key: "includeSpouseIncome",
+    reason: "Using default for including spouse income",
+  },
+];
+
 /**
  * Computes confidence for an estimate based on data completeness and assumption stability.
  * Pure function: no side effects, no UI or API logic.
@@ -74,50 +116,18 @@ export function computeEstimateConfidence(
 
   const { completeness, assumptionsUsed } = input;
 
-  if (!completeness.clientIncome) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Client income is missing");
-  }
-  if (!completeness.spouseIncome) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Spouse income is missing");
-  }
-  if (!completeness.incomeReplacementPercent) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Income replacement percentage is missing");
-  }
-  if (!completeness.replacementDurationYears) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Replacement duration is missing");
-  }
-  if (!completeness.existingCoverage) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Existing life insurance coverage is missing");
-  }
-  if (!completeness.debtsData) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Debt information is missing");
-  }
-  if (!completeness.assetsData) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Asset information is missing");
-  }
-  if (!completeness.estateBuffer) {
-    score -= PENALTY_PER_MISSING_INPUT;
-    reasons.push("Estate buffer is missing");
+  for (const check of COMPLETENESS_CHECKS) {
+    if (!completeness[check.key]) {
+      score -= PENALTY_PER_MISSING_INPUT;
+      reasons.push(check.reason);
+    }
   }
 
-  if (assumptionsUsed.replacementDurationYears) {
-    score -= PENALTY_PER_ASSUMPTION;
-    reasons.push("Using default replacement duration (10 years)");
-  }
-  if (assumptionsUsed.estateBuffer) {
-    score -= PENALTY_PER_ASSUMPTION;
-    reasons.push("Using default estate buffer ($15,000)");
-  }
-  if (assumptionsUsed.includeSpouseIncome) {
-    score -= PENALTY_PER_ASSUMPTION;
-    reasons.push("Using default for including spouse income");
+  for (const check of ASSUMPTION_CHECKS) {
+    if (assumptionsUsed[check.key]) {
+      score -= PENALTY_PER_ASSUMPTION;
+      reasons.push(check.reason);
+    }
   }
 
   const clamped = clampScore(score);
