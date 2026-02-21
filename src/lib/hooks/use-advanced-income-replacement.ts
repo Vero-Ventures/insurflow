@@ -3,8 +3,9 @@
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import type {
-  IncomeReplacementResult,
   AnnualScheduleEntry,
+  CalculationMode,
+  CalculationAssumptions,
 } from "@/lib/financial/income-replacement";
 
 // ============================================================================
@@ -12,13 +13,41 @@ import type {
 // ============================================================================
 
 /**
+ * Income-multiplier mode configuration for the API.
+ */
+export interface IncomeMultiplierModeConfig {
+  mode: "income-multiplier";
+  baseAnnualIncome?: number;
+  replacementRatio?: number;
+}
+
+/**
+ * Expense-based mode configuration for the API.
+ */
+export interface ExpenseBasedModeConfig {
+  mode: "expense-based";
+  annualExpenses: number;
+  expenseReductionPercent?: number;
+}
+
+/**
+ * Union type for mode configuration.
+ */
+export type ModeConfigParam =
+  | IncomeMultiplierModeConfig
+  | ExpenseBasedModeConfig;
+
+/**
  * Parameters that can be sent to the advanced income replacement endpoint.
  * All optional — the API falls back to stored client data / defaults.
  */
 export interface AdvancedIncomeReplacementParams {
+  /** Explicit mode configuration. If omitted, uses income-multiplier with client defaults. */
+  modeConfig?: ModeConfigParam;
   durationScenario?: "childTurns18" | "retirement" | "lifetime" | "custom";
   customDurationYears?: number;
   includeSpouseIncome?: boolean;
+  /** @deprecated Use modeConfig instead */
   replacementRatio?: number;
   inflationRate?: number;
   discountRate?: number;
@@ -28,7 +57,37 @@ export interface AdvancedIncomeReplacementParams {
 }
 
 /** API response (engine result + metadata added by the route). */
-export interface AdvancedIncomeReplacementResponse extends IncomeReplacementResult {
+export interface AdvancedIncomeReplacementResponse {
+  /** Duration used (resolved from scenario) */
+  durationYears: number;
+  /** Year-by-year schedule */
+  annualSchedule: AnnualScheduleEntry[];
+  /** PV of gross income replacement needs */
+  presentValueTotal: number;
+  /** PV of total survivor resources */
+  survivorResourcesPV: number;
+  /** Net coverage gap = max(0, presentValueTotal − survivorResourcesPV) */
+  netCoverageNeededPV: number;
+  /** Metadata about the calculation mode and assumptions used */
+  calculationMetadata: CalculationAssumptions;
+  /** Debug: the inputs after defaults/clamping were applied */
+  resolvedInputs: {
+    baseAnnualIncome?: number;
+    replacementRatio?: number;
+    annualExpenses?: number;
+    expenseReductionPercent?: number;
+    annualBaselineNeed?: number;
+    mode?: CalculationMode;
+    inflationRate: number;
+    discountRate: number;
+    durationYears: number;
+    survivorResources: {
+      govSurvivorBenefit: number;
+      existingInsurance: number;
+      investmentIncome: number;
+      otherIncome: number;
+    };
+  };
   clientId: string;
   clientName: string;
   currentAge: number;
@@ -47,6 +106,10 @@ export interface UseAdvancedIncomeReplacementReturn {
   result: AdvancedIncomeReplacementResponse | null;
   /** Convenience: the year-by-year schedule (empty array until loaded). */
   schedule: AnnualScheduleEntry[];
+  /** The calculation mode used (null until first successful call). */
+  mode: CalculationMode | null;
+  /** Calculation metadata including assumptions (null until first successful call). */
+  calculationMetadata: CalculationAssumptions | null;
   isLoading: boolean;
   error: string | null;
   /**
@@ -143,6 +206,8 @@ export function useAdvancedIncomeReplacement(
   return {
     result,
     schedule: result?.annualSchedule ?? [],
+    mode: result?.calculationMetadata?.mode ?? null,
+    calculationMetadata: result?.calculationMetadata ?? null,
     isLoading,
     error,
     calculate,

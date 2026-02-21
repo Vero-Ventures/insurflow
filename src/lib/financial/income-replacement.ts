@@ -8,12 +8,25 @@
  * whereas the basic calculator in insurance-needs.ts uses a simple
  * income × replacementRatio × years multiplier.
  *
+ * Supports two calculation modes:
+ *   1. **Income-Multiplier Mode** (default): Uses a percentage of gross income
+ *      (e.g., 70% of $100K = $70K/year need). Simple and traditional.
+ *   2. **Expense-Based Mode**: Uses actual household expenses as the baseline,
+ *      then adjusts for post-death expense reduction (e.g., one fewer person).
+ *      More realistic for families with detailed expense data.
+ *
  * All functions are pure and side-effect free.
  *
- * Key formulae:
+ * Key formulae (Income-Multiplier Mode):
  *   incomeNeed(N) = baseAnnualIncome × replacementRatio × (1 + inflationRate)^N
  *   PV            = Σ  incomeNeed(N) / (1 + discountRate)^N   for N = 1..duration
  *   netCoverage   = max(0, PV(incomeNeeds) − PV(survivorResources))
+ *
+ * Key formulae (Expense-Based Mode):
+ *   adjustedExpense = annualExpenses × (1 − expenseReductionPercent)
+ *   expenseNeed(N) = adjustedExpense × (1 + inflationRate)^N
+ *   PV             = Σ  expenseNeed(N) / (1 + discountRate)^N
+ *   netCoverage    = max(0, PV(expenseNeeds) − PV(survivorResources))
  *
  * Terminology:
  *   - "survivor resources" is the umbrella term for government survivor
@@ -21,7 +34,11 @@
  *     The name is intentionally region-agnostic (not "CPP" or "Social Security").
  */
 
-import { DEFAULT_DISCOUNT_RATE, DEFAULT_INFLATION_RATE } from "@/lib/constants";
+import {
+  DEFAULT_DISCOUNT_RATE,
+  DEFAULT_INFLATION_RATE,
+  DEFAULT_EXPENSE_REDUCTION_PERCENT,
+} from "@/lib/constants";
 
 // ============================================================================
 // Constants
@@ -35,6 +52,34 @@ export const MIN_DURATION_YEARS = 0;
 
 /** Maximum allowed duration to guard against absurd inputs */
 export const MAX_DURATION_YEARS = 80;
+
+// ============================================================================
+// Calculation Mode Types
+// ============================================================================
+
+/**
+ * Calculation mode determines how the baseline income need is computed.
+ *
+ * - `income-multiplier`: Traditional approach using a percentage of gross income.
+ *   Simple, widely understood, but may over/underestimate actual survivor needs.
+ *
+ * - `expense-based`: Uses actual household expenses, adjusted for post-death
+ *   expense reduction. More realistic when expense data is available.
+ */
+export type CalculationMode = "income-multiplier" | "expense-based";
+
+/**
+ * Assumptions metadata for transparency and audit trail.
+ * Exposes which mode was used and the key assumptions applied.
+ */
+export interface CalculationAssumptions {
+  /** The calculation mode used */
+  mode: CalculationMode;
+  /** Human-readable description of the mode */
+  modeDescription: string;
+  /** Key assumptions that went into the calculation */
+  assumptions: string[];
+}
 
 // ============================================================================
 // Types
@@ -66,12 +111,71 @@ export interface SurvivorResources {
   otherIncome: number;
 }
 
+/**
+ * Income-multiplier mode configuration.
+ * Uses a percentage of gross income as the baseline need.
+ */
+export interface IncomeMultiplierConfig {
+  mode: "income-multiplier";
+  /** Gross annual income to be replaced */
+  baseAnnualIncome: number;
+  /** Fraction of income to replace (0–1, e.g. 0.70 for 70%) */
+  replacementRatio: number;
+}
+
+/**
+ * Expense-based mode configuration.
+ * Uses actual household expenses as the baseline, adjusted for post-death reduction.
+ */
+export interface ExpenseBasedConfig {
+  mode: "expense-based";
+  /** Total annual household expenses (housing, food, utilities, etc.) */
+  annualExpenses: number;
+  /**
+   * Percentage by which expenses decrease after the primary earner's death (0–1).
+   * Typically 15-25% (one fewer person = less food, transport, etc.).
+   * Defaults to DEFAULT_EXPENSE_REDUCTION_PERCENT if omitted.
+   */
+  expenseReductionPercent?: number;
+}
+
+/**
+ * Mode-specific configuration for the calculation.
+ * Either income-multiplier or expense-based.
+ */
+export type ModeConfig = IncomeMultiplierConfig | ExpenseBasedConfig;
+
 /** Inputs to the advanced income replacement calculator. */
 export interface IncomeReplacementInput {
   /** Gross annual income to be replaced */
   baseAnnualIncome: number;
   /** Fraction of income to replace (0–1, e.g. 0.70 for 70%) */
   replacementRatio: number;
+  /** Annual inflation rate (e.g. 0.02 for 2%) */
+  inflationRate?: number;
+  /** Annual discount rate for present-value (e.g. 0.05 for 5%) */
+  discountRate?: number;
+  /** How long to provide replacement income */
+  duration: DurationScenario;
+  /** Resources that reduce the net coverage gap */
+  survivorResources?: SurvivorResources;
+}
+
+/**
+ * Extended input that supports both income-multiplier and expense-based modes.
+ * Backward compatible: if `modeConfig` is omitted, falls back to income-multiplier
+ * using `baseAnnualIncome` and `replacementRatio` from the legacy fields.
+ */
+export interface IncomeReplacementInputV2 {
+  /**
+   * Mode-specific configuration. If omitted, uses income-multiplier mode
+   * with `baseAnnualIncome` and `replacementRatio` (legacy behavior).
+   */
+  modeConfig?: ModeConfig;
+  /** @deprecated Use modeConfig.baseAnnualIncome instead. Kept for backward compatibility. */
+  baseAnnualIncome?: number;
+  /** @deprecated Use modeConfig.replacementRatio instead. Kept for backward compatibility. */
+  replacementRatio?: number;
   /** Annual inflation rate (e.g. 0.02 for 2%) */
   inflationRate?: number;
   /** Annual discount rate for present-value (e.g. 0.05 for 5%) */
@@ -108,6 +212,8 @@ export interface IncomeReplacementResult {
   survivorResourcesPV: number;
   /** Net coverage gap = max(0, presentValueTotal − survivorResourcesPV) */
   netCoverageNeededPV: number;
+  /** Metadata about the calculation mode and assumptions used */
+  calculationMetadata: CalculationAssumptions;
   /** Debug: the inputs after defaults/clamping were applied */
   resolvedInputs: {
     baseAnnualIncome: number;
@@ -117,6 +223,52 @@ export interface IncomeReplacementResult {
     durationYears: number;
     survivorResources: SurvivorResources;
   };
+}
+
+/**
+ * Extended result for V2 calculations that includes mode-specific resolved inputs.
+ */
+export interface IncomeReplacementResultV2 {
+  /** Duration used (resolved from scenario) */
+  durationYears: number;
+  /** Year-by-year schedule */
+  annualSchedule: AnnualScheduleEntry[];
+  /** PV of gross income replacement needs */
+  presentValueTotal: number;
+  /** PV of total survivor resources */
+  survivorResourcesPV: number;
+  /** Net coverage gap = max(0, presentValueTotal − survivorResourcesPV) */
+  netCoverageNeededPV: number;
+  /** Metadata about the calculation mode and assumptions used */
+  calculationMetadata: CalculationAssumptions;
+  /** Debug: the inputs after defaults/clamping were applied (V2 format) */
+  resolvedInputs: ResolvedInputsV2;
+}
+
+/**
+ * Resolved inputs for V2 calculations, supporting both modes.
+ */
+export interface ResolvedInputsV2 {
+  /** The calculation mode used */
+  mode: CalculationMode;
+  /** Annual baseline need (either from income-multiplier or expense-based) */
+  annualBaselineNeed: number;
+  /** For income-multiplier: the base annual income used */
+  baseAnnualIncome?: number;
+  /** For income-multiplier: the replacement ratio used */
+  replacementRatio?: number;
+  /** For expense-based: the annual expenses used */
+  annualExpenses?: number;
+  /** For expense-based: the expense reduction percent applied */
+  expenseReductionPercent?: number;
+  /** Annual inflation rate applied */
+  inflationRate: number;
+  /** Annual discount rate applied */
+  discountRate: number;
+  /** Duration in years */
+  durationYears: number;
+  /** Survivor resources applied */
+  survivorResources: SurvivorResources;
 }
 
 // ============================================================================
@@ -174,6 +326,57 @@ const EMPTY_SURVIVOR_RESOURCES: SurvivorResources = {
 };
 
 /**
+ * Build calculation metadata for income-multiplier mode.
+ */
+function buildIncomeMultiplierMetadata(
+  baseAnnualIncome: number,
+  replacementRatio: number,
+  inflationRate: number,
+  discountRate: number,
+): CalculationAssumptions {
+  return {
+    mode: "income-multiplier",
+    modeDescription:
+      "Income replacement calculated as a percentage of gross annual income",
+    assumptions: [
+      `Base annual income: $${baseAnnualIncome.toLocaleString()}`,
+      `Replacement ratio: ${(replacementRatio * 100).toFixed(0)}% of income`,
+      `Inflation rate: ${(inflationRate * 100).toFixed(1)}% annually`,
+      `Discount rate: ${(discountRate * 100).toFixed(1)}% annually`,
+      "Survivor resources are inflation-adjusted annually",
+      "Existing insurance treated as lump-sum offset in year 1",
+    ],
+  };
+}
+
+/**
+ * Build calculation metadata for expense-based mode.
+ */
+function buildExpenseBasedMetadata(
+  annualExpenses: number,
+  expenseReductionPercent: number,
+  adjustedExpense: number,
+  inflationRate: number,
+  discountRate: number,
+): CalculationAssumptions {
+  return {
+    mode: "expense-based",
+    modeDescription:
+      "Income replacement based on actual household expenses, adjusted for post-death reduction",
+    assumptions: [
+      `Annual household expenses: $${annualExpenses.toLocaleString()}`,
+      `Post-death expense reduction: ${(expenseReductionPercent * 100).toFixed(0)}%`,
+      `Adjusted annual need: $${adjustedExpense.toLocaleString()}`,
+      `Inflation rate: ${(inflationRate * 100).toFixed(1)}% annually`,
+      `Discount rate: ${(discountRate * 100).toFixed(1)}% annually`,
+      "Expense reduction accounts for deceased's direct costs (food, transport, etc.)",
+      "Survivor resources are inflation-adjusted annually",
+      "Existing insurance treated as lump-sum offset in year 1",
+    ],
+  };
+}
+
+/**
  * Compute the advanced income replacement calculation.
  *
  * @returns Full result including the year-by-year schedule and PV totals.
@@ -214,6 +417,12 @@ export function calculateAdvancedIncomeReplacement(
       presentValueTotal: 0,
       survivorResourcesPV: 0,
       netCoverageNeededPV: 0,
+      calculationMetadata: buildIncomeMultiplierMetadata(
+        baseAnnualIncome,
+        replacementRatio,
+        inflationRate,
+        discountRate,
+      ),
       resolvedInputs: {
         baseAnnualIncome,
         replacementRatio,
@@ -280,6 +489,12 @@ export function calculateAdvancedIncomeReplacement(
     presentValueTotal: roundToTwoDecimals(presentValueTotal),
     survivorResourcesPV: roundToTwoDecimals(survivorResourcesPV),
     netCoverageNeededPV: roundToTwoDecimals(netCoverageNeededPV),
+    calculationMetadata: buildIncomeMultiplierMetadata(
+      baseAnnualIncome,
+      replacementRatio,
+      inflationRate,
+      discountRate,
+    ),
     resolvedInputs: {
       baseAnnualIncome,
       replacementRatio,
@@ -298,4 +513,320 @@ export function calculateAdvancedIncomeReplacement(
 /** Round to 2 decimal places (currency precision). */
 function roundToTwoDecimals(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+// ============================================================================
+// V2 Multi-Mode Calculation
+// ============================================================================
+
+/**
+ * Compute the advanced income replacement calculation with support for both
+ * income-multiplier and expense-based modes.
+ *
+ * This is the recommended function for new integrations. It provides explicit
+ * mode selection and returns comprehensive metadata about the calculation.
+ *
+ * @param input - V2 input supporting both calculation modes
+ * @returns Full result including the year-by-year schedule, PV totals, and mode metadata
+ */
+export function calculateIncomeReplacementV2(
+  input: IncomeReplacementInputV2,
+): IncomeReplacementResultV2 {
+  // --- Resolve mode configuration -------------------------------------------
+  const resolvedMode = resolveModeConfig(input);
+
+  const inflationRate = clamp(
+    input.inflationRate ?? DEFAULT_INFLATION_RATE,
+    0,
+    0.5,
+  );
+  const discountRate = clamp(
+    input.discountRate ?? DEFAULT_DISCOUNT_RATE,
+    0,
+    0.5,
+  );
+  const durationYears = resolveDuration(input.duration);
+
+  const sr: SurvivorResources = {
+    ...EMPTY_SURVIVOR_RESOURCES,
+    ...input.survivorResources,
+  };
+  // Clamp survivor resources to non-negative
+  sr.govSurvivorBenefit = Math.max(0, sr.govSurvivorBenefit);
+  sr.existingInsurance = Math.max(0, sr.existingInsurance);
+  sr.investmentIncome = Math.max(0, sr.investmentIncome);
+  sr.otherIncome = Math.max(0, sr.otherIncome);
+
+  // --- Edge case: zero duration ---------------------------------------------
+  if (durationYears <= 0) {
+    return {
+      durationYears: 0,
+      annualSchedule: [],
+      presentValueTotal: 0,
+      survivorResourcesPV: 0,
+      netCoverageNeededPV: 0,
+      calculationMetadata: resolvedMode.metadata,
+      resolvedInputs: {
+        ...resolvedMode.resolvedInputs,
+        inflationRate,
+        discountRate,
+        durationYears: 0,
+        survivorResources: sr,
+      },
+    };
+  }
+
+  // --- Build year-by-year schedule ------------------------------------------
+  const annualSchedule: AnnualScheduleEntry[] = [];
+  let presentValueTotal = 0;
+  let survivorResourcesPV = 0;
+
+  // Annual recurring survivor resources (everything except lump-sum insurance)
+  const annualSurvivorBase =
+    sr.govSurvivorBenefit + sr.investmentIncome + sr.otherIncome;
+
+  for (let n = 1; n <= durationYears; n++) {
+    // Inflation-adjusted need for year N
+    const inflationFactor = Math.pow(1 + inflationRate, n);
+    const incomeNeed = resolvedMode.annualBaselineNeed * inflationFactor;
+
+    // Survivor offset for year N:
+    //   - existing insurance: treated as a lump-sum offset in year 1 only
+    //   - annual resources: inflation-adjusted the same way
+    const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
+    const lumpSumOffset = n === 1 ? sr.existingInsurance : 0;
+    const survivorOffset = annualSurvivorInflated + lumpSumOffset;
+
+    // Net need for this year (floored at 0)
+    const netNeed = Math.max(0, incomeNeed - survivorOffset);
+
+    // Discount factor for year N
+    const discountFactor = Math.pow(1 + discountRate, n);
+
+    // Present values
+    const incomeNeedPV = incomeNeed / discountFactor;
+    const survivorOffsetPV = survivorOffset / discountFactor;
+    const netNeedPV = netNeed / discountFactor;
+
+    presentValueTotal += incomeNeedPV;
+    survivorResourcesPV += survivorOffsetPV;
+
+    annualSchedule.push({
+      year: n,
+      incomeNeed: roundToTwoDecimals(incomeNeed),
+      survivorOffset: roundToTwoDecimals(survivorOffset),
+      netNeed: roundToTwoDecimals(netNeed),
+      netNeedPV: roundToTwoDecimals(netNeedPV),
+    });
+  }
+
+  const netCoverageNeededPV = Math.max(
+    0,
+    presentValueTotal - survivorResourcesPV,
+  );
+
+  return {
+    durationYears,
+    annualSchedule,
+    presentValueTotal: roundToTwoDecimals(presentValueTotal),
+    survivorResourcesPV: roundToTwoDecimals(survivorResourcesPV),
+    netCoverageNeededPV: roundToTwoDecimals(netCoverageNeededPV),
+    calculationMetadata: resolvedMode.metadata,
+    resolvedInputs: {
+      ...resolvedMode.resolvedInputs,
+      inflationRate,
+      discountRate,
+      durationYears,
+      survivorResources: sr,
+    },
+  };
+}
+
+/**
+ * Internal: Resolve mode configuration from V2 input.
+ * Returns the annual baseline need and metadata for the selected mode.
+ */
+interface ResolvedModeConfig {
+  annualBaselineNeed: number;
+  metadata: CalculationAssumptions;
+  resolvedInputs: Omit<
+    ResolvedInputsV2,
+    "inflationRate" | "discountRate" | "durationYears" | "survivorResources"
+  >;
+}
+
+function resolveModeConfig(
+  input: IncomeReplacementInputV2,
+): ResolvedModeConfig {
+  // If modeConfig is provided, use it
+  if (input.modeConfig) {
+    if (input.modeConfig.mode === "expense-based") {
+      const annualExpenses = Math.max(0, input.modeConfig.annualExpenses);
+      const expenseReductionPercent = clamp(
+        input.modeConfig.expenseReductionPercent ??
+          DEFAULT_EXPENSE_REDUCTION_PERCENT,
+        0,
+        1,
+      );
+      const adjustedExpense = annualExpenses * (1 - expenseReductionPercent);
+
+      // Get rates for metadata (will use defaults if not provided)
+      const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
+      const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
+
+      return {
+        annualBaselineNeed: adjustedExpense,
+        metadata: buildExpenseBasedMetadata(
+          annualExpenses,
+          expenseReductionPercent,
+          adjustedExpense,
+          inflationRate,
+          discountRate,
+        ),
+        resolvedInputs: {
+          mode: "expense-based",
+          annualBaselineNeed: adjustedExpense,
+          annualExpenses,
+          expenseReductionPercent,
+        },
+      };
+    } else {
+      // income-multiplier mode with explicit config
+      const baseAnnualIncome = Math.max(0, input.modeConfig.baseAnnualIncome);
+      const replacementRatio = clamp(input.modeConfig.replacementRatio, 0, 1);
+      const annualBaselineNeed = baseAnnualIncome * replacementRatio;
+
+      // Get rates for metadata
+      const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
+      const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
+
+      return {
+        annualBaselineNeed,
+        metadata: buildIncomeMultiplierMetadata(
+          baseAnnualIncome,
+          replacementRatio,
+          inflationRate,
+          discountRate,
+        ),
+        resolvedInputs: {
+          mode: "income-multiplier",
+          annualBaselineNeed,
+          baseAnnualIncome,
+          replacementRatio,
+        },
+      };
+    }
+  }
+
+  // Legacy fallback: use baseAnnualIncome and replacementRatio fields
+  const baseAnnualIncome = Math.max(0, input.baseAnnualIncome ?? 0);
+  const replacementRatio = clamp(input.replacementRatio ?? 0.7, 0, 1);
+  const annualBaselineNeed = baseAnnualIncome * replacementRatio;
+
+  // Get rates for metadata
+  const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
+  const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
+
+  return {
+    annualBaselineNeed,
+    metadata: buildIncomeMultiplierMetadata(
+      baseAnnualIncome,
+      replacementRatio,
+      inflationRate,
+      discountRate,
+    ),
+    resolvedInputs: {
+      mode: "income-multiplier",
+      annualBaselineNeed,
+      baseAnnualIncome,
+      replacementRatio,
+    },
+  };
+}
+
+/**
+ * Compare results from both calculation modes side-by-side.
+ * Useful for advisors to show clients the difference between approaches.
+ *
+ * @param incomeInput - Income-multiplier mode configuration
+ * @param expenseInput - Expense-based mode configuration
+ * @param commonInput - Common parameters (duration, rates, survivor resources)
+ * @returns Both results for comparison
+ */
+export function compareCalculationModes(
+  incomeInput: {
+    baseAnnualIncome: number;
+    replacementRatio: number;
+  },
+  expenseInput: {
+    annualExpenses: number;
+    expenseReductionPercent?: number;
+  },
+  commonInput: {
+    inflationRate?: number;
+    discountRate?: number;
+    duration: DurationScenario;
+    survivorResources?: SurvivorResources;
+  },
+): {
+  incomeMultiplierResult: IncomeReplacementResultV2;
+  expenseBasedResult: IncomeReplacementResultV2;
+  comparison: {
+    netCoverageDifference: number;
+    percentDifference: number;
+    recommendation: string;
+  };
+} {
+  const incomeMultiplierResult = calculateIncomeReplacementV2({
+    modeConfig: {
+      mode: "income-multiplier",
+      baseAnnualIncome: incomeInput.baseAnnualIncome,
+      replacementRatio: incomeInput.replacementRatio,
+    },
+    ...commonInput,
+  });
+
+  const expenseBasedResult = calculateIncomeReplacementV2({
+    modeConfig: {
+      mode: "expense-based",
+      annualExpenses: expenseInput.annualExpenses,
+      expenseReductionPercent: expenseInput.expenseReductionPercent,
+    },
+    ...commonInput,
+  });
+
+  const netCoverageDifference =
+    incomeMultiplierResult.netCoverageNeededPV -
+    expenseBasedResult.netCoverageNeededPV;
+
+  // Calculate percent difference relative to the larger value
+  const maxCoverage = Math.max(
+    incomeMultiplierResult.netCoverageNeededPV,
+    expenseBasedResult.netCoverageNeededPV,
+  );
+  const percentDifference =
+    maxCoverage > 0 ? (Math.abs(netCoverageDifference) / maxCoverage) * 100 : 0;
+
+  // Generate recommendation based on comparison
+  let recommendation: string;
+  if (percentDifference < 5) {
+    recommendation =
+      "Both methods produce similar results. Either approach is reasonable.";
+  } else if (netCoverageDifference > 0) {
+    recommendation =
+      "Income-multiplier suggests higher coverage. Expense-based may be more accurate if household expense data is reliable.";
+  } else {
+    recommendation =
+      "Expense-based suggests higher coverage. This may indicate lifestyle costs exceed typical income replacement ratios.";
+  }
+
+  return {
+    incomeMultiplierResult,
+    expenseBasedResult,
+    comparison: {
+      netCoverageDifference: roundToTwoDecimals(netCoverageDifference),
+      percentDifference: roundToTwoDecimals(percentDifference),
+      recommendation,
+    },
+  };
 }
