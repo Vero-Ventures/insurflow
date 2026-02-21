@@ -910,7 +910,7 @@ export function compareProducts(
   if (productA === "term_life" && productB !== "term_life") {
     if (premiumDifferencePercent > 100) {
       recommendation = productA;
-      reason = `${PRODUCT_NAMES[productA]} is ${premiumDifferencePercent}% cheaper; choose permanent only if you need lifetime coverage`;
+      reason = `${PRODUCT_NAMES[productA]} is $${roundCurrency(premiumDifference)} cheaper per year; choose permanent only if you need lifetime coverage`;
     } else {
       recommendation = productB;
       reason = `${PRODUCT_NAMES[productB]} provides lifetime coverage for a reasonable premium difference`;
