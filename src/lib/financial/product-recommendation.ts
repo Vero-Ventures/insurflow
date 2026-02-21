@@ -621,7 +621,10 @@ export function generateRecommendations(
     normalizedInput.annualIncome * SUGGESTED_BUDGET_PERCENT,
   );
   const effectiveBudget =
-    normalizedInput.annualPremiumBudget ?? suggestedBudget;
+    normalizedInput.annualPremiumBudget != null &&
+    normalizedInput.annualPremiumBudget > 0
+      ? normalizedInput.annualPremiumBudget
+      : suggestedBudget;
 
   // Generate quotes for all products
   const productTypes: ProductType[] = [
