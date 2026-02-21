@@ -448,8 +448,11 @@ export function calculatePremium(input: PremiumInput): PremiumResult {
     baseResult.annualPremium * loadingFactor,
   );
 
-  // Calculate monthly premium (before frequency adjustment)
-  const monthlyPremium = roundCurrency(grossAnnualPremium / 12);
+  // Calculate monthly premium using modal loading factor
+  // Monthly payments include administrative costs and lost interest
+  const monthlyPremium = roundCurrency(
+    grossAnnualPremium * FREQUENCY_FACTORS.monthly,
+  );
 
   // Calculate period premium with frequency factor
   const frequencyFactor = FREQUENCY_FACTORS[paymentFrequency];
@@ -551,7 +554,9 @@ export function generateProductQuotes(
       faceAmount: input.faceAmount,
       totalPremiumCost: roundCurrency(totalPremiumCost),
       costPerThousand: roundCurrency(
-        result.annualPremium / (input.faceAmount / 1000),
+        input.faceAmount > 0
+          ? result.annualPremium / (input.faceAmount / 1000)
+          : 0,
       ),
       features: PRODUCT_FEATURES[productType],
     });

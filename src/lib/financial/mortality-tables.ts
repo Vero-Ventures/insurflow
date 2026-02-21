@@ -7,6 +7,11 @@
  * All functions are pure and side-effect free for easy testing.
  */
 
+import { MIN_INSURABLE_AGE, MAX_INSURABLE_AGE } from "@/lib/constants";
+
+// Re-export for convenience of consumers
+export { MIN_INSURABLE_AGE, MAX_INSURABLE_AGE };
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -43,12 +48,6 @@ export interface RiskProfile {
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** Minimum insurable age */
-export const MIN_INSURABLE_AGE = 18;
-
-/** Maximum insurable age */
-export const MAX_INSURABLE_AGE = 85;
 
 /** Life expectancy cap for whole life calculations */
 export const LIFE_EXPECTANCY_CAP = 100;
@@ -162,9 +161,10 @@ const MORTALITY_AGES = Object.keys(CSO_2017_MORTALITY_RATES)
  */
 export function getBaseMortalityRate(key: MortalityKey): number {
   const { age, sex, smokingStatus } = key;
+  // Allow fractional ages for more precise interpolation
   const clampedAge = Math.max(
     MIN_INSURABLE_AGE,
-    Math.min(MAX_INSURABLE_AGE, Math.floor(age)),
+    Math.min(MAX_INSURABLE_AGE, age),
   );
 
   // Exact match in table

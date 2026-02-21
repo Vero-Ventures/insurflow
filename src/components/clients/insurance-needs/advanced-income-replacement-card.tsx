@@ -251,7 +251,7 @@ export function AdvancedIncomeReplacementCard({
                       setExpenseReductionPercent(
                         Math.max(
                           0,
-                          Math.min(100, parseInt(e.target.value) || 0),
+                          Math.min(100, parseFloat(e.target.value) || 0),
                         ),
                       )
                     }

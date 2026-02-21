@@ -443,13 +443,18 @@ export function calculateAdvancedIncomeReplacement(
   const annualSurvivorBase =
     sr.govSurvivorBenefit + sr.investmentIncome + sr.otherIncome;
 
+  // Existing insurance is a lump-sum asset available immediately at t=0.
+  // It should NOT be discounted - add it directly to survivorResourcesPV.
+  // We still include it in year 1's survivorOffset for display purposes.
+  survivorResourcesPV += sr.existingInsurance;
+
   for (let n = 1; n <= durationYears; n++) {
     // Inflation-adjusted income need for year N
     const inflationFactor = Math.pow(1 + inflationRate, n);
     const incomeNeed = baseAnnualIncome * replacementRatio * inflationFactor;
 
     // Survivor offset for year N:
-    //   - existing insurance: treated as a lump-sum offset in year 1 only
+    //   - existing insurance: shown in year 1 for display purposes only
     //   - annual resources: inflation-adjusted the same way
     const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
     const lumpSumOffset = n === 1 ? sr.existingInsurance : 0;
@@ -462,12 +467,13 @@ export function calculateAdvancedIncomeReplacement(
     const discountFactor = Math.pow(1 + discountRate, n);
 
     // Present values
+    // Note: Only discount the annual recurring resources, not the lump-sum insurance
     const incomeNeedPV = incomeNeed / discountFactor;
-    const survivorOffsetPV = survivorOffset / discountFactor;
+    const annualSurvivorPV = annualSurvivorInflated / discountFactor;
     const netNeedPV = netNeed / discountFactor;
 
     presentValueTotal += incomeNeedPV;
-    survivorResourcesPV += survivorOffsetPV;
+    survivorResourcesPV += annualSurvivorPV;
 
     annualSchedule.push({
       year: n,
@@ -585,13 +591,18 @@ export function calculateIncomeReplacementV2(
   const annualSurvivorBase =
     sr.govSurvivorBenefit + sr.investmentIncome + sr.otherIncome;
 
+  // Existing insurance is a lump-sum asset available immediately at t=0.
+  // It should NOT be discounted - add it directly to survivorResourcesPV.
+  // We still include it in year 1's survivorOffset for display purposes.
+  survivorResourcesPV += sr.existingInsurance;
+
   for (let n = 1; n <= durationYears; n++) {
     // Inflation-adjusted need for year N
     const inflationFactor = Math.pow(1 + inflationRate, n);
     const incomeNeed = resolvedMode.annualBaselineNeed * inflationFactor;
 
     // Survivor offset for year N:
-    //   - existing insurance: treated as a lump-sum offset in year 1 only
+    //   - existing insurance: shown in year 1 for display purposes only
     //   - annual resources: inflation-adjusted the same way
     const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
     const lumpSumOffset = n === 1 ? sr.existingInsurance : 0;
@@ -604,12 +615,13 @@ export function calculateIncomeReplacementV2(
     const discountFactor = Math.pow(1 + discountRate, n);
 
     // Present values
+    // Note: Only discount the annual recurring resources, not the lump-sum insurance
     const incomeNeedPV = incomeNeed / discountFactor;
-    const survivorOffsetPV = survivorOffset / discountFactor;
+    const annualSurvivorPV = annualSurvivorInflated / discountFactor;
     const netNeedPV = netNeed / discountFactor;
 
     presentValueTotal += incomeNeedPV;
-    survivorResourcesPV += survivorOffsetPV;
+    survivorResourcesPV += annualSurvivorPV;
 
     annualSchedule.push({
       year: n,

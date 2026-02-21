@@ -42,10 +42,15 @@ describe("calculatePremium", () => {
       expect(result.periodPremium).toBeGreaterThan(0);
     });
 
-    it("returns monthly premium as annual / 12", () => {
+    it("returns monthly premium with modal loading factor", () => {
       const result = calculatePremium(baseInput);
 
-      expect(result.monthlyPremium).toBeCloseTo(result.annualPremium / 12, 1);
+      // Monthly premium uses FREQUENCY_FACTORS.monthly (0.0875) which includes
+      // modal loading for administrative costs and lost interest
+      expect(result.monthlyPremium).toBeCloseTo(
+        result.annualPremium * 0.0875,
+        1,
+      );
     });
 
     it("includes correct payment frequency", () => {
