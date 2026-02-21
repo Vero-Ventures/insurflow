@@ -22,12 +22,19 @@ import {
   type PremiumInput,
   PRODUCT_NAMES,
 } from "./actuarial-pricing";
+import { type HealthClass, type Sex } from "./mortality-tables";
 import {
-  type HealthClass,
-  type Sex,
+  SUGGESTED_INSURANCE_BUDGET_PERCENT,
+  MIN_COVERAGE_INCOME_MULTIPLIER,
+  TARGET_COVERAGE_INCOME_MULTIPLIER,
   MIN_INSURABLE_AGE,
   MAX_INSURABLE_AGE,
-} from "./mortality-tables";
+} from "@/lib/constants";
+
+// Re-export for convenience of consumers (with original names for backward compatibility)
+export const SUGGESTED_BUDGET_PERCENT = SUGGESTED_INSURANCE_BUDGET_PERCENT;
+export const MIN_COVERAGE_MULTIPLIER = MIN_COVERAGE_INCOME_MULTIPLIER;
+export const TARGET_COVERAGE_MULTIPLIER = TARGET_COVERAGE_INCOME_MULTIPLIER;
 
 // ============================================================================
 // Types
@@ -187,15 +194,6 @@ export interface RecommendationMetadata {
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** Suggested insurance budget as percentage of income */
-export const SUGGESTED_BUDGET_PERCENT = 0.1; // 10% of income
-
-/** Minimum recommended coverage multiplier (times income) */
-export const MIN_COVERAGE_MULTIPLIER = 5;
-
-/** Target coverage multiplier (times income) */
-export const TARGET_COVERAGE_MULTIPLIER = 10;
 
 /** Score weights for optimization */
 export const SCORE_WEIGHTS = {
@@ -701,8 +699,13 @@ export function generateRecommendations(
       lifeStage,
       primaryGoal,
     );
+    // If face amount was adjusted due to budget constraints, recalculate cost per thousand
+    const adjustedCostPerThousand =
+      recommendedFaceAmount > 0
+        ? annualPremium / (recommendedFaceAmount / 1000)
+        : quote.costPerThousand;
     const valueScore = calculateValueScore(
-      quote.costPerThousand,
+      adjustedCostPerThousand,
       allCostsPerThousand,
     );
 
@@ -883,8 +886,16 @@ export function compareProducts(
   };
 } {
   const quotes = generateProductQuotes(input, [productA, productB]);
-  const quoteA = quotes.find((q) => q.productType === productA)!;
-  const quoteB = quotes.find((q) => q.productType === productB)!;
+  const quoteA = quotes.find((q) => q.productType === productA);
+  const quoteB = quotes.find((q) => q.productType === productB);
+
+  if (!quoteA || !quoteB) {
+    const availableTypes =
+      quotes.map((q) => q.productType).join(", ") || "none";
+    throw new Error(
+      `Missing product quotes for comparison. Requested: ${productA}, ${productB}. Available: ${availableTypes}`,
+    );
+  }
 
   const premiumDifference = quoteB.annualPremium - quoteA.annualPremium;
   const premiumDifferencePercent =

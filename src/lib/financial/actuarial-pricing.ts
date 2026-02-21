@@ -18,10 +18,20 @@ import {
   getSurvivalProbability,
   getLifeExpectancy,
   toSmokingStatus,
-  MIN_INSURABLE_AGE,
-  MAX_INSURABLE_AGE,
   LIFE_EXPECTANCY_CAP,
 } from "./mortality-tables";
+import {
+  DEFAULT_TERM_LIFE_YEARS,
+  MAX_TERM_LIFE_YEARS,
+  DEFAULT_ACTUARIAL_DISCOUNT_RATE,
+  MIN_INSURABLE_AGE,
+  MAX_INSURABLE_AGE,
+} from "@/lib/constants";
+
+// Re-export for convenience of consumers (with original names for backward compatibility)
+export const DEFAULT_TERM_YEARS = DEFAULT_TERM_LIFE_YEARS;
+export const MAX_TERM_YEARS = MAX_TERM_LIFE_YEARS;
+export const ACTUARIAL_DISCOUNT_RATE = DEFAULT_ACTUARIAL_DISCOUNT_RATE;
 
 // ============================================================================
 // Types
@@ -122,15 +132,6 @@ export interface ProductQuote {
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** Default policy term for term life products */
-export const DEFAULT_TERM_YEARS = 20;
-
-/** Maximum term length */
-export const MAX_TERM_YEARS = 40;
-
-/** Default discount rate for PV calculations (insurer's expected return) */
-export const ACTUARIAL_DISCOUNT_RATE = 0.04;
 
 /**
  * Premium loading factors by product type.

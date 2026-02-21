@@ -9,10 +9,9 @@ import {
   toSmokingStatus,
   isInsurableAge,
   HEALTH_CLASS_FACTORS,
-  MIN_INSURABLE_AGE,
-  MAX_INSURABLE_AGE,
   type RiskProfile,
 } from "../mortality-tables";
+import { MIN_INSURABLE_AGE, MAX_INSURABLE_AGE } from "@/lib/constants";
 
 // ============================================================================
 // getBaseMortalityRate

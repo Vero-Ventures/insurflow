@@ -9,9 +9,6 @@
 
 import { MIN_INSURABLE_AGE, MAX_INSURABLE_AGE } from "@/lib/constants";
 
-// Re-export for convenience of consumers
-export { MIN_INSURABLE_AGE, MAX_INSURABLE_AGE };
-
 // ============================================================================
 // Types
 // ============================================================================
