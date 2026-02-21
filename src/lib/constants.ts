@@ -123,7 +123,7 @@ export const SUGGESTED_INSURANCE_BUDGET_PERCENT = 0.1;
 export const MIN_INSURABLE_AGE = 18;
 
 /** Maximum insurable age */
-export const MAX_INSURABLE_AGE = 85;
+export const MAX_INSURABLE_AGE = 80;
 
 // ============================================================================
 // UI Constants
