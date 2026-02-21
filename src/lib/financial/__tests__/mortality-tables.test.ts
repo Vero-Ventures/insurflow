@@ -386,7 +386,7 @@ describe("isInsurableAge", () => {
 describe("mortality table constants", () => {
   it("has correct insurable age range", () => {
     expect(MIN_INSURABLE_AGE).toBe(18);
-    expect(MAX_INSURABLE_AGE).toBe(85);
+    expect(MAX_INSURABLE_AGE).toBe(80);
   });
 
   it("has correct health class factors", () => {
