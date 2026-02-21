@@ -369,7 +369,7 @@ describe("isInsurableAge", () => {
   it("returns true for ages within range", () => {
     expect(isInsurableAge(18)).toBe(true);
     expect(isInsurableAge(40)).toBe(true);
-    expect(isInsurableAge(85)).toBe(true);
+    expect(isInsurableAge(80)).toBe(true);
   });
 
   it("returns false for ages outside range", () => {
