@@ -2,6 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import DashboardPage from "@/app/dashboard/page";
+import {
+  DEMO_HANDOFF_ROUTE,
+  DEMO_INTAKE_ROUTE,
+  DEMO_SNAPSHOT_ROUTE,
+} from "@/lib/app-routes";
 
 describe("DashboardPage", () => {
   it("shows primary client journey actions", () => {
@@ -17,8 +22,8 @@ describe("DashboardPage", () => {
       name: /advisor handoff/i,
     });
 
-    expect(continueIntakeLink.getAttribute("href")).toBe("/demo/intake");
-    expect(estimateSnapshotLink.getAttribute("href")).toBe("/demo/estimate");
-    expect(advisorHandoffLink.getAttribute("href")).toBe("/demo/handoff");
+    expect(continueIntakeLink.getAttribute("href")).toBe(DEMO_INTAKE_ROUTE);
+    expect(estimateSnapshotLink.getAttribute("href")).toBe(DEMO_SNAPSHOT_ROUTE);
+    expect(advisorHandoffLink.getAttribute("href")).toBe(DEMO_HANDOFF_ROUTE);
   });
 });
