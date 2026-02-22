@@ -377,6 +377,32 @@ describe("calculateAdvancedIncomeReplacement", () => {
       expect(result.annualSchedule[2]!.survivorOffset).toBe(0);
     });
 
+    it("does not discount existing insurance in year-1 netNeedPV", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+          inflationRate: 0.02,
+          discountRate: 0.05,
+          duration: { type: "custom", years: 1 },
+          survivorResources: {
+            govSurvivorBenefit: 0,
+            existingInsurance: 50_000,
+            investmentIncome: 0,
+            otherIncome: 0,
+          },
+        }),
+      );
+
+      // Year 1 income PV: (100000 * 0.7 * 1.02) / 1.05 = 68000
+      // Existing insurance is t=0 lump sum and should be subtracted undiscounted.
+      expect(result.annualSchedule[0]!.netNeedPV).toBeCloseTo(18_000, 2);
+      expect(result.netCoverageNeededPV).toBeCloseTo(
+        result.annualSchedule[0]!.netNeedPV,
+        2,
+      );
+    });
+
     it("nets coverage gap to zero when resources exceed needs", () => {
       const result = calculateAdvancedIncomeReplacement(
         makeInput({
@@ -1222,6 +1248,30 @@ describe("calculateIncomeReplacementV2", () => {
       expect(result.resolvedInputs.baseAnnualIncome).toBe(0);
       expect(result.resolvedInputs.replacementRatio).toBe(0.7); // Default
       expect(result.presentValueTotal).toBe(0);
+    });
+  });
+
+  describe("metadata consistency", () => {
+    it("uses clamped inflation and discount rates in assumptions", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "income-multiplier",
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+        },
+        inflationRate: 0.8,
+        discountRate: 0.9,
+        duration: { type: "custom", years: 1 },
+      });
+
+      expect(result.resolvedInputs.inflationRate).toBe(0.5);
+      expect(result.resolvedInputs.discountRate).toBe(0.5);
+      expect(result.calculationMetadata.assumptions).toContain(
+        "Inflation rate: 50.0% annually",
+      );
+      expect(result.calculationMetadata.assumptions).toContain(
+        "Discount rate: 50.0% annually",
+      );
     });
   });
 

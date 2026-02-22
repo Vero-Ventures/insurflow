@@ -474,6 +474,12 @@ describe("calculateAffordableFaceAmount", () => {
     expect(faceAmount % 10_000).toBe(0);
   });
 
+  it("returns 0 when budget is zero", () => {
+    const faceAmount = calculateAffordableFaceAmount(0, affordabilityInput);
+
+    expect(faceAmount).toBe(0);
+  });
+
   it("returns lower amount for smokers (same budget)", () => {
     const nonSmokerAmount = calculateAffordableFaceAmount(
       500,

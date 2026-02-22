@@ -467,10 +467,16 @@ export function calculateAdvancedIncomeReplacement(
     const discountFactor = Math.pow(1 + discountRate, n);
 
     // Present values
-    // Note: Only discount the annual recurring resources, not the lump-sum insurance
+    // Note: Only discount annual recurring resources, not the lump-sum insurance.
+    // For year 1, existingInsurance is a t=0 asset and must be subtracted
+    // undiscounted from the year's PV net need.
     const incomeNeedPV = incomeNeed / discountFactor;
     const annualSurvivorPV = annualSurvivorInflated / discountFactor;
-    const netNeedPV = netNeed / discountFactor;
+    let netNeedPV = incomeNeedPV - annualSurvivorPV;
+    if (n === 1) {
+      netNeedPV -= sr.existingInsurance;
+    }
+    netNeedPV = Math.max(0, netNeedPV);
 
     presentValueTotal += incomeNeedPV;
     survivorResourcesPV += annualSurvivorPV;
@@ -538,9 +544,6 @@ function roundToTwoDecimals(value: number): number {
 export function calculateIncomeReplacementV2(
   input: IncomeReplacementInputV2,
 ): IncomeReplacementResultV2 {
-  // --- Resolve mode configuration -------------------------------------------
-  const resolvedMode = resolveModeConfig(input);
-
   const inflationRate = clamp(
     input.inflationRate ?? DEFAULT_INFLATION_RATE,
     0,
@@ -551,6 +554,9 @@ export function calculateIncomeReplacementV2(
     0,
     0.5,
   );
+  // --- Resolve mode configuration -------------------------------------------
+  const resolvedMode = resolveModeConfig(input, inflationRate, discountRate);
+
   const durationYears = resolveDuration(input.duration);
 
   const sr: SurvivorResources = {
@@ -615,10 +621,16 @@ export function calculateIncomeReplacementV2(
     const discountFactor = Math.pow(1 + discountRate, n);
 
     // Present values
-    // Note: Only discount the annual recurring resources, not the lump-sum insurance
+    // Note: Only discount annual recurring resources, not the lump-sum insurance.
+    // For year 1, existingInsurance is a t=0 asset and must be subtracted
+    // undiscounted from the year's PV net need.
     const incomeNeedPV = incomeNeed / discountFactor;
     const annualSurvivorPV = annualSurvivorInflated / discountFactor;
-    const netNeedPV = netNeed / discountFactor;
+    let netNeedPV = incomeNeedPV - annualSurvivorPV;
+    if (n === 1) {
+      netNeedPV -= sr.existingInsurance;
+    }
+    netNeedPV = Math.max(0, netNeedPV);
 
     presentValueTotal += incomeNeedPV;
     survivorResourcesPV += annualSurvivorPV;
@@ -669,6 +681,8 @@ interface ResolvedModeConfig {
 
 function resolveModeConfig(
   input: IncomeReplacementInputV2,
+  inflationRate: number,
+  discountRate: number,
 ): ResolvedModeConfig {
   // If modeConfig is provided, use it
   if (input.modeConfig) {
@@ -681,10 +695,6 @@ function resolveModeConfig(
         1,
       );
       const adjustedExpense = annualExpenses * (1 - expenseReductionPercent);
-
-      // Get rates for metadata (will use defaults if not provided)
-      const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
-      const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
 
       return {
         annualBaselineNeed: adjustedExpense,
@@ -708,10 +718,6 @@ function resolveModeConfig(
       const replacementRatio = clamp(input.modeConfig.replacementRatio, 0, 1);
       const annualBaselineNeed = baseAnnualIncome * replacementRatio;
 
-      // Get rates for metadata
-      const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
-      const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
-
       return {
         annualBaselineNeed,
         metadata: buildIncomeMultiplierMetadata(
@@ -734,10 +740,6 @@ function resolveModeConfig(
   const baseAnnualIncome = Math.max(0, input.baseAnnualIncome ?? 0);
   const replacementRatio = clamp(input.replacementRatio ?? 0.7, 0, 1);
   const annualBaselineNeed = baseAnnualIncome * replacementRatio;
-
-  // Get rates for metadata
-  const inflationRate = input.inflationRate ?? DEFAULT_INFLATION_RATE;
-  const discountRate = input.discountRate ?? DEFAULT_DISCOUNT_RATE;
 
   return {
     annualBaselineNeed,

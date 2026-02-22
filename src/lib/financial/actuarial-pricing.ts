@@ -578,10 +578,14 @@ export function calculateAffordableFaceAmount(
   maxAnnualPremium: number,
   input: Omit<PremiumInput, "faceAmount">,
 ): number {
+  if (maxAnnualPremium <= 0) {
+    return 0;
+  }
+
   // Use binary search to find the face amount that produces the target premium
-  let low = 10_000;
+  let low = 0;
   let high = 50_000_000;
-  let result = low;
+  let result = 0;
 
   const maxIterations = 50;
   for (let i = 0; i < maxIterations; i++) {
