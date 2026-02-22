@@ -5,6 +5,7 @@ import {
   deriveOnboardingPrefill,
   isOnboardingProfileComplete,
 } from "@/lib/onboarding";
+import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
@@ -23,7 +24,7 @@ export default async function OnboardingPage() {
   });
 
   if (isOnboardingProfileComplete(profile)) {
-    redirect("/clients");
+    redirect(AUTHENTICATED_HOME_ROUTE);
   }
 
   const prefill = deriveOnboardingPrefill(session.user.name);

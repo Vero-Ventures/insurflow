@@ -4,13 +4,14 @@ import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
+import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 
 export function AuthStatus() {
   return (
     <div className="flex flex-col items-center gap-3 sm:flex-row">
       <SignedIn>
         <Button asChild size="lg" className="text-base">
-          <Link href="/clients">
+          <Link href={AUTHENTICATED_HOME_ROUTE}>
             Go to Dashboard
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

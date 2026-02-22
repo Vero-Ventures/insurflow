@@ -22,6 +22,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { cn } from "@/lib/utils";
 
@@ -252,7 +253,7 @@ export default function SettingsPage() {
                   asChild
                   className="text-muted-foreground hover:text-foreground -ml-2"
                 >
-                  <Link href="/clients">
+                  <Link href={AUTHENTICATED_HOME_ROUTE}>
                     <ArrowLeft className="mr-1 h-4 w-4" />
                     Back
                   </Link>
