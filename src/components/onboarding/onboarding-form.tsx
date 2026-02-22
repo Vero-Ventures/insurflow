@@ -11,6 +11,7 @@ import {
   PRIMARY_GOAL_OPTIONS,
   type OnboardingProfileInput,
 } from "@/lib/onboarding";
+import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { STATES } from "@/lib/validation/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
       }
 
       toast.success("Profile completed. Welcome to InsurFlow.");
-      router.replace("/clients");
+      router.replace(AUTHENTICATED_HOME_ROUTE);
       router.refresh();
     } catch (error) {
       const message =

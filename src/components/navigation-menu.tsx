@@ -4,17 +4,35 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Settings, Sun, Moon, Users, Users2, Menu, X } from "lucide-react";
+import {
+  Settings,
+  Sun,
+  Moon,
+  Users,
+  Users2,
+  Menu,
+  X,
+  LayoutDashboard,
+} from "lucide-react";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
+import {
+  ADVISOR_WORKSPACE_ROUTE,
+  AUTHENTICATED_HOME_ROUTE,
+} from "@/lib/app-routes";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/server/better-auth/client";
 
 const navItems = [
-  { title: "Clients", href: "/clients", icon: Users },
+  {
+    title: "Dashboard",
+    href: AUTHENTICATED_HOME_ROUTE,
+    icon: LayoutDashboard,
+  },
+  { title: "Advisor Workspace", href: ADVISOR_WORKSPACE_ROUTE, icon: Users },
   { title: "Team", href: "/team", icon: Users2 },
 ];
 

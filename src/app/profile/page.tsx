@@ -17,6 +17,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { authClient } from "@/server/better-auth/client";
 
 function getInitials(name: string | undefined | null): string {
@@ -100,7 +101,7 @@ export default function ProfilePage() {
                 asChild
                 className="text-muted-foreground hover:text-foreground -ml-2"
               >
-                <Link href="/clients">
+                <Link href={AUTHENTICATED_HOME_ROUTE}>
                   <ArrowLeft className="mr-1 h-4 w-4" />
                   Back
                 </Link>
