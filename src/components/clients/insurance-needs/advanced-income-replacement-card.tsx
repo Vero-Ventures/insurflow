@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp,
   Calculator,
@@ -30,9 +31,16 @@ import {
   ShieldCheck,
   PiggyBank,
   Wallet,
+  Receipt,
+  DollarSign,
+  Info,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/client-utils";
-import { DEFAULT_DISCOUNT_RATE, DEFAULT_INFLATION_RATE } from "@/lib/constants";
+import {
+  DEFAULT_DISCOUNT_RATE,
+  DEFAULT_INFLATION_RATE,
+  DEFAULT_EXPENSE_REDUCTION_PERCENT,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type {
   UseAdvancedIncomeReplacementReturn,
@@ -49,6 +57,8 @@ type DurationScenarioType =
   | "childTurns18"
   | "retirement"
   | "lifetime";
+
+type CalculationModeType = "income-multiplier" | "expense-based";
 
 interface AdvancedIncomeReplacementCardProps {
   hook: UseAdvancedIncomeReplacementReturn;
@@ -76,7 +86,15 @@ export function AdvancedIncomeReplacementCard({
   hasSpouse: _hasSpouse = false,
   isReadOnly = false,
 }: AdvancedIncomeReplacementCardProps) {
-  const { result, isLoading, error, calculate, calculatedAt } = hook;
+  const {
+    result,
+    isLoading,
+    error,
+    calculate,
+    calculatedAt,
+    mode,
+    calculationMetadata,
+  } = hook;
 
   // --- Local form state (scenario selector + advanced params) ---------------
   const [scenario, setScenario] = useState<DurationScenarioType>("custom");
@@ -86,6 +104,14 @@ export function AdvancedIncomeReplacementCard({
     DEFAULT_INFLATION_RATE * 100,
   );
   const [discountRate, setDiscountRate] = useState(DEFAULT_DISCOUNT_RATE * 100);
+
+  // --- Calculation mode state -----------------------------------------------
+  const [calculationMode, setCalculationMode] =
+    useState<CalculationModeType>("income-multiplier");
+  const [annualExpenses, setAnnualExpenses] = useState(60000);
+  const [expenseReductionPercent, setExpenseReductionPercent] = useState(
+    DEFAULT_EXPENSE_REDUCTION_PERCENT * 100,
+  );
 
   // --- Handlers -------------------------------------------------------------
   const handleCalculate = () => {
@@ -97,6 +123,21 @@ export function AdvancedIncomeReplacementCard({
     if (scenario === "custom") {
       params.customDurationYears = customYears;
     }
+
+    // Add mode configuration
+    if (calculationMode === "expense-based") {
+      params.modeConfig = {
+        mode: "expense-based",
+        annualExpenses,
+        expenseReductionPercent: expenseReductionPercent / 100,
+      };
+    } else {
+      // For income-multiplier, let the API use client defaults
+      params.modeConfig = {
+        mode: "income-multiplier",
+      };
+    }
+
     calculate(params);
   };
 
@@ -140,6 +181,88 @@ export function AdvancedIncomeReplacementCard({
         {/* ---- Scenario Selector ---- */}
         {!isReadOnly && (
           <div className="space-y-4">
+            {/* Calculation Mode Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="calculation-mode">Calculation Method</Label>
+              <Select
+                value={calculationMode}
+                onValueChange={(v) =>
+                  setCalculationMode(v as CalculationModeType)
+                }
+              >
+                <SelectTrigger id="calculation-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="income-multiplier">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      <span>Income Multiplier (Traditional)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="expense-based">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4" />
+                      <span>Expense-Based (Realistic)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                {calculationMode === "expense-based"
+                  ? "Uses actual household expenses, adjusted for post-death reduction"
+                  : "Uses a percentage of gross income (e.g., 70%)"}
+              </p>
+            </div>
+
+            {/* Expense-Based Mode Inputs */}
+            {calculationMode === "expense-based" && (
+              <div className="border-border/60 bg-muted/20 grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="annual-expenses">
+                    Annual Household Expenses ($)
+                  </Label>
+                  <Input
+                    id="annual-expenses"
+                    type="number"
+                    min={0}
+                    value={annualExpenses}
+                    onChange={(e) =>
+                      setAnnualExpenses(
+                        Math.max(0, parseInt(e.target.value) || 0),
+                      )
+                    }
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Total yearly expenses (housing, food, utilities, etc.)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expense-reduction">
+                    Post-Death Reduction (%)
+                  </Label>
+                  <Input
+                    id="expense-reduction"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={expenseReductionPercent}
+                    onChange={(e) =>
+                      setExpenseReductionPercent(
+                        Math.max(
+                          0,
+                          Math.min(100, parseFloat(e.target.value) || 0),
+                        ),
+                      )
+                    }
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Typically 15-25% (one fewer person)
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="duration-scenario">Duration Scenario</Label>
@@ -373,16 +496,69 @@ export function AdvancedIncomeReplacementCard({
 
             {/* Resolved Inputs Summary */}
             <div className="border-border/60 text-muted-foreground space-y-1 border-t pt-4 text-xs">
-              <p className="font-medium">Parameters Used:</p>
+              <div className="mb-2 flex items-center gap-2">
+                <p className="font-medium">Parameters Used:</p>
+                {mode && (
+                  <Badge
+                    variant={mode === "expense-based" ? "secondary" : "outline"}
+                    className="text-xs"
+                  >
+                    {mode === "expense-based" ? (
+                      <>
+                        <Receipt className="mr-1 h-3 w-3" />
+                        Expense-Based
+                      </>
+                    ) : (
+                      <>
+                        <DollarSign className="mr-1 h-3 w-3" />
+                        Income-Multiplier
+                      </>
+                    )}
+                  </Badge>
+                )}
+              </div>
               <ul className="mt-1.5 grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
-                <li>
-                  Base Income:{" "}
-                  {formatCurrency(result.resolvedInputs.baseAnnualIncome)}
-                </li>
-                <li>
-                  Replacement Ratio:{" "}
-                  {(result.resolvedInputs.replacementRatio * 100).toFixed(0)}%
-                </li>
+                {/* Show mode-specific inputs */}
+                {result.resolvedInputs.mode === "expense-based" ? (
+                  <>
+                    <li>
+                      Annual Expenses:{" "}
+                      {formatCurrency(
+                        result.resolvedInputs.annualExpenses ?? 0,
+                      )}
+                    </li>
+                    <li>
+                      Expense Reduction:{" "}
+                      {(
+                        (result.resolvedInputs.expenseReductionPercent ?? 0) *
+                        100
+                      ).toFixed(0)}
+                      %
+                    </li>
+                    <li>
+                      Adjusted Annual Need:{" "}
+                      {formatCurrency(
+                        result.resolvedInputs.annualBaselineNeed ?? 0,
+                      )}
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      Base Income:{" "}
+                      {formatCurrency(
+                        result.resolvedInputs.baseAnnualIncome ?? 0,
+                      )}
+                    </li>
+                    <li>
+                      Replacement Ratio:{" "}
+                      {(
+                        (result.resolvedInputs.replacementRatio ?? 0.7) * 100
+                      ).toFixed(0)}
+                      %
+                    </li>
+                  </>
+                )}
                 <li>
                   Inflation:{" "}
                   {(result.resolvedInputs.inflationRate * 100).toFixed(1)}%
@@ -412,6 +588,26 @@ export function AdvancedIncomeReplacementCard({
                   </li>
                 )}
               </ul>
+
+              {/* Assumptions tooltip */}
+              {calculationMetadata && (
+                <div className="border-border/40 bg-muted/20 mt-3 rounded-lg border p-3">
+                  <div className="text-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+                    <Info className="h-3.5 w-3.5" />
+                    Calculation Assumptions
+                  </div>
+                  <p className="text-muted-foreground mb-2">
+                    {calculationMetadata.modeDescription}
+                  </p>
+                  <ul className="text-muted-foreground list-inside list-disc space-y-0.5">
+                    {calculationMetadata.assumptions
+                      .slice(0, 4)
+                      .map((assumption, i) => (
+                        <li key={i}>{assumption}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Year-by-Year Schedule (collapsible) */}

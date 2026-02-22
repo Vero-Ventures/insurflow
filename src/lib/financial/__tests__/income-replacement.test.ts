@@ -1,12 +1,18 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateAdvancedIncomeReplacement,
+  calculateIncomeReplacementV2,
+  compareCalculationModes,
   resolveDuration,
   LIFETIME_AGE_CAP,
   MAX_DURATION_YEARS,
   type IncomeReplacementInput,
 } from "../income-replacement";
-import { DEFAULT_DISCOUNT_RATE, DEFAULT_INFLATION_RATE } from "@/lib/constants";
+import {
+  DEFAULT_DISCOUNT_RATE,
+  DEFAULT_INFLATION_RATE,
+  DEFAULT_EXPENSE_REDUCTION_PERCENT,
+} from "@/lib/constants";
 
 // ============================================================================
 // Helpers
@@ -369,6 +375,32 @@ describe("calculateAdvancedIncomeReplacement", () => {
       expect(result.annualSchedule[1]!.survivorOffset).toBe(0);
       expect(result.annualSchedule[1]!.netNeed).toBe(70_000);
       expect(result.annualSchedule[2]!.survivorOffset).toBe(0);
+    });
+
+    it("does not discount existing insurance in year-1 netNeedPV", () => {
+      const result = calculateAdvancedIncomeReplacement(
+        makeInput({
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+          inflationRate: 0.02,
+          discountRate: 0.05,
+          duration: { type: "custom", years: 1 },
+          survivorResources: {
+            govSurvivorBenefit: 0,
+            existingInsurance: 50_000,
+            investmentIncome: 0,
+            otherIncome: 0,
+          },
+        }),
+      );
+
+      // Year 1 income PV: (100000 * 0.7 * 1.02) / 1.05 = 68000
+      // Existing insurance is t=0 lump sum and should be subtracted undiscounted.
+      expect(result.annualSchedule[0]!.netNeedPV).toBeCloseTo(18_000, 2);
+      expect(result.netCoverageNeededPV).toBeCloseTo(
+        result.annualSchedule[0]!.netNeedPV,
+        2,
+      );
     });
 
     it("nets coverage gap to zero when resources exceed needs", () => {
@@ -918,5 +950,439 @@ describe("calculateAdvancedIncomeReplacement", () => {
       expect(result.durationYears).toBe(10);
       expect(Number.isFinite(result.presentValueTotal)).toBe(true);
     });
+  });
+});
+
+// ============================================================================
+// V2 Multi-Mode Calculation Tests
+// ============================================================================
+
+describe("calculateIncomeReplacementV2", () => {
+  // --------------------------------------------------------------------------
+  // Income-multiplier mode (explicit config)
+  // --------------------------------------------------------------------------
+
+  describe("income-multiplier mode (explicit config)", () => {
+    it("calculates correctly with explicit income-multiplier config", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "income-multiplier",
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+        },
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 5 },
+      });
+
+      expect(result.calculationMetadata.mode).toBe("income-multiplier");
+      expect(result.resolvedInputs.mode).toBe("income-multiplier");
+      expect(result.resolvedInputs.baseAnnualIncome).toBe(100_000);
+      expect(result.resolvedInputs.replacementRatio).toBe(0.7);
+      expect(result.resolvedInputs.annualBaselineNeed).toBe(70_000);
+      expect(result.presentValueTotal).toBe(350_000); // 70000 * 5
+    });
+
+    it("returns correct metadata description for income-multiplier", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "income-multiplier",
+          baseAnnualIncome: 80_000,
+          replacementRatio: 0.65,
+        },
+        duration: { type: "custom", years: 1 },
+      });
+
+      expect(result.calculationMetadata.mode).toBe("income-multiplier");
+      expect(result.calculationMetadata.modeDescription).toContain(
+        "percentage of gross annual income",
+      );
+      expect(result.calculationMetadata.assumptions.length).toBeGreaterThan(0);
+      expect(
+        result.calculationMetadata.assumptions.some((a) =>
+          a.includes("Replacement ratio: 65%"),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Expense-based mode
+  // --------------------------------------------------------------------------
+
+  describe("expense-based mode", () => {
+    it("calculates correctly with expense-based config", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 80_000,
+          expenseReductionPercent: 0.2, // 20% reduction
+        },
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 5 },
+      });
+
+      // Adjusted expense = 80000 * (1 - 0.2) = 64000
+      expect(result.calculationMetadata.mode).toBe("expense-based");
+      expect(result.resolvedInputs.mode).toBe("expense-based");
+      expect(result.resolvedInputs.annualExpenses).toBe(80_000);
+      expect(result.resolvedInputs.expenseReductionPercent).toBe(0.2);
+      expect(result.resolvedInputs.annualBaselineNeed).toBe(64_000);
+      expect(result.presentValueTotal).toBe(320_000); // 64000 * 5
+    });
+
+    it("uses default expense reduction when not specified", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+        },
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 1 },
+      });
+
+      const expectedAdjusted =
+        100_000 * (1 - DEFAULT_EXPENSE_REDUCTION_PERCENT);
+      expect(result.resolvedInputs.expenseReductionPercent).toBe(
+        DEFAULT_EXPENSE_REDUCTION_PERCENT,
+      );
+      expect(result.resolvedInputs.annualBaselineNeed).toBe(expectedAdjusted);
+      expect(result.presentValueTotal).toBe(expectedAdjusted);
+    });
+
+    it("returns correct metadata description for expense-based", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 75_000,
+          expenseReductionPercent: 0.25,
+        },
+        duration: { type: "custom", years: 1 },
+      });
+
+      expect(result.calculationMetadata.mode).toBe("expense-based");
+      expect(result.calculationMetadata.modeDescription).toContain(
+        "actual household expenses",
+      );
+      expect(
+        result.calculationMetadata.assumptions.some((a) =>
+          a.includes("Post-death expense reduction: 25%"),
+        ),
+      ).toBe(true);
+      expect(
+        result.calculationMetadata.assumptions.some((a) =>
+          a.includes("Annual household expenses: $75,000"),
+        ),
+      ).toBe(true);
+    });
+
+    it("clamps expense reduction to [0, 1]", () => {
+      const over = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+          expenseReductionPercent: 1.5, // Over 100%
+        },
+        duration: { type: "custom", years: 1 },
+      });
+      expect(over.resolvedInputs.expenseReductionPercent).toBe(1);
+      expect(over.resolvedInputs.annualBaselineNeed).toBe(0); // 100% reduction
+
+      const under = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+          expenseReductionPercent: -0.3, // Negative
+        },
+        duration: { type: "custom", years: 1 },
+      });
+      expect(under.resolvedInputs.expenseReductionPercent).toBe(0);
+      expect(under.resolvedInputs.annualBaselineNeed).toBe(100_000);
+    });
+
+    it("clamps negative expenses to 0", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: -50_000,
+        },
+        duration: { type: "custom", years: 5 },
+      });
+
+      expect(result.resolvedInputs.annualExpenses).toBe(0);
+      expect(result.resolvedInputs.annualBaselineNeed).toBe(0);
+      expect(result.presentValueTotal).toBe(0);
+    });
+
+    it("handles zero expenses", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 0,
+          expenseReductionPercent: 0.2,
+        },
+        duration: { type: "custom", years: 10 },
+      });
+
+      expect(result.resolvedInputs.annualBaselineNeed).toBe(0);
+      expect(result.presentValueTotal).toBe(0);
+      expect(result.netCoverageNeededPV).toBe(0);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Expense-based mode with inflation
+  // --------------------------------------------------------------------------
+
+  describe("expense-based mode with inflation", () => {
+    it("applies inflation to adjusted expenses", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+          expenseReductionPercent: 0.2, // 80000 adjusted
+        },
+        inflationRate: 0.03,
+        discountRate: 0,
+        duration: { type: "custom", years: 3 },
+      });
+
+      // Year 1: 80000 * 1.03 = 82400
+      expect(result.annualSchedule[0]!.incomeNeed).toBeCloseTo(82_400, 0);
+      // Year 2: 80000 * 1.03^2 = 84872
+      expect(result.annualSchedule[1]!.incomeNeed).toBeCloseTo(84_872, 0);
+      // Year 3: 80000 * 1.03^3 = 87418.16
+      expect(result.annualSchedule[2]!.incomeNeed).toBeCloseTo(87_418.16, 0);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Expense-based mode with survivor resources
+  // --------------------------------------------------------------------------
+
+  describe("expense-based mode with survivor resources", () => {
+    it("offsets expenses with survivor resources", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+          expenseReductionPercent: 0.2, // 80000 adjusted
+        },
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 3 },
+        survivorResources: {
+          govSurvivorBenefit: 20_000,
+          existingInsurance: 0,
+          investmentIncome: 10_000,
+          otherIncome: 0,
+        },
+      });
+
+      // Need = 80000, Resources = 30000, Net = 50000 per year
+      for (const entry of result.annualSchedule) {
+        expect(entry.incomeNeed).toBe(80_000);
+        expect(entry.survivorOffset).toBe(30_000);
+        expect(entry.netNeed).toBe(50_000);
+      }
+      expect(result.netCoverageNeededPV).toBe(150_000);
+    });
+
+    it("handles existing insurance lump-sum in year 1", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 60_000,
+          expenseReductionPercent: 0, // No reduction = 60000/year
+        },
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 3 },
+        survivorResources: {
+          govSurvivorBenefit: 0,
+          existingInsurance: 200_000, // Lump sum in year 1
+          investmentIncome: 0,
+          otherIncome: 0,
+        },
+      });
+
+      // Year 1: need = 60000, offset = 200000, net = 0
+      expect(result.annualSchedule[0]!.survivorOffset).toBe(200_000);
+      expect(result.annualSchedule[0]!.netNeed).toBe(0);
+
+      // Year 2+: offset = 0
+      expect(result.annualSchedule[1]!.survivorOffset).toBe(0);
+      expect(result.annualSchedule[1]!.netNeed).toBe(60_000);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Legacy fallback (no modeConfig)
+  // --------------------------------------------------------------------------
+
+  describe("legacy fallback (no modeConfig)", () => {
+    it("falls back to income-multiplier when modeConfig is omitted", () => {
+      const result = calculateIncomeReplacementV2({
+        baseAnnualIncome: 90_000,
+        replacementRatio: 0.6,
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 5 },
+      });
+
+      expect(result.calculationMetadata.mode).toBe("income-multiplier");
+      expect(result.resolvedInputs.mode).toBe("income-multiplier");
+      expect(result.resolvedInputs.baseAnnualIncome).toBe(90_000);
+      expect(result.resolvedInputs.replacementRatio).toBe(0.6);
+      expect(result.presentValueTotal).toBe(270_000); // 54000 * 5
+    });
+
+    it("uses defaults when legacy fields are omitted", () => {
+      const result = calculateIncomeReplacementV2({
+        duration: { type: "custom", years: 1 },
+      });
+
+      expect(result.calculationMetadata.mode).toBe("income-multiplier");
+      expect(result.resolvedInputs.baseAnnualIncome).toBe(0);
+      expect(result.resolvedInputs.replacementRatio).toBe(0.7); // Default
+      expect(result.presentValueTotal).toBe(0);
+    });
+  });
+
+  describe("metadata consistency", () => {
+    it("uses clamped inflation and discount rates in assumptions", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "income-multiplier",
+          baseAnnualIncome: 100_000,
+          replacementRatio: 0.7,
+        },
+        inflationRate: 0.8,
+        discountRate: 0.9,
+        duration: { type: "custom", years: 1 },
+      });
+
+      expect(result.resolvedInputs.inflationRate).toBe(0.5);
+      expect(result.resolvedInputs.discountRate).toBe(0.5);
+      expect(result.calculationMetadata.assumptions).toContain(
+        "Inflation rate: 50.0% annually",
+      );
+      expect(result.calculationMetadata.assumptions).toContain(
+        "Discount rate: 50.0% annually",
+      );
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Zero duration edge case
+  // --------------------------------------------------------------------------
+
+  describe("zero duration edge case", () => {
+    it("returns zeroed result for expense-based with zero duration", () => {
+      const result = calculateIncomeReplacementV2({
+        modeConfig: {
+          mode: "expense-based",
+          annualExpenses: 100_000,
+        },
+        duration: { type: "custom", years: 0 },
+      });
+
+      expect(result.durationYears).toBe(0);
+      expect(result.annualSchedule).toEqual([]);
+      expect(result.presentValueTotal).toBe(0);
+      expect(result.calculationMetadata.mode).toBe("expense-based");
+    });
+  });
+});
+
+// ============================================================================
+// compareCalculationModes Tests
+// ============================================================================
+
+describe("compareCalculationModes", () => {
+  it("compares income-multiplier and expense-based results", () => {
+    const comparison = compareCalculationModes(
+      { baseAnnualIncome: 100_000, replacementRatio: 0.7 }, // 70000/year
+      { annualExpenses: 80_000, expenseReductionPercent: 0.2 }, // 64000/year
+      {
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 10 },
+      },
+    );
+
+    // Income-multiplier: 70000 * 10 = 700000
+    expect(comparison.incomeMultiplierResult.netCoverageNeededPV).toBe(700_000);
+    // Expense-based: 64000 * 10 = 640000
+    expect(comparison.expenseBasedResult.netCoverageNeededPV).toBe(640_000);
+
+    // Difference: 700000 - 640000 = 60000
+    expect(comparison.comparison.netCoverageDifference).toBe(60_000);
+
+    // Percent difference: 60000 / 700000 * 100 = 8.57%
+    expect(comparison.comparison.percentDifference).toBeCloseTo(8.57, 1);
+
+    expect(comparison.comparison.recommendation).toBeTruthy();
+  });
+
+  it("generates appropriate recommendation when methods produce similar results", () => {
+    const comparison = compareCalculationModes(
+      { baseAnnualIncome: 100_000, replacementRatio: 0.64 }, // 64000/year
+      { annualExpenses: 80_000, expenseReductionPercent: 0.2 }, // 64000/year
+      {
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 10 },
+      },
+    );
+
+    // Results should be identical
+    expect(comparison.incomeMultiplierResult.netCoverageNeededPV).toBe(640_000);
+    expect(comparison.expenseBasedResult.netCoverageNeededPV).toBe(640_000);
+    expect(comparison.comparison.percentDifference).toBe(0);
+    expect(comparison.comparison.recommendation).toContain("similar results");
+  });
+
+  it("handles survivor resources in comparison", () => {
+    const comparison = compareCalculationModes(
+      { baseAnnualIncome: 100_000, replacementRatio: 0.7 },
+      { annualExpenses: 80_000, expenseReductionPercent: 0.2 },
+      {
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 5 },
+        survivorResources: {
+          govSurvivorBenefit: 10_000,
+          existingInsurance: 0,
+          investmentIncome: 0,
+          otherIncome: 0,
+        },
+      },
+    );
+
+    // Income-multiplier: (70000 - 10000) * 5 = 300000
+    expect(comparison.incomeMultiplierResult.netCoverageNeededPV).toBe(300_000);
+    // Expense-based: (64000 - 10000) * 5 = 270000
+    expect(comparison.expenseBasedResult.netCoverageNeededPV).toBe(270_000);
+  });
+
+  it("provides recommendation when expense-based is higher", () => {
+    const comparison = compareCalculationModes(
+      { baseAnnualIncome: 100_000, replacementRatio: 0.5 }, // 50000/year
+      { annualExpenses: 80_000, expenseReductionPercent: 0.1 }, // 72000/year
+      {
+        inflationRate: 0,
+        discountRate: 0,
+        duration: { type: "custom", years: 10 },
+      },
+    );
+
+    // Expense-based suggests higher coverage
+    expect(comparison.comparison.netCoverageDifference).toBeLessThan(0);
+    expect(comparison.comparison.recommendation).toContain(
+      "Expense-based suggests higher coverage",
+    );
   });
 });

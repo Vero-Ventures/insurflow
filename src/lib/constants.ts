@@ -90,6 +90,41 @@ export const DEFAULT_DISCOUNT_RATE = 0.05;
 /** Default inflation rate */
 export const DEFAULT_INFLATION_RATE = 0.02;
 
+/**
+ * Default expense reduction percentage for expense-based mode (20%).
+ * Represents the typical reduction in household expenses after the death
+ * of the primary earner (one fewer person's direct costs: food, transport, etc.).
+ */
+export const DEFAULT_EXPENSE_REDUCTION_PERCENT = 0.2;
+
+// ============================================================================
+// Actuarial & Insurance Constants
+// ============================================================================
+
+/** Default term length for term life insurance (years) */
+export const DEFAULT_TERM_LIFE_YEARS = 20;
+
+/** Maximum term length for term life insurance (years) */
+export const MAX_TERM_LIFE_YEARS = 40;
+
+/** Actuarial discount rate for premium calculations (insurer's expected return) */
+export const DEFAULT_ACTUARIAL_DISCOUNT_RATE = 0.04;
+
+/** Minimum recommended coverage as multiplier of annual income */
+export const MIN_COVERAGE_INCOME_MULTIPLIER = 5;
+
+/** Target recommended coverage as multiplier of annual income */
+export const TARGET_COVERAGE_INCOME_MULTIPLIER = 10;
+
+/** Suggested insurance budget as percentage of income (10%) */
+export const SUGGESTED_INSURANCE_BUDGET_PERCENT = 0.1;
+
+/** Minimum insurable age */
+export const MIN_INSURABLE_AGE = 18;
+
+/** Maximum insurable age */
+export const MAX_INSURABLE_AGE = 80;
+
 // ============================================================================
 // UI Constants
 // ============================================================================
