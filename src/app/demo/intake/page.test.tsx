@@ -67,5 +67,17 @@ describe("DemoIntakePage", () => {
       screen.getByText(/choose the option that best describes you/i),
     ).toBeTruthy();
     expect(screen.getByText(/an estimate is fine/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /add more details/i }));
+
+    expect(
+      screen.getByText(/include mortgage, loans, and credit cards/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/enter 0 if you do not have coverage yet/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/a short note is enough. you can skip this for now/i),
+    ).toBeTruthy();
   });
 });

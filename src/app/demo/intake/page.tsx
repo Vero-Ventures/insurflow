@@ -162,7 +162,7 @@ export default function DemoIntakePage() {
                 </div>
               </div>
 
-              {!showOptionalDetails ? (
+              {!showOptionalDetails && (
                 <div className="border-t pt-4">
                   <Button
                     type="button"
@@ -173,9 +173,9 @@ export default function DemoIntakePage() {
                     Add more details (optional)
                   </Button>
                 </div>
-              ) : null}
+              )}
 
-              {showOptionalDetails ? (
+              {showOptionalDetails && (
                 <>
                   <div className="space-y-1 border-t pt-5">
                     <p className="text-foreground text-sm font-semibold">
@@ -244,7 +244,7 @@ export default function DemoIntakePage() {
                     />
                   </div>
                 </>
-              ) : null}
+              )}
 
               <div className="border-border/60 flex justify-end border-t pt-4">
                 <Button
