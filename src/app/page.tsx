@@ -190,14 +190,16 @@ export default function Home() {
             {demoFlowSteps.map((step, index) => (
               <Card
                 key={step.title}
-                className={`animate-fade-up border-border/60 bg-card/70 p-6 animation-delay-${(index + 1) * 100}`}
+                className={`animate-fade-up border-border/60 bg-card/70 animation-delay-${(index + 1) * 100}`}
               >
-                <h3 className="text-foreground text-lg font-semibold">
-                  {step.title}
-                </h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                  {step.description}
-                </p>
+                <CardHeader>
+                  <CardTitle className="text-foreground text-lg font-semibold">
+                    {step.title}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+                    {step.description}
+                  </CardDescription>
+                </CardHeader>
               </Card>
             ))}
           </div>
