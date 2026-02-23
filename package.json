@@ -84,7 +84,7 @@
     "eslint-plugin-drizzle": "^0.2.3",
     "happy-dom": "^20.4.0",
     "husky": "^9.1.7",
-    "jsdom": "^27.4.0",
+    "jsdom": "^28.1.0",
     "knip": "^5.82.1",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
