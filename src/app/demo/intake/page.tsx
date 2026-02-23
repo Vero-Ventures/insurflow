@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,16 @@ export default function DemoIntakePage() {
   }
 
   const handleContinue = () => {
+    if (!showOptionalDetails) {
+      flushSync(() => {
+        updateIntakeData({
+          totalDebts: "0",
+          currentCoverage: "0",
+          primaryGoal: "",
+        });
+      });
+    }
+
     router.push("/demo/estimate");
   };
 

@@ -47,11 +47,16 @@ describe("DemoIntakePage", () => {
     expect(screen.getByLabelText(/total debts/i)).toBeTruthy();
   });
 
-  it("lets users continue to estimate without revealing optional fields", () => {
+  it("resets optional inputs when users continue without revealing them", () => {
     render(<DemoIntakePage />);
 
     fireEvent.click(screen.getByRole("button", { name: /see estimate now/i }));
 
+    expect(updateIntakeDataMock).toHaveBeenCalledWith({
+      totalDebts: "0",
+      currentCoverage: "0",
+      primaryGoal: "",
+    });
     expect(pushMock).toHaveBeenCalledWith("/demo/estimate");
   });
 
