@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ const CURRENT_STEP = 1;
 export default function DemoIntakePage() {
   const router = useRouter();
   const { state, updateIntakeData } = useDemoContext();
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
   const selectedScenario =
     demoScenarios.find(
       (scenario) => scenario.id === state.selectedScenarioId,
@@ -44,6 +47,16 @@ export default function DemoIntakePage() {
   }
 
   const handleContinue = () => {
+    if (!showOptionalDetails) {
+      flushSync(() => {
+        updateIntakeData({
+          totalDebts: "0",
+          currentCoverage: "0",
+          primaryGoal: "",
+        });
+      });
+    }
+
     router.push("/demo/estimate");
   };
 
@@ -74,8 +87,8 @@ export default function DemoIntakePage() {
             Tell us about your household
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            This quick intake keeps things simple and helps generate an initial
-            estimate before you speak with an advisor.
+            Answer two quick questions to get a first estimate. You can add more
+            details if you want a tighter result.
           </p>
         </div>
 
@@ -96,12 +109,15 @@ export default function DemoIntakePage() {
                   Household profile
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  Basic household context anchors the baseline recommendation.
+                  Start with the basics. You can expand this form any time.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="household-status">Household status</Label>
+                <p className="text-muted-foreground text-xs">
+                  Choose the option that best describes you today.
+                </p>
                 <Select
                   value={state.intakeData.householdStatus}
                   onValueChange={(value) =>
@@ -128,6 +144,9 @@ export default function DemoIntakePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="annual-income">Annual household income</Label>
+                  <p className="text-muted-foreground text-xs">
+                    An estimate is fine. This helps size income replacement.
+                  </p>
                   <Input
                     id="annual-income"
                     inputMode="numeric"
@@ -141,68 +160,98 @@ export default function DemoIntakePage() {
                     className="border-border/60"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="total-debts">Total debts</Label>
-                  <Input
-                    id="total-debts"
-                    inputMode="numeric"
-                    placeholder="515500"
-                    value={state.intakeData.totalDebts}
-                    onChange={(event) =>
-                      updateIntakeData({ totalDebts: event.target.value })
-                    }
-                    className="border-border/60"
-                  />
+              {!showOptionalDetails && (
+                <div className="border-t pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowOptionalDetails(true)}
+                  >
+                    Add more details (optional)
+                  </Button>
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-1 border-t pt-5">
-                <p className="text-foreground text-sm font-semibold">
-                  Current protection
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Existing coverage and priorities help tune the recommendation.
-                </p>
-              </div>
+              {showOptionalDetails && (
+                <>
+                  <div className="space-y-1 border-t pt-5">
+                    <p className="text-foreground text-sm font-semibold">
+                      Optional details
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      These can sharpen the estimate, but you can skip them.
+                    </p>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="current-coverage">
-                  Current life insurance coverage
-                </Label>
-                <Input
-                  id="current-coverage"
-                  inputMode="numeric"
-                  placeholder="250000"
-                  value={state.intakeData.currentCoverage}
-                  onChange={(event) =>
-                    updateIntakeData({ currentCoverage: event.target.value })
-                  }
-                  className="border-border/60"
-                />
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="total-debts">Total debts</Label>
+                      <p className="text-muted-foreground text-xs">
+                        Include mortgage, loans, and credit cards.
+                      </p>
+                      <Input
+                        id="total-debts"
+                        inputMode="numeric"
+                        placeholder="515500"
+                        value={state.intakeData.totalDebts}
+                        onChange={(event) =>
+                          updateIntakeData({ totalDebts: event.target.value })
+                        }
+                        className="border-border/60"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="primary-goal">
-                  What matters most for your family?
-                </Label>
-                <Textarea
-                  id="primary-goal"
-                  rows={4}
-                  value={state.intakeData.primaryGoal}
-                  onChange={(event) =>
-                    updateIntakeData({ primaryGoal: event.target.value })
-                  }
-                  className="border-border/60"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="current-coverage">
+                        Current life insurance coverage
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Enter 0 if you do not have coverage yet.
+                      </p>
+                      <Input
+                        id="current-coverage"
+                        inputMode="numeric"
+                        placeholder="250000"
+                        value={state.intakeData.currentCoverage}
+                        onChange={(event) =>
+                          updateIntakeData({
+                            currentCoverage: event.target.value,
+                          })
+                        }
+                        className="border-border/60"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="primary-goal">
+                      What matters most for your family?
+                    </Label>
+                    <p className="text-muted-foreground text-xs">
+                      A short note is enough. You can skip this for now.
+                    </p>
+                    <Textarea
+                      id="primary-goal"
+                      rows={4}
+                      value={state.intakeData.primaryGoal}
+                      onChange={(event) =>
+                        updateIntakeData({ primaryGoal: event.target.value })
+                      }
+                      className="border-border/60"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="border-border/60 flex justify-end border-t pt-4">
                 <Button
                   type="submit"
                   className="bg-emerald hover:bg-emerald/90 gap-2"
                 >
-                  See Estimate
+                  See Estimate now
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
