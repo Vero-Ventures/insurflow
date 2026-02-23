@@ -50,6 +50,13 @@
       "when": 1771575855416,
       "tag": "0006_jazzy_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771888589956,
+      "tag": "0007_watery_white_queen",
+      "breakpoints": true
     }
   ]
 }

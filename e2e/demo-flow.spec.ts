@@ -33,6 +33,10 @@ test.describe("Demo Client Journey", () => {
     await page.getByRole("combobox").first().click();
     await page.getByRole("option", { name: /single parent/i }).click();
     await page.getByLabel(/annual household income/i).fill("180000");
+
+    // Expand optional details section
+    await page.getByRole("button", { name: /add more details/i }).click();
+
     await page.getByLabel(/total debts/i).fill("320000");
     await page.getByLabel(/current life insurance coverage/i).fill("250000");
     await page

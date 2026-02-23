@@ -37,6 +37,9 @@ export {
   policyStatusEnum,
 } from "./enums-schema";
 
+// Audit log enums
+export { auditActionEnum, auditEntityTypeEnum } from "./audit-logs-schema";
+
 // ============================================================================
 // RE-EXPORT ALL TABLES
 // ============================================================================
@@ -57,6 +60,7 @@ export {
   corporateInsuranceNeed,
 } from "./corporate-schema";
 export { policy } from "./policies-schema";
+export { auditLog } from "./audit-logs-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -79,6 +83,15 @@ export {
   corporateInsuranceNeedRelations,
 } from "./corporate-schema";
 export { policyRelations } from "./policies-schema";
+export { auditLogRelations } from "./audit-logs-schema";
+
+// Audit log types
+export type {
+  AuditLog,
+  AuditLogInsert,
+  AuditAction,
+  AuditEntityType,
+} from "./audit-logs-schema";
 
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
