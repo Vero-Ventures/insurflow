@@ -3,6 +3,7 @@ import {
   auditLog,
   auditEntityTypeEnum,
   auditActionEnum,
+  assetAllocation,
   client,
   asset,
   debt,
@@ -330,7 +331,17 @@ async function getOwnedEntityIds(
     .select({ id: beneficiary.id })
     .from(beneficiary)
     .where(inArray(beneficiary.clientId, clientIds));
-  entityIds.push(...beneficiaries.map((b) => b.id));
+  const beneficiaryIds = beneficiaries.map((b) => b.id);
+  entityIds.push(...beneficiaryIds);
+
+  // Get all asset allocations for these beneficiaries
+  if (beneficiaryIds.length > 0) {
+    const allocations = await db
+      .select({ id: assetAllocation.id })
+      .from(assetAllocation)
+      .where(inArray(assetAllocation.beneficiaryId, beneficiaryIds));
+    entityIds.push(...allocations.map((a) => a.id));
+  }
 
   // Get all policies for these clients
   const policies = await db
