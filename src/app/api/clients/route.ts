@@ -12,10 +12,9 @@ import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  validateSession,
+  validateAdvisorSession,
   parseJsonBody,
   handleValidationError,
-  requireAdvisorAccount,
 } from "@/lib/api/route-helpers";
 
 /**
@@ -99,12 +98,9 @@ export async function GET(request: Request) {
   const logger = createLogger({ endpoint: "/api/clients", method: "GET" });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
-
-    const advisorGuard = await requireAdvisorAccount(logger, session);
-    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id });
 
@@ -193,12 +189,9 @@ export async function POST(request: Request) {
   const logger = createLogger({ endpoint: "/api/clients", method: "POST" });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
-
-    const advisorGuard = await requireAdvisorAccount(logger, session);
-    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id });
 

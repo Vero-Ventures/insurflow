@@ -178,6 +178,25 @@ export async function validateSession(
   return { session };
 }
 
+export async function validateAdvisorSession(
+  logger: Logger,
+): Promise<{ session: Session } | { error: NextResponse }> {
+  const sessionResult = await validateSession(logger);
+  if ("error" in sessionResult) {
+    return sessionResult;
+  }
+
+  const advisorGuard = await requireAdvisorAccount(
+    logger,
+    sessionResult.session,
+  );
+  if (advisorGuard) {
+    return { error: advisorGuard };
+  }
+
+  return sessionResult;
+}
+
 /**
  * Shared helper for parsing JSON body with error handling
  * Returns the parsed body or an error response

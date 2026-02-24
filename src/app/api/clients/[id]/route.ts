@@ -13,10 +13,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  validateSession,
+  validateAdvisorSession,
   parseJsonBody,
   handleValidationError,
-  requireAdvisorAccount,
 } from "@/lib/api/route-helpers";
 
 /**
@@ -107,12 +106,9 @@ export async function GET(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
-
-    const advisorGuard = await requireAdvisorAccount(logger, session);
-    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 
@@ -167,12 +163,9 @@ export async function PATCH(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
-
-    const advisorGuard = await requireAdvisorAccount(logger, session);
-    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 
@@ -255,12 +248,9 @@ export async function DELETE(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
-
-    const advisorGuard = await requireAdvisorAccount(logger, session);
-    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 

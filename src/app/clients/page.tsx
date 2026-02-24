@@ -97,7 +97,7 @@ export default function ClientsPage() {
           }
           if (response.status === 403) {
             router.replace("/dashboard");
-            throw new Error("Advisor account required to access clients");
+            return;
           }
           if (response.status === 500) {
             throw new Error(
