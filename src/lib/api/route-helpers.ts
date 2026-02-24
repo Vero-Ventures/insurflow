@@ -1,5 +1,8 @@
 import { getSession, type Session } from "@/server/better-auth/server";
 import { createLogger, type Logger } from "@/server/axiom";
+import { getDb } from "@/server/db";
+import { userProfile } from "@/server/db/schemas";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { validateUUID, verifyClientOwnership } from "./client-helpers";
 
@@ -211,5 +214,29 @@ export async function handleValidationError(
       details: error.format(),
     },
     { status: 400 },
+  );
+}
+
+export async function requireAdvisorAccount(
+  logger: Logger,
+  session: Session,
+): Promise<NextResponse | null> {
+  const db = getDb();
+  const profile = await db.query.userProfile.findFirst({
+    where: eq(userProfile.userId, session.user.id),
+    columns: { accountType: true },
+  });
+
+  if (profile?.accountType === "advisor") {
+    return null;
+  }
+
+  await logger.warn("Forbidden: advisor account required", {
+    statusCode: 403,
+  });
+
+  return NextResponse.json(
+    { error: "Advisor account required" },
+    { status: 403 },
   );
 }

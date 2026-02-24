@@ -16,6 +16,7 @@ import {
   validateSession,
   parseJsonBody,
   handleValidationError,
+  requireAdvisorAccount,
 } from "@/lib/api/route-helpers";
 
 /**
@@ -110,6 +111,9 @@ export async function GET(
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
 
+    const advisorGuard = await requireAdvisorAccount(logger, session);
+    if (advisorGuard) return advisorGuard;
+
     logger.addContext({ userId: session.user.id, clientId: id });
 
     // Validate UUID format
@@ -166,6 +170,9 @@ export async function PATCH(
     const sessionResult = await validateSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
+
+    const advisorGuard = await requireAdvisorAccount(logger, session);
+    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 
@@ -251,6 +258,9 @@ export async function DELETE(
     const sessionResult = await validateSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
+
+    const advisorGuard = await requireAdvisorAccount(logger, session);
+    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id, clientId: id });
 

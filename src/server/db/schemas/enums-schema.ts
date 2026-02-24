@@ -120,6 +120,9 @@ export const communicationPreferenceEnum = pgEnum("communication_preference", [
   "sms",
 ]);
 
+/** Onboarding account type */
+export const accountTypeEnum = pgEnum("account_type", ["client", "advisor"]);
+
 // ============================================================================
 // ASSET & DEBT ENUMS
 // ============================================================================

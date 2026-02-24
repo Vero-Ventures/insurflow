@@ -42,6 +42,7 @@ export async function GET() {
       householdStatus: profile?.householdStatus ?? "",
       primaryGoal: profile?.primaryGoal ?? "",
       communicationPreference: profile?.communicationPreference ?? "",
+      accountType: profile?.accountType ?? "client",
     };
 
     return NextResponse.json({
@@ -102,6 +103,7 @@ export async function PUT(request: Request) {
         householdStatus: data.householdStatus,
         primaryGoal: data.primaryGoal,
         communicationPreference: data.communicationPreference,
+        accountType: data.accountType,
         onboardingCompletedAt: now,
       })
       .onConflictDoUpdate({
@@ -113,6 +115,7 @@ export async function PUT(request: Request) {
           householdStatus: data.householdStatus,
           primaryGoal: data.primaryGoal,
           communicationPreference: data.communicationPreference,
+          accountType: data.accountType,
           onboardingCompletedAt: now,
           updatedAt: now,
         },

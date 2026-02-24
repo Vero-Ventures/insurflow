@@ -15,6 +15,7 @@ import {
   validateSession,
   parseJsonBody,
   handleValidationError,
+  requireAdvisorAccount,
 } from "@/lib/api/route-helpers";
 
 /**
@@ -101,6 +102,9 @@ export async function GET(request: Request) {
     const sessionResult = await validateSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
+
+    const advisorGuard = await requireAdvisorAccount(logger, session);
+    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id });
 
@@ -192,6 +196,9 @@ export async function POST(request: Request) {
     const sessionResult = await validateSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
+
+    const advisorGuard = await requireAdvisorAccount(logger, session);
+    if (advisorGuard) return advisorGuard;
 
     logger.addContext({ userId: session.user.id });
 
