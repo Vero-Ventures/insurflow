@@ -14,6 +14,7 @@ import {
   type Scenario,
   type ScenarioCoverage,
 } from "@/components/scenario-comparison/scenario-card";
+import { ScenarioMeetingSummary } from "@/components/scenario-comparison/scenario-meeting-summary";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -127,15 +128,7 @@ export function ScenarioComparisonView() {
         </Button>
       </div>
 
-      {isMeetingMode ? (
-        <div className="bg-muted/40 border-border rounded-xl border p-6">
-          <h2 className="text-lg font-semibold">Meeting mode</h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            One-screen advisor summary will appear here. Use Back to Assumptions
-            to keep adjusting scenarios.
-          </p>
-        </div>
-      ) : null}
+      {isMeetingMode ? <ScenarioMeetingSummary scenarios={scenarios} /> : null}
 
       {!isMeetingMode ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">

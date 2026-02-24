@@ -34,7 +34,7 @@ interface ScenarioCardProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatCurrency(value: number): string {
+export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-CA", {
     style: "currency",
     currency: "CAD",
@@ -49,7 +49,7 @@ const PREMIUM_FACTORS = {
   disability: 0.01,
 } as const;
 
-function calculateScenarioResults(c: ScenarioCoverage) {
+export function calculateScenarioResults(c: ScenarioCoverage) {
   const disabilityAnnual = c.disability * 12;
 
   const totalCoverage = c.life + c.criticalIllness + disabilityAnnual;
