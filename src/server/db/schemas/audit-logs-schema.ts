@@ -75,8 +75,8 @@ export const auditLog = pgTable(
     /** The type of entity being audited */
     entityType: auditEntityTypeEnum("entity_type").notNull(),
 
-    /** The ID of the entity being audited */
-    entityId: uuid("entity_id").notNull(),
+    /** The ID of the entity being audited (text to support both UUID and text IDs) */
+    entityId: text("entity_id").notNull(),
 
     /** The action performed */
     action: auditActionEnum("action").notNull(),

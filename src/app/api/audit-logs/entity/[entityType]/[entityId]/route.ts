@@ -19,7 +19,7 @@ const MAX_LIMIT = 100;
  */
 const pathParamsSchema = z.object({
   entityType: z.enum(auditEntityTypeEnum.enumValues),
-  entityId: z.string().uuid(),
+  entityId: z.string().min(1), // Accept both UUID and text IDs
 });
 
 /**

@@ -54,13 +54,6 @@
     {
       "idx": 7,
       "version": "7",
-      "when": 1771888589956,
-      "tag": "0007_watery_white_queen",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
       "when": 1771890762260,
       "tag": "0008_awesome_mandrill",
       "breakpoints": true

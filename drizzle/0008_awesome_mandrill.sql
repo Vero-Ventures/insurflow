@@ -9,7 +9,7 @@ CREATE TYPE "public"."audit_entity_type" AS ENUM('client', 'asset', 'debt', 'ben
 CREATE TABLE "audit_log" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"entity_type" "audit_entity_type" NOT NULL,
-	"entity_id" uuid NOT NULL,
+	"entity_id" text NOT NULL,
 	"action" "audit_action" NOT NULL,
 	"user_id" text,
 	"old_values" jsonb,

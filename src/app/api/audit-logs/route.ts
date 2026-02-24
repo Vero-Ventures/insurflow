@@ -37,7 +37,7 @@ const auditLogQuerySchema = z.object({
 
   // Filtering
   entityType: z.enum(auditEntityTypeEnum.enumValues).optional(),
-  entityId: z.string().uuid().optional(),
+  entityId: z.string().min(1).optional(),
   action: z.enum(auditActionEnum.enumValues).optional(),
   userId: z.string().optional(),
 
