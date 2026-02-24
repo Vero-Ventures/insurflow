@@ -1,3 +1,9 @@
+-- Drop existing audit_log table and types if they exist (from prior db:push)
+-- This is safe because audit_log is a new feature with no production data
+DROP TABLE IF EXISTS "audit_log" CASCADE;
+DROP TYPE IF EXISTS "public"."audit_action";
+DROP TYPE IF EXISTS "public"."audit_entity_type";
+
 CREATE TYPE "public"."audit_action" AS ENUM('create', 'update', 'delete', 'restore');
 CREATE TYPE "public"."audit_entity_type" AS ENUM('client', 'asset', 'debt', 'beneficiary', 'asset_allocation', 'business', 'key_person', 'shareholder', 'corporate_insurance_need', 'policy', 'user_profile');
 CREATE TABLE "audit_log" (
@@ -13,7 +19,7 @@ CREATE TABLE "audit_log" (
 	"user_agent" text,
 	"request_id" text,
 	"metadata" jsonb,
-	"created_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;
 CREATE INDEX "audit_log_entity_type_entity_id_idx" ON "audit_log" USING btree ("entity_type","entity_id");
