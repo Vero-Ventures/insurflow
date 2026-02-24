@@ -2,7 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, FileDown } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  FileDown,
+  MonitorUp,
+  SlidersHorizontal,
+} from "lucide-react";
 import {
   ScenarioCard,
   type Scenario,
@@ -42,6 +48,7 @@ export function ScenarioComparisonView() {
     createScenario(0),
     createScenario(1),
   ]);
+  const [isMeetingMode, setIsMeetingMode] = useState(false);
 
   // ---- Mutations ----------------------------------------------------------
 
@@ -106,19 +113,42 @@ export function ScenarioComparisonView() {
             Export PDF
           </Button>
         </div>
+        <Button
+          variant={isMeetingMode ? "secondary" : "default"}
+          size="sm"
+          onClick={() => setIsMeetingMode((prev) => !prev)}
+        >
+          {isMeetingMode ? (
+            <SlidersHorizontal className="size-4" data-icon="inline-start" />
+          ) : (
+            <MonitorUp className="size-4" data-icon="inline-start" />
+          )}
+          {isMeetingMode ? "Back to Assumptions" : "Open Meeting Mode"}
+        </Button>
       </div>
 
-      {/* Scenario grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {scenarios.map((scenario) => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            onNameChange={handleNameChange}
-            onCoverageChange={handleCoverageChange}
-          />
-        ))}
-      </div>
+      {isMeetingMode ? (
+        <div className="bg-muted/40 border-border rounded-xl border p-6">
+          <h2 className="text-lg font-semibold">Meeting mode</h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            One-screen advisor summary will appear here. Use Back to Assumptions
+            to keep adjusting scenarios.
+          </p>
+        </div>
+      ) : null}
+
+      {!isMeetingMode ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {scenarios.map((scenario) => (
+            <ScenarioCard
+              key={scenario.id}
+              scenario={scenario}
+              onNameChange={handleNameChange}
+              onCoverageChange={handleCoverageChange}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
