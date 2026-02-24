@@ -69,6 +69,24 @@ const solutions = [
   "Leave with a clear action plan and confidence in your coverage",
 ];
 
+const demoFlowSteps = [
+  {
+    title: "1) Intake",
+    description:
+      "Capture essential household details in a plain-language flow that keeps momentum with first-time prospects.",
+  },
+  {
+    title: "2) Estimate",
+    description:
+      "See coverage needs, assumptions, and confidence at a glance so decisions stay grounded in real numbers.",
+  },
+  {
+    title: "3) Advisor Handoff",
+    description:
+      "Transition into advisor-ready next steps with clear recommendations and a practical follow-up path.",
+  },
+];
+
 export default function Home() {
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] flex-col">
@@ -116,12 +134,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow is the AI-powered platform that helps clients understand
-            their protection needs in{" "}
+            InsurFlow helps advisors move cold outreach conversations into a
+            real client journey in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
             </span>{" "}
-            with personalized recommendations and clear next steps.
+            with clear protection estimates, assumptions, and next steps.
           </p>
 
           {/* CTA Buttons */}
@@ -146,6 +164,57 @@ export default function Home() {
         <div className="animate-fade-in animation-delay-700 absolute bottom-8 left-1/2 -translate-x-1/2">
           <div className="border-muted-foreground/30 flex h-8 w-5 items-start justify-center rounded-full border-2 p-1">
             <div className="bg-muted-foreground/50 h-2 w-1 animate-bounce rounded-full" />
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-4 py-16 sm:py-20">
+        <div className="relative z-10 container mx-auto max-w-6xl">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <Badge
+              variant="secondary"
+              className="bg-emerald/10 text-emerald mb-4"
+            >
+              Demo Flow
+            </Badge>
+            <h2 className="text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
+              How the demo works
+            </h2>
+            <p className="text-muted-foreground mt-3 text-base sm:text-lg">
+              A simple three-step walkthrough that mirrors how advisors guide
+              real planning conversations.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {demoFlowSteps.map((step, index) => (
+              <Card
+                key={step.title}
+                className={`animate-fade-up border-border/60 bg-card/70 animation-delay-${(index + 1) * 100}`}
+              >
+                <CardHeader>
+                  <CardTitle className="text-foreground text-lg font-semibold">
+                    {step.title}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+                    {step.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-emerald hover:bg-emerald/90 text-base text-white"
+            >
+              <Link href="/demo">
+                Start Demo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -309,13 +378,13 @@ export default function Home() {
               size="lg"
               className="animate-pulse-glow from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-lg hover:to-[oklch(0.45_0.10_230)]/90"
             >
-              <Link href="/auth/sign-up">
-                Get Early Access
+              <Link href="/demo">
+                Start Demo
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg">
-              <Link href="/demo">Try Demo</Link>
+              <Link href="/auth/sign-up">Get Early Access</Link>
             </Button>
           </div>
 
