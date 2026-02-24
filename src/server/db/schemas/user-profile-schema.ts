@@ -3,6 +3,7 @@ import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { user } from "./auth-schema";
 import {
+  accountTypeEnum,
   communicationPreferenceEnum,
   householdStatusEnum,
   primaryGoalEnum,
@@ -24,6 +25,7 @@ export const userProfile = pgTable(
     communicationPreference: communicationPreferenceEnum(
       "communication_preference",
     ).notNull(),
+    accountType: accountTypeEnum("account_type").notNull().default("client"),
     onboardingCompletedAt: timestamp("onboarding_completed_at", {
       withTimezone: true,
     }).notNull(),

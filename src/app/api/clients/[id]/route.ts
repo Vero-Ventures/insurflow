@@ -13,7 +13,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  validateSession,
+  validateAdvisorSession,
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
@@ -106,7 +106,7 @@ export async function GET(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
 
@@ -163,7 +163,7 @@ export async function PATCH(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
 
@@ -248,7 +248,7 @@ export async function DELETE(
   });
 
   try {
-    const sessionResult = await validateSession(logger);
+    const sessionResult = await validateAdvisorSession(logger);
     if ("error" in sessionResult) return sessionResult.error;
     const { session } = sessionResult;
 

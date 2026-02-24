@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  ACCOUNT_TYPE_OPTIONS,
   COMMUNICATION_PREFERENCE_OPTIONS,
   HOUSEHOLD_STATUS_OPTIONS,
   PRIMARY_GOAL_OPTIONS,
@@ -27,14 +28,17 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
   const [firstName, setFirstName] = useState(initialProfile.firstName ?? "");
   const [lastName, setLastName] = useState(initialProfile.lastName ?? "");
   const [state, setState] = useState(initialProfile.state ?? "");
-  const [householdStatus, setHouseholdStatus] = useState(
-    initialProfile.householdStatus ?? "",
-  );
-  const [primaryGoal, setPrimaryGoal] = useState(
-    initialProfile.primaryGoal ?? "",
-  );
-  const [communicationPreference, setCommunicationPreference] = useState(
-    initialProfile.communicationPreference ?? "",
+  const [householdStatus, setHouseholdStatus] = useState<
+    OnboardingProfileInput["householdStatus"] | ""
+  >(initialProfile.householdStatus ?? "");
+  const [primaryGoal, setPrimaryGoal] = useState<
+    OnboardingProfileInput["primaryGoal"] | ""
+  >(initialProfile.primaryGoal ?? "");
+  const [communicationPreference, setCommunicationPreference] = useState<
+    OnboardingProfileInput["communicationPreference"] | ""
+  >(initialProfile.communicationPreference ?? "");
+  const [accountType, setAccountType] = useState(
+    initialProfile.accountType ?? "client",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,6 +57,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
           householdStatus,
           primaryGoal,
           communicationPreference,
+          accountType,
         }),
       });
 
@@ -144,12 +149,41 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
               <select
                 id="household-status"
                 value={householdStatus}
-                onChange={(event) => setHouseholdStatus(event.target.value)}
+                onChange={(event) =>
+                  setHouseholdStatus(
+                    event.target.value as
+                      | OnboardingProfileInput["householdStatus"]
+                      | "",
+                  )
+                }
                 className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 required
               >
                 <option value="">Select status</option>
                 {HOUSEHOLD_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="account-type">
+                Account type
+              </label>
+              <select
+                id="account-type"
+                value={accountType}
+                onChange={(event) =>
+                  setAccountType(
+                    event.target.value as OnboardingProfileInput["accountType"],
+                  )
+                }
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                required
+              >
+                {ACCOUNT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -165,7 +199,11 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
                 id="communication"
                 value={communicationPreference}
                 onChange={(event) =>
-                  setCommunicationPreference(event.target.value)
+                  setCommunicationPreference(
+                    event.target.value as
+                      | OnboardingProfileInput["communicationPreference"]
+                      | "",
+                  )
                 }
                 className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 required
@@ -187,7 +225,13 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
             <select
               id="primary-goal"
               value={primaryGoal}
-              onChange={(event) => setPrimaryGoal(event.target.value)}
+              onChange={(event) =>
+                setPrimaryGoal(
+                  event.target.value as
+                    | OnboardingProfileInput["primaryGoal"]
+                    | "",
+                )
+              }
               className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               required
             >

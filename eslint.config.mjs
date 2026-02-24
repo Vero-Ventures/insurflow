@@ -55,6 +55,8 @@ const eslintConfig = defineConfig([
     // Cloudflare Workers build output:
     ".open-next/**",
     ".wrangler/**",
+    // Local linked worktrees can contain generated artifacts.
+    ".worktrees/**",
   ]),
 ]);
 

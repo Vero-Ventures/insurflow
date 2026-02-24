@@ -1,5 +1,8 @@
 import { getSession, type Session } from "@/server/better-auth/server";
 import { createLogger, type Logger } from "@/server/axiom";
+import { getDb } from "@/server/db";
+import { userProfile } from "@/server/db/schemas";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { validateUUID, verifyClientOwnership } from "./client-helpers";
 
@@ -175,6 +178,25 @@ export async function validateSession(
   return { session };
 }
 
+export async function validateAdvisorSession(
+  logger: Logger,
+): Promise<{ session: Session } | { error: NextResponse }> {
+  const sessionResult = await validateSession(logger);
+  if ("error" in sessionResult) {
+    return sessionResult;
+  }
+
+  const advisorGuard = await requireAdvisorAccount(
+    logger,
+    sessionResult.session,
+  );
+  if (advisorGuard) {
+    return { error: advisorGuard };
+  }
+
+  return sessionResult;
+}
+
 /**
  * Shared helper for parsing JSON body with error handling
  * Returns the parsed body or an error response
@@ -211,5 +233,29 @@ export async function handleValidationError(
       details: error.format(),
     },
     { status: 400 },
+  );
+}
+
+export async function requireAdvisorAccount(
+  logger: Logger,
+  session: Session,
+): Promise<NextResponse | null> {
+  const db = getDb();
+  const profile = await db.query.userProfile.findFirst({
+    where: eq(userProfile.userId, session.user.id),
+    columns: { accountType: true },
+  });
+
+  if (profile?.accountType === "advisor") {
+    return null;
+  }
+
+  await logger.warn("Forbidden: advisor account required", {
+    statusCode: 403,
+  });
+
+  return NextResponse.json(
+    { error: "Advisor account required" },
+    { status: 403 },
   );
 }

@@ -67,6 +67,10 @@ export default async function OnboardingPage() {
               | "phone"
               | "sms"
               | undefined,
+            accountType: profile?.accountType as
+              | "client"
+              | "advisor"
+              | undefined,
           }}
         />
       </div>

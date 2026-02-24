@@ -28,6 +28,7 @@ export {
   householdStatusEnum,
   primaryGoalEnum,
   communicationPreferenceEnum,
+  accountTypeEnum,
   assetTypeEnum,
   debtTypeEnum,
   beneficiaryRelationshipEnum,

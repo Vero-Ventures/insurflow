@@ -95,6 +95,10 @@ export default function ClientsPage() {
           if (response.status === 401) {
             throw new Error("Please sign in to view your clients");
           }
+          if (response.status === 403) {
+            router.replace("/dashboard");
+            return;
+          }
           if (response.status === 500) {
             throw new Error(
               "Server error. Please try again later or contact support.",
@@ -119,7 +123,7 @@ export default function ClientsPage() {
     }
 
     fetchClients();
-  }, []);
+  }, [router]);
 
   // Combine real clients with optimistic clients
   const allClients = useMemo(() => {
