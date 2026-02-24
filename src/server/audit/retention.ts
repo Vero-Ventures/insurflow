@@ -18,7 +18,7 @@
  * ```
  */
 
-import { lt } from "drizzle-orm";
+import { inArray, lt } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { auditLog } from "@/server/db/schemas";
 
@@ -79,9 +79,10 @@ export interface CleanupResult {
  * falling back to DEFAULT_RETENTION_DAYS.
  */
 export function getRetentionPolicy(): RetentionPolicy {
-  const envDays = process.env.AUDIT_LOG_RETENTION_DAYS;
-  const retentionDays = envDays
-    ? parseInt(envDays, 10)
+  const envDaysRaw = process.env.AUDIT_LOG_RETENTION_DAYS;
+  const envDaysParsed = envDaysRaw ? parseInt(envDaysRaw, 10) : NaN;
+  const retentionDays = !isNaN(envDaysParsed)
+    ? envDaysParsed
     : DEFAULT_RETENTION_DAYS;
 
   // Disable retention if set to 0 or negative
@@ -179,9 +180,8 @@ export async function cleanupOldAuditLogs(
     };
   }
 
-  // Delete in batch
-  // Using raw SQL for IN clause since Drizzle doesn't have a simple way for this
-  await db.delete(auditLog).where(lt(auditLog.createdAt, cutoffDate));
+  // Delete in batch using inArray to respect batch size
+  await db.delete(auditLog).where(inArray(auditLog.id, idsToDelete));
 
   return {
     deletedCount: idsToDelete.length,

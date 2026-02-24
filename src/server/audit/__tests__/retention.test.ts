@@ -1,5 +1,34 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { getRetentionPolicy, calculateCutoffDate } from "../retention";
+import {
+  getRetentionPolicy,
+  calculateCutoffDate,
+  cleanupOldAuditLogs,
+  runFullCleanup,
+} from "../retention";
+
+// Mock data for tests
+const mockSelectResult: { id: string }[] = [];
+const mockDelete = vi.fn(() => ({ where: vi.fn(() => Promise.resolve()) }));
+const mockLimit = vi.fn(() => Promise.resolve(mockSelectResult));
+const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+const mockFrom = vi.fn(() => ({ where: mockWhere }));
+const mockSelect = vi.fn(() => ({ from: mockFrom }));
+
+// Mock the database module
+vi.mock("@/server/db", () => ({
+  getDb: vi.fn(() => ({
+    select: mockSelect,
+    delete: mockDelete,
+  })),
+}));
+
+// Mock the schema
+vi.mock("@/server/db/schemas", () => ({
+  auditLog: {
+    id: "id",
+    createdAt: "createdAt",
+  },
+}));
 
 describe("getRetentionPolicy", () => {
   const originalEnv = process.env;
@@ -44,8 +73,9 @@ describe("getRetentionPolicy", () => {
   it("handles non-numeric values by using default", () => {
     process.env.AUDIT_LOG_RETENTION_DAYS = "invalid";
     const policy = getRetentionPolicy();
-    // parseInt("invalid") returns NaN, which becomes default
-    expect(policy.enabled).toBe(false);
+    // parseInt("invalid") returns NaN, which falls back to default (90 days)
+    expect(policy.retentionDays).toBe(90);
+    expect(policy.enabled).toBe(true);
   });
 });
 
@@ -90,6 +120,164 @@ describe("calculateCutoffDate", () => {
     const cutoff = calculateCutoffDate(0);
 
     const diffMs = Math.abs(cutoff.getTime() - now.getTime());
+    expect(diffMs).toBeLessThan(1000);
+  });
+});
+
+describe("cleanupOldAuditLogs", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    // Reset mock to return empty array by default
+    mockLimit.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("returns zero count when retention is disabled (0 days)", async () => {
+    const result = await cleanupOldAuditLogs({ retentionDays: 0 });
+
+    expect(result.deletedCount).toBe(0);
+    expect(result.hasMore).toBe(false);
+    expect(result.dryRun).toBe(false);
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("returns zero count when no records to delete", async () => {
+    mockLimit.mockResolvedValue([]);
+
+    const result = await cleanupOldAuditLogs({ retentionDays: 90 });
+
+    expect(result.deletedCount).toBe(0);
+    expect(result.hasMore).toBe(false);
+  });
+
+  it("deletes records older than retention period", async () => {
+    mockLimit.mockResolvedValue([{ id: "log-1" }, { id: "log-2" }]);
+
+    const result = await cleanupOldAuditLogs({ retentionDays: 90 });
+
+    expect(result.deletedCount).toBe(2);
+    expect(result.hasMore).toBe(false);
+    expect(result.dryRun).toBe(false);
+    expect(mockDelete).toHaveBeenCalled();
+  });
+
+  it("reports hasMore when batch limit is reached", async () => {
+    // Return batchSize + 1 results to indicate there are more
+    const manyRecords = Array.from({ length: 101 }, (_, i) => ({
+      id: `log-${i}`,
+    }));
+    mockLimit.mockResolvedValue(manyRecords);
+
+    const result = await cleanupOldAuditLogs({
+      retentionDays: 90,
+      batchSize: 100,
+    });
+
+    expect(result.deletedCount).toBe(100);
+    expect(result.hasMore).toBe(true);
+  });
+
+  it("respects custom batch size", async () => {
+    const records = [{ id: "log-1" }, { id: "log-2" }, { id: "log-3" }];
+    mockLimit.mockResolvedValue(records);
+
+    await cleanupOldAuditLogs({ retentionDays: 90, batchSize: 50 });
+
+    expect(mockLimit).toHaveBeenCalledWith(51); // batchSize + 1
+  });
+
+  describe("dry run mode", () => {
+    it("counts records without deleting in dry run mode", async () => {
+      mockLimit.mockResolvedValue([
+        { id: "log-1" },
+        { id: "log-2" },
+        { id: "log-3" },
+      ]);
+
+      const result = await cleanupOldAuditLogs({
+        retentionDays: 90,
+        dryRun: true,
+      });
+
+      expect(result.deletedCount).toBe(3);
+      expect(result.dryRun).toBe(true);
+      expect(mockDelete).not.toHaveBeenCalled();
+    });
+
+    it("reports hasMore correctly in dry run mode", async () => {
+      const manyRecords = Array.from({ length: 1001 }, (_, i) => ({
+        id: `log-${i}`,
+      }));
+      mockLimit.mockResolvedValue(manyRecords);
+
+      const result = await cleanupOldAuditLogs({
+        retentionDays: 90,
+        batchSize: 1000,
+        dryRun: true,
+      });
+
+      expect(result.deletedCount).toBe(1000);
+      expect(result.hasMore).toBe(true);
+    });
+  });
+});
+
+describe("runFullCleanup", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    mockLimit.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("returns zero when no records to delete", async () => {
+    mockLimit.mockResolvedValue([]);
+
+    const result = await runFullCleanup({ retentionDays: 90 });
+
+    expect(result.totalDeleted).toBe(0);
+    expect(result.batches).toBe(1);
+  });
+
+  it("runs multiple batches until all records deleted", async () => {
+    // First call returns batch + 1 (indicating more)
+    // Second call returns batch + 1 (indicating more)
+    // Third call returns empty (done)
+    mockLimit
+      .mockResolvedValueOnce([{ id: "log-1" }, { id: "log-2" }])
+      .mockResolvedValueOnce([{ id: "log-3" }])
+      .mockResolvedValueOnce([]);
+
+    const result = await runFullCleanup({ retentionDays: 90, batchSize: 1 });
+
+    expect(result.batches).toBeGreaterThanOrEqual(2);
+    expect(mockSelect).toHaveBeenCalled();
+  });
+
+  it("respects retention days option", async () => {
+    mockLimit.mockResolvedValue([]);
+
+    const result = await runFullCleanup({ retentionDays: 365 });
+
+    expect(result.totalDeleted).toBe(0);
+    // Cutoff date should be approximately 365 days ago
+    const expectedCutoff = new Date();
+    expectedCutoff.setDate(expectedCutoff.getDate() - 365);
+    const diffMs = Math.abs(
+      result.cutoffDate.getTime() - expectedCutoff.getTime(),
+    );
     expect(diffMs).toBeLessThan(1000);
   });
 });

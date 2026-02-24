@@ -8,12 +8,14 @@ import {
   createAuditLogger,
 } from "../index";
 
+// Create mock functions we can inspect
+const mockValues = vi.fn(() => Promise.resolve());
+const mockInsert = vi.fn(() => ({ values: mockValues }));
+
 // Mock the database module
 vi.mock("@/server/db", () => ({
   getDb: vi.fn(() => ({
-    insert: vi.fn(() => ({
-      values: vi.fn(() => Promise.resolve()),
-    })),
+    insert: mockInsert,
   })),
 }));
 
@@ -288,6 +290,284 @@ describe("AuditLogger", () => {
     logger.setContext({ ipAddress: "192.168.1.1" });
     // Context update doesn't throw
     expect(logger).toBeInstanceOf(AuditLogger);
+  });
+
+  describe("logCreate", () => {
+    it("logs create action with sanitized values", async () => {
+      const logger = new AuditLogger({
+        userId: "user-123",
+        ipAddress: "192.168.1.1",
+        userAgent: "Test Agent",
+        requestId: "req-456",
+      });
+
+      await logger.logCreate("client", "client-001", {
+        id: "client-001",
+        name: "John Doe",
+        email: "john@example.com",
+      });
+
+      expect(mockInsert).toHaveBeenCalled();
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: "client",
+          entityId: "client-001",
+          action: "create",
+          oldValues: null,
+          newValues: expect.objectContaining({
+            id: "client-001",
+            name: "John Doe",
+            email: "john@example.com",
+          }),
+          changedFields: null,
+          userId: "user-123",
+          ipAddress: "192.168.1.1",
+          userAgent: "Test Agent",
+          requestId: "req-456",
+        }),
+      );
+    });
+
+    it("logs create action with metadata", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logCreate(
+        "client",
+        "client-001",
+        { id: "client-001", name: "Jane Doe" },
+        { metadata: { source: "import", batchId: "batch-123" } },
+      );
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "create",
+          metadata: { source: "import", batchId: "batch-123" },
+        }),
+      );
+    });
+
+    it("sanitizes sensitive fields in new values", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logCreate("client", "client-001", {
+        id: "client-001",
+        name: "John",
+        password: "secret123",
+        apiToken: "abc123",
+      });
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          newValues: {
+            id: "client-001",
+            name: "John",
+          },
+        }),
+      );
+    });
+  });
+
+  describe("logUpdate", () => {
+    it("logs update action with changed fields detected", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logUpdate(
+        "client",
+        "client-001",
+        { id: "client-001", name: "John", age: 30 },
+        { id: "client-001", name: "Jane", age: 30 },
+      );
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: "client",
+          entityId: "client-001",
+          action: "update",
+          changedFields: ["name"],
+        }),
+      );
+    });
+
+    it("skips logging when no fields changed", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logUpdate(
+        "client",
+        "client-001",
+        { id: "client-001", name: "John" },
+        { id: "client-001", name: "John" },
+      );
+
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("logs update with metadata", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logUpdate(
+        "client",
+        "client-001",
+        { name: "John" },
+        { name: "Jane" },
+        { metadata: { reason: "Name correction" } },
+      );
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "update",
+          metadata: { reason: "Name correction" },
+        }),
+      );
+    });
+  });
+
+  describe("logDelete", () => {
+    it("logs delete action with old values", async () => {
+      const logger = new AuditLogger({
+        userId: "user-123",
+        ipAddress: "10.0.0.1",
+      });
+
+      await logger.logDelete("client", "client-001", {
+        id: "client-001",
+        name: "John Doe",
+        email: "john@example.com",
+      });
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: "client",
+          entityId: "client-001",
+          action: "delete",
+          oldValues: expect.objectContaining({
+            id: "client-001",
+            name: "John Doe",
+            email: "john@example.com",
+          }),
+          newValues: null,
+          changedFields: null,
+          userId: "user-123",
+          ipAddress: "10.0.0.1",
+        }),
+      );
+    });
+
+    it("logs delete with reason metadata", async () => {
+      const logger = new AuditLogger({ userId: "admin-001" });
+
+      await logger.logDelete(
+        "client",
+        "client-001",
+        { id: "client-001", name: "Test Client" },
+        { metadata: { reason: "User requested deletion" } },
+      );
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "delete",
+          metadata: { reason: "User requested deletion" },
+        }),
+      );
+    });
+  });
+
+  describe("logRestore", () => {
+    it("logs restore action with restored values", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      await logger.logRestore("client", "client-001", {
+        id: "client-001",
+        name: "John Doe",
+        deletedAt: null,
+      });
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: "client",
+          entityId: "client-001",
+          action: "restore",
+          oldValues: null,
+          newValues: expect.objectContaining({
+            id: "client-001",
+            name: "John Doe",
+            deletedAt: null,
+          }),
+          changedFields: null,
+        }),
+      );
+    });
+
+    it("logs restore with metadata", async () => {
+      const logger = new AuditLogger({ userId: "admin-001" });
+
+      await logger.logRestore(
+        "client",
+        "client-001",
+        { id: "client-001", name: "Restored Client" },
+        { metadata: { reason: "Accidental deletion" } },
+      );
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "restore",
+          metadata: { reason: "Accidental deletion" },
+        }),
+      );
+    });
+  });
+
+  describe("error handling", () => {
+    it("does not throw when database insert fails", async () => {
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      mockValues.mockRejectedValueOnce(new Error("Database error"));
+
+      const logger = new AuditLogger({ userId: "user-123" });
+
+      // Should not throw
+      await expect(
+        logger.logCreate("client", "client-001", { name: "John" }),
+      ).resolves.toBeUndefined();
+
+      expect(consoleError).toHaveBeenCalledWith(
+        "[AuditLogger] Failed to write audit log:",
+        expect.any(Error),
+      );
+
+      consoleError.mockRestore();
+    });
+  });
+
+  describe("context handling", () => {
+    it("uses null for missing context values", async () => {
+      const logger = new AuditLogger(); // No context provided
+
+      await logger.logCreate("client", "client-001", { name: "John" });
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: null,
+          ipAddress: null,
+          userAgent: null,
+          requestId: null,
+        }),
+      );
+    });
+
+    it("merges context when setContext is called", async () => {
+      const logger = new AuditLogger({ userId: "user-123" });
+      logger.setContext({ ipAddress: "192.168.1.1" });
+
+      await logger.logCreate("client", "client-001", { name: "John" });
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          ipAddress: "192.168.1.1",
+        }),
+      );
+    });
   });
 });
 

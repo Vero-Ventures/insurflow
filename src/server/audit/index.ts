@@ -101,26 +101,50 @@ export function detectChangedFields(
 }
 
 /**
- * Simple equality check for values.
- * Handles primitives, null, undefined, dates, and shallow object comparison.
+ * Deep equality check for values.
+ * Handles primitives, null, undefined, dates, arrays, and objects.
+ *
+ * Note: This is more reliable than JSON.stringify comparison because
+ * it handles key ordering differences and special types correctly.
  */
 function isEqual(a: unknown, b: unknown): boolean {
-  // Handle null/undefined
+  // Handle strict equality (primitives, same reference, null, undefined)
   if (a === b) return true;
+
+  // Handle null/undefined
   if (a === null || b === null) return false;
   if (a === undefined || b === undefined) return false;
+
+  // Handle different types
+  if (typeof a !== typeof b) return false;
 
   // Handle dates
   if (a instanceof Date && b instanceof Date) {
     return a.getTime() === b.getTime();
   }
 
-  // Handle objects (shallow comparison)
-  if (typeof a === "object" && typeof b === "object") {
-    return JSON.stringify(a) === JSON.stringify(b);
+  // Handle arrays
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((item, index) => isEqual(item, b[index]));
   }
 
-  return a === b;
+  // Handle objects
+  if (typeof a === "object" && typeof b === "object") {
+    const aObj = a as Record<string, unknown>;
+    const bObj = b as Record<string, unknown>;
+
+    const aKeys = Object.keys(aObj);
+    const bKeys = Object.keys(bObj);
+
+    // Check same number of keys
+    if (aKeys.length !== bKeys.length) return false;
+
+    // Check all keys exist and values are equal
+    return aKeys.every((key) => key in bObj && isEqual(aObj[key], bObj[key]));
+  }
+
+  return false;
 }
 
 /**

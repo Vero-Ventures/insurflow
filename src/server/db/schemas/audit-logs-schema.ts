@@ -82,7 +82,7 @@ export const auditLog = pgTable(
     action: auditActionEnum("action").notNull(),
 
     /** The user who performed the action (null for system changes) */
-    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
 
     /** Previous values before the change (null for create) */
     oldValues: jsonb("old_values").$type<Record<string, unknown> | null>(),
@@ -103,11 +103,11 @@ export const auditLog = pgTable(
     requestId: text("request_id"),
 
     /** Additional metadata (e.g., reason for change, batch operation ID) */
-    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
 
     /** Timestamp of the change (immutable, no updatedAt) */
     createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
+      .defaultNow()
       .notNull(),
   },
   (t) => [
