@@ -50,6 +50,13 @@
       "when": 1771575855416,
       "tag": "0006_jazzy_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771890762260,
+      "tag": "0008_awesome_mandrill",
+      "breakpoints": true
     }
   ]
 }
