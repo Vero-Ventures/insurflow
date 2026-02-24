@@ -5,6 +5,7 @@ import { and, count, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/api/route-helpers";
+import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
 
 /**
  * Pagination defaults
@@ -77,6 +78,20 @@ export async function GET(
 
     const { entityType, entityId } = pathResult.data;
     logger.addContext({ entityType, entityId });
+
+    // Authorization: verify user has access to this entity
+    const hasAccess = await verifyAuditEntityAccess(
+      entityType,
+      entityId,
+      session.user.id,
+    );
+
+    if (!hasAccess) {
+      await logger.warn("Access denied to entity audit history", {
+        statusCode: 403,
+      });
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
 
     // Parse pagination parameters
     const url = new URL(request.url);

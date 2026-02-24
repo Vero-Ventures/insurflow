@@ -3,12 +3,22 @@ import {
   auditLog,
   auditEntityTypeEnum,
   auditActionEnum,
+  client,
+  asset,
+  debt,
+  beneficiary,
+  business,
+  policy,
+  keyPerson,
+  shareholder,
+  corporateInsuranceNeed,
 } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/api/route-helpers";
+import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
 
 /**
  * Pagination defaults and limits
@@ -29,7 +39,7 @@ const auditLogQuerySchema = z.object({
   entityType: z.enum(auditEntityTypeEnum.enumValues).optional(),
   entityId: z.string().uuid().optional(),
   action: z.enum(auditActionEnum.enumValues).optional(),
-  userId: z.string().uuid().optional(),
+  userId: z.string().optional(),
 
   // Date range
   startDate: z
@@ -54,6 +64,11 @@ const auditLogQuerySchema = z.object({
  * - userId: Filter by user who made the change
  * - startDate: Filter changes after this date (YYYY-MM-DD)
  * - endDate: Filter changes before this date (YYYY-MM-DD)
+ *
+ * Authorization:
+ * - Users can only see audit logs for entities they own
+ * - If entityId is specified, access is verified for that specific entity
+ * - Otherwise, results are filtered to only show owned entities
  */
 export async function GET(request: Request) {
   const logger = createLogger({ endpoint: "/api/audit-logs", method: "GET" });
@@ -116,8 +131,44 @@ export async function GET(request: Request) {
 
     const db = getDb();
 
+    // =========================================================================
+    // AUTHORIZATION
+    // =========================================================================
+    // If a specific entityId is requested, verify access to that entity.
+    // Otherwise, we'll filter results to only show owned entities.
+
+    if (entityId && entityType) {
+      const hasAccess = await verifyAuditEntityAccess(
+        entityType,
+        entityId,
+        session.user.id,
+      );
+
+      if (!hasAccess) {
+        await logger.warn("Access denied to entity audit logs", {
+          statusCode: 403,
+          entityType,
+          entityId,
+        });
+        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
+    }
+
+    // Get all entity IDs the user has access to for filtering
+    // This is more efficient than checking each log entry individually
+    const ownedEntityIds = await getOwnedEntityIds(db, session.user.id);
+
     // Build dynamic where clause
     const conditions = [];
+
+    // Authorization filter: only show logs for owned entities or user's own actions
+    const authConditions = [
+      // Logs for entities the user owns
+      inArray(auditLog.entityId, ownedEntityIds),
+      // OR logs where the user was the actor (their own actions)
+      eq(auditLog.userId, session.user.id),
+    ];
+    conditions.push(or(...authConditions));
 
     if (entityType) {
       conditions.push(eq(auditLog.entityType, entityType));
@@ -206,4 +257,105 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
+}
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+type DbClient = ReturnType<typeof getDb>;
+
+/**
+ * Gets all entity IDs that a user has access to for audit log filtering.
+ *
+ * This collects IDs from:
+ * - Clients owned by the user
+ * - Assets, debts, beneficiaries, policies belonging to those clients
+ * - Businesses belonging to those clients
+ * - Key persons, shareholders, insurance needs belonging to those businesses
+ * - The user's own profile ID
+ */
+async function getOwnedEntityIds(
+  db: DbClient,
+  userId: string,
+): Promise<string[]> {
+  const entityIds: string[] = [];
+
+  // Add user's own ID for user_profile entity type
+  entityIds.push(userId);
+
+  // Get all client IDs owned by the user
+  const clients = await db
+    .select({ id: client.id })
+    .from(client)
+    .where(eq(client.userId, userId));
+
+  const clientIds = clients.map((c) => c.id);
+  entityIds.push(...clientIds);
+
+  if (clientIds.length === 0) {
+    return entityIds;
+  }
+
+  // Get all assets for these clients
+  const assets = await db
+    .select({ id: asset.id })
+    .from(asset)
+    .where(inArray(asset.clientId, clientIds));
+  entityIds.push(...assets.map((a) => a.id));
+
+  // Get all debts for these clients
+  const debts = await db
+    .select({ id: debt.id })
+    .from(debt)
+    .where(inArray(debt.clientId, clientIds));
+  entityIds.push(...debts.map((d) => d.id));
+
+  // Get all beneficiaries for these clients
+  const beneficiaries = await db
+    .select({ id: beneficiary.id })
+    .from(beneficiary)
+    .where(inArray(beneficiary.clientId, clientIds));
+  entityIds.push(...beneficiaries.map((b) => b.id));
+
+  // Get all policies for these clients
+  const policies = await db
+    .select({ id: policy.id })
+    .from(policy)
+    .where(inArray(policy.clientId, clientIds));
+  entityIds.push(...policies.map((p) => p.id));
+
+  // Get all businesses for these clients
+  const businesses = await db
+    .select({ id: business.id })
+    .from(business)
+    .where(inArray(business.clientId, clientIds));
+
+  const businessIds = businesses.map((b) => b.id);
+  entityIds.push(...businessIds);
+
+  if (businessIds.length > 0) {
+    // Get key persons for these businesses
+    const keyPersons = await db
+      .select({ id: keyPerson.id })
+      .from(keyPerson)
+      .where(inArray(keyPerson.businessId, businessIds));
+    entityIds.push(...keyPersons.map((k) => k.id));
+
+    // Get shareholders for these businesses
+    const shareholders = await db
+      .select({ id: shareholder.id })
+      .from(shareholder)
+      .where(inArray(shareholder.businessId, businessIds));
+    entityIds.push(...shareholders.map((s) => s.id));
+
+    // Get corporate insurance needs for these businesses
+    const insuranceNeeds = await db
+      .select({ id: corporateInsuranceNeed.id })
+      .from(corporateInsuranceNeed)
+      .where(inArray(corporateInsuranceNeed.businessId, businessIds));
+    entityIds.push(...insuranceNeeds.map((i) => i.id));
+  }
+
+  return entityIds;
 }
