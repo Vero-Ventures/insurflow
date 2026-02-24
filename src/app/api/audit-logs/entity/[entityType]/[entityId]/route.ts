@@ -6,6 +6,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/api/route-helpers";
 import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
+import {
+  buildPaginationResponse,
+  calculateOffset,
+} from "@/lib/api/audit-helpers";
 
 /**
  * Pagination defaults
@@ -114,7 +118,7 @@ export async function GET(
     }
 
     const { page, limit } = paginationResult.data;
-    const offset = (page - 1) * limit;
+    const offset = calculateOffset(page, limit);
 
     const db = getDb();
     const whereClause = and(
@@ -146,28 +150,21 @@ export async function GET(
     });
 
     const total = totalResult[0]?.count ?? 0;
-    const totalPages = Math.ceil(total / limit);
+    const response = buildPaginationResponse(history, { page, limit }, total);
 
     await logger.info("Entity audit history fetched successfully", {
       statusCode: 200,
       entryCount: history.length,
       total,
       page,
-      totalPages,
+      totalPages: response.pagination.totalPages,
     });
 
     return NextResponse.json({
       entityType,
       entityId,
-      history,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      history: response.data,
+      pagination: response.pagination,
     });
   } catch (error) {
     await logger.error(

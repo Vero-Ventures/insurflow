@@ -20,6 +20,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/api/route-helpers";
 import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
+import {
+  buildPaginationResponse,
+  calculateOffset,
+} from "@/lib/api/audit-helpers";
 
 /**
  * Pagination defaults and limits
@@ -117,7 +121,7 @@ export async function GET(request: Request) {
       startDate,
       endDate,
     } = queryResult.data;
-    const offset = (page - 1) * limit;
+    const offset = calculateOffset(page, limit);
 
     logger.addContext({
       page,
@@ -167,16 +171,10 @@ export async function GET(request: Request) {
       conditions.push(inArray(auditLog.entityId, ownedEntityIds));
     } else {
       // User has no owned entities - return empty results
+      const response = buildPaginationResponse([], { page, limit }, 0);
       return NextResponse.json({
-        logs: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
+        logs: response.data,
+        pagination: response.pagination,
         filters: {
           entityType,
           entityId,
@@ -236,26 +234,19 @@ export async function GET(request: Request) {
     });
 
     const total = totalResult[0]?.count ?? 0;
-    const totalPages = Math.ceil(total / limit);
+    const response = buildPaginationResponse(logs, { page, limit }, total);
 
     await logger.info("Audit logs fetched successfully", {
       statusCode: 200,
       logCount: logs.length,
       total,
       page,
-      totalPages,
+      totalPages: response.pagination.totalPages,
     });
 
     return NextResponse.json({
-      logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      logs: response.data,
+      pagination: response.pagination,
       filters: {
         entityType,
         entityId,

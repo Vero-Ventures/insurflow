@@ -19,6 +19,11 @@ vi.mock("@/server/db", () => ({
   })),
 }));
 
+// Helper to create test requests with headers
+function createTestRequest(headers: Record<string, string> = {}): Request {
+  return new Request("http://localhost", { headers });
+}
+
 describe("detectChangedFields", () => {
   it("returns empty array when both values are null", () => {
     const result = detectChangedFields(null, null);
@@ -171,76 +176,69 @@ describe("sanitizeForAudit", () => {
 
 describe("getClientIp", () => {
   it("returns null when no IP headers are present", () => {
-    const request = new Request("http://localhost", {
-      headers: {},
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(createTestRequest());
     expect(result).toBeNull();
   });
 
   it("extracts IP from x-forwarded-for header", () => {
-    const request = new Request("http://localhost", {
-      headers: { "x-forwarded-for": "192.168.1.1" },
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(
+      createTestRequest({ "x-forwarded-for": "192.168.1.1" }),
+    );
     expect(result).toBe("192.168.1.1");
   });
 
   it("extracts first IP from x-forwarded-for with multiple IPs", () => {
-    const request = new Request("http://localhost", {
-      headers: { "x-forwarded-for": "192.168.1.1, 10.0.0.1, 172.16.0.1" },
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(
+      createTestRequest({
+        "x-forwarded-for": "192.168.1.1, 10.0.0.1, 172.16.0.1",
+      }),
+    );
     expect(result).toBe("192.168.1.1");
   });
 
   it("trims whitespace from IP addresses", () => {
-    const request = new Request("http://localhost", {
-      headers: { "x-forwarded-for": "  192.168.1.1  " },
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(
+      createTestRequest({ "x-forwarded-for": "  192.168.1.1  " }),
+    );
     expect(result).toBe("192.168.1.1");
   });
 
   it("extracts IP from cf-connecting-ip header (Cloudflare)", () => {
-    const request = new Request("http://localhost", {
-      headers: { "cf-connecting-ip": "203.0.113.50" },
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(
+      createTestRequest({ "cf-connecting-ip": "203.0.113.50" }),
+    );
     expect(result).toBe("203.0.113.50");
   });
 
   it("extracts IP from x-real-ip header", () => {
-    const request = new Request("http://localhost", {
-      headers: { "x-real-ip": "198.51.100.25" },
-    });
-    const result = getClientIp(request);
+    const result = getClientIp(
+      createTestRequest({ "x-real-ip": "198.51.100.25" }),
+    );
     expect(result).toBe("198.51.100.25");
   });
 
   it("prefers x-forwarded-for over other headers", () => {
-    const request = new Request("http://localhost", {
-      headers: {
+    const result = getClientIp(
+      createTestRequest({
         "x-forwarded-for": "192.168.1.1",
         "cf-connecting-ip": "203.0.113.50",
         "x-real-ip": "198.51.100.25",
-      },
-    });
-    const result = getClientIp(request);
+      }),
+    );
     expect(result).toBe("192.168.1.1");
   });
 });
 
 describe("extractAuditContext", () => {
   it("extracts all context from request", () => {
-    const request = new Request("http://localhost", {
-      headers: {
+    const result = extractAuditContext(
+      createTestRequest({
         "x-forwarded-for": "192.168.1.1",
         "user-agent": "Mozilla/5.0",
         "x-request-id": "req-123",
-      },
-    });
-    const result = extractAuditContext(request, "user-456");
+      }),
+      "user-456",
+    );
     expect(result).toEqual({
       userId: "user-456",
       ipAddress: "192.168.1.1",
@@ -250,8 +248,7 @@ describe("extractAuditContext", () => {
   });
 
   it("handles missing headers gracefully", () => {
-    const request = new Request("http://localhost");
-    const result = extractAuditContext(request);
+    const result = extractAuditContext(createTestRequest());
     expect(result).toEqual({
       userId: undefined,
       ipAddress: null,
@@ -261,8 +258,7 @@ describe("extractAuditContext", () => {
   });
 
   it("handles null userId", () => {
-    const request = new Request("http://localhost");
-    const result = extractAuditContext(request, null);
+    const result = extractAuditContext(createTestRequest(), null);
     expect(result.userId).toBeNull();
   });
 });
