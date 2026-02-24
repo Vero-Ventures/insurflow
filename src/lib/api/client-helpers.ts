@@ -1,6 +1,7 @@
 import { getDb } from "@/server/db";
 import {
   asset,
+  assetAllocation,
   beneficiary,
   business,
   client,
@@ -75,6 +76,7 @@ export async function verifyBusinessOwnership(
  */
 const CLIENT_OWNED_ENTITIES: AuditEntityType[] = [
   "asset",
+  "asset_allocation",
   "debt",
   "beneficiary",
   "business",
@@ -157,14 +159,6 @@ export async function verifyAuditEntityAccess(
     return !!foundClient;
   }
 
-  // Asset allocation: owned through beneficiary -> client
-  if (entityType === "asset_allocation") {
-    // Asset allocations reference beneficiaryId, look up the chain
-    // For now, deny access (would need asset_allocation table reference)
-    // This is a conservative approach - can be expanded later
-    return false;
-  }
-
   // Unknown entity type - deny by default
   return false;
 }
@@ -213,6 +207,18 @@ async function getClientIdForEntity(
         columns: { clientId: true },
       });
       return found?.clientId ?? null;
+    }
+    case "asset_allocation": {
+      const allocation = await db.query.assetAllocation.findFirst({
+        where: eq(assetAllocation.id, entityId),
+        columns: { beneficiaryId: true },
+      });
+      if (!allocation) return null;
+      const ben = await db.query.beneficiary.findFirst({
+        where: eq(beneficiary.id, allocation.beneficiaryId),
+        columns: { clientId: true },
+      });
+      return ben?.clientId ?? null;
     }
     default:
       return null;

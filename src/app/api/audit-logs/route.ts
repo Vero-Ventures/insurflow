@@ -14,7 +14,7 @@ import {
   corporateInsuranceNeed,
 } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
-import { and, count, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/api/route-helpers";
@@ -161,14 +161,31 @@ export async function GET(request: Request) {
     // Build dynamic where clause
     const conditions = [];
 
-    // Authorization filter: only show logs for owned entities or user's own actions
-    const authConditions = [
-      // Logs for entities the user owns
-      inArray(auditLog.entityId, ownedEntityIds),
-      // OR logs where the user was the actor (their own actions)
-      eq(auditLog.userId, session.user.id),
-    ];
-    conditions.push(or(...authConditions));
+    // Authorization filter: only show logs for owned entities
+    if (ownedEntityIds.length > 0) {
+      conditions.push(inArray(auditLog.entityId, ownedEntityIds));
+    } else {
+      // User has no owned entities - return empty results
+      return NextResponse.json({
+        logs: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+        filters: {
+          entityType,
+          entityId,
+          action,
+          userId,
+          startDate,
+          endDate,
+        },
+      });
+    }
 
     if (entityType) {
       conditions.push(eq(auditLog.entityType, entityType));
@@ -280,9 +297,6 @@ async function getOwnedEntityIds(
   userId: string,
 ): Promise<string[]> {
   const entityIds: string[] = [];
-
-  // Add user's own ID for user_profile entity type
-  entityIds.push(userId);
 
   // Get all client IDs owned by the user
   const clients = await db
