@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 import {
@@ -6,12 +7,17 @@ import {
   isOnboardingProfileComplete,
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
+import { resolveOnboardingAccountType } from "@/lib/role-experience";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
 import { eq } from "drizzle-orm";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string | string[] }>;
+}) {
   const session = await getSession();
 
   if (!session?.user) {
@@ -26,6 +32,16 @@ export default async function OnboardingPage() {
   if (isOnboardingProfileComplete(profile)) {
     redirect(AUTHENTICATED_HOME_ROUTE);
   }
+
+  const params = await searchParams;
+  const roleFromParams = Array.isArray(params.role)
+    ? params.role[0]
+    : params.role;
+  const roleFromCookie = (await cookies()).get("insurflow_role_intent")?.value;
+  const initialAccountType = resolveOnboardingAccountType({
+    profileAccountType: profile?.accountType,
+    roleIntent: roleFromParams ?? roleFromCookie,
+  });
 
   const prefill = deriveOnboardingPrefill(session.user.name);
 
@@ -67,10 +83,7 @@ export default async function OnboardingPage() {
               | "phone"
               | "sms"
               | undefined,
-            accountType: profile?.accountType as
-              | "client"
-              | "advisor"
-              | undefined,
+            accountType: initialAccountType,
           }}
         />
       </div>

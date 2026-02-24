@@ -42,7 +42,7 @@ export async function GET() {
       householdStatus: profile?.householdStatus ?? "",
       primaryGoal: profile?.primaryGoal ?? "",
       communicationPreference: profile?.communicationPreference ?? "",
-      accountType: profile?.accountType ?? "client",
+      accountType: profile?.accountType ?? "",
     };
 
     return NextResponse.json({

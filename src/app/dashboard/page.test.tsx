@@ -1,29 +1,24 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import DashboardPage from "@/app/dashboard/page";
+import { ADVISOR_WORKSPACE_ROUTE, DEMO_INTAKE_ROUTE } from "@/lib/app-routes";
 import {
-  DEMO_HANDOFF_ROUTE,
-  DEMO_INTAKE_ROUTE,
-  DEMO_SNAPSHOT_ROUTE,
-} from "@/lib/app-routes";
+  getDashboardExperience,
+  normalizeAccountType,
+} from "@/lib/role-experience";
 
 describe("DashboardPage", () => {
-  it("shows primary client journey actions", () => {
-    render(<DashboardPage />);
+  it("returns client dashboard experience by default", () => {
+    const accountType = normalizeAccountType(undefined) ?? "client";
+    const experience = getDashboardExperience(accountType);
 
-    const continueIntakeLink = screen.getByRole("link", {
-      name: /continue intake/i,
-    });
-    const estimateSnapshotLink = screen.getByRole("link", {
-      name: /view estimate snapshot/i,
-    });
-    const advisorHandoffLink = screen.getByRole("link", {
-      name: /advisor handoff/i,
-    });
+    expect(experience.heading).toMatch(/client journey/i);
+    expect(experience.cards[0]?.href).toBe(DEMO_INTAKE_ROUTE);
+  });
 
-    expect(continueIntakeLink.getAttribute("href")).toBe(DEMO_INTAKE_ROUTE);
-    expect(estimateSnapshotLink.getAttribute("href")).toBe(DEMO_SNAPSHOT_ROUTE);
-    expect(advisorHandoffLink.getAttribute("href")).toBe(DEMO_HANDOFF_ROUTE);
+  it("returns advisor dashboard experience", () => {
+    const experience = getDashboardExperience("advisor");
+
+    expect(experience.heading).toMatch(/advisor workspace/i);
+    expect(experience.cards[0]?.href).toBe(ADVISOR_WORKSPACE_ROUTE);
   });
 });
