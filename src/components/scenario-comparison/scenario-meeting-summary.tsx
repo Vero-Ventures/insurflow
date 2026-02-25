@@ -80,36 +80,51 @@ export function ScenarioMeetingSummary({
   });
 
   return (
-    <div className="space-y-6" data-testid="meeting-mode-summary">
-      <Card className="border-border/70">
+    <div className="space-y-4 sm:space-y-6" data-testid="meeting-mode-summary">
+      <Card className="border-border/70 shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-xl">Meeting Mode Summary</CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl">
+                Meeting Mode Summary
+              </CardTitle>
+              <p className="text-muted-foreground mt-1 max-w-2xl text-sm sm:text-base">
                 A client-friendly snapshot of coverage options for today&apos;s
                 conversation.
               </p>
             </div>
-            <Badge variant="outline" className="font-medium">
+            <Badge variant="outline" className="h-6 self-start font-medium">
               Advisor conversation view
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
             <div>
-              <p className="text-sm font-medium">Quick actions</p>
-              <p className="text-muted-foreground text-xs" aria-live="polite">
+              <p className="text-sm font-medium sm:text-base">Quick actions</p>
+              <p
+                className="text-muted-foreground text-xs sm:text-sm"
+                aria-live="polite"
+              >
                 Summary last recalculated at {recalculatedLabel}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={onRecalculate}>
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRecalculate}
+                className="w-full sm:w-auto"
+              >
                 <RotateCw className="size-4" data-icon="inline-start" />
                 Recalculate
               </Button>
-              <Button size="sm" variant="secondary" onClick={onEditAssumptions}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onEditAssumptions}
+                className="w-full sm:w-auto"
+              >
                 <SlidersHorizontal
                   className="size-4"
                   data-icon="inline-start"
@@ -145,7 +160,7 @@ export function ScenarioMeetingSummary({
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-        <Card className="border-border/70">
+        <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">
               Scenario options at a glance
@@ -158,12 +173,15 @@ export function ScenarioMeetingSummary({
                 className="border-border/60 rounded-lg border p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-medium">{scenario.name}</h3>
-                  <Badge variant="secondary" className="font-currency">
+                  <h3 className="text-base font-semibold">{scenario.name}</h3>
+                  <Badge
+                    variant="secondary"
+                    className="font-currency text-sm sm:text-base"
+                  >
                     {formatCurrency(scenario.totalCoverage)}
                   </Badge>
                 </div>
-                <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 sm:text-base">
                   <InlineFact
                     label="Life insurance"
                     value={formatCurrency(scenario.coverage.life)}
@@ -186,23 +204,25 @@ export function ScenarioMeetingSummary({
           </CardContent>
         </Card>
 
-        <Card className="border-border/70">
+        <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">
               Assumptions shown during the meeting
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/40 p-3">
-              <p className="text-sm font-medium">Confidence in this estimate</p>
-              <p className="text-muted-foreground mt-1 text-sm">
+            <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/40 p-3 sm:p-4">
+              <p className="text-sm font-medium sm:text-base">
+                Confidence in this estimate
+              </p>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
                 {confidence.note}
               </p>
             </div>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm sm:text-base">
               <p className="font-medium">Calculation assumptions</p>
-              <ul className="text-muted-foreground list-inside list-disc space-y-1">
+              <ul className="text-muted-foreground list-inside list-disc space-y-1 leading-relaxed">
                 <li>
                   Disability coverage is displayed monthly and annualized in
                   totals.
@@ -221,10 +241,10 @@ export function ScenarioMeetingSummary({
               {summaries.map((scenario) => (
                 <div
                   key={`${scenario.id}-assumptions`}
-                  className="bg-muted/40 rounded-md p-3 text-sm"
+                  className="bg-muted/40 rounded-md p-3 text-sm sm:p-4 sm:text-base"
                 >
                   <p className="font-medium">{scenario.name}</p>
-                  <p className="text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 leading-relaxed">
                     Life {formatCurrency(scenario.coverage.life)} · Disability{" "}
                     {formatCurrency(scenario.coverage.disability)}/mo · Critical
                     illness {formatCurrency(scenario.coverage.criticalIllness)}
@@ -249,12 +269,14 @@ function MetricTile({
   helper: string;
 }) {
   return (
-    <div className="bg-muted/30 rounded-lg border border-transparent p-4">
+    <div className="bg-muted/30 rounded-lg border border-transparent p-4 sm:p-5">
       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
         {label}
       </p>
-      <p className="mt-2 text-base font-semibold sm:text-lg">{value}</p>
-      <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+      <p className="mt-2 text-base font-semibold sm:text-lg lg:text-xl">
+        {value}
+      </p>
+      <p className="text-muted-foreground mt-1 text-xs leading-relaxed sm:text-sm">
         {helper}
       </p>
     </div>
@@ -263,9 +285,9 @@ function MetricTile({
 
 function InlineFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-start justify-between gap-3">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-currency font-medium">{value}</span>
+      <span className="font-currency text-right font-medium">{value}</span>
     </div>
   );
 }

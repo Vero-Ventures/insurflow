@@ -98,13 +98,14 @@ export function ScenarioComparisonView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={addScenario}
             disabled={scenarios.length >= MAX_SCENARIOS}
+            className="w-full sm:w-auto"
           >
             <Plus className="size-4" data-icon="inline-start" />
             Add Scenario
@@ -114,11 +115,17 @@ export function ScenarioComparisonView() {
             size="sm"
             onClick={removeScenario}
             disabled={scenarios.length <= MIN_SCENARIOS}
+            className="w-full sm:w-auto"
           >
             <Minus className="size-4" data-icon="inline-start" />
             Remove
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPdf}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            className="w-full sm:w-auto"
+          >
             <FileDown className="size-4" data-icon="inline-start" />
             Export PDF
           </Button>
@@ -127,6 +134,7 @@ export function ScenarioComparisonView() {
           variant={isMeetingMode ? "secondary" : "default"}
           size="sm"
           onClick={() => setIsMeetingMode((prev) => !prev)}
+          className="w-full sm:w-auto"
         >
           {isMeetingMode ? (
             <SlidersHorizontal className="size-4" data-icon="inline-start" />
