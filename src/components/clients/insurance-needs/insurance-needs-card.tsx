@@ -26,6 +26,12 @@ import type {
   ConfidenceLabel,
   ConfidenceResult,
 } from "@/lib/financial/confidence-scoring";
+import {
+  MethodologySection,
+  RateTableDisplay,
+} from "@/components/transparency";
+import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
+import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const MAX_CONFIDENCE_REASONS_TO_DISPLAY = 6;
 
@@ -39,6 +45,8 @@ interface InsuranceNeedsCardProps {
   confidence?: ConfidenceResult | null;
   /** When true, hides action buttons for read-only contexts like reports */
   isReadOnly?: boolean;
+  /** Client state code (e.g., CA) used for state-specific rate table display */
+  clientStateCode?: string;
 }
 
 function getConfidenceStyles(label: ConfidenceLabel) {
@@ -70,6 +78,7 @@ export function InsuranceNeedsCard({
   calculatedAt,
   confidence,
   isReadOnly = false,
+  clientStateCode,
 }: InsuranceNeedsCardProps) {
   if (isLoading) {
     return <InsuranceNeedsCardSkeleton />;
@@ -451,6 +460,34 @@ export function InsuranceNeedsCard({
             </ul>
           </div>
         )}
+
+        {/* Calculation Transparency */}
+        <div className="mt-6 space-y-4 border-t pt-6">
+          <MethodologySection
+            methodology={INSURANCE_NEEDS_METHODOLOGY}
+            stepValues={{
+              1: {
+                value: formatCurrency(incomeReplacementNeeds),
+              },
+              2: {
+                value: formatCurrency(debtPayoffNeeds),
+              },
+              3: {
+                value: formatCurrency(estateBufferNeeds),
+              },
+              4: {
+                value: formatCurrency(grossNeeds),
+              },
+              5: {
+                value: formatCurrency(totalInsuranceNeeds),
+              },
+            }}
+          />
+
+          {clientStateCode && (
+            <RateTableDisplay rateTable={getStateRateTable(clientStateCode)} />
+          )}
+        </div>
       </CardContent>
     </Card>
   );

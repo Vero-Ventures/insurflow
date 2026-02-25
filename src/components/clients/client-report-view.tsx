@@ -480,6 +480,7 @@ export function ClientReportView({
               isDemo ? new Date().toISOString() : insuranceCalculatedAt
             }
             isReadOnly={isDemo}
+            clientStateCode={client.state}
           />
           <InsuranceNeedsChart
             result={insuranceResult}

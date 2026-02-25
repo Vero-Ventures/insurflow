@@ -432,6 +432,7 @@ function ClientDetailContent() {
                 error={insuranceError}
                 onRecalculate={recalculateInsurance}
                 calculatedAt={insuranceCalculatedAt}
+                clientStateCode={client.state}
               />
               <InsuranceNeedsChart
                 result={insuranceResult}

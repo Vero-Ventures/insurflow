@@ -58,6 +58,12 @@ export const demoEstimateTourSteps: TourStep[] = createTourSteps([
     "top",
   ],
   [
+    "[data-tour='estimate-transparency']",
+    "Calculation Transparency",
+    "Open this section to show the exact methodology and state-specific reference tables behind the estimate.",
+    "top",
+  ],
+  [
     "[data-tour='showcase-next']",
     "Continue to Showcase",
     "Next you will see AI and report deliverables generated from this analysis.",
