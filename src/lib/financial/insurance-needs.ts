@@ -144,6 +144,11 @@ interface InsuranceNeedsCoreOutput {
   intermediates: InsuranceNeedsIntermediates;
 }
 
+interface InsuranceNeedsRoundedCoreOutput {
+  result: InsuranceNeedsResult;
+  intermediates: InsuranceNeedsIntermediates;
+}
+
 /**
  * Default estate buffer configuration
  * $15,000 is a common estimate for funeral costs and estate settlement expenses
@@ -660,6 +665,29 @@ export function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+function calculateInsuranceNeedsRoundedCore(
+  input: InsuranceNeedsInput,
+): InsuranceNeedsRoundedCoreOutput {
+  const { result: unrounded, intermediates } =
+    calculateInsuranceNeedsCore(input);
+  const totalInsuranceNeeds = roundCurrency(unrounded.totalInsuranceNeeds);
+
+  return {
+    intermediates,
+    result: {
+      incomeReplacementNeeds: roundCurrency(unrounded.incomeReplacementNeeds),
+      debtPayoffNeeds: roundCurrency(unrounded.debtPayoffNeeds),
+      estateBufferNeeds: roundCurrency(unrounded.estateBufferNeeds),
+      grossNeeds: roundCurrency(unrounded.grossNeeds),
+      existingCoverage: roundCurrency(unrounded.existingCoverage),
+      liquidAssets: roundCurrency(unrounded.liquidAssets),
+      totalInsuranceNeeds,
+      totalInsuranceNeedsBand: deriveRecommendationBand(totalInsuranceNeeds),
+      inputsUsed: unrounded.inputsUsed,
+    },
+  };
+}
+
 /**
  * Calculates insurance needs with all values rounded to 2 decimal places
  * Useful for display and API responses
@@ -667,27 +695,13 @@ export function roundCurrency(value: number): number {
 export function calculateInsuranceNeedsRounded(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsResult {
-  return calculateInsuranceNeedsRoundedWithTrace(input).result;
+  return calculateInsuranceNeedsRoundedCore(input).result;
 }
 
 export function calculateInsuranceNeedsRoundedWithTrace(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsCalculationWithTraceResult {
-  const { result: unrounded, intermediates } =
-    calculateInsuranceNeedsCore(input);
-  const totalInsuranceNeeds = roundCurrency(unrounded.totalInsuranceNeeds);
-
-  const result: InsuranceNeedsResult = {
-    incomeReplacementNeeds: roundCurrency(unrounded.incomeReplacementNeeds),
-    debtPayoffNeeds: roundCurrency(unrounded.debtPayoffNeeds),
-    estateBufferNeeds: roundCurrency(unrounded.estateBufferNeeds),
-    grossNeeds: roundCurrency(unrounded.grossNeeds),
-    existingCoverage: roundCurrency(unrounded.existingCoverage),
-    liquidAssets: roundCurrency(unrounded.liquidAssets),
-    totalInsuranceNeeds,
-    totalInsuranceNeedsBand: deriveRecommendationBand(totalInsuranceNeeds),
-    inputsUsed: unrounded.inputsUsed,
-  };
+  const { result, intermediates } = calculateInsuranceNeedsRoundedCore(input);
 
   return {
     result,

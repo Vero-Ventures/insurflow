@@ -465,6 +465,27 @@ describe("calculateInsuranceNeedsRoundedWithTrace", () => {
         ?.value,
     ).toBe(result.totalInsuranceNeeds);
   });
+
+  it("returns the same rounded result as calculateInsuranceNeedsRounded", () => {
+    const input: InsuranceNeedsInput = {
+      clientIncome: 100000,
+      spouseIncome: 25000,
+      includeSpouseIncome: true,
+      incomeReplacementPercent: 66.67,
+      replacementDurationYears: 12,
+      existingLifeInsuranceCoverage: 125000,
+      totalDebts: 234567.89,
+      liquidAssets: 45678.12,
+      totalAssets: 345678.91,
+      estateBuffer: { type: "percentage", percentage: 3.33 },
+    };
+
+    const roundedOnly = calculateInsuranceNeedsRounded(input);
+    const withTrace = calculateInsuranceNeedsRoundedWithTrace(input);
+
+    expect(withTrace.result).toEqual(roundedOnly);
+    expect(withTrace.trace.version).toBeTruthy();
+  });
 });
 
 describe("DEFAULT_ESTATE_BUFFER", () => {
