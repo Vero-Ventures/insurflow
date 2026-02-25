@@ -50,6 +50,9 @@ export function ScenarioComparisonView() {
     createScenario(1),
   ]);
   const [isMeetingMode, setIsMeetingMode] = useState(false);
+  const [meetingSummaryCalculatedAt, setMeetingSummaryCalculatedAt] = useState(
+    () => new Date(),
+  );
 
   // ---- Mutations ----------------------------------------------------------
 
@@ -82,6 +85,12 @@ export function ScenarioComparisonView() {
 
   const handleExportPdf = useCallback(() => {
     window.print();
+  }, []);
+
+  const handleMeetingRecalculate = useCallback(() => {
+    // Summary values are derived from current scenarios, so recalculation
+    // refreshes the visible snapshot timestamp during the meeting.
+    setMeetingSummaryCalculatedAt(new Date());
   }, []);
 
   // ---- Render -------------------------------------------------------------
@@ -128,7 +137,14 @@ export function ScenarioComparisonView() {
         </Button>
       </div>
 
-      {isMeetingMode ? <ScenarioMeetingSummary scenarios={scenarios} /> : null}
+      {isMeetingMode ? (
+        <ScenarioMeetingSummary
+          scenarios={scenarios}
+          lastRecalculatedAt={meetingSummaryCalculatedAt}
+          onRecalculate={handleMeetingRecalculate}
+          onEditAssumptions={() => setIsMeetingMode(false)}
+        />
+      ) : null}
 
       {!isMeetingMode ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">

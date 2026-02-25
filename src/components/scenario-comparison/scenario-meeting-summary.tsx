@@ -1,7 +1,9 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RotateCw, SlidersHorizontal } from "lucide-react";
 import {
   calculateScenarioResults,
   formatCurrency,
@@ -10,6 +12,9 @@ import {
 
 interface ScenarioMeetingSummaryProps {
   scenarios: Scenario[];
+  lastRecalculatedAt: Date;
+  onRecalculate: () => void;
+  onEditAssumptions: () => void;
 }
 
 type MeetingConfidence = {
@@ -43,6 +48,9 @@ function getMeetingConfidence(scenarios: Scenario[]): MeetingConfidence {
 
 export function ScenarioMeetingSummary({
   scenarios,
+  lastRecalculatedAt,
+  onRecalculate,
+  onEditAssumptions,
 }: ScenarioMeetingSummaryProps) {
   const summaries = scenarios.map((scenario) => {
     const calculated = calculateScenarioResults(scenario.coverage);
@@ -66,6 +74,10 @@ export function ScenarioMeetingSummary({
       0,
     ) / Math.max(summaries.length, 1);
   const confidence = getMeetingConfidence(scenarios);
+  const recalculatedLabel = lastRecalculatedAt.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   return (
     <div className="space-y-6" data-testid="meeting-mode-summary">
@@ -84,27 +96,51 @@ export function ScenarioMeetingSummary({
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile
-            label="Target Coverage"
-            value={formatCurrency(targetCoverage)}
-            helper="Midpoint of current scenarios"
-          />
-          <MetricTile
-            label="Coverage Range"
-            value={`${formatCurrency(lowCoverage)} to ${formatCurrency(highCoverage)}`}
-            helper="From lowest to highest scenario"
-          />
-          <MetricTile
-            label="Avg. Annual Premium"
-            value={formatCurrency(avgPremium)}
-            helper="Across visible scenarios"
-          />
-          <MetricTile
-            label="Confidence"
-            value={`${confidence.label} (${confidence.score}/100)`}
-            helper={confidence.note}
-          />
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Quick actions</p>
+              <p className="text-muted-foreground text-xs" aria-live="polite">
+                Summary last recalculated at {recalculatedLabel}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={onRecalculate}>
+                <RotateCw className="size-4" data-icon="inline-start" />
+                Recalculate
+              </Button>
+              <Button size="sm" variant="secondary" onClick={onEditAssumptions}>
+                <SlidersHorizontal
+                  className="size-4"
+                  data-icon="inline-start"
+                />
+                Edit assumptions
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              label="Target Coverage"
+              value={formatCurrency(targetCoverage)}
+              helper="Midpoint of current scenarios"
+            />
+            <MetricTile
+              label="Coverage Range"
+              value={`${formatCurrency(lowCoverage)} to ${formatCurrency(highCoverage)}`}
+              helper="From lowest to highest scenario"
+            />
+            <MetricTile
+              label="Avg. Annual Premium"
+              value={formatCurrency(avgPremium)}
+              helper="Across visible scenarios"
+            />
+            <MetricTile
+              label="Confidence"
+              value={`${confidence.label} (${confidence.score}/100)`}
+              helper={confidence.note}
+            />
+          </div>
         </CardContent>
       </Card>
 
