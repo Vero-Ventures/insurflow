@@ -49,9 +49,6 @@ export interface AuditContext {
 /** Additional metadata for audit entries */
 export interface AuditMetadata {
   /** Reason for the change (e.g., "User requested deletion") */
-  reason?: string;
-  /** Batch operation ID for bulk changes */
-  batchId?: string;
   /** Source of the change (e.g., "api", "import", "migration") */
   source?: string;
   /** Any additional context */
