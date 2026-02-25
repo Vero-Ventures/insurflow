@@ -120,6 +120,30 @@ export interface InsuranceNeedsCalculationWithTraceResult {
   trace: CalculationTrace;
 }
 
+interface InsuranceNeedsIntermediates {
+  spouseIncomeRaw: number | undefined;
+  validClientIncome: number;
+  validSpouseIncome: number | null;
+  includedSpouseIncome: number;
+  validPercent: number;
+  validYears: number;
+  replacementFactor: number;
+  totalIncomeForReplacement: number;
+  validDebtTotal: number;
+  validTotalAssets: number;
+  validExistingCoverage: number;
+  validLiquidAssets: number;
+  totalDeductions: number;
+  netBeforeFloor: number;
+  estateBufferConfiguredValue: number;
+  normalizedEstateBufferValue: number;
+}
+
+interface InsuranceNeedsCoreOutput {
+  result: InsuranceNeedsResult;
+  intermediates: InsuranceNeedsIntermediates;
+}
+
 /**
  * Default estate buffer configuration
  * $15,000 is a common estimate for funeral costs and estate settlement expenses
@@ -186,44 +210,10 @@ export function calculateEstateBufferNeeds(
 function buildInsuranceNeedsTrace(
   input: InsuranceNeedsInput,
   result: InsuranceNeedsResult,
+  intermediates: InsuranceNeedsIntermediates,
   options?: { rounded?: boolean },
 ): CalculationTrace {
   const mapNumber = options?.rounded ? roundCurrency : (value: number) => value;
-
-  const spouseIncomeRaw = input.spouseIncome;
-  const validClientIncome = Math.max(0, input.clientIncome);
-  const validSpouseIncome =
-    spouseIncomeRaw == null ? null : Math.max(0, spouseIncomeRaw);
-  const includedSpouseIncome =
-    input.includeSpouseIncome && spouseIncomeRaw != null
-      ? Math.max(0, spouseIncomeRaw)
-      : 0;
-  const validPercent = Math.max(
-    0,
-    Math.min(100, input.incomeReplacementPercent),
-  );
-  const validYears = Math.max(0, input.replacementDurationYears);
-  const replacementFactor = validPercent / 100;
-  const totalIncomeForReplacement = validClientIncome + includedSpouseIncome;
-
-  const validDebtTotal = Math.max(0, input.totalDebts);
-  const validTotalAssets = Math.max(0, input.totalAssets);
-  const validExistingCoverage = Math.max(
-    0,
-    input.existingLifeInsuranceCoverage,
-  );
-  const validLiquidAssets = Math.max(0, input.liquidAssets);
-  const totalDeductions = validExistingCoverage + validLiquidAssets;
-  const netBeforeFloor = result.grossNeeds - totalDeductions;
-
-  const estateBufferConfiguredValue =
-    input.estateBuffer.type === "fixed"
-      ? input.estateBuffer.amount
-      : input.estateBuffer.percentage;
-  const normalizedEstateBufferValue =
-    input.estateBuffer.type === "fixed"
-      ? Math.max(0, input.estateBuffer.amount)
-      : Math.max(0, Math.min(100, input.estateBuffer.percentage));
   const estateBufferValueUnit =
     input.estateBuffer.type === "fixed" ? "currency" : "percent";
 
@@ -243,7 +233,10 @@ function buildInsuranceNeedsTrace(
         {
           key: "spouse_income",
           label: "Spouse income",
-          value: spouseIncomeRaw == null ? null : mapNumber(spouseIncomeRaw),
+          value:
+            intermediates.spouseIncomeRaw == null
+              ? null
+              : mapNumber(intermediates.spouseIncomeRaw),
           kind: "input",
           unit: "currency",
         },
@@ -270,7 +263,7 @@ function buildInsuranceNeedsTrace(
         {
           key: "normalized_client_income",
           label: "Normalized client income",
-          value: mapNumber(validClientIncome),
+          value: mapNumber(intermediates.validClientIncome),
           kind: "intermediate",
           unit: "currency",
         },
@@ -278,42 +271,44 @@ function buildInsuranceNeedsTrace(
           key: "normalized_spouse_income",
           label: "Normalized spouse income",
           value:
-            validSpouseIncome == null ? null : mapNumber(validSpouseIncome),
+            intermediates.validSpouseIncome == null
+              ? null
+              : mapNumber(intermediates.validSpouseIncome),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "included_spouse_income",
           label: "Included spouse income",
-          value: mapNumber(includedSpouseIncome),
+          value: mapNumber(intermediates.includedSpouseIncome),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "normalized_replacement_percent",
           label: "Normalized replacement percent",
-          value: mapNumber(validPercent),
+          value: mapNumber(intermediates.validPercent),
           kind: "intermediate",
           unit: "percent",
         },
         {
           key: "replacement_factor",
           label: "Replacement factor",
-          value: mapNumber(replacementFactor),
+          value: mapNumber(intermediates.replacementFactor),
           kind: "intermediate",
           unit: "ratio",
         },
         {
           key: "normalized_replacement_years",
           label: "Normalized replacement years",
-          value: mapNumber(validYears),
+          value: mapNumber(intermediates.validYears),
           kind: "intermediate",
           unit: "years",
         },
         {
           key: "total_income_for_replacement",
           label: "Income used for replacement",
-          value: mapNumber(totalIncomeForReplacement),
+          value: mapNumber(intermediates.totalIncomeForReplacement),
           kind: "intermediate",
           unit: "currency",
         },
@@ -341,7 +336,7 @@ function buildInsuranceNeedsTrace(
         {
           key: "normalized_total_debts",
           label: "Normalized total debts",
-          value: mapNumber(validDebtTotal),
+          value: mapNumber(intermediates.validDebtTotal),
           kind: "intermediate",
           unit: "currency",
         },
@@ -368,7 +363,7 @@ function buildInsuranceNeedsTrace(
         {
           key: "estate_buffer_config_value",
           label: "Estate buffer configured value",
-          value: mapNumber(estateBufferConfiguredValue),
+          value: mapNumber(intermediates.estateBufferConfiguredValue),
           kind: "assumption",
           unit: estateBufferValueUnit,
         },
@@ -382,14 +377,14 @@ function buildInsuranceNeedsTrace(
         {
           key: "normalized_total_assets",
           label: "Normalized total assets",
-          value: mapNumber(validTotalAssets),
+          value: mapNumber(intermediates.validTotalAssets),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "normalized_estate_buffer_value",
           label: "Normalized estate buffer value",
-          value: mapNumber(normalizedEstateBufferValue),
+          value: mapNumber(intermediates.normalizedEstateBufferValue),
           kind: "intermediate",
           unit: estateBufferValueUnit,
         },
@@ -440,7 +435,7 @@ function buildInsuranceNeedsTrace(
     {
       key: "deductions",
       label: "Existing resources",
-      result: mapNumber(totalDeductions),
+      result: mapNumber(intermediates.totalDeductions),
       items: [
         {
           key: "existing_life_insurance_coverage",
@@ -459,21 +454,21 @@ function buildInsuranceNeedsTrace(
         {
           key: "normalized_existing_coverage",
           label: "Normalized existing coverage",
-          value: mapNumber(validExistingCoverage),
+          value: mapNumber(intermediates.validExistingCoverage),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "normalized_liquid_assets",
           label: "Normalized liquid assets",
-          value: mapNumber(validLiquidAssets),
+          value: mapNumber(intermediates.validLiquidAssets),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "total_deductions",
           label: "Total deductions",
-          value: mapNumber(totalDeductions),
+          value: mapNumber(intermediates.totalDeductions),
           kind: "result",
           unit: "currency",
         },
@@ -484,7 +479,7 @@ function buildInsuranceNeedsTrace(
       label: "Net insurance needs",
       result: mapNumber(result.totalInsuranceNeeds),
       notes:
-        netBeforeFloor < 0
+        intermediates.netBeforeFloor < 0
           ? ["Net insurance needs are floored at zero."]
           : undefined,
       items: [
@@ -498,14 +493,14 @@ function buildInsuranceNeedsTrace(
         {
           key: "total_deductions",
           label: "Total deductions",
-          value: mapNumber(totalDeductions),
+          value: mapNumber(intermediates.totalDeductions),
           kind: "intermediate",
           unit: "currency",
         },
         {
           key: "net_needs_before_floor",
           label: "Net needs before floor",
-          value: mapNumber(netBeforeFloor),
+          value: mapNumber(intermediates.netBeforeFloor),
           kind: "intermediate",
           unit: "currency",
         },
@@ -523,7 +518,23 @@ function buildInsuranceNeedsTrace(
 
 function calculateInsuranceNeedsCore(
   input: InsuranceNeedsInput,
-): InsuranceNeedsResult {
+): InsuranceNeedsCoreOutput {
+  const spouseIncomeRaw = input.spouseIncome;
+  const validClientIncome = Math.max(0, input.clientIncome);
+  const validSpouseIncome =
+    spouseIncomeRaw == null ? null : Math.max(0, spouseIncomeRaw);
+  const includedSpouseIncome =
+    input.includeSpouseIncome && spouseIncomeRaw != null
+      ? Math.max(0, spouseIncomeRaw)
+      : 0;
+  const validPercent = Math.max(
+    0,
+    Math.min(100, input.incomeReplacementPercent),
+  );
+  const validYears = Math.max(0, input.replacementDurationYears);
+  const replacementFactor = validPercent / 100;
+  const totalIncomeForReplacement = validClientIncome + includedSpouseIncome;
+
   // Calculate income replacement needs
   const incomeReplacementNeeds = calculateIncomeReplacementNeeds(
     input.clientIncome,
@@ -534,9 +545,19 @@ function calculateInsuranceNeedsCore(
   );
 
   // Debt payoff is simply the sum of all debts (already provided as total)
-  const debtPayoffNeeds = Math.max(0, input.totalDebts);
+  const validDebtTotal = Math.max(0, input.totalDebts);
+  const debtPayoffNeeds = validDebtTotal;
 
   // Calculate estate buffer
+  const estateBufferConfiguredValue =
+    input.estateBuffer.type === "fixed"
+      ? input.estateBuffer.amount
+      : input.estateBuffer.percentage;
+  const normalizedEstateBufferValue =
+    input.estateBuffer.type === "fixed"
+      ? Math.max(0, input.estateBuffer.amount)
+      : Math.max(0, Math.min(100, input.estateBuffer.percentage));
+  const validTotalAssets = Math.max(0, input.totalAssets);
   const estateBufferNeeds = calculateEstateBufferNeeds(
     input.estateBuffer,
     input.totalAssets,
@@ -547,16 +568,20 @@ function calculateInsuranceNeedsCore(
     incomeReplacementNeeds + debtPayoffNeeds + estateBufferNeeds;
 
   // Calculate deductions
-  const existingCoverage = Math.max(0, input.existingLifeInsuranceCoverage);
-  const liquidAssets = Math.max(0, input.liquidAssets);
+  const validExistingCoverage = Math.max(
+    0,
+    input.existingLifeInsuranceCoverage,
+  );
+  const validLiquidAssets = Math.max(0, input.liquidAssets);
+  const existingCoverage = validExistingCoverage;
+  const liquidAssets = validLiquidAssets;
+  const totalDeductions = validExistingCoverage + validLiquidAssets;
 
   // Calculate net needs (floored at 0)
-  const totalInsuranceNeeds = Math.max(
-    0,
-    grossNeeds - existingCoverage - liquidAssets,
-  );
+  const netBeforeFloor = grossNeeds - totalDeductions;
+  const totalInsuranceNeeds = Math.max(0, netBeforeFloor);
 
-  return {
+  const result: InsuranceNeedsResult = {
     incomeReplacementNeeds,
     debtPayoffNeeds,
     estateBufferNeeds,
@@ -577,6 +602,28 @@ function calculateInsuranceNeedsCore(
           : input.estateBuffer.percentage,
     },
   };
+
+  return {
+    result,
+    intermediates: {
+      spouseIncomeRaw,
+      validClientIncome,
+      validSpouseIncome,
+      includedSpouseIncome,
+      validPercent,
+      validYears,
+      replacementFactor,
+      totalIncomeForReplacement,
+      validDebtTotal,
+      validTotalAssets,
+      validExistingCoverage,
+      validLiquidAssets,
+      totalDeductions,
+      netBeforeFloor,
+      estateBufferConfiguredValue,
+      normalizedEstateBufferValue,
+    },
+  };
 }
 
 /**
@@ -592,17 +639,17 @@ function calculateInsuranceNeedsCore(
 export function calculateInsuranceNeeds(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsResult {
-  return calculateInsuranceNeedsCore(input);
+  return calculateInsuranceNeedsCore(input).result;
 }
 
 export function calculateInsuranceNeedsWithTrace(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsCalculationWithTraceResult {
-  const result = calculateInsuranceNeedsCore(input);
+  const { result, intermediates } = calculateInsuranceNeedsCore(input);
 
   return {
     result,
-    trace: buildInsuranceNeedsTrace(input, result),
+    trace: buildInsuranceNeedsTrace(input, result, intermediates),
   };
 }
 
@@ -626,7 +673,8 @@ export function calculateInsuranceNeedsRounded(
 export function calculateInsuranceNeedsRoundedWithTrace(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsCalculationWithTraceResult {
-  const unrounded = calculateInsuranceNeedsCore(input);
+  const { result: unrounded, intermediates } =
+    calculateInsuranceNeedsCore(input);
   const totalInsuranceNeeds = roundCurrency(unrounded.totalInsuranceNeeds);
 
   const result: InsuranceNeedsResult = {
@@ -643,6 +691,8 @@ export function calculateInsuranceNeedsRoundedWithTrace(
 
   return {
     result,
-    trace: buildInsuranceNeedsTrace(input, result, { rounded: true }),
+    trace: buildInsuranceNeedsTrace(input, result, intermediates, {
+      rounded: true,
+    }),
   };
 }

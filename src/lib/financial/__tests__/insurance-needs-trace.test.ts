@@ -73,4 +73,46 @@ describe("insurance needs trace schema consistency", () => {
         ?.value,
     ).toBeNull();
   });
+
+  it("maps trace section results from the same computed result values", () => {
+    const { result, trace } = calculateInsuranceNeedsWithTrace(baseInput);
+
+    const sectionResultByKey = Object.fromEntries(
+      trace.sections.map((section) => [section.key, section.result]),
+    );
+
+    expect(sectionResultByKey.income_replacement).toBe(
+      result.incomeReplacementNeeds,
+    );
+    expect(sectionResultByKey.debt_payoff).toBe(result.debtPayoffNeeds);
+    expect(sectionResultByKey.estate_buffer).toBe(result.estateBufferNeeds);
+    expect(sectionResultByKey.gross_needs).toBe(result.grossNeeds);
+    expect(sectionResultByKey.net_needs).toBe(result.totalInsuranceNeeds);
+  });
+
+  it("keeps floored-net note and intermediate value aligned with computed output", () => {
+    const input: InsuranceNeedsInput = {
+      ...baseInput,
+      existingLifeInsuranceCoverage: 2_000_000,
+      liquidAssets: 500_000,
+    };
+
+    const { result, trace } = calculateInsuranceNeedsWithTrace(input);
+    const netSection = trace.sections.find(
+      (section) => section.key === "net_needs",
+    );
+
+    expect(result.totalInsuranceNeeds).toBe(0);
+    expect(netSection?.notes).toEqual([
+      "Net insurance needs are floored at zero.",
+    ]);
+    expect(
+      netSection?.items.find((item) => item.key === "net_needs_before_floor")
+        ?.value,
+    ).toBeLessThan(0);
+    expect(
+      netSection?.items.find((item) => item.key === "total_insurance_needs")
+        ?.value,
+    ).toBe(result.totalInsuranceNeeds);
+  });
 });
