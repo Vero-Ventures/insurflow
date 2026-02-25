@@ -14,6 +14,7 @@ import {
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { getAccountTypeConfirmation } from "@/lib/role-experience";
+import { cn } from "@/lib/utils";
 import { STATES } from "@/lib/validation/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,11 +203,12 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
               </select>
               {accountTypeConfirmation ? (
                 <div
-                  className={`rounded-md border px-3 py-2 text-xs ${
+                  className={cn(
+                    "rounded-md border px-3 py-2 text-xs",
                     accountTypeConfirmation.tone === "advisor"
                       ? "border-sky-200 bg-sky-50 text-sky-900"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-900"
-                  }`}
+                      : "border-emerald-200 bg-emerald-50 text-emerald-900",
+                  )}
                 >
                   <p className="font-semibold">
                     {accountTypeConfirmation.title}

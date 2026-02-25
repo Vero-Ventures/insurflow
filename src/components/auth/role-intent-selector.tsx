@@ -6,6 +6,9 @@ import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { AccountType } from "@/lib/role-experience";
 
+const ROLE_INTENT_COOKIE_NAME = "insurflow_role_intent";
+const ROLE_INTENT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
 type RoleIntentSelectorProps = {
   selectedRole: AccountType | null;
 };
@@ -13,12 +16,11 @@ type RoleIntentSelectorProps = {
 export function RoleIntentSelector({ selectedRole }: RoleIntentSelectorProps) {
   useEffect(() => {
     if (!selectedRole) {
-      document.cookie =
-        "insurflow_role_intent=; Path=/; Max-Age=0; SameSite=Lax";
+      document.cookie = `${ROLE_INTENT_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax`;
       return;
     }
 
-    document.cookie = `insurflow_role_intent=${selectedRole}; Path=/; Max-Age=2592000; SameSite=Lax`;
+    document.cookie = `${ROLE_INTENT_COOKIE_NAME}=${selectedRole}; Path=/; Max-Age=${ROLE_INTENT_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
   }, [selectedRole]);
 
   return (
