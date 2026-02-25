@@ -64,6 +64,28 @@ describe("ScenarioComparisonView", () => {
 
     vi.useRealTimers();
   });
+
+  it("refreshes summary timestamp when re-entering meeting mode after edits", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-25T10:00:00Z"));
+
+    render(<ScenarioComparisonView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Meeting Mode" }));
+    const before = screen.getByText(
+      /Summary last recalculated at/i,
+    ).textContent;
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit assumptions" }));
+
+    vi.setSystemTime(new Date("2026-02-25T10:07:00Z"));
+    fireEvent.click(screen.getByRole("button", { name: "Open Meeting Mode" }));
+
+    const after = screen.getByText(/Summary last recalculated at/i).textContent;
+    expect(after).not.toBe(before);
+
+    vi.useRealTimers();
+  });
 });
 
 describe("ScenarioCard", () => {

@@ -93,6 +93,18 @@ export function ScenarioComparisonView() {
     setMeetingSummaryCalculatedAt(new Date());
   }, []);
 
+  const handleMeetingModeToggle = useCallback(() => {
+    setIsMeetingMode((prev) => {
+      const next = !prev;
+
+      if (next) {
+        setMeetingSummaryCalculatedAt(new Date());
+      }
+
+      return next;
+    });
+  }, []);
+
   // ---- Render -------------------------------------------------------------
 
   return (
@@ -133,7 +145,7 @@ export function ScenarioComparisonView() {
         <Button
           variant={isMeetingMode ? "secondary" : "default"}
           size="sm"
-          onClick={() => setIsMeetingMode((prev) => !prev)}
+          onClick={handleMeetingModeToggle}
           className="w-full sm:w-auto"
         >
           {isMeetingMode ? (
