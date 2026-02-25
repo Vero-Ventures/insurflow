@@ -152,9 +152,7 @@ export function ScenarioComparisonView() {
           onRecalculate={handleMeetingRecalculate}
           onEditAssumptions={() => setIsMeetingMode(false)}
         />
-      ) : null}
-
-      {!isMeetingMode ? (
+      ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {scenarios.map((scenario) => (
             <ScenarioCard
@@ -165,7 +163,7 @@ export function ScenarioComparisonView() {
             />
           ))}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
