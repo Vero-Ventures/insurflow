@@ -63,6 +63,7 @@ export {
 export { policy } from "./policies-schema";
 export { auditLog } from "./audit-logs-schema";
 export { inquiry, inquiryStatusEnum } from "./inquiry-schema";
+export { shareLink, shareLinkStatusEnum } from "./share-link-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -87,6 +88,7 @@ export {
 export { policyRelations } from "./policies-schema";
 export { auditLogRelations } from "./audit-logs-schema";
 export { inquiryRelations } from "./inquiry-schema";
+export { shareLinkRelations } from "./share-link-schema";
 
 // Audit log types
 export type {
