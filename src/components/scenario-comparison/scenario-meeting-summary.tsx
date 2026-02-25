@@ -92,7 +92,7 @@ export function ScenarioMeetingSummary({
       0,
     ) / Math.max(summaries.length, 1);
   const confidence = getMeetingConfidence(scenarios);
-  const recalculatedLabel = lastRecalculatedAt.toLocaleTimeString([], {
+  const recalculatedLabel = lastRecalculatedAt.toLocaleTimeString("en-CA", {
     hour: "numeric",
     minute: "2-digit",
   });
