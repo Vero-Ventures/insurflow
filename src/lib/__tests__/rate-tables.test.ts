@@ -3,7 +3,7 @@ import {
   getStateRateTable,
   stateHasDeathTax,
   getStateTaxSummary,
-} from "../rate-tables";
+} from "../transparency/rate-tables";
 
 describe("getStateRateTable", () => {
   it("returns rate table for California", () => {

@@ -4,7 +4,7 @@ import {
   getAvailableMethodologies,
   INSURANCE_NEEDS_METHODOLOGY,
   INCOME_REPLACEMENT_METHODOLOGY,
-} from "../methodology-data";
+} from "../transparency/methodology-data";
 
 describe("getMethodologyData", () => {
   it("returns insurance needs methodology", () => {
