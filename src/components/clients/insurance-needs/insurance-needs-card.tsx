@@ -30,6 +30,7 @@ import {
   MethodologySection,
   RateTableDisplay,
 } from "@/components/transparency";
+import { CalculationTraceViewer } from "@/components/clients/insurance-needs/calculation-trace-viewer";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
@@ -463,6 +464,8 @@ export function InsuranceNeedsCard({
 
         {/* Calculation Transparency */}
         <div className="mt-6 space-y-4 border-t pt-6">
+          {result.trace && <CalculationTraceViewer trace={result.trace} />}
+
           <MethodologySection
             methodology={INSURANCE_NEEDS_METHODOLOGY}
             stepValues={{
