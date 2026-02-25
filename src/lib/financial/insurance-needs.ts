@@ -1,3 +1,10 @@
+import {
+  createCalculationTrace,
+  createTraceItem,
+  createTraceSection,
+} from "@/lib/calculation-trace";
+import type { CalculationTrace } from "@/types/calculation-trace";
+
 /**
  * Insurance Needs Calculation Engine
  *
@@ -14,6 +21,15 @@
 
 /** ±10% band around target for recommendation range (MVP rule) */
 const RECOMMENDATION_BAND_FRACTION = 0.1;
+
+export const INSURANCE_NEEDS_TRACE_SECTION_KEYS = [
+  "income_replacement",
+  "debt_payoff",
+  "estate_buffer",
+  "gross_needs",
+  "deductions",
+  "net_needs",
+] as const;
 
 /**
  * Recommendation band: low / target / high range for a key value.
@@ -103,6 +119,11 @@ export interface InsuranceNeedsResult {
   };
 }
 
+export interface InsuranceNeedsCalculationWithTraceResult {
+  result: InsuranceNeedsResult;
+  trace: CalculationTrace;
+}
+
 /**
  * Default estate buffer configuration
  * $15,000 is a common estimate for funeral costs and estate settlement expenses
@@ -166,17 +187,345 @@ export function calculateEstateBufferNeeds(
   return validTotalAssets * (validPercentage / 100);
 }
 
-/**
- * Calculates total insurance needs with full breakdown
- *
- * Implements the formula from Issue #62:
- * - Gross Needs = Income Replacement + Debt Payoff + Estate Buffer
- * - Net Needs = max(Gross Needs - Existing Coverage - Liquid Assets, 0)
- *
- * @param input - All input parameters for calculation
- * @returns Full breakdown of insurance needs
- */
-export function calculateInsuranceNeeds(
+function buildInsuranceNeedsTrace(
+  input: InsuranceNeedsInput,
+  result: InsuranceNeedsResult,
+  options?: { rounded?: boolean },
+): CalculationTrace {
+  const mapNumber = options?.rounded ? roundCurrency : (value: number) => value;
+
+  const spouseIncomeRaw = input.spouseIncome;
+  const validClientIncome = Math.max(0, input.clientIncome);
+  const validSpouseIncome =
+    spouseIncomeRaw == null ? null : Math.max(0, spouseIncomeRaw);
+  const includedSpouseIncome =
+    input.includeSpouseIncome && spouseIncomeRaw != null
+      ? Math.max(0, spouseIncomeRaw)
+      : 0;
+  const validPercent = Math.max(
+    0,
+    Math.min(100, input.incomeReplacementPercent),
+  );
+  const validYears = Math.max(0, input.replacementDurationYears);
+  const replacementFactor = validPercent / 100;
+  const totalIncomeForReplacement = validClientIncome + includedSpouseIncome;
+
+  const validDebtTotal = Math.max(0, input.totalDebts);
+  const validTotalAssets = Math.max(0, input.totalAssets);
+  const validExistingCoverage = Math.max(
+    0,
+    input.existingLifeInsuranceCoverage,
+  );
+  const validLiquidAssets = Math.max(0, input.liquidAssets);
+  const totalDeductions = validExistingCoverage + validLiquidAssets;
+  const netBeforeFloor = result.grossNeeds - totalDeductions;
+
+  const estateBufferConfiguredValue =
+    input.estateBuffer.type === "fixed"
+      ? input.estateBuffer.amount
+      : input.estateBuffer.percentage;
+  const normalizedEstateBufferValue =
+    input.estateBuffer.type === "fixed"
+      ? Math.max(0, input.estateBuffer.amount)
+      : Math.max(0, Math.min(100, input.estateBuffer.percentage));
+  const estateBufferValueUnit =
+    input.estateBuffer.type === "fixed" ? "currency" : "percent";
+
+  return createCalculationTrace([
+    createTraceSection({
+      key: "income_replacement",
+      label: "Income replacement",
+      result: mapNumber(result.incomeReplacementNeeds),
+      items: [
+        createTraceItem({
+          key: "client_income",
+          label: "Client income",
+          value: mapNumber(input.clientIncome),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "spouse_income",
+          label: "Spouse income",
+          value: spouseIncomeRaw == null ? null : mapNumber(spouseIncomeRaw),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "include_spouse_income",
+          label: "Include spouse income",
+          value: input.includeSpouseIncome ? "yes" : "no",
+          kind: "assumption",
+        }),
+        createTraceItem({
+          key: "income_replacement_percent",
+          label: "Income replacement percent",
+          value: mapNumber(input.incomeReplacementPercent),
+          kind: "assumption",
+          unit: "percent",
+        }),
+        createTraceItem({
+          key: "replacement_duration_years",
+          label: "Replacement duration",
+          value: mapNumber(input.replacementDurationYears),
+          kind: "assumption",
+          unit: "years",
+        }),
+        createTraceItem({
+          key: "normalized_client_income",
+          label: "Normalized client income",
+          value: mapNumber(validClientIncome),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_spouse_income",
+          label: "Normalized spouse income",
+          value:
+            validSpouseIncome == null ? null : mapNumber(validSpouseIncome),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "included_spouse_income",
+          label: "Included spouse income",
+          value: mapNumber(includedSpouseIncome),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_replacement_percent",
+          label: "Normalized replacement percent",
+          value: mapNumber(validPercent),
+          kind: "intermediate",
+          unit: "percent",
+        }),
+        createTraceItem({
+          key: "replacement_factor",
+          label: "Replacement factor",
+          value: mapNumber(replacementFactor),
+          kind: "intermediate",
+          unit: "ratio",
+        }),
+        createTraceItem({
+          key: "normalized_replacement_years",
+          label: "Normalized replacement years",
+          value: mapNumber(validYears),
+          kind: "intermediate",
+          unit: "years",
+        }),
+        createTraceItem({
+          key: "total_income_for_replacement",
+          label: "Income used for replacement",
+          value: mapNumber(totalIncomeForReplacement),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "income_replacement_needs",
+          label: "Income replacement needs",
+          value: mapNumber(result.incomeReplacementNeeds),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+    createTraceSection({
+      key: "debt_payoff",
+      label: "Debt payoff",
+      result: mapNumber(result.debtPayoffNeeds),
+      items: [
+        createTraceItem({
+          key: "total_debts",
+          label: "Total debts",
+          value: mapNumber(input.totalDebts),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_total_debts",
+          label: "Normalized total debts",
+          value: mapNumber(validDebtTotal),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "debt_payoff_needs",
+          label: "Debt payoff needs",
+          value: mapNumber(result.debtPayoffNeeds),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+    createTraceSection({
+      key: "estate_buffer",
+      label: "Estate buffer",
+      result: mapNumber(result.estateBufferNeeds),
+      items: [
+        createTraceItem({
+          key: "estate_buffer_type",
+          label: "Estate buffer method",
+          value: input.estateBuffer.type,
+          kind: "assumption",
+        }),
+        createTraceItem({
+          key: "estate_buffer_config_value",
+          label: "Estate buffer configured value",
+          value: mapNumber(estateBufferConfiguredValue),
+          kind: "assumption",
+          unit: estateBufferValueUnit,
+        }),
+        createTraceItem({
+          key: "total_assets",
+          label: "Total assets",
+          value: mapNumber(input.totalAssets),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_total_assets",
+          label: "Normalized total assets",
+          value: mapNumber(validTotalAssets),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_estate_buffer_value",
+          label: "Normalized estate buffer value",
+          value: mapNumber(normalizedEstateBufferValue),
+          kind: "intermediate",
+          unit: estateBufferValueUnit,
+        }),
+        createTraceItem({
+          key: "estate_buffer_needs",
+          label: "Estate buffer needs",
+          value: mapNumber(result.estateBufferNeeds),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+    createTraceSection({
+      key: "gross_needs",
+      label: "Gross needs",
+      result: mapNumber(result.grossNeeds),
+      items: [
+        createTraceItem({
+          key: "income_replacement_needs",
+          label: "Income replacement needs",
+          value: mapNumber(result.incomeReplacementNeeds),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "debt_payoff_needs",
+          label: "Debt payoff needs",
+          value: mapNumber(result.debtPayoffNeeds),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "estate_buffer_needs",
+          label: "Estate buffer needs",
+          value: mapNumber(result.estateBufferNeeds),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "gross_needs",
+          label: "Gross insurance needs",
+          value: mapNumber(result.grossNeeds),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+    createTraceSection({
+      key: "deductions",
+      label: "Existing resources",
+      result: mapNumber(totalDeductions),
+      items: [
+        createTraceItem({
+          key: "existing_life_insurance_coverage",
+          label: "Existing life insurance coverage",
+          value: mapNumber(input.existingLifeInsuranceCoverage),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "liquid_assets",
+          label: "Liquid assets",
+          value: mapNumber(input.liquidAssets),
+          kind: "input",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_existing_coverage",
+          label: "Normalized existing coverage",
+          value: mapNumber(validExistingCoverage),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "normalized_liquid_assets",
+          label: "Normalized liquid assets",
+          value: mapNumber(validLiquidAssets),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "total_deductions",
+          label: "Total deductions",
+          value: mapNumber(totalDeductions),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+    createTraceSection({
+      key: "net_needs",
+      label: "Net insurance needs",
+      result: mapNumber(result.totalInsuranceNeeds),
+      notes:
+        netBeforeFloor < 0
+          ? ["Net insurance needs are floored at zero."]
+          : undefined,
+      items: [
+        createTraceItem({
+          key: "gross_needs",
+          label: "Gross insurance needs",
+          value: mapNumber(result.grossNeeds),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "total_deductions",
+          label: "Total deductions",
+          value: mapNumber(totalDeductions),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "net_needs_before_floor",
+          label: "Net needs before floor",
+          value: mapNumber(netBeforeFloor),
+          kind: "intermediate",
+          unit: "currency",
+        }),
+        createTraceItem({
+          key: "total_insurance_needs",
+          label: "Total insurance needs",
+          value: mapNumber(result.totalInsuranceNeeds),
+          kind: "result",
+          unit: "currency",
+        }),
+      ],
+    }),
+  ]);
+}
+
+function calculateInsuranceNeedsCore(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsResult {
   // Calculate income replacement needs
@@ -235,6 +584,33 @@ export function calculateInsuranceNeeds(
 }
 
 /**
+ * Calculates total insurance needs with full breakdown
+ *
+ * Implements the formula from Issue #62:
+ * - Gross Needs = Income Replacement + Debt Payoff + Estate Buffer
+ * - Net Needs = max(Gross Needs - Existing Coverage - Liquid Assets, 0)
+ *
+ * @param input - All input parameters for calculation
+ * @returns Full breakdown of insurance needs
+ */
+export function calculateInsuranceNeeds(
+  input: InsuranceNeedsInput,
+): InsuranceNeedsResult {
+  return calculateInsuranceNeedsCore(input);
+}
+
+export function calculateInsuranceNeedsWithTrace(
+  input: InsuranceNeedsInput,
+): InsuranceNeedsCalculationWithTraceResult {
+  const result = calculateInsuranceNeedsCore(input);
+
+  return {
+    result,
+    trace: buildInsuranceNeedsTrace(input, result),
+  };
+}
+
+/**
  * Rounds a number to 2 decimal places (for currency display)
  */
 export function roundCurrency(value: number): number {
@@ -248,18 +624,29 @@ export function roundCurrency(value: number): number {
 export function calculateInsuranceNeedsRounded(
   input: InsuranceNeedsInput,
 ): InsuranceNeedsResult {
-  const result = calculateInsuranceNeeds(input);
-  const totalInsuranceNeeds = roundCurrency(result.totalInsuranceNeeds);
+  return calculateInsuranceNeedsRoundedWithTrace(input).result;
+}
 
-  return {
-    incomeReplacementNeeds: roundCurrency(result.incomeReplacementNeeds),
-    debtPayoffNeeds: roundCurrency(result.debtPayoffNeeds),
-    estateBufferNeeds: roundCurrency(result.estateBufferNeeds),
-    grossNeeds: roundCurrency(result.grossNeeds),
-    existingCoverage: roundCurrency(result.existingCoverage),
-    liquidAssets: roundCurrency(result.liquidAssets),
+export function calculateInsuranceNeedsRoundedWithTrace(
+  input: InsuranceNeedsInput,
+): InsuranceNeedsCalculationWithTraceResult {
+  const unrounded = calculateInsuranceNeedsCore(input);
+  const totalInsuranceNeeds = roundCurrency(unrounded.totalInsuranceNeeds);
+
+  const result: InsuranceNeedsResult = {
+    incomeReplacementNeeds: roundCurrency(unrounded.incomeReplacementNeeds),
+    debtPayoffNeeds: roundCurrency(unrounded.debtPayoffNeeds),
+    estateBufferNeeds: roundCurrency(unrounded.estateBufferNeeds),
+    grossNeeds: roundCurrency(unrounded.grossNeeds),
+    existingCoverage: roundCurrency(unrounded.existingCoverage),
+    liquidAssets: roundCurrency(unrounded.liquidAssets),
     totalInsuranceNeeds,
     totalInsuranceNeedsBand: deriveRecommendationBand(totalInsuranceNeeds),
-    inputsUsed: result.inputsUsed,
+    inputsUsed: unrounded.inputsUsed,
+  };
+
+  return {
+    result,
+    trace: buildInsuranceNeedsTrace(input, result, { rounded: true }),
   };
 }

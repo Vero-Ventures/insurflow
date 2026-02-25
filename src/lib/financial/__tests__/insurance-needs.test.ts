@@ -4,9 +4,12 @@ import {
   calculateEstateBufferNeeds,
   calculateInsuranceNeeds,
   calculateInsuranceNeedsRounded,
+  calculateInsuranceNeedsRoundedWithTrace,
+  calculateInsuranceNeedsWithTrace,
   deriveRecommendationBand,
   roundCurrency,
   DEFAULT_ESTATE_BUFFER,
+  INSURANCE_NEEDS_TRACE_SECTION_KEYS,
   type InsuranceNeedsInput,
   type EstateBufferConfig,
 } from "../insurance-needs";
@@ -384,6 +387,83 @@ describe("calculateInsuranceNeedsRounded", () => {
     expect(result.totalInsuranceNeedsBand!.high).toBe(
       roundCurrency(result.totalInsuranceNeeds * 1.1),
     );
+  });
+});
+
+describe("calculateInsuranceNeedsWithTrace", () => {
+  const input: InsuranceNeedsInput = {
+    clientIncome: 100000,
+    spouseIncome: undefined,
+    includeSpouseIncome: true,
+    incomeReplacementPercent: 70,
+    replacementDurationYears: 10,
+    existingLifeInsuranceCoverage: 100000,
+    totalDebts: 250000,
+    liquidAssets: 50000,
+    totalAssets: 500000,
+    estateBuffer: { type: "fixed", amount: 15000 },
+  };
+
+  it("returns a trace with stable section keys", () => {
+    const { result, trace } = calculateInsuranceNeedsWithTrace(input);
+
+    expect(trace).toBeDefined();
+    expect(trace.version).toBeTruthy();
+    expect(trace.sections.map((section) => section.key)).toEqual([
+      ...INSURANCE_NEEDS_TRACE_SECTION_KEYS,
+    ]);
+    expect(result.totalInsuranceNeeds).toBe(815000);
+  });
+
+  it("includes null for missing optional values and explicit assumptions", () => {
+    const { trace } = calculateInsuranceNeedsWithTrace(input);
+    const incomeSection = trace.sections.find(
+      (section) => section.key === "income_replacement",
+    );
+
+    expect(incomeSection).toBeDefined();
+    expect(
+      incomeSection!.items.find((item) => item.key === "spouse_income")?.value,
+    ).toBeNull();
+    expect(
+      incomeSection!.items.find((item) => item.key === "include_spouse_income")
+        ?.kind,
+    ).toBe("assumption");
+    expect(
+      incomeSection!.items.find((item) => item.key === "included_spouse_income")
+        ?.value,
+    ).toBe(0);
+  });
+});
+
+describe("calculateInsuranceNeedsRoundedWithTrace", () => {
+  it("rounds trace numeric values consistently with rounded result output", () => {
+    const input: InsuranceNeedsInput = {
+      clientIncome: 100000,
+      spouseIncome: undefined,
+      includeSpouseIncome: false,
+      incomeReplacementPercent: 66.67,
+      replacementDurationYears: 10,
+      existingLifeInsuranceCoverage: 100000,
+      totalDebts: 250000,
+      liquidAssets: 50000,
+      totalAssets: 500000,
+      estateBuffer: { type: "percentage", percentage: 3.33 },
+    };
+
+    const { result, trace } = calculateInsuranceNeedsRoundedWithTrace(input);
+    const netSection = trace.sections.find(
+      (section) => section.key === "net_needs",
+    );
+
+    expect(trace.sections.length).toBe(
+      INSURANCE_NEEDS_TRACE_SECTION_KEYS.length,
+    );
+    expect(netSection?.result).toBe(result.totalInsuranceNeeds);
+    expect(
+      netSection?.items.find((item) => item.key === "total_insurance_needs")
+        ?.value,
+    ).toBe(result.totalInsuranceNeeds);
   });
 });
 
