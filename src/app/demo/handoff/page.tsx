@@ -5,10 +5,19 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, FileCheck2, MessageCircle, Share2 } from "lucide-react";
+import {
+  CalendarClock,
+  FileCheck2,
+  MessageCircle,
+  Share2,
+  Copy,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
-import { ShareWithAdvisorModal } from "@/components/demo/share-with-advisor-modal";
+import { toast } from "sonner";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 4;
@@ -32,8 +41,11 @@ const nextSteps = [
 ];
 
 export default function DemoHandoffPage() {
-  const [showShareModal, setShowShareModal] = useState(false);
   const { state } = useDemoContext();
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const { result } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
@@ -46,16 +58,61 @@ export default function DemoHandoffPage() {
     liquidAssets: state.analysisAssumptions.liquidAssets,
   });
 
-  const estimateResult = result
-    ? {
-        coverageNeed: result.totalInsuranceNeeds,
-        existingCoverage: result.existingCoverage,
-        coverageGap: Math.max(
-          0,
-          result.totalInsuranceNeeds - result.existingCoverage,
-        ),
+  const coverageGap = result
+    ? Math.max(0, result.totalInsuranceNeeds - result.existingCoverage)
+    : 0;
+
+  const handleGenerateLink = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch("/api/share-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: "Demo",
+          lastName: "User",
+          email: "demo@example.com",
+          householdStatus: state.intakeData.householdStatus,
+          annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
+          totalDebts: state.intakeData.totalDebts || undefined,
+          currentCoverage: state.intakeData.currentCoverage || undefined,
+          primaryGoal: state.intakeData.primaryGoal || undefined,
+          estimatedCoverageNeed: result?.totalInsuranceNeeds.toString() || "0",
+          estimatedGap: coverageGap.toString(),
+          scenarioId: state.selectedScenarioId,
+          incomeReplacementPercent:
+            state.analysisAssumptions.incomeReplacementPercent,
+          replacementDurationYears:
+            state.analysisAssumptions.replacementDurationYears,
+          liquidAssets: state.analysisAssumptions.liquidAssets,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate share link");
       }
-    : null;
+
+      const data = await response.json();
+      setShareUrl(data.shareUrl);
+      toast.success("Share link generated!");
+    } catch {
+      toast.error("Failed to generate share link");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setIsCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
@@ -118,7 +175,7 @@ export default function DemoHandoffPage() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button
             className="bg-emerald hover:bg-emerald/90 gap-2"
-            onClick={() => setShowShareModal(true)}
+            onClick={() => setShowSharePanel(true)}
           >
             <Share2 className="h-4 w-4" />
             Share with Advisor
@@ -127,15 +184,79 @@ export default function DemoHandoffPage() {
             <Link href="/demo">Restart Demo</Link>
           </Button>
         </div>
-      </div>
 
-      <ShareWithAdvisorModal
-        open={showShareModal}
-        onOpenChange={setShowShareModal}
-        intakeData={state.intakeData}
-        estimateResult={estimateResult}
-        scenarioId={state.selectedScenarioId}
-      />
+        {showSharePanel && (
+          <Card className="border-border/60 mt-6">
+            <div className="m-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald/10 text-emerald flex h-12 w-12 items-center justify-center rounded-full">
+                  <Share2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Share your estimate</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Generate a link to share with an advisor
+                  </p>
+                </div>
+              </div>
+
+              {!shareUrl ? (
+                <Button
+                  onClick={handleGenerateLink}
+                  disabled={isGenerating}
+                  className="bg-emerald hover:bg-emerald/90 w-full gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating link...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4" />
+                      Generate Share Link
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                    <Button
+                      onClick={handleCopyLink}
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                    >
+                      {isCopied ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    This link is valid for 2 days. The advisor will be able to
+                    view your estimate without needing an account.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowSharePanel(false)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
