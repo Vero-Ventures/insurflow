@@ -81,9 +81,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@/lib/financial/insurance-needs", async () => {
-  const actual = await vi.importActual<typeof import("../route")>(
-    "@/lib/financial/insurance-needs",
-  );
+  const actual = await vi.importActual("@/lib/financial/insurance-needs");
   return {
     ...actual,
     calculateInsuranceNeedsRoundedWithTrace:
