@@ -46,6 +46,25 @@ function getMeetingConfidence(scenarios: Scenario[]): MeetingConfidence {
   };
 }
 
+export function getTargetCoverageFromSortedTotals(
+  sortedTotals: number[],
+): number {
+  if (sortedTotals.length === 0) {
+    return 0;
+  }
+
+  const mid = Math.floor(sortedTotals.length / 2);
+
+  if (sortedTotals.length % 2 === 1) {
+    return sortedTotals[mid] ?? 0;
+  }
+
+  const lower = sortedTotals[mid - 1] ?? 0;
+  const upper = sortedTotals[mid] ?? 0;
+
+  return (lower + upper) / 2;
+}
+
 export function ScenarioMeetingSummary({
   scenarios,
   lastRecalculatedAt,
@@ -64,8 +83,7 @@ export function ScenarioMeetingSummary({
   const sortedTotals = [...summaries]
     .map((scenario) => scenario.totalCoverage)
     .sort((a, b) => a - b);
-  const midpointIndex = Math.floor(sortedTotals.length / 2);
-  const targetCoverage = sortedTotals[midpointIndex] ?? 0;
+  const targetCoverage = getTargetCoverageFromSortedTotals(sortedTotals);
   const lowCoverage = sortedTotals[0] ?? 0;
   const highCoverage = sortedTotals.at(-1) ?? 0;
   const avgPremium =
