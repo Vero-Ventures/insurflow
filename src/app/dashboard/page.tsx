@@ -4,16 +4,21 @@ import {
   ClipboardList,
   FileBarChart2,
   Handshake,
+  Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { redirect } from "next/navigation";
 
 import {
-  DEMO_HANDOFF_ROUTE,
-  DEMO_INTAKE_ROUTE,
-  DEMO_SNAPSHOT_ROUTE,
-} from "@/lib/app-routes";
+  getDashboardExperience,
+  normalizeAccountType,
+} from "@/lib/role-experience";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSession } from "@/server/better-auth/server";
+import { getDb } from "@/server/db";
+import { userProfile } from "@/server/db/schemas";
+import { eq } from "drizzle-orm";
 
 type JourneyCardProps = {
   title: string;
@@ -22,6 +27,13 @@ type JourneyCardProps = {
   ctaLabel: string;
   icon: ComponentType<{ className?: string }>;
 };
+
+const iconMap = {
+  clipboard: ClipboardList,
+  chart: FileBarChart2,
+  handoff: Handshake,
+  users: Users,
+} as const;
 
 function JourneyCard({
   title,
@@ -53,45 +65,52 @@ function JourneyCard({
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+
+  const db = getDb();
+  const profile = await db.query.userProfile.findFirst({
+    where: eq(userProfile.userId, session.user.id),
+    columns: { accountType: true },
+  });
+
+  const accountType = normalizeAccountType(profile?.accountType) ?? "client";
+  const dashboardExperience = getDashboardExperience(accountType);
+
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
       <div className="mx-auto w-full max-w-6xl space-y-8">
         <section className="space-y-3">
           <p className="text-primary text-sm font-semibold tracking-wide uppercase">
-            Your Planning Dashboard
+            {dashboardExperience.eyebrow}
           </p>
           <h1 className="font-display text-foreground text-3xl tracking-tight sm:text-4xl">
-            Pick up your client journey
+            {dashboardExperience.heading}
           </h1>
           <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">
-            Start where you left off. Move from intake to estimate and finish
-            with a clear advisor handoff.
+            {dashboardExperience.description}
           </p>
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <JourneyCard
-            title="Continue Intake"
-            description="Capture or update household details in a guided flow before running the estimate."
-            href={DEMO_INTAKE_ROUTE}
-            ctaLabel="Continue Intake"
-            icon={ClipboardList}
-          />
-          <JourneyCard
-            title="View Estimate Snapshot"
-            description="Review the current estimate and plain-language breakdown of what it means."
-            href={DEMO_SNAPSHOT_ROUTE}
-            ctaLabel="View Estimate Snapshot"
-            icon={FileBarChart2}
-          />
-          <JourneyCard
-            title="Advisor Handoff"
-            description="Prepare the next conversation with one clear handoff step and recommended action."
-            href={DEMO_HANDOFF_ROUTE}
-            ctaLabel="Advisor Handoff"
-            icon={Handshake}
-          />
+          {dashboardExperience.cards.map((card) => {
+            const Icon = iconMap[card.icon];
+
+            return (
+              <JourneyCard
+                key={card.title}
+                title={card.title}
+                description={card.description}
+                href={card.href}
+                ctaLabel={card.ctaLabel}
+                icon={Icon}
+              />
+            );
+          })}
         </section>
       </div>
     </main>

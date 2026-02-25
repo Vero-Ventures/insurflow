@@ -13,6 +13,7 @@ import {
   type OnboardingProfileInput,
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
+import { getAccountTypeConfirmation } from "@/lib/role-experience";
 import { STATES } from "@/lib/validation/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,13 +38,20 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
   const [communicationPreference, setCommunicationPreference] = useState<
     OnboardingProfileInput["communicationPreference"] | ""
   >(initialProfile.communicationPreference ?? "");
-  const [accountType, setAccountType] = useState(
-    initialProfile.accountType ?? "client",
-  );
+  const [accountType, setAccountType] = useState<
+    OnboardingProfileInput["accountType"] | ""
+  >(initialProfile.accountType ?? "");
+  const accountTypeConfirmation = getAccountTypeConfirmation(accountType);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!accountType) {
+      toast.error("Select your account type to continue.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -177,18 +185,37 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
                 value={accountType}
                 onChange={(event) =>
                   setAccountType(
-                    event.target.value as OnboardingProfileInput["accountType"],
+                    event.target.value as
+                      | OnboardingProfileInput["accountType"]
+                      | "",
                   )
                 }
                 className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 required
               >
+                <option value="">Select account type</option>
                 {ACCOUNT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
+              {accountTypeConfirmation ? (
+                <div
+                  className={`rounded-md border px-3 py-2 text-xs ${
+                    accountTypeConfirmation.tone === "advisor"
+                      ? "border-sky-200 bg-sky-50 text-sky-900"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {accountTypeConfirmation.title}
+                  </p>
+                  <p className="mt-1 leading-relaxed">
+                    {accountTypeConfirmation.description}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-2">

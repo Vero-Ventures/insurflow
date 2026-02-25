@@ -11,6 +11,9 @@ import {
   Zap,
 } from "lucide-react";
 
+import { RoleIntentSelector } from "@/components/auth/role-intent-selector";
+import { normalizeAccountType } from "@/lib/role-experience";
+
 export function generateStaticParams() {
   return Object.values(authViewPaths).map((path) => ({ path }));
 }
@@ -50,13 +53,19 @@ const stats = [
 
 export default async function AuthPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ path: string }>;
+  searchParams: Promise<{ role?: string | string[] }>;
 }) {
   const { path } = await params;
+  const { role } = await searchParams;
 
   // Determine if this is sign-up or sign-in for contextual copy
   const isSignUp = path === "sign-up";
+  const selectedRole = normalizeAccountType(
+    Array.isArray(role) ? role[0] : role,
+  );
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col lg:flex-row">
@@ -202,6 +211,8 @@ export default async function AuthPage({
                 : "Sign in to continue to InsurFlow"}
             </p>
           </div>
+
+          {isSignUp ? <RoleIntentSelector selectedRole={selectedRole} /> : null}
 
           <AuthView
             path={path}
