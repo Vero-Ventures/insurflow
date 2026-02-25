@@ -274,15 +274,15 @@ export function getStateRateTable(stateCode: string): StateRateTable {
       rows.push({
         label: "Inheritance Tax",
         value: "Yes",
-        note: stateTax.notes,
       });
     }
 
-    if (stateTax.notes && !stateTax.hasInheritanceTax) {
-      const lastRow = rows[rows.length - 1];
-      if (lastRow) {
-        rows[rows.length - 1] = { ...lastRow, note: stateTax.notes };
-      }
+    // Add notes as a dedicated row to avoid attaching to wrong data
+    if (stateTax.notes) {
+      rows.push({
+        label: "Notes",
+        value: stateTax.notes,
+      });
     }
 
     sections.push({

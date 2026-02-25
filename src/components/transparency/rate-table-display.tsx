@@ -29,7 +29,7 @@ function RateTableSectionView({ section }: { section: RateTableSection }) {
           <tbody>
             {section.rows.map((row, i) => (
               <tr
-                key={i}
+                key={row.label}
                 className={cn(
                   "border-b last:border-b-0",
                   i % 2 === 0 ? "bg-muted/20" : "bg-background",
@@ -90,8 +90,8 @@ export function RateTableDisplay({
 
         <CollapsibleContent>
           <CardContent className="space-y-4 pt-0">
-            {rateTable.sections.map((section, i) => (
-              <RateTableSectionView key={i} section={section} />
+            {rateTable.sections.map((section) => (
+              <RateTableSectionView key={section.title} section={section} />
             ))}
           </CardContent>
         </CollapsibleContent>

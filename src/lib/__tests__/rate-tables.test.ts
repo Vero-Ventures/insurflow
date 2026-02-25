@@ -58,6 +58,26 @@ describe("getStateRateTable", () => {
       expect(section.effectiveDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
   });
+
+  it("shows notes as a dedicated row", () => {
+    const table = getStateRateTable("CT");
+    const stateSection = table.sections.find((s) =>
+      s.title.includes("Connecticut"),
+    );
+    expect(stateSection).toBeDefined();
+    const notesRow = stateSection?.rows.find((r) => r.label === "Notes");
+    expect(notesRow).toBeDefined();
+    expect(notesRow?.value).toContain("federal exemption");
+  });
+
+  it("does not attach notes to unrelated rows", () => {
+    const table = getStateRateTable("CT");
+    const stateSection = table.sections.find((s) =>
+      s.title.includes("Connecticut"),
+    );
+    const topRateRow = stateSection?.rows.find((r) => r.label === "Top Rate");
+    expect(topRateRow?.note).toBeUndefined();
+  });
 });
 
 describe("stateHasDeathTax", () => {

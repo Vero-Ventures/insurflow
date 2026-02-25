@@ -101,7 +101,12 @@ export function MethodologySection({
                 <span className="font-medium">
                   {new Date(methodology.lastReviewedDate).toLocaleDateString(
                     "en-US",
-                    { year: "numeric", month: "long", day: "numeric" },
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    },
                   )}
                 </span>
               </p>
