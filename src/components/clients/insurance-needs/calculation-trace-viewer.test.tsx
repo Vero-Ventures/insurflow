@@ -50,4 +50,63 @@ describe("CalculationTraceViewer", () => {
     expect(screen.getByText("$125,000.00")).toBeDefined();
     expect(screen.getByText("Assumption")).toBeDefined();
   });
+
+  it("trims ratio values safely without regex backtracking", () => {
+    render(
+      <CalculationTraceViewer
+        trace={{
+          version: "1.0.0",
+          sections: [
+            {
+              key: "ratios",
+              label: "Ratios",
+              items: [
+                {
+                  key: "ratio_1_2300",
+                  label: "Ratio 1.2300",
+                  value: 1.23,
+                  kind: "intermediate",
+                  unit: "ratio",
+                },
+                {
+                  key: "ratio_1_0000",
+                  label: "Ratio 1.0000",
+                  value: 1,
+                  kind: "intermediate",
+                  unit: "ratio",
+                },
+                {
+                  key: "ratio_1_2345",
+                  label: "Ratio 1.2345",
+                  value: 1.2345,
+                  kind: "intermediate",
+                  unit: "ratio",
+                },
+                {
+                  key: "ratio_1_2001",
+                  label: "Ratio 1.2001",
+                  value: 1.2001,
+                  kind: "intermediate",
+                  unit: "ratio",
+                },
+                {
+                  key: "ratio_1_0001",
+                  label: "Ratio 1.0001",
+                  value: 1.0001,
+                  kind: "intermediate",
+                  unit: "ratio",
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("1.23")).toBeDefined();
+    expect(screen.getByText("1")).toBeDefined();
+    expect(screen.getByText("1.2345")).toBeDefined();
+    expect(screen.getByText("1.2001")).toBeDefined();
+    expect(screen.getByText("1.0001")).toBeDefined();
+  });
 });

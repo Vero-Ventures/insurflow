@@ -10,6 +10,24 @@ interface CalculationTraceViewerProps {
   className?: string;
 }
 
+function formatRatioValue(value: number): string {
+  let formatted = value.toFixed(4);
+
+  if (!formatted.includes(".")) {
+    return formatted;
+  }
+
+  while (formatted.endsWith("0")) {
+    formatted = formatted.slice(0, -1);
+  }
+
+  if (formatted.endsWith(".")) {
+    formatted = formatted.slice(0, -1);
+  }
+
+  return formatted;
+}
+
 function formatTraceValue(item: TraceItem): string {
   if (item.value === null) return "Not provided";
   if (typeof item.value === "string") return item.value;
@@ -22,7 +40,7 @@ function formatTraceValue(item: TraceItem): string {
     case "years":
       return `${item.value} ${item.value === 1 ? "year" : "years"}`;
     case "ratio":
-      return item.value.toFixed(4).replace(/\.?0+$/, "");
+      return formatRatioValue(item.value);
     default:
       return String(item.value);
   }
