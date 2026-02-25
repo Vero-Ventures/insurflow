@@ -7,6 +7,12 @@ import {
 
 export type AccountType = "client" | "advisor";
 
+type AccountTypeConfirmation = {
+  title: string;
+  description: string;
+  tone: "client" | "advisor";
+};
+
 type DashboardCard = {
   title: string;
   description: string;
@@ -116,4 +122,30 @@ export function getDashboardExperience(
       },
     ],
   };
+}
+
+export function getAccountTypeConfirmation(
+  accountType: string | null | undefined,
+): AccountTypeConfirmation | null {
+  const normalizedAccountType = normalizeAccountType(accountType);
+
+  if (normalizedAccountType === "advisor") {
+    return {
+      title: "Advisor account selected",
+      description:
+        "You will see advisor workflow cards and client workspace access after onboarding.",
+      tone: "advisor",
+    };
+  }
+
+  if (normalizedAccountType === "client") {
+    return {
+      title: "Client account selected",
+      description:
+        "You will see a client-focused dashboard with intake, estimate, and handoff guidance.",
+      tone: "client",
+    };
+  }
+
+  return null;
 }

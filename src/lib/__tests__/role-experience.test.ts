@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getAccountTypeConfirmation,
   getDashboardExperience,
   normalizeAccountType,
   resolveOnboardingAccountType,
@@ -40,5 +41,15 @@ describe("role experience helpers", () => {
     expect(advisorExperience.cards[0]?.title).not.toBe(
       clientExperience.cards[0]?.title,
     );
+  });
+
+  it("returns role confirmation copy for onboarding", () => {
+    expect(getAccountTypeConfirmation("advisor")?.title).toMatch(
+      /advisor account selected/i,
+    );
+    expect(getAccountTypeConfirmation("client")?.title).toMatch(
+      /client account selected/i,
+    );
+    expect(getAccountTypeConfirmation("")).toBeNull();
   });
 });
