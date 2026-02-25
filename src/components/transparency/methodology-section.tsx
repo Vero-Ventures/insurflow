@@ -16,7 +16,7 @@ import { CalculationBreakdown } from "./calculation-breakdown";
 interface MethodologySectionProps {
   methodology: MethodologyData;
   /** Actual values to show alongside each step (optional) */
-  stepValues?: Record<number, { label: string; value: string }>;
+  stepValues?: Record<number, { value: string }>;
   /** Default open state */
   defaultOpen?: boolean;
 }

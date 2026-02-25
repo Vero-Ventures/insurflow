@@ -7,7 +7,7 @@ import type { MethodologyStep } from "@/lib/transparency/methodology-data";
 interface CalculationBreakdownProps {
   steps: MethodologyStep[];
   /** Actual calculated values to display next to each step */
-  stepValues?: Record<number, { label: string; value: string }>;
+  stepValues?: Record<number, { value: string }>;
 }
 
 export function CalculationBreakdown({

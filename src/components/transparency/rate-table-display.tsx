@@ -35,9 +35,12 @@ function RateTableSectionView({ section }: { section: RateTableSection }) {
                   i % 2 === 0 ? "bg-muted/20" : "bg-background",
                 )}
               >
-                <td className="text-muted-foreground px-3 py-2 font-medium">
+                <th
+                  scope="row"
+                  className="text-muted-foreground px-3 py-2 text-left font-medium"
+                >
                   {row.label}
-                </td>
+                </th>
                 <td className="px-3 py-2 text-right">
                   <span>{row.value}</span>
                   {row.note && (

@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
-import { MethodologySection } from "@/components/transparency";
+import {
+  MethodologySection,
+  RateTableDisplay,
+} from "@/components/transparency";
 import { formatCurrency } from "@/lib/client-utils";
+import { demoClient } from "@/lib/demo-data";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
+import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
@@ -188,32 +193,29 @@ export default function DemoEstimatePage() {
           </p>
         </Card>
 
-        <div className="mt-6" data-tour="estimate-transparency">
+        <div className="mt-6 space-y-4" data-tour="estimate-transparency">
           <MethodologySection
             methodology={INSURANCE_NEEDS_METHODOLOGY}
             stepValues={{
               1: {
-                label: "Income Replacement",
                 value: formatCurrency(result.incomeReplacementNeeds),
               },
               2: {
-                label: "Debt Payoff",
                 value: formatCurrency(result.debtPayoffNeeds),
               },
               3: {
-                label: "Estate Buffer",
                 value: formatCurrency(result.estateBufferNeeds),
               },
               4: {
-                label: "Gross Needs",
                 value: formatCurrency(result.grossNeeds),
               },
               5: {
-                label: "Total Insurance Need",
                 value: formatCurrency(result.totalInsuranceNeeds),
               },
             }}
           />
+
+          <RateTableDisplay rateTable={getStateRateTable(demoClient.state)} />
         </div>
 
         <div className="mt-6 flex justify-end" data-tour="showcase-next">
