@@ -1,8 +1,4 @@
-import {
-  createCalculationTrace,
-  createTraceItem,
-  createTraceSection,
-} from "@/lib/calculation-trace";
+import { createCalculationTrace } from "@/lib/calculation-trace";
 import type { CalculationTrace } from "@/types/calculation-trace";
 
 /**
@@ -232,258 +228,258 @@ function buildInsuranceNeedsTrace(
     input.estateBuffer.type === "fixed" ? "currency" : "percent";
 
   return createCalculationTrace([
-    createTraceSection({
+    {
       key: "income_replacement",
       label: "Income replacement",
       result: mapNumber(result.incomeReplacementNeeds),
       items: [
-        createTraceItem({
+        {
           key: "client_income",
           label: "Client income",
           value: mapNumber(input.clientIncome),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "spouse_income",
           label: "Spouse income",
           value: spouseIncomeRaw == null ? null : mapNumber(spouseIncomeRaw),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "include_spouse_income",
           label: "Include spouse income",
           value: input.includeSpouseIncome ? "yes" : "no",
           kind: "assumption",
-        }),
-        createTraceItem({
+        },
+        {
           key: "income_replacement_percent",
           label: "Income replacement percent",
           value: mapNumber(input.incomeReplacementPercent),
           kind: "assumption",
           unit: "percent",
-        }),
-        createTraceItem({
+        },
+        {
           key: "replacement_duration_years",
           label: "Replacement duration",
           value: mapNumber(input.replacementDurationYears),
           kind: "assumption",
           unit: "years",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_client_income",
           label: "Normalized client income",
           value: mapNumber(validClientIncome),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_spouse_income",
           label: "Normalized spouse income",
           value:
             validSpouseIncome == null ? null : mapNumber(validSpouseIncome),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "included_spouse_income",
           label: "Included spouse income",
           value: mapNumber(includedSpouseIncome),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_replacement_percent",
           label: "Normalized replacement percent",
           value: mapNumber(validPercent),
           kind: "intermediate",
           unit: "percent",
-        }),
-        createTraceItem({
+        },
+        {
           key: "replacement_factor",
           label: "Replacement factor",
           value: mapNumber(replacementFactor),
           kind: "intermediate",
           unit: "ratio",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_replacement_years",
           label: "Normalized replacement years",
           value: mapNumber(validYears),
           kind: "intermediate",
           unit: "years",
-        }),
-        createTraceItem({
+        },
+        {
           key: "total_income_for_replacement",
           label: "Income used for replacement",
           value: mapNumber(totalIncomeForReplacement),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "income_replacement_needs",
           label: "Income replacement needs",
           value: mapNumber(result.incomeReplacementNeeds),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
-    createTraceSection({
+    },
+    {
       key: "debt_payoff",
       label: "Debt payoff",
       result: mapNumber(result.debtPayoffNeeds),
       items: [
-        createTraceItem({
+        {
           key: "total_debts",
           label: "Total debts",
           value: mapNumber(input.totalDebts),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_total_debts",
           label: "Normalized total debts",
           value: mapNumber(validDebtTotal),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "debt_payoff_needs",
           label: "Debt payoff needs",
           value: mapNumber(result.debtPayoffNeeds),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
-    createTraceSection({
+    },
+    {
       key: "estate_buffer",
       label: "Estate buffer",
       result: mapNumber(result.estateBufferNeeds),
       items: [
-        createTraceItem({
+        {
           key: "estate_buffer_type",
           label: "Estate buffer method",
           value: input.estateBuffer.type,
           kind: "assumption",
-        }),
-        createTraceItem({
+        },
+        {
           key: "estate_buffer_config_value",
           label: "Estate buffer configured value",
           value: mapNumber(estateBufferConfiguredValue),
           kind: "assumption",
           unit: estateBufferValueUnit,
-        }),
-        createTraceItem({
+        },
+        {
           key: "total_assets",
           label: "Total assets",
           value: mapNumber(input.totalAssets),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_total_assets",
           label: "Normalized total assets",
           value: mapNumber(validTotalAssets),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_estate_buffer_value",
           label: "Normalized estate buffer value",
           value: mapNumber(normalizedEstateBufferValue),
           kind: "intermediate",
           unit: estateBufferValueUnit,
-        }),
-        createTraceItem({
+        },
+        {
           key: "estate_buffer_needs",
           label: "Estate buffer needs",
           value: mapNumber(result.estateBufferNeeds),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
-    createTraceSection({
+    },
+    {
       key: "gross_needs",
       label: "Gross needs",
       result: mapNumber(result.grossNeeds),
       items: [
-        createTraceItem({
+        {
           key: "income_replacement_needs",
           label: "Income replacement needs",
           value: mapNumber(result.incomeReplacementNeeds),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "debt_payoff_needs",
           label: "Debt payoff needs",
           value: mapNumber(result.debtPayoffNeeds),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "estate_buffer_needs",
           label: "Estate buffer needs",
           value: mapNumber(result.estateBufferNeeds),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "gross_needs",
           label: "Gross insurance needs",
           value: mapNumber(result.grossNeeds),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
-    createTraceSection({
+    },
+    {
       key: "deductions",
       label: "Existing resources",
       result: mapNumber(totalDeductions),
       items: [
-        createTraceItem({
+        {
           key: "existing_life_insurance_coverage",
           label: "Existing life insurance coverage",
           value: mapNumber(input.existingLifeInsuranceCoverage),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "liquid_assets",
           label: "Liquid assets",
           value: mapNumber(input.liquidAssets),
           kind: "input",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_existing_coverage",
           label: "Normalized existing coverage",
           value: mapNumber(validExistingCoverage),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "normalized_liquid_assets",
           label: "Normalized liquid assets",
           value: mapNumber(validLiquidAssets),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "total_deductions",
           label: "Total deductions",
           value: mapNumber(totalDeductions),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
-    createTraceSection({
+    },
+    {
       key: "net_needs",
       label: "Net insurance needs",
       result: mapNumber(result.totalInsuranceNeeds),
@@ -492,36 +488,36 @@ function buildInsuranceNeedsTrace(
           ? ["Net insurance needs are floored at zero."]
           : undefined,
       items: [
-        createTraceItem({
+        {
           key: "gross_needs",
           label: "Gross insurance needs",
           value: mapNumber(result.grossNeeds),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "total_deductions",
           label: "Total deductions",
           value: mapNumber(totalDeductions),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "net_needs_before_floor",
           label: "Net needs before floor",
           value: mapNumber(netBeforeFloor),
           kind: "intermediate",
           unit: "currency",
-        }),
-        createTraceItem({
+        },
+        {
           key: "total_insurance_needs",
           label: "Total insurance needs",
           value: mapNumber(result.totalInsuranceNeeds),
           kind: "result",
           unit: "currency",
-        }),
+        },
       ],
-    }),
+    },
   ]);
 }
 
