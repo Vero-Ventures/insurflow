@@ -101,8 +101,9 @@ export const clientStatusEnum = pgEnum("client_status", [
 /** Onboarding household status */
 export const householdStatusEnum = pgEnum("household_status", [
   "single",
+  "married",
   "partnered",
-  "family",
+  "single_parent",
 ]);
 
 /** Onboarding primary goal */

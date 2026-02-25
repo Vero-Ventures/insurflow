@@ -2,7 +2,11 @@ import { z } from "zod";
 
 import { STATES } from "@/lib/validation/client";
 
-export type HouseholdStatus = "single" | "partnered" | "family";
+export type HouseholdStatus =
+  | "single"
+  | "married"
+  | "partnered"
+  | "single_parent";
 
 export type PrimaryGoal =
   | "family_protection"
@@ -18,8 +22,9 @@ export const HOUSEHOLD_STATUS_OPTIONS: Array<{
   label: string;
 }> = [
   { value: "single", label: "Single" },
+  { value: "married", label: "Married" },
   { value: "partnered", label: "Partnered" },
-  { value: "family", label: "Family with dependents" },
+  { value: "single_parent", label: "Single Parent" },
 ];
 
 export const PRIMARY_GOAL_OPTIONS: Array<{
@@ -53,7 +58,7 @@ export const onboardingProfileSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100),
   lastName: z.string().trim().min(1, "Last name is required").max(100),
   state: z.enum(STATES),
-  householdStatus: z.enum(["single", "partnered", "family"]),
+  householdStatus: z.enum(["single", "married", "partnered", "single_parent"]),
   primaryGoal: z.enum([
     "family_protection",
     "debt_coverage",

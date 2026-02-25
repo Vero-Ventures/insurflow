@@ -71,8 +71,9 @@ export default async function OnboardingPage({
             state: profile?.state,
             householdStatus: profile?.householdStatus as
               | "single"
+              | "married"
               | "partnered"
-              | "family"
+              | "single_parent"
               | undefined,
             primaryGoal: profile?.primaryGoal as
               | "family_protection"

@@ -1,15 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowRight,
-  CalendarClock,
-  FileCheck2,
-  MessageCircle,
-} from "lucide-react";
+import { CalendarClock, FileCheck2, MessageCircle, Share2 } from "lucide-react";
+import { useDemoContext } from "@/components/demo/demo-context";
+import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
+import { ShareWithAdvisorModal } from "@/components/demo/share-with-advisor-modal";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 4;
@@ -33,6 +32,31 @@ const nextSteps = [
 ];
 
 export default function DemoHandoffPage() {
+  const [showShareModal, setShowShareModal] = useState(false);
+  const { state } = useDemoContext();
+
+  const { result } = useDemoInsuranceNeeds({
+    annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
+    totalDebts: state.intakeData.totalDebts,
+    currentCoverage: state.intakeData.currentCoverage,
+    incomeReplacementPercent:
+      state.analysisAssumptions.incomeReplacementPercent,
+    replacementDurationYears:
+      state.analysisAssumptions.replacementDurationYears,
+    liquidAssets: state.analysisAssumptions.liquidAssets,
+  });
+
+  const estimateResult = result
+    ? {
+        coverageNeed: result.totalInsuranceNeeds,
+        existingCoverage: result.existingCoverage,
+        coverageGap: Math.max(
+          0,
+          result.totalInsuranceNeeds - result.existingCoverage,
+        ),
+      }
+    : null;
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
       <div className="relative z-10 container mx-auto px-4 py-8 lg:px-8">
@@ -92,17 +116,26 @@ export default function DemoHandoffPage() {
         </Card>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button asChild className="bg-emerald hover:bg-emerald/90 gap-2">
-            <Link href="/auth/sign-up">
-              Connect with an Advisor
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <Button
+            className="bg-emerald hover:bg-emerald/90 gap-2"
+            onClick={() => setShowShareModal(true)}
+          >
+            <Share2 className="h-4 w-4" />
+            Share with Advisor
           </Button>
           <Button variant="outline" asChild>
             <Link href="/demo">Restart Demo</Link>
           </Button>
         </div>
       </div>
+
+      <ShareWithAdvisorModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        intakeData={state.intakeData}
+        estimateResult={estimateResult}
+        scenarioId={state.selectedScenarioId}
+      />
     </div>
   );
 }
