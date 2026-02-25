@@ -20,6 +20,72 @@ describe("ScenarioComparisonView", () => {
     expect(screen.getAllByText(/Scenario [A-C]/)).toHaveLength(2);
     expect(removeButton.getAttribute("disabled")).not.toBeNull();
   });
+
+  it("opens meeting mode with one-screen summary content", () => {
+    render(<ScenarioComparisonView />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Open Meeting Mode",
+      }),
+    );
+
+    expect(screen.getByTestId("meeting-mode-summary")).toBeDefined();
+    expect(screen.getByText("Meeting Mode Summary")).toBeDefined();
+    expect(screen.getByText("Confidence")).toBeDefined();
+    expect(screen.getByText("Calculation assumptions")).toBeDefined();
+    expect(screen.queryByText("Adjustments")).toBeNull();
+  });
+
+  it("supports meeting mode quick actions for recalculate and editing assumptions", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-25T10:00:00Z"));
+
+    render(<ScenarioComparisonView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Meeting Mode" }));
+
+    const before = screen.getByText(
+      /Summary last recalculated at/i,
+    ).textContent;
+
+    vi.setSystemTime(new Date("2026-02-25T10:05:00Z"));
+    fireEvent.click(screen.getByRole("button", { name: "Recalculate" }));
+
+    const after = screen.getByText(/Summary last recalculated at/i).textContent;
+    expect(after).not.toBe(before);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit assumptions" }));
+
+    expect(
+      screen.getByRole("button", { name: "Open Meeting Mode" }),
+    ).toBeDefined();
+    expect(screen.getAllByText("Adjustments").length).toBeGreaterThan(0);
+
+    vi.useRealTimers();
+  });
+
+  it("refreshes summary timestamp when re-entering meeting mode after edits", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-25T10:00:00Z"));
+
+    render(<ScenarioComparisonView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Meeting Mode" }));
+    const before = screen.getByText(
+      /Summary last recalculated at/i,
+    ).textContent;
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit assumptions" }));
+
+    vi.setSystemTime(new Date("2026-02-25T10:07:00Z"));
+    fireEvent.click(screen.getByRole("button", { name: "Open Meeting Mode" }));
+
+    const after = screen.getByText(/Summary last recalculated at/i).textContent;
+    expect(after).not.toBe(before);
+
+    vi.useRealTimers();
+  });
 });
 
 describe("ScenarioCard", () => {

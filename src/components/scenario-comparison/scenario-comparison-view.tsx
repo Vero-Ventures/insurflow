@@ -2,12 +2,19 @@
 
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, FileDown } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  FileDown,
+  MonitorUp,
+  SlidersHorizontal,
+} from "lucide-react";
 import {
   ScenarioCard,
   type Scenario,
   type ScenarioCoverage,
 } from "@/components/scenario-comparison/scenario-card";
+import { ScenarioMeetingSummary } from "@/components/scenario-comparison/scenario-meeting-summary";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -42,6 +49,10 @@ export function ScenarioComparisonView() {
     createScenario(0),
     createScenario(1),
   ]);
+  const [isMeetingMode, setIsMeetingMode] = useState(false);
+  const [meetingSummaryCalculatedAt, setMeetingSummaryCalculatedAt] = useState(
+    () => new Date(),
+  );
 
   // ---- Mutations ----------------------------------------------------------
 
@@ -76,18 +87,37 @@ export function ScenarioComparisonView() {
     window.print();
   }, []);
 
+  const handleMeetingRecalculate = useCallback(() => {
+    // Summary values are derived from current scenarios, so recalculation
+    // refreshes the visible snapshot timestamp during the meeting.
+    setMeetingSummaryCalculatedAt(new Date());
+  }, []);
+
+  const handleMeetingModeToggle = useCallback(() => {
+    setIsMeetingMode((prev) => {
+      const next = !prev;
+
+      if (next) {
+        setMeetingSummaryCalculatedAt(new Date());
+      }
+
+      return next;
+    });
+  }, []);
+
   // ---- Render -------------------------------------------------------------
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={addScenario}
             disabled={scenarios.length >= MAX_SCENARIOS}
+            className="w-full sm:w-auto"
           >
             <Plus className="size-4" data-icon="inline-start" />
             Add Scenario
@@ -97,28 +127,55 @@ export function ScenarioComparisonView() {
             size="sm"
             onClick={removeScenario}
             disabled={scenarios.length <= MIN_SCENARIOS}
+            className="w-full sm:w-auto"
           >
             <Minus className="size-4" data-icon="inline-start" />
             Remove
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPdf}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            className="w-full sm:w-auto"
+          >
             <FileDown className="size-4" data-icon="inline-start" />
             Export PDF
           </Button>
         </div>
+        <Button
+          variant={isMeetingMode ? "secondary" : "default"}
+          size="sm"
+          onClick={handleMeetingModeToggle}
+          className="w-full sm:w-auto"
+        >
+          {isMeetingMode ? (
+            <SlidersHorizontal className="size-4" data-icon="inline-start" />
+          ) : (
+            <MonitorUp className="size-4" data-icon="inline-start" />
+          )}
+          {isMeetingMode ? "Back to Assumptions" : "Open Meeting Mode"}
+        </Button>
       </div>
 
-      {/* Scenario grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {scenarios.map((scenario) => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            onNameChange={handleNameChange}
-            onCoverageChange={handleCoverageChange}
-          />
-        ))}
-      </div>
+      {isMeetingMode ? (
+        <ScenarioMeetingSummary
+          scenarios={scenarios}
+          lastRecalculatedAt={meetingSummaryCalculatedAt}
+          onRecalculate={handleMeetingRecalculate}
+          onEditAssumptions={() => setIsMeetingMode(false)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {scenarios.map((scenario) => (
+            <ScenarioCard
+              key={scenario.id}
+              scenario={scenario}
+              onNameChange={handleNameChange}
+              onCoverageChange={handleCoverageChange}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
