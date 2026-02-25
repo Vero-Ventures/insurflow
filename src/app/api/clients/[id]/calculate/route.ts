@@ -9,7 +9,7 @@ import {
   handleValidationError,
 } from "@/lib/api/route-helpers";
 import {
-  calculateInsuranceNeedsRounded,
+  calculateInsuranceNeedsRoundedWithTrace,
   DEFAULT_ESTATE_BUFFER,
   type InsuranceNeedsInput,
   type EstateBufferConfig,
@@ -87,6 +87,7 @@ function hasClientValue(value: string | number | null | undefined): boolean {
  * - totalInsuranceNeedsBand: { low, target, high } recommendation band (target = totalInsuranceNeeds; ±10% MVP)
  * - confidence: { score (0–100), label (High/Medium/Low), reasons[] } from data completeness and assumption stability
  * - inputsUsed: object (parameters used for calculation, for transparency)
+ * - trace: structured calculation trace ("show your work")
  * - clientId, clientName, calculatedAt (envelope)
  */
 export const POST = withApiHandler(
@@ -216,7 +217,8 @@ export const POST = withApiHandler(
     };
 
     // Run calculation
-    const result = calculateInsuranceNeedsRounded(calculationInput);
+    const { result, trace } =
+      calculateInsuranceNeedsRoundedWithTrace(calculationInput);
 
     // Confidence: data completeness + assumption stability
     const completeness: EstimateCompleteness = {
@@ -252,6 +254,7 @@ export const POST = withApiHandler(
     return {
       data: {
         ...result,
+        trace,
         confidence,
         // Policy-level coverage metadata
         policyCount,

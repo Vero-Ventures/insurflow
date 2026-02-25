@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
+import type { CalculationTrace } from "@/types/calculation-trace";
 
 /** Recommendation band: low / target / high for a key value (re-exported for consumers) */
 export type RecommendationBand = {
@@ -25,6 +26,7 @@ export interface InsuranceNeedsResult {
   policyCount?: number;
   /** Source of existing coverage: "policies" (from policy records) or "legacy" (from scalar field) */
   coverageSource?: "policies" | "legacy";
+  trace?: CalculationTrace;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -47,6 +49,7 @@ interface CalculateResponse {
   totalInsuranceNeedsBand?: RecommendationBand;
   policyCount?: number;
   coverageSource?: "policies" | "legacy";
+  trace: CalculationTrace;
   inputsUsed: {
     clientIncome: number;
     spouseIncome: number;
@@ -154,6 +157,7 @@ export function useInsuranceNeeds(
         totalInsuranceNeedsBand: data.totalInsuranceNeedsBand,
         policyCount: data.policyCount,
         coverageSource: data.coverageSource,
+        trace: data.trace,
         inputsUsed: data.inputsUsed,
       });
 
