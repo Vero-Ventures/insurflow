@@ -26,6 +26,8 @@ import type {
   ConfidenceLabel,
   ConfidenceResult,
 } from "@/lib/financial/confidence-scoring";
+import { MethodologySection } from "@/components/transparency";
+import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 
 const MAX_CONFIDENCE_REASONS_TO_DISPLAY = 6;
 
@@ -449,6 +451,37 @@ export function InsuranceNeedsCard({
                   )}
               </li>
             </ul>
+          </div>
+        )}
+
+        {/* Calculation Transparency */}
+        {result && (
+          <div className="mt-6 border-t pt-6">
+            <MethodologySection
+              methodology={INSURANCE_NEEDS_METHODOLOGY}
+              stepValues={{
+                1: {
+                  label: "Income Replacement",
+                  value: formatCurrency(incomeReplacementNeeds),
+                },
+                2: {
+                  label: "Debt Payoff",
+                  value: formatCurrency(debtPayoffNeeds),
+                },
+                3: {
+                  label: "Estate Buffer",
+                  value: formatCurrency(estateBufferNeeds),
+                },
+                4: {
+                  label: "Gross Needs",
+                  value: formatCurrency(grossNeeds),
+                },
+                5: {
+                  label: "Total Insurance Need",
+                  value: formatCurrency(totalInsuranceNeeds),
+                },
+              }}
+            />
           </div>
         )}
       </CardContent>
