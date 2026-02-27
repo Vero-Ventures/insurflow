@@ -5,6 +5,7 @@ import { userProfile } from "@/server/db/schemas";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { validateUUID, verifyClientOwnership } from "./client-helpers";
+import { getSessionUserId } from "@/lib/auth/session-utils";
 
 /**
  * Context passed to API route handlers
@@ -173,15 +174,24 @@ export async function validateSession(
   logger: Logger,
 ): Promise<{ session: Session } | { error: NextResponse }> {
   const session = await getSession();
+  const userId = getSessionUserId(session);
 
-  if (!session?.user) {
+  if (!session?.user || !userId) {
     await logger.warn("Unauthorized access attempt");
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
 
-  return { session };
+  const normalizedSession = {
+    ...session,
+    user: {
+      ...session.user,
+      id: userId,
+    },
+  } as Session;
+
+  return { session: normalizedSession };
 }
 
 export async function validateAdvisorSession(

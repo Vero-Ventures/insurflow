@@ -1,27 +1,36 @@
 import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 import {
   deriveOnboardingPrefill,
   isOnboardingProfileComplete,
   onboardingProfileSchema,
 } from "@/lib/onboarding";
+import { getSessionUserId } from "@/lib/auth/session-utils";
 import {
   handleValidationError,
   parseJsonBody,
   withApiHandler,
 } from "@/lib/api/route-helpers";
 import { getDb } from "@/server/db";
-import { user, userProfile } from "@/server/db/schemas";
+import { userProfile } from "@/server/db/schemas/user-profile-schema";
+import { user } from "@/server/db/schemas/auth-schema";
 
 export const GET = withApiHandler(
   {
     endpoint: "/api/onboarding/profile",
     method: "GET",
   },
-  async (_request, { session }) => {
+  async (_request, { logger, session }) => {
+    const userId = getSessionUserId(session);
+    if (!userId) {
+      await logger.warn("Unauthorized access attempt");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const db = getDb();
     const profile = await db.query.userProfile.findFirst({
-      where: eq(userProfile.userId, session.user.id),
+      where: eq(userProfile.userId, userId),
     });
 
     const prefill = deriveOnboardingPrefill(session.user.name);
@@ -51,6 +60,12 @@ export const PUT = withApiHandler(
     method: "PUT",
   },
   async (request, { logger, session }) => {
+    const userId = getSessionUserId(session);
+    if (!userId) {
+      await logger.warn("Unauthorized access attempt");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) return bodyResult.error;
 
@@ -71,7 +86,7 @@ export const PUT = withApiHandler(
     await db
       .insert(userProfile)
       .values({
-        userId: session.user.id,
+        userId,
         firstName: data.firstName,
         lastName: data.lastName,
         state: data.state,
@@ -102,7 +117,7 @@ export const PUT = withApiHandler(
         name: fullName,
         updatedAt: now,
       })
-      .where(eq(user.id, session.user.id));
+      .where(eq(user.id, userId));
 
     await logger.info("Onboarding profile updated", {
       statusCode: 200,
