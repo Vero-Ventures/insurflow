@@ -19,3 +19,27 @@ export function getSessionUserId(
 
   return null;
 }
+
+export function normalizeSessionUserId<
+  T extends {
+    user?: Record<string, unknown> | null;
+    session?: { userId?: string | null } | null;
+  },
+>(session: T): T {
+  const userId = getSessionUserId(session);
+  if (!userId) {
+    return session;
+  }
+
+  if (session.user?.id === userId) {
+    return session;
+  }
+
+  return {
+    ...session,
+    user: {
+      ...(session.user ?? {}),
+      id: userId,
+    },
+  };
+}

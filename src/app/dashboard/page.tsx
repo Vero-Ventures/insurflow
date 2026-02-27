@@ -13,6 +13,7 @@ import {
   getDashboardExperience,
   normalizeAccountType,
 } from "@/lib/role-experience";
+import { getSessionUserId } from "@/lib/auth/session-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
@@ -67,14 +68,15 @@ function JourneyCard({
 
 export default async function DashboardPage() {
   const session = await getSession();
+  const userId = getSessionUserId(session);
 
-  if (!session?.user) {
+  if (!session?.user || !userId) {
     redirect("/auth/sign-in");
   }
 
   const db = getDb();
   const profile = await db.query.userProfile.findFirst({
-    where: eq(userProfile.userId, session.user.id),
+    where: eq(userProfile.userId, userId),
     columns: { accountType: true },
   });
 

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 
 import { createAuth, type Session as ConfigSession } from "./config";
+import { normalizeSessionUserId } from "@/lib/auth/session-utils";
 
 /**
  * Get the current user's session from the request headers.
@@ -19,7 +20,12 @@ import { createAuth, type Session as ConfigSession } from "./config";
  */
 export const getSession = async () => {
   const auth = createAuth();
-  return auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return null;
+  }
+
+  return normalizeSessionUserId(session);
 };
 
 /** Session type inferred from Better Auth */
