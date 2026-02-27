@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
 /**
  * GET /api/share-links
- * List all share links (for advisors).
+ * List all share links (for advisors) with pagination.
  * Requires authentication.
  */
 export async function GET(request: Request) {
@@ -166,21 +166,53 @@ export async function GET(request: Request) {
 
     logger.addContext({ userId: session.user.id });
 
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10)),
+    );
+    const offset = (page - 1) * limit;
+
     const db = getDb();
-    const { eq, isNull, desc, and } = await import("drizzle-orm");
+    const { isNull, desc, and, count } = await import("drizzle-orm");
+
+    const whereClause = and(isNull(shareLink.deletedAt));
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(shareLink)
+      .where(whereClause);
+
+    const total = totalResult?.count ?? 0;
+    const totalPages = Math.ceil(total / limit);
 
     const shareLinks = await db.query.shareLink.findMany({
-      where: and(isNull(shareLink.deletedAt)),
+      where: whereClause,
       orderBy: [desc(shareLink.createdAt)],
-      limit: 100,
+      limit,
+      offset,
     });
 
     await logger.info("Share links fetched successfully", {
       statusCode: 200,
       shareLinkCount: shareLinks.length,
+      total,
+      page,
+      totalPages,
     });
 
-    return NextResponse.json({ shareLinks });
+    return NextResponse.json({
+      shareLinks,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     await logger.error(
       "Error fetching share links",
