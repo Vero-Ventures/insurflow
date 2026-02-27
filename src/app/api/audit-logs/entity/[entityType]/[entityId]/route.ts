@@ -1,10 +1,9 @@
 import { getDb } from "@/server/db";
 import { auditLog, auditEntityTypeEnum } from "@/server/db/schemas";
-import { createLogger } from "@/server/axiom";
 import { and, count, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { validateSession } from "@/lib/api/route-helpers";
+import { withApiHandler } from "@/lib/api/route-helpers";
 import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
 import {
   buildPaginationResponse,
@@ -48,24 +47,17 @@ const paginationSchema = z.object({
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
  */
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ entityType: string; entityId: string }> },
-) {
-  const resolvedParams = await params;
-  const logger = createLogger({
-    endpoint: `/api/audit-logs/entity/${resolvedParams.entityType}/${resolvedParams.entityId}`,
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/audit-logs/entity/[entityType]/[entityId]",
     method: "GET",
-  });
+  },
+  async (request, { logger, session, params }) => {
+    const resolvedParams = {
+      entityType: params.entityType ?? "",
+      entityId: params.entityId ?? "",
+    };
 
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
-    // Validate path parameters
     const pathResult = pathParamsSchema.safeParse(resolvedParams);
     if (!pathResult.success) {
       await logger.warn("Invalid path parameters", {
@@ -83,7 +75,6 @@ export async function GET(
     const { entityType, entityId } = pathResult.data;
     logger.addContext({ entityType, entityId });
 
-    // Authorization: verify user has access to this entity
     const hasAccess = await verifyAuditEntityAccess(
       entityType,
       entityId,
@@ -97,7 +88,6 @@ export async function GET(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Parse pagination parameters
     const url = new URL(request.url);
     const paginationResult = paginationSchema.safeParse({
       page: url.searchParams.get("page") ?? DEFAULT_PAGE,
@@ -126,13 +116,11 @@ export async function GET(
       eq(auditLog.entityId, entityId),
     );
 
-    // Get total count
     const totalResult = await db
       .select({ count: count() })
       .from(auditLog)
       .where(whereClause);
 
-    // Get paginated audit history
     const history = await db.query.auditLog.findMany({
       where: whereClause,
       orderBy: [desc(auditLog.createdAt)],
@@ -160,20 +148,13 @@ export async function GET(
       totalPages: response.pagination.totalPages,
     });
 
-    return NextResponse.json({
-      entityType,
-      entityId,
-      history: response.data,
-      pagination: response.pagination,
-    });
-  } catch (error) {
-    await logger.error(
-      "Error fetching entity audit history",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return {
+      data: {
+        entityType,
+        entityId,
+        history: response.data,
+        pagination: response.pagination,
+      },
+    };
+  },
+);

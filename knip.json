@@ -1,11 +1,33 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
-    "next.config.js",
-    "src/app/**/{page,layout,route,loading,not-found,error}.tsx"
+    "src/app/**/{page,layout,route,loading,not-found,error}.tsx",
+    "src/env.js",
+    "src/styles/globals.css"
   ],
   "project": ["tsconfig.json"],
-  "ignore": [".next/**", "node_modules/**", "dist/**", "coverage/**", "e2e/**"],
+  "ignore": [
+    ".next/**",
+    "node_modules/**",
+    "dist/**",
+    "coverage/**",
+    "e2e/**",
+    "stubs/**"
+  ],
+  "ignoreDependencies": [
+    "@react-email/components",
+    "@eslint/eslintrc",
+    "@axiomhq/js",
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "@radix-ui/react-alert-dialog",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-slider",
+    "recharts",
+    "@commitlint/cli",
+    "husky",
+    "typescript-eslint"
+  ],
   "rules": {
     "dependencies": "warn",
     "devDependencies": "warn"

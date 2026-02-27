@@ -1,35 +1,20 @@
 import { getDb } from "@/server/db";
 import { asset, client, debt } from "@/server/db/schemas";
-import { createLogger } from "@/server/axiom";
 import {
   decimalString,
   HEALTH_RATINGS,
   isValidClientAge,
   isValidDate,
   STATES,
-  UUID_REGEX,
 } from "@/lib/validation/client";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  validateAdvisorSession,
+  withApiHandler,
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
-
-/**
- * Validates UUID format and returns 400 response if invalid
- */
-function validateUUID(id: string): NextResponse | null {
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json(
-      { error: "Invalid client ID format" },
-      { status: 400 },
-    );
-  }
-  return null;
-}
 
 /**
  * Validation schema for updating a client (all fields optional)
@@ -95,36 +80,18 @@ const updateClientSchema = z
 /**
  * GET /api/clients/[id] - Get a single client by ID
  */
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${id}`,
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]",
     method: "GET",
-  });
-
-  try {
-    const sessionResult = await validateAdvisorSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id, clientId: id });
-
-    // Validate UUID format
-    const uuidError = validateUUID(id);
-    if (uuidError) {
-      await logger.warn("Invalid UUID format");
-      return uuidError;
-    }
-
+    requireClient: true,
+    requireAdvisor: true,
+  },
+  async (_request, { logger, clientId, session }) => {
     const db = getDb();
-
-    // Fetch client with ownership verification
     const foundClient = await db.query.client.findFirst({
       where: and(
-        eq(client.id, id),
+        eq(client.id, clientId!),
         eq(client.userId, session.user.id),
         isNull(client.deletedAt),
       ),
@@ -136,56 +103,29 @@ export async function GET(
     }
 
     await logger.info("Client fetched successfully", { statusCode: 200 });
-    return NextResponse.json({ client: foundClient });
-  } catch (error) {
-    await logger.error(
-      "Error fetching client",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { client: foundClient } };
+  },
+);
 
 /**
  * PATCH /api/clients/[id] - Update a client
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${id}`,
+export const PATCH = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]",
     method: "PATCH",
-  });
-
-  try {
-    const sessionResult = await validateAdvisorSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id, clientId: id });
-
-    // Validate UUID format
-    const uuidError = validateUUID(id);
-    if (uuidError) {
-      await logger.warn("Invalid UUID format");
-      return uuidError;
-    }
-
+    requireClient: true,
+    requireAdvisor: true,
+  },
+  async (request, { logger, clientId, session }) => {
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) return bodyResult.error;
 
-    // Validate request body
     const validationResult = updateClientSchema.safeParse(bodyResult.body);
     if (!validationResult.success) {
       return handleValidationError(logger, validationResult.error);
     }
 
-    // Check if no fields were provided
     if (Object.keys(validationResult.data).length === 0) {
       await logger.warn("No fields provided for update");
       return NextResponse.json(
@@ -195,8 +135,6 @@ export async function PATCH(
     }
 
     const db = getDb();
-
-    // Update client with ownership and deletion check in WHERE clause
     const [updatedClient] = await db
       .update(client)
       .set({
@@ -205,7 +143,7 @@ export async function PATCH(
       })
       .where(
         and(
-          eq(client.id, id),
+          eq(client.id, clientId!),
           eq(client.userId, session.user.id),
           isNull(client.deletedAt),
         ),
@@ -218,18 +156,9 @@ export async function PATCH(
     }
 
     await logger.info("Client updated successfully", { statusCode: 200 });
-    return NextResponse.json({ client: updatedClient });
-  } catch (error) {
-    await logger.error(
-      "Error updating client",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { client: updatedClient } };
+  },
+);
 
 /**
  * DELETE /api/clients/[id] - Soft delete a client and cascade to child records
@@ -237,36 +166,18 @@ export async function PATCH(
  * Uses a database transaction to ensure atomicity - either all records
  * (client, assets, debts) are soft-deleted, or none are.
  */
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const logger = createLogger({
-    endpoint: `/api/clients/${id}`,
+export const DELETE = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]",
     method: "DELETE",
-  });
-
-  try {
-    const sessionResult = await validateAdvisorSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id, clientId: id });
-
-    // Validate UUID format
-    const uuidError = validateUUID(id);
-    if (uuidError) {
-      await logger.warn("Invalid UUID format");
-      return uuidError;
-    }
-
+    requireClient: true,
+    requireAdvisor: true,
+  },
+  async (_request, { logger, clientId, session }) => {
     const db = getDb();
     const now = new Date();
 
-    // Use transaction for atomic cascade soft-delete
     const deletedClient = await db.transaction(async (tx) => {
-      // Soft delete client with ownership and deletion check in WHERE clause
       const [deleted] = await tx
         .update(client)
         .set({
@@ -275,7 +186,7 @@ export async function DELETE(
         })
         .where(
           and(
-            eq(client.id, id),
+            eq(client.id, clientId!),
             eq(client.userId, session.user.id),
             isNull(client.deletedAt),
           ),
@@ -286,17 +197,15 @@ export async function DELETE(
         return null;
       }
 
-      // Cascade soft-delete to child records (assets and debts)
-      // Run these in parallel for better performance
       await Promise.all([
         tx
           .update(asset)
           .set({ deletedAt: now, updatedAt: now })
-          .where(and(eq(asset.clientId, id), isNull(asset.deletedAt))),
+          .where(and(eq(asset.clientId, clientId!), isNull(asset.deletedAt))),
         tx
           .update(debt)
           .set({ deletedAt: now, updatedAt: now })
-          .where(and(eq(debt.clientId, id), isNull(debt.deletedAt))),
+          .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt))),
       ]);
 
       return deleted;
@@ -311,18 +220,6 @@ export async function DELETE(
       statusCode: 200,
     });
 
-    return NextResponse.json(
-      { message: "Client deleted successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
-    await logger.error(
-      "Error deleting client",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { message: "Client deleted successfully" } };
+  },
+);

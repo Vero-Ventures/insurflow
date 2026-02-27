@@ -75,6 +75,14 @@ Useful commands:
 - `bun run test:e2e` - e2e tests
 - `bun run build` - production build
 - `bun run verify` - full verification suite
+- `bun run db:debug` - inspect local users/clients
+
+## Operational Notes
+
+- API routes should use `withApiHandler(...)` and `parseJsonBody(...)` from `src/lib/api/route-helpers.ts` for consistent auth, validation, and error shape.
+- Ownership checks are a security boundary. Reuse helpers in `src/lib/api/client-helpers.ts` and `src/lib/api/resource-helpers.ts`.
+- Pre-push may auto-sync your branch with `main`; to intentionally bypass in automation use `SKIP_SYNC_CHECK=1 git push`.
+- `scripts/clean-clients.ts` is a destructive local utility that hard-deletes all clients. Do not run against shared or production databases.
 
 ## Documentation Index
 

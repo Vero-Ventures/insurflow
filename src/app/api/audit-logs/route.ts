@@ -3,26 +3,16 @@ import {
   auditLog,
   auditEntityTypeEnum,
   auditActionEnum,
-  assetAllocation,
-  client,
-  asset,
-  debt,
-  beneficiary,
-  business,
-  policy,
-  keyPerson,
-  shareholder,
-  corporateInsuranceNeed,
 } from "@/server/db/schemas";
-import { createLogger } from "@/server/axiom";
 import { and, count, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { validateSession } from "@/lib/api/route-helpers";
+import { withApiHandler } from "@/lib/api/route-helpers";
 import { verifyAuditEntityAccess } from "@/lib/api/client-helpers";
 import {
   buildPaginationResponse,
   calculateOffset,
+  getOwnedEntityIdsForAudit,
 } from "@/lib/api/audit-helpers";
 
 /**
@@ -75,17 +65,12 @@ const auditLogQuerySchema = z.object({
  * - If entityId is specified, access is verified for that specific entity
  * - Otherwise, results are filtered to only show owned entities
  */
-export async function GET(request: Request) {
-  const logger = createLogger({ endpoint: "/api/audit-logs", method: "GET" });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
-    // Parse query parameters
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/audit-logs",
+    method: "GET",
+  },
+  async (request, { logger, session }) => {
     const url = new URL(request.url);
     const queryResult = auditLogQuerySchema.safeParse({
       page: url.searchParams.get("page") ?? DEFAULT_PAGE,
@@ -161,7 +146,7 @@ export async function GET(request: Request) {
 
     // Get all entity IDs the user has access to for filtering
     // This is more efficient than checking each log entry individually
-    const ownedEntityIds = await getOwnedEntityIds(db, session.user.id);
+    const ownedEntityIds = await getOwnedEntityIdsForAudit(db, session.user.id);
 
     // Build dynamic where clause
     const conditions = [];
@@ -172,18 +157,20 @@ export async function GET(request: Request) {
     } else {
       // User has no owned entities - return empty results
       const response = buildPaginationResponse([], { page, limit }, 0);
-      return NextResponse.json({
-        logs: response.data,
-        pagination: response.pagination,
-        filters: {
-          entityType,
-          entityId,
-          action,
-          userId,
-          startDate,
-          endDate,
+      return {
+        data: {
+          logs: response.data,
+          pagination: response.pagination,
+          filters: {
+            entityType,
+            entityId,
+            action,
+            userId,
+            startDate,
+            endDate,
+          },
         },
-      });
+      };
     }
 
     if (entityType) {
@@ -244,134 +231,19 @@ export async function GET(request: Request) {
       totalPages: response.pagination.totalPages,
     });
 
-    return NextResponse.json({
-      logs: response.data,
-      pagination: response.pagination,
-      filters: {
-        entityType,
-        entityId,
-        action,
-        userId,
-        startDate,
-        endDate,
+    return {
+      data: {
+        logs: response.data,
+        pagination: response.pagination,
+        filters: {
+          entityType,
+          entityId,
+          action,
+          userId,
+          startDate,
+          endDate,
+        },
       },
-    });
-  } catch (error) {
-    await logger.error(
-      "Error fetching audit logs",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-type DbClient = ReturnType<typeof getDb>;
-
-/**
- * Gets all entity IDs that a user has access to for audit log filtering.
- *
- * This collects IDs from:
- * - Clients owned by the user
- * - Assets, debts, beneficiaries, policies belonging to those clients
- * - Businesses belonging to those clients
- * - Key persons, shareholders, insurance needs belonging to those businesses
- * - The user's own profile ID
- */
-async function getOwnedEntityIds(
-  db: DbClient,
-  userId: string,
-): Promise<string[]> {
-  const entityIds: string[] = [];
-
-  // Get all client IDs owned by the user
-  const clients = await db
-    .select({ id: client.id })
-    .from(client)
-    .where(eq(client.userId, userId));
-
-  const clientIds = clients.map((c) => c.id);
-  entityIds.push(...clientIds);
-
-  if (clientIds.length === 0) {
-    return entityIds;
-  }
-
-  // Get all assets for these clients
-  const assets = await db
-    .select({ id: asset.id })
-    .from(asset)
-    .where(inArray(asset.clientId, clientIds));
-  entityIds.push(...assets.map((a) => a.id));
-
-  // Get all debts for these clients
-  const debts = await db
-    .select({ id: debt.id })
-    .from(debt)
-    .where(inArray(debt.clientId, clientIds));
-  entityIds.push(...debts.map((d) => d.id));
-
-  // Get all beneficiaries for these clients
-  const beneficiaries = await db
-    .select({ id: beneficiary.id })
-    .from(beneficiary)
-    .where(inArray(beneficiary.clientId, clientIds));
-  const beneficiaryIds = beneficiaries.map((b) => b.id);
-  entityIds.push(...beneficiaryIds);
-
-  // Get all asset allocations for these beneficiaries
-  if (beneficiaryIds.length > 0) {
-    const allocations = await db
-      .select({ id: assetAllocation.id })
-      .from(assetAllocation)
-      .where(inArray(assetAllocation.beneficiaryId, beneficiaryIds));
-    entityIds.push(...allocations.map((a) => a.id));
-  }
-
-  // Get all policies for these clients
-  const policies = await db
-    .select({ id: policy.id })
-    .from(policy)
-    .where(inArray(policy.clientId, clientIds));
-  entityIds.push(...policies.map((p) => p.id));
-
-  // Get all businesses for these clients
-  const businesses = await db
-    .select({ id: business.id })
-    .from(business)
-    .where(inArray(business.clientId, clientIds));
-
-  const businessIds = businesses.map((b) => b.id);
-  entityIds.push(...businessIds);
-
-  if (businessIds.length > 0) {
-    // Get key persons for these businesses
-    const keyPersons = await db
-      .select({ id: keyPerson.id })
-      .from(keyPerson)
-      .where(inArray(keyPerson.businessId, businessIds));
-    entityIds.push(...keyPersons.map((k) => k.id));
-
-    // Get shareholders for these businesses
-    const shareholders = await db
-      .select({ id: shareholder.id })
-      .from(shareholder)
-      .where(inArray(shareholder.businessId, businessIds));
-    entityIds.push(...shareholders.map((s) => s.id));
-
-    // Get corporate insurance needs for these businesses
-    const insuranceNeeds = await db
-      .select({ id: corporateInsuranceNeed.id })
-      .from(corporateInsuranceNeed)
-      .where(inArray(corporateInsuranceNeed.businessId, businessIds));
-    entityIds.push(...insuranceNeeds.map((i) => i.id));
-  }
-
-  return entityIds;
-}
+    };
+  },
+);

@@ -1,516 +1,119 @@
-# InsurFlow Agent Guide
-
-## Project Overview
-
-InsurFlow is an AI-integrated InsurTech SaaS platform for life insurance advisors. It modernizes financial needs analysis workflows by replacing archaic spreadsheets with a cutting-edge web application featuring complex financial calculators, interactive dashboards, and GenAI-powered document generation.
-
-This is a **greenfield v2.0 rebuild** - built entirely from scratch using modern architecture, with v1.0 serving only as a functional specification and logic reference.
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router) with React 19
-- **Language**: TypeScript (Strict Mode)
-- **Database**: PostgreSQL (Neon in production) via Drizzle ORM
-- **Authentication**: Better Auth with Better Auth UI (`@daveyplate/better-auth-ui`)
-- **UI Components**: shadcn/ui, Tailwind CSS v4, Recharts
-- **Notifications**: Sonner (toast notifications)
-- **Observability**: Axiom (Structured Logging)
-- **Services** (planned): Stripe (Payments), UploadThing (File Storage), OpenAI/Gemini (AI features)
-- **Runtime**: Bun
-- **DevOps**: GitHub Actions, Vercel (CI/CD)
-
-## Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── auth/[path]/        # Auth pages (sign-in, sign-up, etc.)
-│   ├── clients/            # Client management pages
-│   ├── api/
-│   │   ├── auth/[...all]/  # Better Auth API routes
-│   │   └── clients/        # Client API endpoints
-│   ├── global-error.tsx    # Global error boundary
-│   ├── layout.tsx          # Root layout with providers
-│   ├── page.tsx            # Home page
-│   └── providers.tsx       # Client-side providers (Auth, Theme)
-├── components/
-│   ├── clients/            # Client-specific components
-│   └── ui/                 # shadcn/ui components
-├── lib/
-│   ├── hooks/              # Custom React hooks (useDebounce, etc.)
-│   ├── test-data/          # Test data generators
-│   ├── client-utils.ts     # Client-specific utilities
-│   └── utils.ts            # General utilities (cn, etc.)
-├── server/
-│   ├── axiom/              # Structured logging (Canonical Logging pattern)
-│   ├── better-auth/        # Auth configuration
-│   └── db/                 # Drizzle ORM client and schemas
-│       ├── index.ts        # Database connection factory
-│       └── schemas/        # Modular schema definitions
-│           ├── index.ts    # Barrel exports (backward-compatible)
-│           ├── enums-schema.ts      # All pgEnum definitions
-│           ├── auth-schema.ts       # Better Auth tables
-│           ├── clients-schema.ts    # Client entity
-│           ├── assets-schema.ts     # Asset entity
-│           ├── debts-schema.ts      # Debt entity
-│           ├── beneficiaries-schema.ts # Beneficiary & allocation
-│           └── corporate-schema.ts  # Business, shareholders, key persons
-├── types/                  # Shared TypeScript type definitions
-└── styles/globals.css      # Global styles with CSS variables
-
-infra/                      # Infrastructure (Terraform)
-├── main.tf                 # Vercel project configuration
-├── provider.tf             # Vercel provider configuration
-├── variables.tf            # Input variables
-├── outputs.tf              # Output values
-└── terraform.tfvars.example # Example variable values
-
-.github/workflows/          # GitHub Actions
-├── ci.yml                  # CI pipeline (lint, test, build)
-├── deploy-preview.yml      # Neon database branching for previews
-├── cleanup-preview.yml     # Cleanup Neon branches on PR close
-├── codeql.yml              # CodeQL security analysis
-└── sonarcloud.yml          # SonarCloud analysis
-```
-
-## Key Modules
-
-1. **Financial Engines**: Calculators for Settling Requirements (Probate, Final Taxes), Income Replacement, and Corporate Shareholder Analysis (EBITDA contribution, Key Person risks)
-2. **Interactive Dashboard**: Visual reports using Recharts for Net Worth, Tax Burdens, and Liquidity scenarios
-3. **GenAI Co-Pilot**: LLM integration (OpenAI/Gemini) for auto-generating compliance documents ("Reasons Why" letters) and cover letters
-4. **SaaS Infrastructure**: Multi-tenancy, subscription gating (Stripe), secure document handling (UploadThing)
-
-## Getting Started
-
-- `bun install` to install dependencies tracked in `bun.lock`
-- `docker compose up -d postgres` to launch the local database container before running Drizzle commands or local dev
-- Copy required env vars into `.env`; validation happens in `src/env.js`
-- `./scripts/dev-services.sh start|stop|status` wraps `docker compose` to manage local Postgres without recreating containers
-- `.env.example` documents required variables; replace placeholder strings with environment-specific values in your local `.env`
-
-## Build & Verification Commands
-
-- `bun run dev` — start Docker services, push schema, and run HMR dev server
-- `bun run build` — create the production bundle and run type checks
-- `bun run preview` — serve the built app for smoke testing
-- `bun run check` — run ESLint and TypeScript without emitting output
-- `bun run verify` — full verification: lint, typecheck, unit tests, e2e tests, build
-- `bun run db:generate` / `bun run db:migrate` — generate Drizzle migrations & apply them
-- `bun run db:push` — push schema changes directly to database (dev only)
-- `bun run db:studio` — open Drizzle Studio for local data inspection
-- `bun run sync` — sync current branch with main (rebase)
-- `bun run sync:check` — check if branch is behind main
-- `bun run sync:merge` — sync with main using merge instead of rebase
+# InsurFlow Agent Operating Spec
 
-## Code Style & Conventions
+This document is for autonomous coding agents. It intentionally excludes obvious repo facts and command catalogs. It captures non-obvious constraints that prevent unsafe refactors.
 
-- Prettier (`prettier.config.js`) with 2-space indentation; use `bun run format:write`
-- ESLint (`eslint.config.js`) + TypeScript enforce modern React rules
-- PascalCase for React components, camelCase for vars/functions, kebab-case for route segments under `src/app`
-- Keep server-only utilities inside `src/server` to avoid client bundling
+## 1) Context Budgeting (Load Only What You Need)
 
-## Authentication
+- Do not ingest broad project context by default. Start from the task surface and load only relevant modules.
+- For API work, prioritize: `src/lib/api/route-helpers.ts`, `src/lib/api/client-helpers.ts`, and the target route file.
+- For business sub-resources, load `src/lib/api/business-resource-helpers.ts` before changing route handlers.
+- For financial logic, load only the specific engine and its tests under `src/lib/financial/**`.
+- For auth/runtime issues, load `src/server/better-auth/*`, `src/server/db/index.ts`, and `src/env.js` first.
+- For infra/preview behavior, load only `.github/workflows/deploy-preview.yml`, `.github/workflows/cleanup-preview.yml`, and `infra/main.tf`.
 
-Authentication uses Better Auth with Better Auth UI for pre-built components:
+## 2) Runtime and Boundary Invariants (Do Not Break)
 
-- **Auth routes**: `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/magic-link`, `/auth/sign-out`
-- **Components**: `<SignedIn>`, `<SignedOut>`, `<UserButton>` from `@daveyplate/better-auth-ui`
-- **Provider**: `AuthUIProvider` wraps the app in `src/app/providers.tsx`
-- **Config**: `src/server/better-auth/config.ts` - email/password enabled, GitHub OAuth optional
+- Keep auth and DB client creation request-scoped; do not hoist Better Auth/DB initialization to module level.
+- Keep `getSession()` uncached; do not wrap with React `cache()`.
+- Preserve DB driver branching: Neon URL -> HTTP driver, non-Neon -> postgres TCP driver.
+- Keep server-only logic in `src/server/**`; never import server modules into client components.
+- Keep PDF routes on Node runtime (`runtime = "nodejs"`).
 
-## UI Components
+## 3) API Contract Rules (Required)
 
-- **shadcn/ui** for component primitives; add new components with `bunx shadcn@latest add <component>`
-- **Recharts** for financial data visualization
-- **Tailwind CSS v4** for styling with `prettier-plugin-tailwindcss` for class sorting
-- **Sonner** for toast notifications (required by Better Auth UI)
+- Prefer `withApiHandler(...)` for API routes. It standardizes session checks, UUID validation, ownership checks, and error shape.
+- Use `parseJsonBody(...)` and `handleValidationError(...)` helpers; avoid ad-hoc body parsing and validation response formats.
+- Treat ownership checks as a security boundary. Reuse shared ownership helpers; do not hand-roll ownership SQL in routes.
 
-Components are installed to `src/components/ui/`. The `cn()` utility in `src/lib/utils.ts` merges Tailwind classes.
+## 4) Concurrency and Mutation Safety
 
-## Observability & Analytics
+- Do not convert atomic ownership updates/deletes into separate check-then-mutate flows.
+- Maintain TOCTOU protections in `src/lib/api/resource-helpers.ts` (`EXISTS` ownership checks inside mutation statements).
+- For business-shareholder mutations, preserve transaction + business row lock behavior (`withBusinessLock`, `SELECT ... FOR UPDATE`).
+- Keep transactional cascade behavior for client deletion atomic.
 
-### Structured Logging (Axiom)
+## 5) Data Modeling and Precision Rules
 
-InsurFlow uses Axiom for structured logging, following the **Canonical Logging** (Wide Events) pattern from [loggingsucks.com](https://loggingsucks.com).
+- Monetary and percentage values are stored as decimal strings in DB schemas. Convert at boundaries, not globally.
+- Keep precision-safe math for shareholder ownership in basis points (integer arithmetic). Do not replace with float-only aggregation.
+- Soft-delete is default for core entities (`deletedAt`), but allocation rows are intentionally hard-deleted.
+- Always filter soft-deleted rows where appropriate (`isNull(deletedAt)`) in application queries.
 
-**Philosophy**: "One Event Per Request" - accumulate context throughout the request lifecycle and emit a single wide event when complete. This reduces noise and adds comprehensive context.
+## 6) Financial Engine Guardrails (High Risk)
 
-**Usage**:
+- Financial engines are deterministic and side-effect free by design. Preserve purity.
+- Do not change rounding/clamping behavior casually; these are part of output stability and downstream expectations.
+- Treat jurisdiction/year constants as regulated business assumptions (estate tax/probate tables, actuarial assumptions). Changes require explicit policy/legal product direction.
+- Preserve test-backed invariants (for example PV identity and non-negative coverage invariants) when touching formulas.
 
-```typescript
-import { createLogger } from "~/server/axiom";
+## 7) Compliance, Audit, and Observability
 
-// Create logger with initial context
-const logger = createLogger({
-  userId: "user_123",
-  endpoint: "/api/users",
-});
+- Audit logging is best-effort and must not block primary business operations.
+- Preserve audit sanitization rules for sensitive fields (`password`, `secret`, `token`) and change detection behavior.
+- Preserve request correlation plumbing (`x-request-id`) and structured context enrichment.
+- Keep structured logging paths intact; use raw console logging only for explicit fallback behavior.
 
-// Add context throughout request
-logger.addContext({ operation: "fetchUser" });
+## 8) AI Generation Constraints
 
-// Emit log with complete context
-await logger.info("User fetched successfully", {
-  statusCode: 200,
-  duration: 45,
-});
+- Reasons-Why letter generation is a compliance workflow, not generic content generation.
+- Preserve Gemini feature gating (`isGeminiConfigured`) and graceful `503` degradation when unavailable.
+- Do not weaken prompt requirements that enforce formal compliance tone and methodology explanation.
 
-// Always flush at end of request
-await logger.flush();
-```
+## 9) CI/CD and Infra Couplings (Hidden but Critical)
 
-**Log Levels**: `debug`, `info`, `warn`, `error`, `fatal`
+- Preview deployments depend on GitHub Actions creating Neon branches and writing branch-scoped `DATABASE_URL` into Vercel.
+- Cleanup depends on matching branch metadata to remove preview DB/env resources.
+- Do not change branch naming conventions in preview workflows without coordinated updates across both create and cleanup workflows.
+- CI build currently uses `SKIP_ENV_VALIDATION=true`; do not infer production env correctness from CI build success alone.
 
-**Configuration**:
+## 10) Git Hooks and Automation Behavior
 
-- `AXIOM_TOKEN`: API token from https://app.axiom.co/settings/tokens
-- `AXIOM_DATASET`: Dataset name (default: "insurflow")
-- `AXIOM_ORG_ID`: Organization ID (optional)
+- Pre-push hook may auto-rebase branch onto `origin/main` and can require `--force-with-lease` afterward.
+- Automation that cannot perform interactive sync logic should use the documented sync bypass env (`SKIP_SYNC_CHECK=1`) intentionally and explicitly.
+- Do not bypass hooks/quality gates by default.
 
-**Fallback**: If Axiom is not configured, logs are written to console in JSON format.
+## 11) Bundle/Dependency Control Rules
 
-## Testing
+- Stubbed overrides in `package.json` and externals/output tracing exclusions in `next.config.js` are operational controls for bundle size/runtime compatibility.
+- Do not remove stubs/exclusions as "cleanup" unless you verify equivalent behavior and bundle impact.
 
-### Unit Testing (Vitest)
+## 12) Agent Change Policy by Risk Tier
 
-- **Framework**: Vitest with React Testing Library
-- **Config**: `vitest.config.ts` with jsdom environment
-- **Structure**: Mirror source structure with `__tests__/` folders (e.g., `src/lib/__tests__/utils.test.ts`)
-- **Patterns**:
-  - Use `vi.mock()` for module-level mocking
-  - Test happy paths, error scenarios, and edge cases
-  - Mock external dependencies (Stripe, OpenAI, etc.) to isolate units
-- **Running Tests**:
-  - `bun run test` — watch mode for development
-  - `bun run test:run` — single run for CI/verification
-  - `bun run test:coverage` — run with coverage report
-- **Adding Tests**: Create `__tests__/` folder next to source, name test files `*.test.ts`
+- High-risk paths (require extra scrutiny + tests + explicit rationale in PR notes):
+  - `src/server/better-auth/**`
+  - `src/server/db/**` and `drizzle/**`
+  - `src/lib/financial/**`
+  - `src/server/audit/**`
+  - `.github/workflows/deploy-preview.yml`
+  - `.github/workflows/cleanup-preview.yml`
+  - `infra/**`
+- Other paths are lower risk but still require scoped verification.
 
-### E2E Testing (Playwright)
+## 13) Minimum Verification Matrix (Task-Scoped)
 
-- **Framework**: Playwright with Chromium browser
-- **Config**: `playwright.config.ts` with auto-start dev server
-- **Structure**: All E2E tests in `e2e/` directory (e.g., `e2e/auth.spec.ts`)
-- **Patterns**:
-  - Use Page Object Model for complex flows
-  - Test critical user journeys (auth, main features)
-  - Use `test.describe()` to group related tests
-- **Running Tests**:
-  - `bun run test:e2e` — run all E2E tests headlessly
-  - `bun run test:e2e:ui` — open Playwright UI for debugging
-- **CI Considerations**: E2E tests run with `CI=true` (single worker, retries enabled)
+- API/auth/data mutation changes: run lint+types and relevant unit tests for touched modules.
+- Financial changes: run full relevant financial tests, including invariant-focused cases.
+- Workflow/infra changes: validate both preview create and cleanup logic paths by inspection.
+- Schema/migration changes: preserve migration artifacts and `drizzle/meta/_journal.json` consistency.
 
-## Database & Configuration
+## 14) Execution Workflow Expectations (Agent Behavior)
 
-### Schema Management
-
-Drizzle ORM uses two different workflows:
-
-| Command                      | Purpose                             | When to Use                                             |
-| ---------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| `db:push`                    | Directly syncs schema to DB         | **Local dev only** - fast iteration, no migration files |
-| `db:generate` + `db:migrate` | Creates and applies migration files | **Production** - trackable, reversible changes          |
-
-**Workflow:**
-
-1. **Local development**: Use `db:push` for quick iteration
-2. **Before PR**: Run `db:generate` to create migration files if schema changed
-3. **CI tests**: Uses `db:migrate` (ephemeral database)
-4. **Production**: GitHub Actions runs `db:migrate` before deployment
-
-### Configuration
-
-- Drizzle schemas are in `src/server/db/schemas/` directory; import from `@/server/db/schemas`
-- Each domain has its own schema file (e.g., `clients-schema.ts`, `assets-schema.ts`)
-- The barrel export (`index.ts`) organizes schema exports. Note: the legacy import path `@/server/db/schema` has been removed update imports to `@/server/db/schemas` (breaking change).
-- Rerun `bun run db:generate` after schema edits
-- Local Postgres defaults come from `docker-compose.yml` (port 5432)
-- `DATABASE_URL` should point to local Docker instance for development, Neon for production
-- Restart dev server after schema or environment changes
-- Do not commit local database artifacts
-
-## Deployment (Vercel + GitHub Actions)
-
-InsurFlow deploys to Vercel with automatic Git integration. Database branching for previews is handled by GitHub Actions.
-
-### Architecture
-
-| Environment | URL                                                   | Database                     |
-| ----------- | ----------------------------------------------------- | ---------------------------- |
-| Production  | https://insurflow.biz                                 | Neon main branch             |
-| Preview     | https://insurflow-{git-hash}-{vercel-team}.vercel.app | Neon `preview/pr-{N}` branch |
-
-### Deployment Workflows
-
-**Production**:
-
-- Triggered automatically by Vercel on push to `main` branch
-- Vercel runs `bun run build` and deploys
-
-**Preview** (GitHub Actions + Vercel):
-
-- Vercel automatically creates preview deployment on PR
-- GitHub Actions creates Neon database branch and sets DATABASE_URL
-- Runs migrations on the Neon branch
-
-**Cleanup** (`.github/workflows/cleanup-preview.yml`):
-
-- Triggered when PR is closed
-- Deletes the Neon database branch
-
-### GitHub Secrets Required
-
-Configure in: Settings → Secrets and variables → Actions → Secrets
-
-| Secret             | Description                             |
-| ------------------ | --------------------------------------- |
-| `VERCEL_API_TOKEN` | Vercel API token for env var management |
-| `NEON_API_KEY`     | Neon API key for database branching     |
-| `NEON_PROJECT_ID`  | Neon project ID                         |
-
-### Terraform Variables
-
-The Vercel project and environment variables are managed via Terraform in `infra/`.
-
-| Variable             | Description                                  |
-| -------------------- | -------------------------------------------- |
-| `database_url`       | Production Neon connection string (pooled)   |
-| `better_auth_secret` | Session encryption key (min 32 chars)        |
-| `better_auth_url`    | Production URL (e.g., https://insurflow.biz) |
-| `axiom_token`        | (Optional) Axiom logging token               |
-| `axiom_dataset`      | (Optional) Axiom dataset name                |
-
-### Security Scanning
-
-- **CodeQL**: Static analysis for JavaScript/TypeScript security issues
-- **SonarCloud**: Code quality and security analysis
-- **Dependency Review**: Blocks PRs introducing high-severity vulnerabilities
-
-## Domain-Specific Concepts
-
-### Financial Calculations
-
-- **Settling Requirements**: Probate fees, final income tax, capital gains tax on deemed disposition
-- **Income Replacement**: Present value calculations for income streams with inflation adjustment
-- **Corporate Analysis**: EBITDA contribution, key person insurance needs, shareholder agreements
-
-### Compliance Documents
-
-- **Reasons Why Letter**: Regulatory document explaining insurance recommendations
-- **Cover Letter**: Client-facing summary of financial analysis and recommendations
-
-## Security & Secrets
-
-- Never commit secrets; store credentials securely
-- Add new env vars to `src/env.js` so they are validated via `@t3-oss/env-nextjs`
-- Be mindful of server-only code paths to keep sensitive logic off the client
-- Validate all inputs at API boundaries using Zod schemas
-
-## Git & Collaboration
-
-### Branching Strategy
-
-We use a **protected main** (trunk-based) workflow:
-
-```
-feature-branch → PR to main
-```
-
-| Branch            | Purpose              | Protection                            |
-| ----------------- | -------------------- | ------------------------------------- |
-| `main`            | Production releases  | PR required, CI must pass, 1 approval |
-| `feat/*`, `fix/*` | Feature/fix branches | None - created from main              |
-
-**Workflow:**
-
-1. Create feature branch from `main`: `git checkout -b feat/my-feature`
-2. Make changes, commit with conventional commits
-3. Open PR to `main`, get approval, CI must pass → auto-deploys to production
-
-**Branch Naming:**
-
-- `feat/description` - New features
-- `fix/description` - Bug fixes
-- `docs/description` - Documentation updates
-- `refactor/description` - Code refactoring
-
-### Conventional Commits
-
-All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format, enforced by Commitlint:
-
-- Format: `type(scope): description` (e.g., `feat(auth): add password reset flow`)
-- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
-- The scope is optional but recommended
-
-### Git Hooks (Husky)
-
-| Hook         | When                  | What it Does                                                       |
-| ------------ | --------------------- | ------------------------------------------------------------------ |
-| `pre-commit` | Before commit created | Runs lint-staged (ESLint + Prettier on staged files)               |
-| `commit-msg` | After message entered | Validates conventional commit format                               |
-| `pre-push`   | Before push to remote | Auto-syncs with main if behind, runs lint + typecheck + unit tests |
-
-**Pre-push checks (fast, ~10-15 seconds):**
-
-1. Lint & typecheck (`bun run check`)
-2. Unit tests (`bun run test:run`)
-
-**Note:** E2E tests are NOT run in pre-push (too slow, ~2+ minutes). They run in CI instead.
-
-**Pre-push auto-sync:**
-
-- If your branch is behind main, the hook automatically rebases
-- If there are conflicts, it aborts and tells you to run `bun run sync` manually
-- If the branch was previously pushed, it reminds you to `git push --force-with-lease`
-
-**Bypassing pre-push (use sparingly):**
-
-```bash
-SKIP_SYNC_CHECK=1 git push  # Skip sync check only
-git push --no-verify         # Skip all hooks (not recommended)
-```
-
-### CI Pipeline (GitHub Actions)
-
-The CI workflow (`.github/workflows/ci.yml`) runs on all PRs and pushes to main/dev:
-
-| Job         | What it Checks                 |
-| ----------- | ------------------------------ |
-| `lint`      | ESLint + TypeScript            |
-| `test-unit` | Vitest unit tests              |
-| `test-e2e`  | Playwright E2E tests           |
-| `build`     | Production build succeeds      |
-| `ci-pass`   | Gate job - all above must pass |
-
-**Branch Protection Requirements:**
-
-- CI must pass (`ci-pass` job)
-- At least 1 approval required
-- Branch must be up-to-date with base
-
-### PR Guidelines
-
-- Link related issues
-- Summarize changes clearly
-- Include verification commands
-- Add UI screenshots for user-facing changes
-- Squash formatting-only changes into related commits
-
-### Responding to PR Review Comments
-
-When addressing PR review feedback, use efficient workflows:
-
-**Batch replies:** Instead of replying to each comment individually, post a single summary comment:
-
-```markdown
-## Addressed Review Comments
-
-| Comment                  | Fix                                                     |
-| ------------------------ | ------------------------------------------------------- |
-| Migration safety warning | Added NOTE + commented UPDATE example in migration file |
-| California estate tax    | Fixed: CA has no state estate tax, updated to federal   |
-| Asset types mismatch     | Aligned across validation, schema, and demo data        |
-
-All fixes in commit `abc1234`.
-```
-
-**Use `gh pr comment`** for summary replies instead of multiple `gh api` calls:
-
-```bash
-gh pr comment 174 --body "$(cat <<'EOF'
-## Review Comments Addressed
-
-- Fixed X in commit abc1234
-- Fixed Y in commit def5678
-EOF
-)"
-```
-
-**Verify before claiming fixes:**
-
-1. Run `bun run check` (lint + typecheck)
-2. Run `bun run test:run` (unit tests)
-3. Run `bun run build` (production build)
-4. Then commit, push, and reply to comments
-
-### Incremental Commits
-
-When working on multi-step tasks, create small, focused commits:
-
-1. Commit dependency additions separately
-2. Commit configuration/setup changes
-3. Commit new components/modules
-4. Commit integration changes to existing code
-
-## Definition of Done
-
-A task is not complete until:
-
-1. **Linter Pass**: Code passes `bun run check` (ESLint + TypeScript)
-2. **Tests Pass**: Relevant unit/integration tests are green
-3. **No Regression**: Existing functionality remains unaffected
-4. **Documentation**: Update AGENTS.md if new patterns or architecture decisions were established
-
----
-
-## Technology Strategy & Operational Standards
-
-Modern development requires automated guardrails, not just manual vigilance. We automate standards within our DevOps infrastructure to ensure security, reliability, and standardization by default.
-
-### 1. Development Environment & Tooling
-
-- **Runtime & Package Manager**: Bun (superior speed for dependency installation and script execution)
-- **Monorepo Architecture**: Turborepo (planned) - centralize shared configs in `packages/config`
-- **Code Formatting**: Prettier with automated import sorting
-- **Git Hooks**: Husky + lint-staged (prevent unformatted/error-ridden commits)
-
-### 2. Static Analysis & Quality Gates
-
-- **Strict TypeScript**: `strict: true`, enforce `no-explicit-any`
-- **Dead Code Elimination**: Knip (`bun run knip` detects unused dependencies, files, and exports)
-- **Commit Discipline**: Conventional Commits via Commitlint
-- **Database Safety**: `eslint-plugin-drizzle` (catch ORM errors at lint time)
-
-### 3. Testing Strategy
-
-- **E2E Testing**: Playwright (handles auth flows, parallel execution)
-- **Unit Testing**: Vitest with React Testing Library (jsdom environment)
-
-### 4. AI & Automation Integration
-
-- **AI Code Reviews**: CodeRabbit, CodiumAI, or Gemini Code Assist
-- **Dependency Management**: Dependabot (auto-merge non-breaking patches if CI passes)
-- **Workflow Automation**: Auto-Author-Assign for PRs
-
-### 5. Security & Deployment (DevSecOps)
-
-- **Main Branch Protection**: Passing CI, code owner approval, no direct pushes
-- **Vulnerability Scanning**: CodeQL, SonarCloud (scan for security issues)
-- **Deployment Gates**: Vercel deployment requires CI pass
-- **Preview Environments**: Automatic Vercel previews with dedicated Neon database branches
-
-### 6. Observability & Analytics
-
-- **Structured Logging**: Axiom (deep JSON inspection, wide event logging)
-
-### 7. AI-Assisted Development Guardrails
-
-- **Supply Chain Security**: Socket.dev (block malicious packages)
-- **Secrets Detection**: GitGuardian/ggshield (verify API keys against services)
-- **Code Quality & Security**: SonarCloud (code smells, bugs, vulnerabilities, technical debt)
-- **Complexity Monitoring**: SonarCloud (flag unmaintainable code, cyclomatic complexity)
-- **Visual Regression Testing**: Storybook + Chromatic (detect UI breaks)
-
-### 8. Developer Experience (DX) Standards
-
-- **Zero-Friction Onboarding**: Working local app in 10 mins with setup script
-- **Environment Validation**: T3 Env (`@t3-oss/env-nextjs`) validates env vars at build time
-- **Database Branching**: Neon Database Branching (isolated DB per PR for schema migration testing)
-
-### 9. Structured Logging Strategy
-
-- **Philosophy**: "One Event Per Request" (loggingsucks.com) - reduces noise, adds context
-- **Standard**: Canonical Logging (Wide Events)
-  - Accumulate context (User ID, Endpoint, Status, Error, Duration, Feature Flags) into single JSON object
-  - Emit only when unit of work completes
-- **Implementation**: OpenTelemetry middleware to initialize context span, attach attributes, export on completion
+- For non-trivial issues, do a short pre-implementation design pass: propose the viable approaches and state tradeoffs/risks to each one, planning it out execution of a task is the most important part.
+- Keep scope tight: implement the smallest valuable slice first; defer optional refactors unless required for correctness/safety.
+- Make small, encapsulated commits by logical unit (e.g., validation, core logic, tests), not one large mixed commit.
+- Before opening a PR, run the same quality gates CI enforces for the touched surface (lint/typecheck/tests/build as applicable).
+- In PR notes, include: what changed, why this approach was chosen, verification performed, and any known follow-ups.
+
+## 15) Explicit Anti-Patterns for Agents
+
+- Do not replace helper-driven route patterns with one-off custom route logic.
+- Do not introduce client imports of server modules.
+- Do not collapse decimal-string boundaries into pervasive floating-point state.
+- Do not remove atomic/transactional protections for ownership invariants.
+- Do not convert compliance-oriented errors into silent fallbacks that hide operational failures.
+- Do not rewrite preview DB workflow behavior without end-to-end understanding of Neon + Vercel coupling.
+
+## 16) When Unsure
+
+- Prefer minimal, reversible edits.
+- Preserve existing invariants/helper patterns and add tests before deeper refactors.
