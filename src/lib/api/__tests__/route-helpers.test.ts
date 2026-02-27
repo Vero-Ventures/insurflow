@@ -31,13 +31,9 @@ vi.mock("@/server/axiom", () => ({
 }));
 
 describe("withApiHandler advisor guard", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns 403 when endpoint requires advisor role", async () => {
+  async function runAdvisorGuard(accountType: "advisor" | "client") {
     mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
-    mockFindFirst.mockResolvedValue({ accountType: "client" });
+    mockFindFirst.mockResolvedValue({ accountType });
 
     const handler = withApiHandler(
       {
@@ -48,9 +44,17 @@ describe("withApiHandler advisor guard", () => {
       async () => ({ data: { ok: true } }),
     );
 
-    const response = await handler(new Request("http://localhost"), {
+    return handler(new Request("http://localhost"), {
       params: Promise.resolve({}),
     });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns 403 when endpoint requires advisor role", async () => {
+    const response = await runAdvisorGuard("client");
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
@@ -59,21 +63,7 @@ describe("withApiHandler advisor guard", () => {
   });
 
   it("allows advisor through when role matches", async () => {
-    mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
-    mockFindFirst.mockResolvedValue({ accountType: "advisor" });
-
-    const handler = withApiHandler(
-      {
-        endpoint: "/api/test",
-        method: "GET",
-        requireAdvisor: true,
-      },
-      async () => ({ data: { ok: true } }),
-    );
-
-    const response = await handler(new Request("http://localhost"), {
-      params: Promise.resolve({}),
-    });
+    const response = await runAdvisorGuard("advisor");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
