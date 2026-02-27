@@ -64,6 +64,7 @@ export const shareLink = pgTable(
       scale: 2,
     }),
     estimatedGap: decimal("estimated_gap", { precision: 14, scale: 2 }),
+    estimatedPremium: decimal("estimated_premium", { precision: 14, scale: 2 }),
     scenarioId: text("scenario_id"),
 
     incomeReplacementPercent: decimal("income_replacement_percent", {

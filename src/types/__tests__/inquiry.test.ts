@@ -4,8 +4,7 @@ import {
   INQUIRY_STATUS_COLORS,
   type InquiryStatus,
   type HouseholdStatus,
-  type IntakeData,
-  type EstimateSnapshot,
+  type Inquiry,
 } from "@/types/inquiry";
 
 describe("Inquiry Types", () => {
@@ -55,88 +54,144 @@ describe("Inquiry Types", () => {
       ];
 
       validStatuses.forEach((status) => {
-        const intakeData: IntakeData = {
+        const inquiry: Inquiry = {
+          id: "1",
+          status: "pending",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john@example.com",
+          phone: null,
+          referralSource: null,
           householdStatus: status,
           annualHouseholdIncome: "100000",
           totalDebts: "50000",
           currentCoverage: "250000",
           primaryGoal: "Protect my family",
+          estimatedCoverageNeed: null,
+          estimatedPremium: null,
+          scenarioId: null,
+          claimedByUserId: null,
+          claimedAt: null,
+          convertedToClientId: null,
+          convertedAt: null,
+          consumerIpAddress: null,
+          consumerUserAgent: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
         };
 
-        expect(intakeData.householdStatus).toBe(status);
+        expect(inquiry.householdStatus).toBe(status);
       });
     });
 
     it("allows null household status", () => {
-      const intakeData: IntakeData = {
+      const inquiry: Inquiry = {
+        id: "1",
+        status: "pending",
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@example.com",
+        phone: null,
+        referralSource: null,
         householdStatus: null,
         annualHouseholdIncome: "100000",
         totalDebts: "50000",
         currentCoverage: "250000",
         primaryGoal: "Protect my family",
+        estimatedCoverageNeed: null,
+        estimatedPremium: null,
+        scenarioId: null,
+        claimedByUserId: null,
+        claimedAt: null,
+        convertedToClientId: null,
+        convertedAt: null,
+        consumerIpAddress: null,
+        consumerUserAgent: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
-      expect(intakeData.householdStatus).toBeNull();
+      expect(inquiry.householdStatus).toBeNull();
     });
   });
 
-  describe("IntakeData", () => {
-    it("creates valid intake data object", () => {
-      const intakeData: IntakeData = {
+  describe("Inquiry Flat Structure", () => {
+    it("creates valid inquiry with flat structure", () => {
+      const inquiry: Inquiry = {
+        id: "1",
+        status: "pending",
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@example.com",
+        phone: "555-123-4567",
+        referralSource: "Google",
         householdStatus: "married",
         annualHouseholdIncome: "150000",
         totalDebts: "200000",
         currentCoverage: "100000",
         primaryGoal: "Estate planning",
+        estimatedCoverageNeed: "500000",
+        estimatedPremium: "5000",
+        scenarioId: "young-family",
+        claimedByUserId: null,
+        claimedAt: null,
+        convertedToClientId: null,
+        convertedAt: null,
+        consumerIpAddress: null,
+        consumerUserAgent: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
-      expect(intakeData.householdStatus).toBe("married");
-      expect(intakeData.annualHouseholdIncome).toBe("150000");
-      expect(intakeData.totalDebts).toBe("200000");
-      expect(intakeData.currentCoverage).toBe("100000");
-      expect(intakeData.primaryGoal).toBe("Estate planning");
+      expect(inquiry.householdStatus).toBe("married");
+      expect(inquiry.annualHouseholdIncome).toBe("150000");
+      expect(inquiry.totalDebts).toBe("200000");
+      expect(inquiry.currentCoverage).toBe("100000");
+      expect(inquiry.primaryGoal).toBe("Estate planning");
+      expect(inquiry.estimatedCoverageNeed).toBe("500000");
+      expect(inquiry.estimatedPremium).toBe("5000");
+      expect(inquiry.scenarioId).toBe("young-family");
     });
 
     it("allows optional fields to be null", () => {
-      const intakeData: IntakeData = {
+      const inquiry: Inquiry = {
+        id: "1",
+        status: "pending",
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@example.com",
+        phone: null,
+        referralSource: null,
         householdStatus: null,
         annualHouseholdIncome: null,
         totalDebts: null,
         currentCoverage: null,
         primaryGoal: null,
-      };
-
-      expect(intakeData.householdStatus).toBeNull();
-      expect(intakeData.annualHouseholdIncome).toBeNull();
-      expect(intakeData.totalDebts).toBeNull();
-      expect(intakeData.currentCoverage).toBeNull();
-      expect(intakeData.primaryGoal).toBeNull();
-    });
-  });
-
-  describe("EstimateSnapshot", () => {
-    it("creates valid estimate snapshot", () => {
-      const snapshot: EstimateSnapshot = {
-        estimatedCoverageNeed: "500000",
-        estimatedPremium: "5000",
-        scenarioId: "young-family",
-      };
-
-      expect(snapshot.estimatedCoverageNeed).toBe("500000");
-      expect(snapshot.estimatedPremium).toBe("5000");
-      expect(snapshot.scenarioId).toBe("young-family");
-    });
-
-    it("allows optional fields to be null", () => {
-      const snapshot: EstimateSnapshot = {
         estimatedCoverageNeed: null,
         estimatedPremium: null,
         scenarioId: null,
+        claimedByUserId: null,
+        claimedAt: null,
+        convertedToClientId: null,
+        convertedAt: null,
+        consumerIpAddress: null,
+        consumerUserAgent: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
-      expect(snapshot.estimatedCoverageNeed).toBeNull();
-      expect(snapshot.estimatedPremium).toBeNull();
-      expect(snapshot.scenarioId).toBeNull();
+      expect(inquiry.householdStatus).toBeNull();
+      expect(inquiry.annualHouseholdIncome).toBeNull();
+      expect(inquiry.totalDebts).toBeNull();
+      expect(inquiry.currentCoverage).toBeNull();
+      expect(inquiry.primaryGoal).toBeNull();
+      expect(inquiry.estimatedCoverageNeed).toBeNull();
+      expect(inquiry.estimatedPremium).toBeNull();
+      expect(inquiry.scenarioId).toBeNull();
     });
   });
 });

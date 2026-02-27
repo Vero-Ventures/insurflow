@@ -1,5 +1,6 @@
 /**
  * @fileoverview Type definitions for share links.
+ * Uses flat structure to match database schema.
  */
 
 export type ShareLinkStatus = "active" | "viewed" | "interested" | "expired";
@@ -9,23 +10,6 @@ export type HouseholdStatus =
   | "married"
   | "partnered"
   | "single_parent";
-
-export interface ShareLinkIntakeData {
-  householdStatus: HouseholdStatus | null;
-  annualHouseholdIncome: string | null;
-  totalDebts: string | null;
-  currentCoverage: string | null;
-  primaryGoal: string | null;
-}
-
-export interface ShareLinkEstimateData {
-  estimatedCoverageNeed: string | null;
-  estimatedGap: string | null;
-  scenarioId: string | null;
-  incomeReplacementPercent: number | null;
-  replacementDurationYears: number | null;
-  liquidAssets: number | null;
-}
 
 export interface ShareLink {
   id: string;
@@ -39,14 +23,25 @@ export interface ShareLink {
   lastName: string;
   email: string;
   phone: string | null;
-  intakeData: {
-    householdStatus: HouseholdStatus | null;
-    annualHouseholdIncome: string | null;
-    totalDebts: string | null;
-    currentCoverage: string | null;
-    primaryGoal: string | null;
-  } | null;
-  estimateData: ShareLinkEstimateData | null;
+
+  // Intake data fields (flat structure)
+  householdStatus: HouseholdStatus | null;
+  annualHouseholdIncome: string | null;
+  totalDebts: string | null;
+  currentCoverage: string | null;
+  primaryGoal: string | null;
+
+  // Estimate data fields (flat structure)
+  estimatedCoverageNeed: string | null;
+  estimatedGap: string | null;
+  estimatedPremium: string | null;
+  scenarioId: string | null;
+  incomeReplacementPercent: string | null;
+  replacementDurationYears: number | null;
+  liquidAssets: string | null;
+
+  // Metadata
+  referrerEmail: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,8 +51,18 @@ export interface CreateShareLinkInput {
   lastName: string;
   email: string;
   phone?: string;
-  intakeData: ShareLinkIntakeData;
-  estimateData: ShareLinkEstimateData;
+  householdStatus?: HouseholdStatus;
+  annualHouseholdIncome?: string;
+  totalDebts?: string;
+  currentCoverage?: string;
+  primaryGoal?: string;
+  estimatedCoverageNeed?: string;
+  estimatedGap?: string;
+  estimatedPremium?: string;
+  scenarioId?: string;
+  incomeReplacementPercent?: number;
+  replacementDurationYears?: number;
+  liquidAssets?: number;
   referrerEmail?: string;
 }
 

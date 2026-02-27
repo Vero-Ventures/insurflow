@@ -1,7 +1,6 @@
 /**
  * @fileoverview Type definitions for intake inquiries.
- *
- * Represents consumer leads captured when they share their estimate with an advisor.
+ * Uses flat structure to match database schema.
  */
 
 export type InquiryStatus =
@@ -18,20 +17,6 @@ export type HouseholdStatus =
   | "partnered"
   | "single_parent";
 
-export interface IntakeData {
-  householdStatus: HouseholdStatus | null;
-  annualHouseholdIncome: string | null;
-  totalDebts: string | null;
-  currentCoverage: string | null;
-  primaryGoal: string | null;
-}
-
-export interface EstimateSnapshot {
-  estimatedCoverageNeed: string | null;
-  estimatedPremium: string | null;
-  scenarioId: string | null;
-}
-
 export interface Inquiry {
   id: string;
   status: InquiryStatus;
@@ -40,12 +25,26 @@ export interface Inquiry {
   email: string;
   phone: string | null;
   referralSource: string | null;
-  intakeData: IntakeData | null;
-  estimateSnapshot: EstimateSnapshot | null;
+
+  // Intake data fields (flat structure)
+  householdStatus: HouseholdStatus | null;
+  annualHouseholdIncome: string | null;
+  totalDebts: string | null;
+  currentCoverage: string | null;
+  primaryGoal: string | null;
+
+  // Estimate data fields (flat structure)
+  estimatedCoverageNeed: string | null;
+  estimatedPremium: string | null;
+  scenarioId: string | null;
+
+  // Assignment & conversion
   claimedByUserId: string | null;
   claimedAt: string | null;
   convertedToClientId: string | null;
   convertedAt: string | null;
+
+  // Metadata
   consumerIpAddress: string | null;
   consumerUserAgent: string | null;
   createdAt: string;
@@ -63,8 +62,14 @@ export interface CreateInquiryInput {
   email: string;
   phone?: string;
   referralSource?: string;
-  intakeData: IntakeData;
-  estimateSnapshot: EstimateSnapshot;
+  householdStatus?: HouseholdStatus;
+  annualHouseholdIncome?: string;
+  totalDebts?: string;
+  currentCoverage?: string;
+  primaryGoal?: string;
+  estimatedCoverageNeed?: string;
+  estimatedPremium?: string;
+  scenarioId?: string;
 }
 
 export interface UpdateInquiryStatusInput {
