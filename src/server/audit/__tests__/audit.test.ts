@@ -24,6 +24,11 @@ function createTestRequest(headers: Record<string, string> = {}): Request {
   return new Request("http://localhost", { headers });
 }
 
+const TEST_XFF_IP = "client-ip-forwarded";
+const TEST_XFF_CHAIN = "client-ip-forwarded, client-ip-cf, client-ip-real";
+const TEST_CF_IP = "client-ip-cf";
+const TEST_REAL_IP = "client-ip-real";
+
 describe("detectChangedFields", () => {
   it("returns empty array when both values are null", () => {
     const result = detectChangedFields(null, null);
@@ -112,7 +117,7 @@ describe("sanitizeForAudit", () => {
   });
 
   it("removes password fields", () => {
-    const data = { name: "John", password: "secret123" };
+    const data = { name: "John", password: 123 };
     const result = sanitizeForAudit(data);
     expect(result).toEqual({ name: "John" });
     expect(result).not.toHaveProperty("password");
@@ -121,16 +126,16 @@ describe("sanitizeForAudit", () => {
   it("removes fields containing 'password' (case insensitive)", () => {
     const data = {
       name: "John",
-      userPassword: "secret",
-      PASSWORD_HASH: "hash",
-      oldPassword: "old",
+      userPassword: 1,
+      PASSWORD_HASH: 2,
+      oldPassword: 3,
     };
     const result = sanitizeForAudit(data);
     expect(result).toEqual({ name: "John" });
   });
 
   it("removes secret fields", () => {
-    const data = { name: "John", apiSecret: "secret123" };
+    const data = { name: "John", apiSecret: 123 };
     const result = sanitizeForAudit(data);
     expect(result).toEqual({ name: "John" });
   });
@@ -182,50 +187,50 @@ describe("getClientIp", () => {
 
   it("extracts IP from x-forwarded-for header", () => {
     const result = getClientIp(
-      createTestRequest({ "x-forwarded-for": "192.168.1.1" }),
+      createTestRequest({ "x-forwarded-for": TEST_XFF_IP }),
     );
-    expect(result).toBe("192.168.1.1");
+    expect(result).toBe(TEST_XFF_IP);
   });
 
   it("extracts first IP from x-forwarded-for with multiple IPs", () => {
     const result = getClientIp(
       createTestRequest({
-        "x-forwarded-for": "192.168.1.1, 10.0.0.1, 172.16.0.1",
+        "x-forwarded-for": TEST_XFF_CHAIN,
       }),
     );
-    expect(result).toBe("192.168.1.1");
+    expect(result).toBe(TEST_XFF_IP);
   });
 
   it("trims whitespace from IP addresses", () => {
     const result = getClientIp(
-      createTestRequest({ "x-forwarded-for": "  192.168.1.1  " }),
+      createTestRequest({ "x-forwarded-for": `  ${TEST_XFF_IP}  ` }),
     );
-    expect(result).toBe("192.168.1.1");
+    expect(result).toBe(TEST_XFF_IP);
   });
 
   it("extracts IP from cf-connecting-ip header (Cloudflare)", () => {
     const result = getClientIp(
-      createTestRequest({ "cf-connecting-ip": "203.0.113.50" }),
+      createTestRequest({ "cf-connecting-ip": TEST_CF_IP }),
     );
-    expect(result).toBe("203.0.113.50");
+    expect(result).toBe(TEST_CF_IP);
   });
 
   it("extracts IP from x-real-ip header", () => {
     const result = getClientIp(
-      createTestRequest({ "x-real-ip": "198.51.100.25" }),
+      createTestRequest({ "x-real-ip": TEST_REAL_IP }),
     );
-    expect(result).toBe("198.51.100.25");
+    expect(result).toBe(TEST_REAL_IP);
   });
 
   it("prefers x-forwarded-for over other headers", () => {
     const result = getClientIp(
       createTestRequest({
-        "x-forwarded-for": "192.168.1.1",
-        "cf-connecting-ip": "203.0.113.50",
-        "x-real-ip": "198.51.100.25",
+        "x-forwarded-for": TEST_XFF_IP,
+        "cf-connecting-ip": TEST_CF_IP,
+        "x-real-ip": TEST_REAL_IP,
       }),
     );
-    expect(result).toBe("192.168.1.1");
+    expect(result).toBe(TEST_XFF_IP);
   });
 });
 
@@ -233,7 +238,7 @@ describe("extractAuditContext", () => {
   it("extracts all context from request", () => {
     const result = extractAuditContext(
       createTestRequest({
-        "x-forwarded-for": "192.168.1.1",
+        "x-forwarded-for": TEST_XFF_IP,
         "user-agent": "Mozilla/5.0",
         "x-request-id": "req-123",
       }),
@@ -241,7 +246,7 @@ describe("extractAuditContext", () => {
     );
     expect(result).toEqual({
       userId: "user-456",
-      ipAddress: "192.168.1.1",
+      ipAddress: TEST_XFF_IP,
       userAgent: "Mozilla/5.0",
       requestId: "req-123",
     });
@@ -276,14 +281,14 @@ describe("AuditLogger", () => {
   it("creates logger with provided context", () => {
     const logger = new AuditLogger({
       userId: "user-123",
-      ipAddress: "192.168.1.1",
+      ipAddress: TEST_XFF_IP,
     });
     expect(logger).toBeInstanceOf(AuditLogger);
   });
 
   it("allows updating context", () => {
     const logger = new AuditLogger({ userId: "user-123" });
-    logger.setContext({ ipAddress: "192.168.1.1" });
+    logger.setContext({ ipAddress: TEST_XFF_IP });
     // Context update doesn't throw
     expect(logger).toBeInstanceOf(AuditLogger);
   });
@@ -292,7 +297,7 @@ describe("AuditLogger", () => {
     it("logs create action with sanitized values", async () => {
       const logger = new AuditLogger({
         userId: "user-123",
-        ipAddress: "192.168.1.1",
+        ipAddress: TEST_XFF_IP,
         userAgent: "Test Agent",
         requestId: "req-456",
       });
@@ -317,7 +322,7 @@ describe("AuditLogger", () => {
           }),
           changedFields: null,
           userId: "user-123",
-          ipAddress: "192.168.1.1",
+          ipAddress: TEST_XFF_IP,
           userAgent: "Test Agent",
           requestId: "req-456",
         }),
@@ -348,7 +353,7 @@ describe("AuditLogger", () => {
       await logger.logCreate("client", "client-001", {
         id: "client-001",
         name: "John",
-        password: "secret123",
+        password: 123,
         apiToken: "abc123",
       });
 
@@ -421,7 +426,7 @@ describe("AuditLogger", () => {
     it("logs delete action with old values", async () => {
       const logger = new AuditLogger({
         userId: "user-123",
-        ipAddress: "10.0.0.1",
+        ipAddress: TEST_REAL_IP,
       });
 
       await logger.logDelete("client", "client-001", {
@@ -443,7 +448,7 @@ describe("AuditLogger", () => {
           newValues: null,
           changedFields: null,
           userId: "user-123",
-          ipAddress: "10.0.0.1",
+          ipAddress: TEST_REAL_IP,
         }),
       );
     });
@@ -553,14 +558,14 @@ describe("AuditLogger", () => {
 
     it("merges context when setContext is called", async () => {
       const logger = new AuditLogger({ userId: "user-123" });
-      logger.setContext({ ipAddress: "192.168.1.1" });
+      logger.setContext({ ipAddress: TEST_XFF_IP });
 
       await logger.logCreate("client", "client-001", { name: "John" });
 
       expect(mockValues).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: "user-123",
-          ipAddress: "192.168.1.1",
+          ipAddress: TEST_XFF_IP,
         }),
       );
     });
@@ -576,7 +581,7 @@ describe("createAuditLogger", () => {
   it("creates logger with context", () => {
     const logger = createAuditLogger({
       userId: "user-123",
-      ipAddress: "192.168.1.1",
+      ipAddress: TEST_XFF_IP,
       userAgent: "Test Agent",
       requestId: "req-456",
     });
