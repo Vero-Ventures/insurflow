@@ -61,6 +61,8 @@ NEXT_PUBLIC_POSTHOG_KEY="..."
 NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
 ```
 
+Variables in `.env.example` for Stripe/UploadThing are reserved for future features and are not required for current MVP development.
+
 ### 5. Start Development Environment
 
 ```bash
@@ -154,6 +156,8 @@ bun run services:status      # Check services status
 bun run db:generate          # Generate migrations
 bun run db:push              # Push schema to database
 bun run db:studio            # Open Drizzle Studio
+bun run db:debug             # Print users/clients for local debugging
+bun run db:clean:clients     # DANGER: hard-delete all clients
 
 # Code Quality
 bun run check                # ESLint + TypeScript
@@ -204,6 +208,12 @@ rm -rf .next node_modules
 bun install
 bun run build
 ```
+
+## Operational Guardrails
+
+- `scripts/clean-clients.ts` hard-deletes every client row. Treat it as destructive and local-only.
+- Pre-push runs lint/typecheck/tests and may auto-rebase onto `origin/main`.
+- If automation must bypass auto-sync logic, use `SKIP_SYNC_CHECK=1 git push` intentionally.
 
 ## Getting Help
 
