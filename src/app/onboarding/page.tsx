@@ -7,6 +7,7 @@ import {
   isOnboardingProfileComplete,
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
+import { getSessionUserId } from "@/lib/auth/session-utils";
 import { resolveOnboardingAccountType } from "@/lib/role-experience";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
@@ -19,14 +20,15 @@ export default async function OnboardingPage({
   searchParams: Promise<{ role?: string | string[] }>;
 }) {
   const session = await getSession();
+  const userId = getSessionUserId(session);
 
-  if (!session?.user) {
+  if (!session?.user || !userId) {
     redirect("/auth/sign-in");
   }
 
   const db = getDb();
   const profile = await db.query.userProfile.findFirst({
-    where: eq(userProfile.userId, session.user.id),
+    where: eq(userProfile.userId, userId),
   });
 
   if (isOnboardingProfileComplete(profile)) {
