@@ -15,7 +15,6 @@ export * from "./currency";
 export * from "./dialog";
 export * from "./input";
 export * from "./label";
-export * from "./navigation-menu";
 export * from "./select";
 export * from "./skeleton";
 export * from "./sonner";
