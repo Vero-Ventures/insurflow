@@ -1,23 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { z } from "zod";
-
-const createInquirySchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100),
-  lastName: z.string().min(1, "Last name is required").max(100),
-  email: z.string().email("Valid email is required"),
-  phone: z.string().max(20).optional(),
-  referralSource: z.string().max(200).optional(),
-  householdStatus: z
-    .enum(["single", "married", "partnered", "single_parent"])
-    .optional(),
-  annualHouseholdIncome: z.string().optional(),
-  totalDebts: z.string().optional(),
-  currentCoverage: z.string().optional(),
-  primaryGoal: z.string().max(2000).optional(),
-  estimatedCoverageNeed: z.string().optional(),
-  estimatedPremium: z.string().optional(),
-  scenarioId: z.string().optional(),
-});
+import { createInquirySchema } from "@/lib/validation/shared-schemas";
 
 describe("Create Inquiry Schema Validation", () => {
   it("validates a complete valid inquiry", () => {

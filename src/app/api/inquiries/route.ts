@@ -4,41 +4,11 @@ import { createLogger } from "@/server/axiom";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, isNull, desc, and, or, count } from "drizzle-orm";
-
-const INQUIRY_STATUSES = [
-  "pending",
-  "completed",
-  "viewed",
-  "claimed",
-  "converted",
-  "archived",
-] as const;
-
-const createInquirySchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100),
-  lastName: z.string().min(1, "Last name is required").max(100),
-  email: z.string().email("Valid email is required"),
-  phone: z.string().max(20).optional(),
-  referralSource: z.string().max(200).optional(),
-  householdStatus: z
-    .enum(["single", "married", "partnered", "single_parent"])
-    .optional(),
-  annualHouseholdIncome: z.string().optional(),
-  totalDebts: z.string().optional(),
-  currentCoverage: z.string().optional(),
-  primaryGoal: z.string().max(2000).optional(),
-  estimatedCoverageNeed: z.string().optional(),
-  estimatedPremium: z.string().optional(),
-  scenarioId: z.string().optional(),
-});
-
-async function getClientIp(request: Request): Promise<string | null> {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]!.trim();
-  }
-  return request.headers.get("x-real-ip") || null;
-}
+import { getClientIp } from "@/lib/api/shared-utils";
+import {
+  createInquirySchema,
+  INQUIRY_STATUSES,
+} from "@/lib/validation/shared-schemas";
 
 /**
  * POST /api/inquiries

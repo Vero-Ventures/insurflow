@@ -2,52 +2,15 @@ import { getDb } from "@/server/db";
 import { shareLink } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { randomBytes } from "node:crypto";
+import { getClientIp, getBaseUrl } from "@/lib/api/shared-utils";
+import { createShareLinkSchema } from "@/lib/validation/shared-schemas";
 
 function generateToken(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  return randomBytes(9).toString("base64url");
 }
-
-function getBaseUrl(request: Request): string {
-  const url = new URL(request.url);
-  return `${url.protocol}//${url.host}`;
-}
-
-const createShareLinkSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100),
-  lastName: z.string().min(1, "Last name is required").max(100),
-  email: z.string().email("Valid email is required"),
-  phone: z.string().max(20).optional(),
-  householdStatus: z
-    .enum(["single", "married", "partnered", "single_parent"])
-    .optional(),
-  annualHouseholdIncome: z.string().optional(),
-  totalDebts: z.string().optional(),
-  currentCoverage: z.string().optional(),
-  primaryGoal: z.string().max(2000).optional(),
-  estimatedCoverageNeed: z.string().optional(),
-  estimatedGap: z.string().optional(),
-  scenarioId: z.string().optional(),
-  incomeReplacementPercent: z.number().optional(),
-  replacementDurationYears: z.number().optional(),
-  liquidAssets: z.number().optional(),
-  referrerEmail: z.string().email().optional(),
-});
 
 const DEFAULT_EXPIRY_DAYS = 2;
-
-async function getClientIp(request: Request): Promise<string | null> {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]!.trim();
-  }
-  return request.headers.get("x-real-ip") || null;
-}
 
 /**
  * POST /api/share-links
@@ -104,6 +67,7 @@ export async function POST(request: Request) {
         primaryGoal: data.primaryGoal || null,
         estimatedCoverageNeed: data.estimatedCoverageNeed || null,
         estimatedGap: data.estimatedGap || null,
+        estimatedPremium: data.estimatedPremium || null,
         scenarioId: data.scenarioId || null,
         incomeReplacementPercent:
           data.incomeReplacementPercent?.toString() || null,
