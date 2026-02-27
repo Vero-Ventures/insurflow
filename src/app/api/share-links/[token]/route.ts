@@ -3,19 +3,8 @@ import { shareLink, inquiry } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
 import { eq, isNull, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const TOKEN_REGEX = /^[a-z0-9]{12}$/;
-
-function validateToken(token: string): NextResponse | null {
-  if (!TOKEN_REGEX.test(token)) {
-    return NextResponse.json(
-      { error: "Invalid token format" },
-      { status: 400 },
-    );
-  }
-  return null;
-}
+import { validateToken } from "@/lib/api/shared-utils";
+import { INTERSTED_SCHEMA } from "@/lib/validation/shared-schemas";
 
 /**
  * GET /api/share-links/[token]
@@ -113,9 +102,7 @@ export async function GET(
   }
 }
 
-const interestedSchema = z.object({
-  advisorEmail: z.string().email("Valid email is required").optional(),
-});
+const interestedSchema = INTERSTED_SCHEMA;
 
 /**
  * POST /api/share-links/[token]/interested

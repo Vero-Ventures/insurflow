@@ -68,5 +68,13 @@ export const createShareLinkSchema = z.object({
   referrerEmail: z.string().email().optional(),
 });
 
+export const UPDATE_STATUS_SCHEMA = z.object({
+  status: INQUIRY_STATUS_ENUM,
+});
+
+export const INTERSTED_SCHEMA = z.object({
+  advisorEmail: z.string().email("Valid email is required").optional(),
+});
+
 export type HouseholdStatus = z.infer<typeof HOUSEHOLD_STATUS_ENUM>;
 export type InquiryStatus = z.infer<typeof INQUIRY_STATUS_ENUM>;

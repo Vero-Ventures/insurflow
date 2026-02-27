@@ -3,31 +3,8 @@ import { inquiry } from "@/server/db/schemas";
 import { createLogger } from "@/server/axiom";
 import { eq, isNull, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const updateStatusSchema = z.object({
-  status: z.enum([
-    "pending",
-    "completed",
-    "viewed",
-    "claimed",
-    "converted",
-    "archived",
-  ]),
-});
-
-function validateUUID(id: string): NextResponse | null {
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json(
-      { error: "Invalid inquiry ID format" },
-      { status: 400 },
-    );
-  }
-  return null;
-}
+import { validateUUID } from "@/lib/api/shared-utils";
+import { UPDATE_STATUS_SCHEMA } from "@/lib/validation/shared-schemas";
 
 export async function GET(
   request: Request,
@@ -113,7 +90,7 @@ export async function PATCH(
     });
 
     const body = await request.json();
-    const validationResult = updateStatusSchema.safeParse(body);
+    const validationResult = UPDATE_STATUS_SCHEMA.safeParse(body);
 
     if (!validationResult.success) {
       await logger.warn("Invalid status update", {
