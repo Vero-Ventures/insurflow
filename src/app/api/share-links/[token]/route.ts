@@ -17,14 +17,6 @@ function validateToken(token: string): NextResponse | null {
   return null;
 }
 
-async function getClientIp(request: Request): Promise<string | null> {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]!.trim();
-  }
-  return request.headers.get("x-real-ip") || null;
-}
-
 /**
  * GET /api/share-links/[token]
  * Get share link details by token (public).

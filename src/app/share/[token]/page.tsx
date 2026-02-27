@@ -87,38 +87,38 @@ function SharePageContent() {
   const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      fetchShareLink();
-    }
+    if (!token) return;
+
+    const fetchShareLink = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/share-links/${token}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("This share link was not found or has expired");
+          }
+          if (response.status === 410) {
+            throw new Error("This share link has expired");
+          }
+          throw new Error("Failed to load share link");
+        }
+
+        const data = await response.json();
+        setShareLink(data.shareLink);
+
+        if (data.shareLink.interestedAt) {
+          setIsInterested(true);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchShareLink();
   }, [token]);
-
-  const fetchShareLink = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/share-links/${token}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("This share link was not found or has expired");
-        }
-        if (response.status === 410) {
-          throw new Error("This share link has expired");
-        }
-        throw new Error("Failed to load share link");
-      }
-
-      const data = await response.json();
-      setShareLink(data.shareLink);
-
-      if (data.shareLink.interestedAt) {
-        setIsInterested(true);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleInterested = async () => {
     setIsSubmitting(true);
