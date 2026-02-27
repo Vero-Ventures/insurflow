@@ -64,6 +64,23 @@ export function calculateOffset(page: number, limit: number): number {
 }
 
 type DbClient = Pick<ReturnType<typeof getDb>, "select">;
+type IdRow = { id: string };
+
+async function selectIds(query: Promise<IdRow[]>): Promise<string[]> {
+  const rows = await query;
+  return rows.map((row) => row.id);
+}
+
+async function selectIdsWhen(
+  condition: boolean,
+  query: Promise<IdRow[]>,
+): Promise<string[]> {
+  if (!condition) {
+    return [];
+  }
+
+  return selectIds(query);
+}
 
 export async function getOwnedEntityIdsForAudit(
   db: DbClient,
@@ -79,73 +96,92 @@ export async function getOwnedEntityIdsForAudit(
     return [];
   }
 
-  const [assets, debts, beneficiaries, policies, businesses] =
+  const [assetIds, debtIds, beneficiaryIds, policyIds, businessIds] =
     await Promise.all([
-      db
-        .select({ id: asset.id })
-        .from(asset)
-        .where(inArray(asset.clientId, clientIds)),
-      db
-        .select({ id: debt.id })
-        .from(debt)
-        .where(inArray(debt.clientId, clientIds)),
-      db
-        .select({ id: beneficiary.id })
-        .from(beneficiary)
-        .where(inArray(beneficiary.clientId, clientIds)),
-      db
-        .select({ id: policy.id })
-        .from(policy)
-        .where(inArray(policy.clientId, clientIds)),
-      db
-        .select({ id: business.id })
-        .from(business)
-        .where(inArray(business.clientId, clientIds)),
+      selectIds(
+        db
+          .select({ id: asset.id })
+          .from(asset)
+          .where(inArray(asset.clientId, clientIds)) as Promise<IdRow[]>,
+      ),
+      selectIds(
+        db
+          .select({ id: debt.id })
+          .from(debt)
+          .where(inArray(debt.clientId, clientIds)) as Promise<IdRow[]>,
+      ),
+      selectIds(
+        db
+          .select({ id: beneficiary.id })
+          .from(beneficiary)
+          .where(inArray(beneficiary.clientId, clientIds)) as Promise<IdRow[]>,
+      ),
+      selectIds(
+        db
+          .select({ id: policy.id })
+          .from(policy)
+          .where(inArray(policy.clientId, clientIds)) as Promise<IdRow[]>,
+      ),
+      selectIds(
+        db
+          .select({ id: business.id })
+          .from(business)
+          .where(inArray(business.clientId, clientIds)) as Promise<IdRow[]>,
+      ),
     ]);
 
-  const beneficiaryIds = beneficiaries.map((row) => row.id);
-  const businessIds = businesses.map((row) => row.id);
-
-  const [allocations, keyPeople, shareholders, insuranceNeeds] =
+  const [allocationIds, keyPersonIds, shareholderIds, insuranceNeedIds] =
     await Promise.all([
-      beneficiaryIds.length > 0
-        ? db
-            .select({ id: assetAllocation.id })
-            .from(assetAllocation)
-            .where(inArray(assetAllocation.beneficiaryId, beneficiaryIds))
-        : Promise.resolve([]),
-      businessIds.length > 0
-        ? db
-            .select({ id: keyPerson.id })
-            .from(keyPerson)
-            .where(inArray(keyPerson.businessId, businessIds))
-        : Promise.resolve([]),
-      businessIds.length > 0
-        ? db
-            .select({ id: shareholder.id })
-            .from(shareholder)
-            .where(inArray(shareholder.businessId, businessIds))
-        : Promise.resolve([]),
-      businessIds.length > 0
-        ? db
-            .select({ id: corporateInsuranceNeed.id })
-            .from(corporateInsuranceNeed)
-            .where(inArray(corporateInsuranceNeed.businessId, businessIds))
-        : Promise.resolve([]),
+      selectIdsWhen(
+        beneficiaryIds.length > 0,
+        db
+          .select({ id: assetAllocation.id })
+          .from(assetAllocation)
+          .where(
+            inArray(assetAllocation.beneficiaryId, beneficiaryIds),
+          ) as Promise<IdRow[]>,
+      ),
+      selectIdsWhen(
+        businessIds.length > 0,
+        db
+          .select({ id: keyPerson.id })
+          .from(keyPerson)
+          .where(inArray(keyPerson.businessId, businessIds)) as Promise<
+          IdRow[]
+        >,
+      ),
+      selectIdsWhen(
+        businessIds.length > 0,
+        db
+          .select({ id: shareholder.id })
+          .from(shareholder)
+          .where(inArray(shareholder.businessId, businessIds)) as Promise<
+          IdRow[]
+        >,
+      ),
+      selectIdsWhen(
+        businessIds.length > 0,
+        db
+          .select({ id: corporateInsuranceNeed.id })
+          .from(corporateInsuranceNeed)
+          .where(
+            inArray(corporateInsuranceNeed.businessId, businessIds),
+          ) as Promise<IdRow[]>,
+      ),
     ]);
 
   return [
     ...new Set([
       ...clientIds,
-      ...assets.map((row) => row.id),
-      ...debts.map((row) => row.id),
+      ...assetIds,
+      ...debtIds,
       ...beneficiaryIds,
-      ...policies.map((row) => row.id),
+      ...policyIds,
       ...businessIds,
-      ...allocations.map((row) => row.id),
-      ...keyPeople.map((row) => row.id),
-      ...shareholders.map((row) => row.id),
-      ...insuranceNeeds.map((row) => row.id),
+      ...allocationIds,
+      ...keyPersonIds,
+      ...shareholderIds,
+      ...insuranceNeedIds,
     ]),
   ];
 }
