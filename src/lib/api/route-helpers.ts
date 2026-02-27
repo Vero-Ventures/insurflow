@@ -70,9 +70,11 @@ type ApiHandler = (
 export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
   return async (
     request: Request,
-    { params }: { params: Promise<Record<string, string>> },
+    context?: {
+      params?: Promise<Record<string, string>> | Record<string, string>;
+    },
   ): Promise<NextResponse> => {
-    const resolvedParams = await params;
+    const resolvedParams = await Promise.resolve(context?.params ?? {});
     const clientId = resolvedParams.id;
 
     // Build endpoint string with actual IDs for logging
@@ -87,6 +89,11 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
     });
 
     try {
+      await logger.info("API request received", {
+        requestUrl: request.url,
+        requestMethod: request.method,
+      });
+
       // Validate session
       const sessionResult = config.requireAdvisor
         ? await validateAdvisorSession(logger)
@@ -149,8 +156,17 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
 
       // Return NextResponse directly or wrap data
       if (result instanceof NextResponse) {
+        await logger.info("API response returned", {
+          statusCode: result.status,
+          responseBody: await readResponseBodyForDebug(result),
+        });
         return result;
       }
+
+      await logger.info("API response returned", {
+        statusCode: result.status ?? 200,
+        responseBody: result.data,
+      });
 
       return NextResponse.json(result.data, { status: result.status ?? 200 });
     } catch (error) {
@@ -164,6 +180,20 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
       );
     }
   };
+}
+
+async function readResponseBodyForDebug(response: NextResponse) {
+  try {
+    const text = await response.clone().text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  } catch {
+    return "Unable to read response body";
+  }
 }
 
 /**

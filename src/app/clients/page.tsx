@@ -87,8 +87,35 @@ export default function ClientsPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch("/api/clients", {
+        const requestUrl = "/api/clients";
+        const requestMethod = "GET";
+
+        console.debug("[clients-page] Request", {
+          url: requestUrl,
+          method: requestMethod,
+        });
+
+        const response = await fetch(requestUrl, {
+          method: requestMethod,
+          headers: {
+            Accept: "application/json",
+          },
           credentials: "include",
+        });
+
+        const responseText = await response.text();
+        let responseBody: unknown = responseText;
+        try {
+          responseBody = responseText ? JSON.parse(responseText) : null;
+        } catch {
+          // Keep raw text if response is not JSON
+        }
+
+        console.debug("[clients-page] Response", {
+          url: requestUrl,
+          method: requestMethod,
+          status: response.status,
+          body: responseBody,
         });
 
         if (!response.ok) {
@@ -104,15 +131,30 @@ export default function ClientsPage() {
               "Server error. Please try again later or contact support.",
             );
           }
-          const errorData = await response.json().catch(() => ({}));
+          const errorData =
+            typeof responseBody === "object" && responseBody !== null
+              ? (responseBody as Record<string, unknown>)
+              : {};
+          const errorMessageFromBody =
+            typeof errorData.error === "string" ? errorData.error : undefined;
           throw new Error(
-            errorData.error || `Failed to fetch clients (${response.status})`,
+            errorMessageFromBody ||
+              `Failed to fetch clients (${response.status})`,
           );
         }
 
-        const data = await response.json();
-        setClients(data.clients || []);
+        const data =
+          typeof responseBody === "object" && responseBody !== null
+            ? (responseBody as Record<string, unknown>)
+            : {};
+        setClients(
+          Array.isArray(data.clients) ? (data.clients as Client[]) : [],
+        );
       } catch (err) {
+        console.error("[clients-page] fetchClients failed", {
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+        });
         const errorMessage =
           err instanceof Error ? err.message : "An unexpected error occurred";
         setError(errorMessage);

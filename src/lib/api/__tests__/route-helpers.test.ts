@@ -68,4 +68,23 @@ describe("withApiHandler advisor guard", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
+
+  it("handles static routes when Next omits route context", async () => {
+    mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockFindFirst.mockResolvedValue({ accountType: "advisor" });
+
+    const handler = withApiHandler(
+      {
+        endpoint: "/api/test",
+        method: "GET",
+        requireAdvisor: true,
+      },
+      async () => ({ data: { ok: true } }),
+    );
+
+    const response = await handler(new Request("http://localhost/api/test"));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ ok: true });
+  });
 });
