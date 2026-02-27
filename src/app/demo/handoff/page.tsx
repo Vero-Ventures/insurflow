@@ -79,6 +79,7 @@ export default function DemoHandoffPage() {
           primaryGoal: state.intakeData.primaryGoal || undefined,
           estimatedCoverageNeed: result?.totalInsuranceNeeds.toString() || "0",
           estimatedGap: coverageGap.toString(),
+          estimatedPremium: "0", // Premium calculation not available in demo
           scenarioId: state.selectedScenarioId,
           incomeReplacementPercent:
             state.analysisAssumptions.incomeReplacementPercent,

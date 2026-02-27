@@ -220,7 +220,7 @@ export async function POST(
         currentCoverage: foundLink.currentCoverage,
         primaryGoal: foundLink.primaryGoal,
         estimatedCoverageNeed: foundLink.estimatedCoverageNeed,
-        estimatedPremium: foundLink.estimatedGap,
+        estimatedPremium: foundLink.estimatedPremium,
         scenarioId: foundLink.scenarioId,
         status: "claimed",
         claimedByUserId: session.user.id,
