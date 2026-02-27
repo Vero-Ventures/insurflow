@@ -1,6 +1,5 @@
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
-import { createLogger } from "@/server/axiom";
 import {
   decimalString,
   HEALTH_RATINGS,
@@ -12,7 +11,7 @@ import { and, count, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  validateAdvisorSession,
+  withApiHandler,
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
@@ -94,17 +93,13 @@ const paginationSchema = z.object({
  * GET /api/clients - List all clients for the authenticated user
  * Supports pagination with ?page=1&limit=20 query parameters
  */
-export async function GET(request: Request) {
-  const logger = createLogger({ endpoint: "/api/clients", method: "GET" });
-
-  try {
-    const sessionResult = await validateAdvisorSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
-    // Parse pagination parameters from URL
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/clients",
+    method: "GET",
+    requireAdvisor: true,
+  },
+  async (request, { logger, session }) => {
     const url = new URL(request.url);
     const paginationResult = paginationSchema.safeParse({
       page: url.searchParams.get("page") ?? DEFAULT_PAGE,
@@ -135,7 +130,6 @@ export async function GET(request: Request) {
       isNull(client.deletedAt),
     );
 
-    // Execute queries sequentially to avoid concurrent queries on single connection
     const totalResult = await db
       .select({ count: count() })
       .from(client)
@@ -159,60 +153,46 @@ export async function GET(request: Request) {
       totalPages,
     });
 
-    return NextResponse.json({
-      clients,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+    return {
+      data: {
+        clients,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
       },
-    });
-  } catch (error) {
-    await logger.error(
-      "Error fetching clients",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    };
+  },
+);
 
 /**
  * POST /api/clients - Create a new client
  */
-export async function POST(request: Request) {
-  const logger = createLogger({ endpoint: "/api/clients", method: "POST" });
-
-  try {
-    const sessionResult = await validateAdvisorSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
+export const POST = withApiHandler(
+  {
+    endpoint: "/api/clients",
+    method: "POST",
+    requireAdvisor: true,
+  },
+  async (request, { logger, session }) => {
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) return bodyResult.error;
 
-    // Validate request body
     const validationResult = createClientSchema.safeParse(bodyResult.body);
     if (!validationResult.success) {
       return handleValidationError(logger, validationResult.error);
     }
 
-    const data = validationResult.data;
     const db = getDb();
-
-    // Create client with ownership
     const [newClient] = await db
       .insert(client)
       .values({
         userId: session.user.id,
-        ...data,
+        ...validationResult.data,
       })
       .returning();
 
@@ -221,15 +201,6 @@ export async function POST(request: Request) {
       clientId: newClient?.id,
     });
 
-    return NextResponse.json({ client: newClient }, { status: 201 });
-  } catch (error) {
-    await logger.error(
-      "Error creating client",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return { data: { client: newClient }, status: 201 };
+  },
+);

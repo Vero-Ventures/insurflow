@@ -13,6 +13,7 @@ export interface RouteContext {
   session: Session;
   logger: Logger;
   clientId?: string;
+  params: Record<string, string>;
   /** Additional validated resource IDs (e.g., debtId, assetId) */
   resourceIds?: Record<string, string>;
 }
@@ -27,6 +28,8 @@ export interface ApiHandlerConfig {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   /** Whether to validate and verify client ownership (requires clientId param) */
   requireClient?: boolean;
+  /** Whether endpoint requires advisor account */
+  requireAdvisor?: boolean;
   /** Additional resource IDs to validate as UUIDs */
   resourceIdParams?: string[];
 }
@@ -84,7 +87,9 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
 
     try {
       // Validate session
-      const sessionResult = await validateSession(logger);
+      const sessionResult = config.requireAdvisor
+        ? await validateAdvisorSession(logger)
+        : await validateSession(logger);
       if ("error" in sessionResult) return sessionResult.error;
       const { session } = sessionResult;
 
@@ -137,6 +142,7 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
         session,
         logger,
         clientId,
+        params: resolvedParams,
         resourceIds,
       });
 

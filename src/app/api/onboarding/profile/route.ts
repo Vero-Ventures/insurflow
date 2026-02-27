@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 
 import {
   deriveOnboardingPrefill,
@@ -9,32 +8,23 @@ import {
 import {
   handleValidationError,
   parseJsonBody,
-  validateSession,
+  withApiHandler,
 } from "@/lib/api/route-helpers";
-import { createLogger } from "@/server/axiom";
 import { getDb } from "@/server/db";
 import { user, userProfile } from "@/server/db/schemas";
 
-export async function GET() {
-  const logger = createLogger({
+export const GET = withApiHandler(
+  {
     endpoint: "/api/onboarding/profile",
     method: "GET",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
+  },
+  async (_request, { session }) => {
     const db = getDb();
     const profile = await db.query.userProfile.findFirst({
       where: eq(userProfile.userId, session.user.id),
     });
 
     const prefill = deriveOnboardingPrefill(session.user.name);
-
     const onboardingData = {
       firstName: profile?.firstName ?? prefill.firstName,
       lastName: profile?.lastName ?? prefill.lastName,
@@ -45,37 +35,22 @@ export async function GET() {
       accountType: profile?.accountType ?? "",
     };
 
-    return NextResponse.json({
-      profile: onboardingData,
-      isComplete: isOnboardingProfileComplete(profile),
-      completedAt: profile?.onboardingCompletedAt ?? null,
-    });
-  } catch (error) {
-    await logger.error(
-      "Failed to fetch onboarding profile",
-      error instanceof Error ? error : new Error(String(error)),
-    );
+    return {
+      data: {
+        profile: onboardingData,
+        isComplete: isOnboardingProfileComplete(profile),
+        completedAt: profile?.onboardingCompletedAt ?? null,
+      },
+    };
+  },
+);
 
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function PUT(request: Request) {
-  const logger = createLogger({
+export const PUT = withApiHandler(
+  {
     endpoint: "/api/onboarding/profile",
     method: "PUT",
-  });
-
-  try {
-    const sessionResult = await validateSession(logger);
-    if ("error" in sessionResult) return sessionResult.error;
-    const { session } = sessionResult;
-
-    logger.addContext({ userId: session.user.id });
-
+  },
+  async (request, { logger, session }) => {
     const bodyResult = await parseJsonBody(request, logger);
     if ("error" in bodyResult) return bodyResult.error;
 
@@ -134,19 +109,11 @@ export async function PUT(request: Request) {
       onboardingCompleted: true,
     });
 
-    return NextResponse.json({
-      profile: data,
-      isComplete: true,
-    });
-  } catch (error) {
-    await logger.error(
-      "Failed to update onboarding profile",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return {
+      data: {
+        profile: data,
+        isComplete: true,
+      },
+    };
+  },
+);
