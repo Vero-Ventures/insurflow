@@ -21,6 +21,8 @@ import { SpouseFields } from "./form-sections/spouse-fields";
 import { Plus, UserPlus, Loader2 } from "lucide-react";
 
 interface CreateClientDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onOptimisticCreate?: (clientData: {
     firstName: string;
     lastName: string;
@@ -32,11 +34,23 @@ interface CreateClientDialogProps {
 }
 
 export function CreateClientDialog({
+  open,
+  onOpenChange,
   onOptimisticCreate,
   onOptimisticSuccess,
   onOptimisticError,
 }: CreateClientDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(nextOpen);
+    }
+    onOpenChange?.(nextOpen);
+  };
+
   const {
     formData,
     errors,
@@ -44,13 +58,13 @@ export function CreateClientDialog({
     handleInputChange,
     handleSubmit,
     resetForm,
-  } = useClientForm(() => setOpen(false), {
+  } = useClientForm(() => setDialogOpen(false), {
     onOptimisticCreate,
     onOptimisticSuccess,
     onOptimisticError,
   });
 
-  const onOpenChange = (isOpen: boolean) => {
+  const handleDialogOpenChange = (isOpen: boolean) => {
     // Prevent closing the dialog while submitting
     if (!isOpen && isSubmitting) {
       return;
@@ -59,11 +73,11 @@ export function CreateClientDialog({
     if (!isOpen && !isSubmitting) {
       resetForm();
     }
-    setOpen(isOpen);
+    setDialogOpen(isOpen);
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
       <AlertDialogTrigger asChild>
         <Button className="bg-primary hover:bg-primary/90 gap-2 shadow-sm">
           <Plus className="h-4 w-4" />

@@ -37,10 +37,23 @@ describe("role experience helpers", () => {
     const clientExperience = getDashboardExperience("client");
 
     expect(advisorExperience.heading).toMatch(/advisor workspace/i);
-    expect(clientExperience.heading).toMatch(/client journey/i);
+    expect(clientExperience.heading).toMatch(/production account/i);
     expect(advisorExperience.cards[0]?.title).not.toBe(
       clientExperience.cards[0]?.title,
     );
+  });
+
+  it("uses production dashboard destinations instead of demo routes", () => {
+    const advisorExperience = getDashboardExperience("advisor");
+    const clientExperience = getDashboardExperience("client");
+
+    expect(
+      advisorExperience.cards.every((card) => !card.href.startsWith("/demo")),
+    ).toBe(true);
+    expect(
+      clientExperience.cards.every((card) => !card.href.startsWith("/demo")),
+    ).toBe(true);
+    expect(advisorExperience.cards[1]?.href).toContain("intent=create");
   });
 
   it("returns role confirmation copy for onboarding", () => {

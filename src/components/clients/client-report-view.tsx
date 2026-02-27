@@ -67,6 +67,8 @@ interface ClientReportViewProps {
   demoInsuranceResult?: InsuranceNeedsResult;
   /** Pre-generated AI letter for demo mode (skips API call) */
   demoLetter?: string;
+  /** Called after successful report download */
+  onReportDownloaded?: () => void;
 }
 
 /**
@@ -84,6 +86,7 @@ export function ClientReportView({
   demoDebts,
   demoInsuranceResult,
   demoLetter,
+  onReportDownloaded,
 }: ClientReportViewProps) {
   const isDemo = !!(demoAssets && demoDebts && demoInsuranceResult);
   const [assets, setAssets] = useState<Asset[]>(demoAssets || []);
@@ -189,6 +192,7 @@ export function ClientReportView({
       window.URL.revokeObjectURL(url);
 
       toast.success("Report downloaded successfully");
+      onReportDownloaded?.();
     } catch (error) {
       console.error("Failed to download PDF:", error);
       toast.error("Failed to download report. Please try again.");

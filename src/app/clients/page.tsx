@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +70,7 @@ function StatCard({
 
 export default function ClientsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [optimisticClients, setOptimisticClients] = useState<
     OptimisticClient[]
@@ -77,9 +78,20 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  useEffect(() => {
+    const intent = searchParams.get("intent");
+    if (intent !== "create") {
+      return;
+    }
+
+    setIsCreateDialogOpen(true);
+    router.replace("/clients", { scroll: false });
+  }, [router, searchParams]);
 
   useEffect(() => {
     async function fetchClients() {
@@ -298,6 +310,8 @@ export default function ClientsPage() {
               </div>
               <div className="animate-fade-up animation-delay-100">
                 <CreateClientDialog
+                  open={isCreateDialogOpen}
+                  onOpenChange={setIsCreateDialogOpen}
                   onOptimisticCreate={handleOptimisticCreate}
                   onOptimisticSuccess={handleOptimisticSuccess}
                   onOptimisticError={handleOptimisticError}

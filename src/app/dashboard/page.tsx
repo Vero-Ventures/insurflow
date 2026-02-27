@@ -14,12 +14,14 @@ import {
   normalizeAccountType,
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
+import { buildClientTabHref } from "@/lib/client-detail-tabs";
+import { CLIENT_INTAKE_START_ROUTE } from "@/lib/app-routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { userProfile } from "@/server/db/schemas";
-import { eq } from "drizzle-orm";
+import { client, userProfile } from "@/server/db/schemas";
+import { and, eq, isNull } from "drizzle-orm";
 
 type JourneyCardProps = {
   title: string;
@@ -80,6 +82,17 @@ export default async function DashboardPage() {
     columns: { accountType: true },
   });
 
+  const recentClient = await db.query.client.findFirst({
+    where: and(eq(client.userId, userId), isNull(client.deletedAt)),
+    orderBy: (client, { desc }) => [desc(client.updatedAt)],
+    columns: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      updatedAt: true,
+    },
+  });
+
   const accountType = normalizeAccountType(profile?.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
 
@@ -114,6 +127,60 @@ export default async function DashboardPage() {
             );
           })}
         </section>
+
+        {accountType === "advisor" && (
+          <section>
+            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+              <CardHeader className="space-y-2">
+                <p className="text-primary text-xs font-semibold tracking-wide uppercase">
+                  Quick Actions
+                </p>
+                <CardTitle className="text-xl">Jump into active work</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentClient ? (
+                  <>
+                    <p className="text-muted-foreground text-sm">
+                      Continue with {recentClient.firstName}{" "}
+                      {recentClient.lastName}.
+                    </p>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Button asChild>
+                        <Link
+                          href={buildClientTabHref(
+                            recentClient.id,
+                            "insurance",
+                          )}
+                        >
+                          Open Estimate
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link
+                          href={buildClientTabHref(recentClient.id, "report")}
+                        >
+                          Open Report
+                        </Link>
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground text-sm">
+                      No clients yet. Create your first client to unlock
+                      estimate and report workflows.
+                    </p>
+                    <Button asChild>
+                      <Link href={CLIENT_INTAKE_START_ROUTE}>
+                        Create First Client
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </div>
     </main>
   );
