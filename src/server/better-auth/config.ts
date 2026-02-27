@@ -5,6 +5,14 @@ import { env } from "@/env";
 import { getDb } from "@/server/db";
 import { buildSocialProviders } from "@/server/better-auth/social-providers";
 
+export function getUserOptions(): BetterAuthOptions["user"] {
+  return {
+    deleteUser: {
+      enabled: true,
+    },
+  };
+}
+
 /**
  * Better Auth configuration options factory.
  *
@@ -21,6 +29,7 @@ function getAuthOptions(): BetterAuthOptions {
     emailAndPassword: {
       enabled: true,
     },
+    user: getUserOptions(),
     socialProviders: buildSocialProviders(env),
   };
 }

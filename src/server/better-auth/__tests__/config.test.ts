@@ -5,8 +5,15 @@ import {
   getDefaultSocialProviderIds,
   type OAuthEnv,
 } from "@/server/better-auth/social-providers";
+import { getUserOptions } from "@/server/better-auth/config";
 
 describe("better-auth social provider configuration", () => {
+  it("enables delete-user endpoint in auth config", () => {
+    const options = getUserOptions();
+
+    expect(options?.deleteUser?.enabled).toBe(true);
+  });
+
   it("returns undefined when no social env vars are set", () => {
     const env: OAuthEnv = {
       BETTER_AUTH_GITHUB_CLIENT_ID: undefined,
