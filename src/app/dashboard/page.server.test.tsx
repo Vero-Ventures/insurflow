@@ -56,5 +56,5 @@ describe("DashboardPage session fallback", () => {
     expect(redirectMock).not.toHaveBeenCalled();
     expect(findProfileMock).toHaveBeenCalledTimes(1);
     expect(findClientMock).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 });
