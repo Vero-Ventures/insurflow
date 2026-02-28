@@ -21,34 +21,33 @@ export function generateStaticParams() {
 const features = [
   {
     icon: Clock,
-    title: "5-Minute Analysis",
+    title: "Fast Eligibility Check",
     description:
-      "Complete comprehensive financial analysis before your client finishes their coffee",
+      "Complete a short intake and see your estimate preview in minutes",
   },
   {
     icon: FileText,
-    title: "Instant Compliance",
+    title: "Simple Application Flow",
     description:
-      "Generate 'Reasons Why' letters and cover letters that satisfy regulators",
+      "Move from estimate to application submission in one guided journey",
   },
   {
     icon: BarChart3,
-    title: "Visual Dashboards",
+    title: "Clear Status Tracking",
     description:
-      "Interactive charts that make complex estate planning crystal clear",
+      "Track your application with clear, easy-to-understand status updates",
   },
   {
     icon: Smartphone,
-    title: "Works Everywhere",
-    description:
-      "Full functionality on iPad and mobile, so your plan is always with you",
+    title: "Built for Mobile",
+    description: "Complete your intake and application from desktop or phone",
   },
 ];
 
 const stats = [
-  { value: "90%", label: "Time Saved" },
-  { value: "50+", label: "Beta Advisors" },
-  { value: "100%", label: "Compliance Rate" },
+  { value: "5 min", label: "Typical Intake" },
+  { value: "D2C", label: "Consumer-first" },
+  { value: "Live", label: "Status Timeline" },
 ];
 
 export default async function AuthPage({
@@ -131,8 +130,7 @@ export default async function AuthPage({
               </div>
             </div>
             <p className="max-w-md text-base leading-relaxed font-medium text-white/90 lg:text-lg">
-              The AI-powered platform that turns your life details into clear
-              insurance recommendations in{" "}
+              Check your term life coverage needs and submit an application in{" "}
               <span className="text-emerald-400">under 5 minutes</span>.
             </p>
           </div>
@@ -153,12 +151,12 @@ export default async function AuthPage({
           <div className="hidden space-y-4 lg:block">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
               <Shield className="text-emerald h-5 w-5" />
-              Built for US Life Insurance Advisors
+              Built for Canada-first D2C Term Life
             </h2>
             <p className="max-w-md leading-relaxed text-white/80">
-              Replace archaic spreadsheets with a modern, AI-native platform
-              that automates estate planning, income replacement modeling, and
-              compliance document generation.
+              Start with eligibility intake, review a non-binding estimate, and
+              submit your application directly. We keep carrier integration
+              provider-agnostic while status tracking stays transparent.
             </p>
           </div>
 
