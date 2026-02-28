@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ADVISOR_WORKSPACE_ROUTE, DEMO_INTAKE_ROUTE } from "@/lib/app-routes";
+import { ADVISOR_WORKSPACE_ROUTE, USER_PROFILE_ROUTE } from "@/lib/app-routes";
 import {
   getDashboardExperience,
   normalizeAccountType,
@@ -11,8 +11,8 @@ describe("DashboardPage", () => {
     const accountType = normalizeAccountType(undefined) ?? "client";
     const experience = getDashboardExperience(accountType);
 
-    expect(experience.heading).toMatch(/client journey/i);
-    expect(experience.cards[0]?.href).toBe(DEMO_INTAKE_ROUTE);
+    expect(experience.heading).toMatch(/production account/i);
+    expect(experience.cards[0]?.href).toBe(USER_PROFILE_ROUTE);
   });
 
   it("returns advisor dashboard experience", () => {

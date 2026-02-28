@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
 import {
@@ -63,10 +63,19 @@ import {
 } from "@/components/clients/settling-requirements";
 import { ClientReportView } from "@/components/clients/client-report-view";
 import { ScenarioComparisonView } from "@/components/scenario-comparison/scenario-comparison-view";
+import {
+  resolveClientTab,
+  type ClientDetailTab,
+} from "@/lib/client-detail-tabs";
+import { deriveClientJourneyStatus } from "@/lib/client-journey-status";
+
+const reportDownloadStorageKey = (clientId: string) =>
+  `insurflow:report-downloaded:${clientId}`;
 
 function ClientDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const clientId = params.id as string;
 
   const [client, setClient] = useState<Client | null>(null);
@@ -75,7 +84,22 @@ function ClientDetailContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [totalAssets, setTotalAssets] = useState(0);
+  const [activeTab, setActiveTab] = useState<ClientDetailTab>(() =>
+    resolveClientTab(searchParams.get("tab")),
+  );
+  const [hasDownloadedReport, setHasDownloadedReport] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setActiveTab(resolveClientTab(searchParams.get("tab")));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem(
+      reportDownloadStorageKey(clientId),
+    );
+    setHasDownloadedReport(storedValue === "true");
+  }, [clientId]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -192,6 +216,26 @@ function ClientDetailContent() {
     }
   };
 
+  const handleTabChange = (nextTabValue: string) => {
+    const nextTab = resolveClientTab(nextTabValue);
+    setActiveTab(nextTab);
+
+    const nextQueryParams = new URLSearchParams(searchParams.toString());
+    if (nextTab === "profile") {
+      nextQueryParams.delete("tab");
+    } else {
+      nextQueryParams.set("tab", nextTab);
+    }
+
+    const queryString = nextQueryParams.toString();
+    router.replace(
+      queryString
+        ? `/clients/${clientId}?${queryString}`
+        : `/clients/${clientId}`,
+      { scroll: false },
+    );
+  };
+
   if (isLoading) {
     return <ClientDetailSkeleton />;
   }
@@ -222,6 +266,17 @@ function ClientDetailContent() {
   // Calculate completion status for sections
   const completionStatus = calculateCompletionStatus(client, insuranceResult);
   const { completed, total } = getCompletionCount(completionStatus);
+  const journeyStatus = deriveClientJourneyStatus({
+    hasProfileData: completionStatus.profile,
+    hasFinancialInputs: completionStatus.financialInputs,
+    hasInsuranceEstimate: Boolean(insuranceResult),
+    hasDownloadedReport,
+  });
+
+  const markReportDownloaded = () => {
+    setHasDownloadedReport(true);
+    window.localStorage.setItem(reportDownloadStorageKey(clientId), "true");
+  };
 
   return (
     <div className="container mx-auto px-4 pt-20">
@@ -265,6 +320,30 @@ function ClientDetailContent() {
                   <Copy className="h-3 w-3" />
                 )}
               </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge
+                variant={journeyStatus.intakeComplete ? "default" : "outline"}
+              >
+                Intake {journeyStatus.intakeComplete ? "complete" : "pending"}
+              </Badge>
+              <Badge
+                variant={
+                  journeyStatus.estimateGenerated ? "default" : "outline"
+                }
+              >
+                Estimate {journeyStatus.estimateGenerated ? "ready" : "pending"}
+              </Badge>
+              <Badge
+                variant={journeyStatus.reportDownloaded ? "default" : "outline"}
+              >
+                Report{" "}
+                {journeyStatus.reportDownloaded ? "downloaded" : "pending"}
+              </Badge>
+              <span className="text-muted-foreground text-xs">
+                Journey progress: {journeyStatus.completedStages}/
+                {journeyStatus.totalStages}
+              </span>
             </div>
           </div>
 
@@ -311,7 +390,11 @@ function ClientDetailContent() {
       </div>
 
       {/* Tabbed Navigation */}
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-1.5">
             {completionStatus.profile ? (
@@ -486,6 +569,7 @@ function ClientDetailContent() {
             client={client}
             clientId={clientId}
             pdfDownloadUrl={`/api/clients/${clientId}/report-pdf`}
+            onReportDownloaded={markReportDownloaded}
           />
         </TabsContent>
       </Tabs>

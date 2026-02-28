@@ -1,8 +1,8 @@
 import {
   ADVISOR_WORKSPACE_ROUTE,
-  DEMO_HANDOFF_ROUTE,
-  DEMO_INTAKE_ROUTE,
-  DEMO_SNAPSHOT_ROUTE,
+  CLIENT_INTAKE_START_ROUTE,
+  USER_PROFILE_ROUTE,
+  USER_SETTINGS_ROUTE,
 } from "@/lib/app-routes";
 
 export type AccountType = "client" | "advisor";
@@ -60,7 +60,7 @@ export function getDashboardExperience(
       eyebrow: "Advisor Workspace",
       heading: "Open your advisor workspace",
       description:
-        "Open your client workspace, guide live conversations, and keep intake momentum moving.",
+        "Open your client workspace, run real estimates, and generate reports clients can take away from each meeting.",
       cards: [
         {
           title: "Open Client Workspace",
@@ -71,19 +71,19 @@ export function getDashboardExperience(
           icon: "users",
         },
         {
-          title: "Meeting Mode Snapshot",
+          title: "Start Client Intake",
           description:
-            "Use one-screen estimate context for your next advisor-client conversation.",
-          href: DEMO_SNAPSHOT_ROUTE,
-          ctaLabel: "Open Snapshot",
-          icon: "chart",
+            "Create a new client record and capture the intake details used for production calculations.",
+          href: CLIENT_INTAKE_START_ROUTE,
+          ctaLabel: "Start Intake",
+          icon: "clipboard",
         },
         {
-          title: "Handoff Readiness",
+          title: "Estimate and Share Report",
           description:
-            "Prepare next actions and send clients a clear post-meeting handoff.",
-          href: DEMO_HANDOFF_ROUTE,
-          ctaLabel: "Prepare Handoff",
+            "Open client analyses, review insurance recommendations, and download a shareable report.",
+          href: ADVISOR_WORKSPACE_ROUTE,
+          ctaLabel: "Open Reports",
           icon: "handoff",
         },
       ],
@@ -92,32 +92,32 @@ export function getDashboardExperience(
 
   return {
     eyebrow: "Your Planning Dashboard",
-    heading: "Pick up your client journey",
+    heading: "Manage your production account",
     description:
-      "Start where you left off. Move from intake to estimate and finish with a clear advisor handoff.",
+      "Keep your profile and preferences current so advisors can deliver accurate recommendations and follow-ups.",
     cards: [
       {
-        title: "Continue Intake",
+        title: "Review Profile",
         description:
-          "Capture or update household details in a guided flow before running the estimate.",
-        href: DEMO_INTAKE_ROUTE,
-        ctaLabel: "Continue Intake",
+          "Verify your account details and contact information before your next planning conversation.",
+        href: USER_PROFILE_ROUTE,
+        ctaLabel: "Open Profile",
         icon: "clipboard",
       },
       {
-        title: "View Estimate Snapshot",
+        title: "Update Settings",
         description:
-          "Review the current estimate and plain-language breakdown of what it means.",
-        href: DEMO_SNAPSHOT_ROUTE,
-        ctaLabel: "View Estimate Snapshot",
+          "Adjust account preferences, security controls, and communication settings.",
+        href: USER_SETTINGS_ROUTE,
+        ctaLabel: "Open Settings",
         icon: "chart",
       },
       {
-        title: "Advisor Handoff",
+        title: "Security and Privacy",
         description:
-          "Prepare the next conversation with one clear handoff step and recommended action.",
-        href: DEMO_HANDOFF_ROUTE,
-        ctaLabel: "Advisor Handoff",
+          "Review account protection settings and keep your access secure.",
+        href: `${USER_SETTINGS_ROUTE}#security`,
+        ctaLabel: "Review Security",
         icon: "handoff",
       },
     ],

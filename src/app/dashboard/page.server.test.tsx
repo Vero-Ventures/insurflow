@@ -4,7 +4,8 @@ const redirectMock = vi.fn((path: string) => {
   throw new Error(`redirect:${path}`);
 });
 const getSessionMock = vi.fn();
-const findFirstMock = vi.fn();
+const findProfileMock = vi.fn();
+const findClientMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -18,7 +19,10 @@ vi.mock("@/server/db", () => ({
   getDb: () => ({
     query: {
       userProfile: {
-        findFirst: findFirstMock,
+        findFirst: findProfileMock,
+      },
+      client: {
+        findFirst: findClientMock,
       },
     },
   }),
@@ -27,7 +31,8 @@ vi.mock("@/server/db", () => ({
 describe("DashboardPage session fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findFirstMock.mockResolvedValue({ accountType: "client" });
+    findProfileMock.mockResolvedValue({ accountType: "client" });
+    findClientMock.mockResolvedValue(null);
   });
 
   it("uses session.session.userId when session.user.id is missing", async () => {
@@ -41,6 +46,7 @@ describe("DashboardPage session fallback", () => {
 
     expect(page).toBeTruthy();
     expect(redirectMock).not.toHaveBeenCalled();
-    expect(findFirstMock).toHaveBeenCalledTimes(1);
+    expect(findProfileMock).toHaveBeenCalledTimes(1);
+    expect(findClientMock).toHaveBeenCalledTimes(1);
   });
 });
