@@ -1,4 +1,6 @@
-# Advisor Demo and Outreach Guide
+# Advisor Demo and Outreach Guide (Archived)
+
+> Status note (2026-02-28): This advisor outreach guide is archived after the D2C pivot. Keep for historical context only. Current direction is documented in `docs/product-direction-alignment.md`.
 
 ## Purpose
 

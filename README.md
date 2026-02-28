@@ -1,47 +1,47 @@
 ## InsurFlow
 
-InsurFlow is an AI-assisted life insurance planning platform.
+InsurFlow is a direct-to-consumer (D2C) term life application platform.
 
-The product direction is now **client-first**:
+The product direction is now **D2C, carrier-agnostic**:
 
-- Lead with a fast, guided client demo experience.
-- Turn advisor outreach traffic into a clear value moment in under 7 minutes.
-- Hand off cleanly to advisor workflows after the client-facing estimate snapshot.
+- Lead with a fast, guided eligibility and estimate journey.
+- Let consumers create an account and submit an application directly.
+- Track application status through provider events.
 
 ## Product Direction (Plain English)
 
-InsurFlow is the front door for life insurance planning:
+InsurFlow is the front door for term life discovery and application:
 
 - Fast guided intake
-- Clear, explainable estimate (not a black box)
-- Strong advisor handoff and next steps
+- Clear, explainable non-binding estimate range
+- Submission and status tracking in one flow
 
-Then we deepen the advisor workflow with saved sessions, recalculation, and compliance-ready outputs.
+The existing calculation engine remains in place as a black-box input to the estimate experience.
 
 ## Current Direction (2026)
 
-We are prioritizing two delivery phases:
+We are prioritizing one core phase and then follow-on improvements:
 
-- **MVP**: Demo-first client journey that is easy to test in advisor calls and outbound outreach.
-- **Post-MVP**: Deeper advisor operations, richer collaboration, and expanded automation.
+- **D2C v1**: Eligibility intake -> estimate preview -> account -> application submission -> status tracking (mock carrier).
+- **Post-v1**: Deeper provider integrations and additional lifecycle workflows.
 
 This replaces older tier-based planning docs and sequencing language.
 
 ## MVP Scope
 
-Core MVP outcomes:
+Core D2C v1 outcomes:
 
-- Guided demo intake flow for client context capture.
-- Estimate snapshot with plain-language explanation.
-- Advisor handoff step with clear next action.
-- Landing page path that drives traffic directly into the demo.
-- Updated roadmap/docs language using MVP and Post-MVP.
+- Guided intake flow for consumer context capture.
+- Estimate preview with conservative non-binding language.
+- Account-gated application submission flow.
+- Application status tracking powered by mock provider events.
+- Updated roadmap/docs language for D2C scope.
 
-What we are building next (tracked in GitHub issues):
+What we are building now (tracked in GitHub issues):
 
-- Core journey upgrades (intake realism, confidence bands, meeting mode, shareable intake links)
-- Workflow bridge (save/resume, life-event recalculation, exports/webhooks)
-- Trust layer (assumption versioning, calculation traces, compliance-ready packet)
+- Minimal `CarrierProvider` boundary + mock provider.
+- Applications + application events persistence.
+- Submission resilience (idempotency, retries, safe errors) and PII-safe audit logging.
 
 ## What Exists Today
 
@@ -52,6 +52,12 @@ The codebase already includes:
 - Core calculation APIs (settling, income replacement, gap analysis).
 - AI letter generation endpoint.
 - Demo routes under `src/app/demo/*`.
+
+## Explicitly Out of Scope (D2C v1)
+
+- Payments or billing
+- Policy purchase/binding
+- Policy issuance
 
 ## Tech Stack
 
@@ -86,8 +92,8 @@ Useful commands:
 
 ## Documentation Index
 
-- Product direction and scope: `docs/PRD-InsurFlow-v2.md`
-- Team alignment (plain English): `docs/product-direction-alignment.md`
-- Client journey UX guide: `docs/insurflow-v2-design-guide.md`
-- Advisor research notes (trimmed): `docs/insurance-advisor-app-design-guide.md`
+- Active product direction and scope: `docs/product-direction-alignment.md`
+- Archived PRD (previous direction): `docs/PRD-InsurFlow-v2.md`
+- Archived design guide (previous direction): `docs/insurflow-v2-design-guide.md`
+- Archived advisor research notes: `docs/insurance-advisor-app-design-guide.md`
 - Data model status and source of truth: `docs/V2_ERD_DESIGN.md`

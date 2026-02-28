@@ -1,4 +1,6 @@
-# InsurFlow v2.0 Client Journey Design Guide
+# InsurFlow v2.0 Client Journey Design Guide (Archived)
+
+> Status note (2026-02-28): This guide captures the previous advisor handoff-oriented UX. For the active D2C carrier-agnostic flow, use `docs/product-direction-alignment.md`.
 
 ## Purpose
 

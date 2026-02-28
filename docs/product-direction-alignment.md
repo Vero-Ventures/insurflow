@@ -1,97 +1,98 @@
 # Product Direction Alignment (2026)
 
-This page is the simple shared picture of what InsurFlow is building right now and where it is going next.
+This page is the shared picture of what InsurFlow is building now.
 
 ## What InsurFlow Is
 
-InsurFlow is the front door for life insurance planning.
+InsurFlow is a direct-to-consumer (D2C) term life application funnel.
 
 It helps a person quickly:
 
-- Answer a short set of guided questions
-- See an estimate they can understand
-- Know what to do next
+- Complete a short eligibility intake
+- See a clear, non-binding estimate range
+- Create an account and submit an application
+- Track application status updates
 
-Then it helps the advisor continue with better information and fewer repeated steps.
+The app keeps the existing calculation engine for needs analysis and recommendation support.
 
 ## What InsurFlow Is Not
 
 InsurFlow is not:
 
+- A licensed insurance carrier
 - A full wealth-planning platform
-- A carrier quoting engine or premium pricing system
-- A replacement for an advisor
+- A policy purchase/issuance workflow in v1
 
-The output is a clear starting point for a conversation, not a final plan.
+We submit applications to a carrier integration boundary and track status responses.
 
-## Our Current Experience (MVP)
+## Carrier Strategy (Current)
 
-The MVP experience is a fast flow:
+- We are carrier-agnostic until a partner is selected.
+- We implement a `CarrierProvider` interface + mock provider now.
+- We use the mock provider to ship end-to-end product flow without vendor lock-in.
+- We keep the interface minimal for v1 and easy to refactor when a real API is chosen.
 
-1. Entry into the demo
-2. Guided intake (aim: under 7 minutes)
-3. Estimate snapshot with plain-language explanation
-4. Advisor handoff with a clear next action
+## V1 User Journey (D2C)
 
-The MVP must feel simple, even if the math and systems behind it are strong.
+1. Landing page CTA (Canada-first messaging)
+2. Eligibility intake (including province, not state)
+3. Non-binding estimate preview
+4. Account creation/login (required to submit)
+5. Application form (minimal generic fields)
+6. Review + consent/disclosure placeholders
+7. Submission + status tracking timeline
 
-## Where We Are Going (Next)
+## V1 Stop Line (Scope Guardrail)
 
-We are building the next work in three parts.
+V1 ends at:
 
-### Part 1: Core Journey Upgrades (MVP)
+- Application submission
+- Application status tracking
 
-Goal: make the estimate more realistic and more explainable without slowing down the flow.
+V1 explicitly excludes:
 
-- Better intake inputs (still fast)
-- Better estimate realism (not just a multiplier)
-- Recommendation bands + confidence context
-- Meeting mode (one-screen summary)
-- Shareable intake links
+- Payments
+- Policy purchase/binding
+- Policy issuance
 
-Issue map:
+## Compliance and Data Handling Baseline (V1)
 
-- #217, #218, #219, #220, #221, #222
+- Use conservative, non-binding estimate language.
+- Use generic placeholder disclosure copy pending legal review.
+- Capture explicit consent and authorization to collect/share health information.
+- Audit log key application lifecycle events.
+- Do not log raw PII.
 
-### Part 2: Advisor Workflow Bridge (Post-MVP)
+## Data Model Direction
 
-Goal: make the system usable beyond the first estimate.
+We are shifting from advisor-first concepts to consumer application concepts:
 
-- Save/resume incomplete intake
-- Recalculate when life changes happen
-- Exports/webhooks so the handoff fits into real follow-up workflows
+- From: advisor/client handoff workflows
+- To: consumer user + application + application events
 
-Issue map:
+The estimate artifacts remain inputs to the application flow.
 
-- #223, #224, #225
+## What Waits for Carrier Selection
 
-### Part 3: Trust and Control Layer (Post-MVP)
-
-Goal: make outputs easier to trust, defend, and retain.
-
-- Assumption versioning and effective dates
-- Full calculation trace ("show your work")
-- Compliance-ready estimate packet
-
-Issue map:
-
-- #226, #227, #228
+- Provider-specific payload mapping details
+- Provider-specific status expansion
+- Any purchase/issuance workflow
 
 ## How We Decide What To Build
 
-If a feature does not improve at least one of these, it likely does not belong in MVP:
+If a feature does not improve at least one of these, it likely does not belong in D2C v1:
 
-- Faster entry into the flow
+- Faster intake-to-submit flow
 - Higher completion rate
-- Clearer client comprehension
-- Easier advisor explanation during a live call
-- Cleaner handoff to next steps
+- Clearer consumer comprehension
+- Reliable submission + status tracking
+- Lower compliance and security risk
 
 ## What Success Looks Like
 
 When this direction is working:
 
-- A first-time user can reach an estimate in under 7 minutes.
-- The estimate is explainable in plain language.
-- The advisor can use meeting mode without hunting for information.
-- The handoff creates structured data that can be reused.
+- A first-time consumer reaches estimate preview quickly.
+- The estimate is understandable and clearly non-binding.
+- The consumer can submit an application without advisor mediation.
+- Status updates are tracked reliably through provider events.

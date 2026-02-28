@@ -1,14 +1,16 @@
-# InsurFlow v2.0 Product Direction (Current)
+# InsurFlow v2.0 Product Direction (Archived)
+
+> Status note (2026-02-28): This document reflects the prior advisor-first/client-demo direction and is retained for historical reference. For the active direction, use `docs/product-direction-alignment.md`.
 
 ## Document Info
 
-| Field        | Value                                        |
-| ------------ | -------------------------------------------- |
-| Product      | InsurFlow                                    |
-| Version      | v2.0                                         |
-| Status       | Active build                                 |
-| Market       | US life insurance advisors and their clients |
-| Last Updated | February 17, 2026                            |
+| Field        | Value                           |
+| ------------ | ------------------------------- |
+| Product      | InsurFlow                       |
+| Version      | v2.0                            |
+| Status       | Archived (superseded)           |
+| Market       | Historical: advisor-first model |
+| Last Updated | February 17, 2026               |
 
 ---
 
