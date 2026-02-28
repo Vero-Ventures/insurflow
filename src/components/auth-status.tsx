@@ -13,7 +13,7 @@ export function AuthStatus() {
         <Button asChild size="lg" className="text-base">
           <Link href={AUTHENTICATED_HOME_ROUTE}>
             Go to Dashboard
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
       </SignedIn>
@@ -26,7 +26,7 @@ export function AuthStatus() {
         >
           <Link href="/apply/intake">
             Start Application
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
         <Button

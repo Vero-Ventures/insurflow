@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the better-auth-ui components
@@ -26,20 +26,22 @@ describe("Home page D2C CTA", () => {
     render(<AuthStatus />);
 
     const signedOutContainer = screen.getByTestId("signed-out");
-    const primaryCta = signedOutContainer.querySelector(
-      'a[href="/apply/intake"]',
-    );
+    const primaryCta = within(signedOutContainer).getByRole("link", {
+      name: /start application/i,
+    });
 
-    expect(primaryCta).not.toBeNull();
-    expect(primaryCta?.textContent).toContain("Start Application");
+    expect(primaryCta.getAttribute("href")).toBe("/apply/intake");
   });
 
   it("does not link to /demo for signed-out users", () => {
     render(<AuthStatus />);
 
     const signedOutContainer = screen.getByTestId("signed-out");
-    const demoLink = signedOutContainer.querySelector('a[href="/demo"]');
+    const links = within(signedOutContainer).getAllByRole("link");
 
-    expect(demoLink).toBeNull();
+    const demoLink = links.find(
+      (link) => link.getAttribute("href") === "/demo",
+    );
+    expect(demoLink).toBeUndefined();
   });
 });

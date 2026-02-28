@@ -116,7 +116,7 @@ export default function Home() {
               variant="outline"
               className="border-emerald bg-emerald/5 text-emerald mb-8 px-4 py-1.5 text-sm font-medium"
             >
-              <Zap className="mr-1.5 h-3.5 w-3.5" />
+              <Zap className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               Client Preview
             </Badge>
           </div>
@@ -150,18 +150,24 @@ export default function Home() {
           {/* Trust indicators */}
           <div className="animate-fade-up animation-delay-400 text-muted-foreground mt-12 flex flex-wrap items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <Shield className="text-emerald h-4 w-4" />
+              <Shield className="text-emerald h-4 w-4" aria-hidden="true" />
               <span>Secure & Private</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="text-emerald h-4 w-4" />
+              <CheckCircle2
+                className="text-emerald h-4 w-4"
+                aria-hidden="true"
+              />
               <span>Canada-first</span>
             </div>
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="animate-fade-in animation-delay-700 absolute bottom-8 left-1/2 -translate-x-1/2">
+        <div
+          className="animate-fade-in animation-delay-700 absolute bottom-8 left-1/2 -translate-x-1/2"
+          aria-hidden="true"
+        >
           <div className="border-muted-foreground/30 flex h-8 w-5 items-start justify-center rounded-full border-2 p-1">
             <div className="bg-muted-foreground/50 h-2 w-1 animate-bounce rounded-full" />
           </div>
@@ -211,7 +217,7 @@ export default function Home() {
             >
               <Link href="/apply/intake">
                 Start Application
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
           </div>
@@ -227,6 +233,7 @@ export default function Home() {
             viewBox="0 0 400 800"
             fill="none"
             preserveAspectRatio="none"
+            aria-hidden="true"
           >
             <path
               d="M0,0 Q200,200 100,400 T200,800"
@@ -273,14 +280,17 @@ export default function Home() {
             <div className="animate-slide-in-right animation-delay-200 rounded-2xl bg-emerald-500/10 p-8 backdrop-blur-sm dark:bg-emerald-400/10">
               <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-emerald-300 dark:text-emerald-400">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                 </span>
                 The InsurFlow Way
               </h3>
               <ul className="space-y-4">
                 {solutions.map((solution, i) => (
                   <li key={i} className="flex items-start gap-3 text-white/90">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400" />
+                    <CheckCircle2
+                      className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400"
+                      aria-hidden="true"
+                    />
                     {solution}
                   </li>
                 ))}
@@ -324,7 +334,7 @@ export default function Home() {
                 <CardHeader className="relative">
                   <div className="mb-4 flex items-start justify-between">
                     <div className="from-primary/10 to-emerald/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br transition-transform duration-300 group-hover:scale-110">
-                      <feature.icon className="h-6 w-6" />
+                      <feature.icon className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <div className="text-right">
                       <div className="text-primary font-display text-2xl font-normal">
@@ -379,7 +389,7 @@ export default function Home() {
             >
               <Link href="/apply/intake">
                 Start Application
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg">
