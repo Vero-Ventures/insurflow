@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 import {
   getDashboardExperience,
@@ -96,9 +95,6 @@ export default async function DashboardPage() {
 
   const accountType = normalizeAccountType(profile?.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
-  const applicationStatus = (await cookies()).get(
-    "insurflow_application_status",
-  )?.value;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
@@ -114,15 +110,6 @@ export default async function DashboardPage() {
             {dashboardExperience.description}
           </p>
         </section>
-
-        {accountType === "client" ? (
-          <Card className="border-emerald/30 bg-emerald/5 p-4">
-            <p className="text-sm">
-              <span className="font-semibold">Application status: </span>
-              {applicationStatus === "submitted" ? "Submitted" : "In progress"}
-            </p>
-          </Card>
-        ) : null}
 
         <section className="grid gap-4 md:grid-cols-3">
           {dashboardExperience.cards.map((card) => {

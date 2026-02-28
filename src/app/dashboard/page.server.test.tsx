@@ -6,16 +6,9 @@ const redirectMock = vi.fn((path: string) => {
 const getSessionMock = vi.fn();
 const findProfileMock = vi.fn();
 const findClientMock = vi.fn();
-const cookiesGetMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
-}));
-
-vi.mock("next/headers", () => ({
-  cookies: async () => ({
-    get: cookiesGetMock,
-  }),
 }));
 
 vi.mock("@/server/better-auth/server", () => ({
@@ -38,7 +31,6 @@ vi.mock("@/server/db", () => ({
 describe("DashboardPage session fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    cookiesGetMock.mockReturnValue(undefined);
     findProfileMock.mockResolvedValue({ accountType: "client" });
     findClientMock.mockResolvedValue(null);
   });
