@@ -5,7 +5,7 @@ export const D2C_INTAKE_STORAGE_KEY = "d2c_intake";
 export const DEFAULT_D2C_INTAKE: D2cIntake = {
   dateOfBirth: "",
   gender: "",
-  state: "",
+  province: "",
   tobaccoUse: false,
   annualIncome: 0,
   coverageAmount: 0,
@@ -20,6 +20,9 @@ export const DEFAULT_D2C_INTAKE: D2cIntake = {
  * - No stored value
  * - Invalid JSON
  * - Stored value is not an object
+ *
+ * Merges stored values into defaults for forward-compatibility
+ * when new fields are added to the schema.
  */
 export function loadD2cIntake(): D2cIntake {
   if (typeof window === "undefined") {
@@ -41,7 +44,7 @@ export function loadD2cIntake(): D2cIntake {
       return DEFAULT_D2C_INTAKE;
     }
 
-    return parsed as D2cIntake;
+    return { ...DEFAULT_D2C_INTAKE, ...(parsed as Partial<D2cIntake>) };
   } catch {
     return DEFAULT_D2C_INTAKE;
   }

@@ -52,6 +52,32 @@ describe("D2C intake storage", () => {
 
       expect(result).toEqual(stored);
     });
+
+    it("fills missing keys from defaults for forward-compatibility", () => {
+      // Simulate stored data missing new fields (e.g., from older schema)
+      const partialStored = {
+        dateOfBirth: "1990-01-15",
+        gender: "male",
+        // Missing: province, tobaccoUse, annualIncome, coverageAmount, termYears, healthClass
+      };
+      sessionStorage.setItem(
+        D2C_INTAKE_STORAGE_KEY,
+        JSON.stringify(partialStored),
+      );
+
+      const result = loadD2cIntake();
+
+      // Stored values preserved
+      expect(result.dateOfBirth).toBe("1990-01-15");
+      expect(result.gender).toBe("male");
+      // Missing fields filled from defaults
+      expect(result.province).toBe(DEFAULT_D2C_INTAKE.province);
+      expect(result.tobaccoUse).toBe(DEFAULT_D2C_INTAKE.tobaccoUse);
+      expect(result.annualIncome).toBe(DEFAULT_D2C_INTAKE.annualIncome);
+      expect(result.coverageAmount).toBe(DEFAULT_D2C_INTAKE.coverageAmount);
+      expect(result.termYears).toBe(DEFAULT_D2C_INTAKE.termYears);
+      expect(result.healthClass).toBe(DEFAULT_D2C_INTAKE.healthClass);
+    });
   });
 
   describe("saveD2cIntake", () => {
@@ -71,13 +97,13 @@ describe("D2C intake storage", () => {
       saveD2cIntake({ dateOfBirth: "1985-06-20", annualIncome: 100000 });
 
       // Second save (partial update)
-      saveD2cIntake({ state: "CA" });
+      saveD2cIntake({ province: "ON" });
 
       const result = loadD2cIntake();
 
       expect(result.dateOfBirth).toBe("1985-06-20");
       expect(result.annualIncome).toBe(100000);
-      expect(result.state).toBe("CA");
+      expect(result.province).toBe("ON");
     });
 
     it("returns the merged intake", () => {
@@ -93,7 +119,7 @@ describe("D2C intake storage", () => {
       const intake: D2cIntake = {
         dateOfBirth: "1988-12-25",
         gender: "female",
-        state: "NY",
+        province: "BC",
         tobaccoUse: true,
         annualIncome: 150000,
         coverageAmount: 500000,
@@ -111,29 +137,33 @@ describe("D2C intake storage", () => {
   describe("SSR safety", () => {
     it("loadD2cIntake returns defaults when window is undefined", () => {
       const originalWindow = global.window;
-      // @ts-expect-error - simulating SSR
-      delete global.window;
+      try {
+        // @ts-expect-error - simulating SSR
+        delete global.window;
 
-      const result = loadD2cIntake();
+        const result = loadD2cIntake();
 
-      expect(result).toEqual(DEFAULT_D2C_INTAKE);
-
-      global.window = originalWindow;
+        expect(result).toEqual(DEFAULT_D2C_INTAKE);
+      } finally {
+        global.window = originalWindow;
+      }
     });
 
-    it("saveD2cIntake returns defaults without throwing when window is undefined", () => {
+    it("saveD2cIntake returns merged value without throwing when window is undefined", () => {
       const originalWindow = global.window;
-      // @ts-expect-error - simulating SSR
-      delete global.window;
+      try {
+        // @ts-expect-error - simulating SSR
+        delete global.window;
 
-      const result = saveD2cIntake({ dateOfBirth: "1990-01-01" });
+        const result = saveD2cIntake({ dateOfBirth: "1990-01-01" });
 
-      expect(result).toEqual({
-        ...DEFAULT_D2C_INTAKE,
-        dateOfBirth: "1990-01-01",
-      });
-
-      global.window = originalWindow;
+        expect(result).toEqual({
+          ...DEFAULT_D2C_INTAKE,
+          dateOfBirth: "1990-01-01",
+        });
+      } finally {
+        global.window = originalWindow;
+      }
     });
   });
 });

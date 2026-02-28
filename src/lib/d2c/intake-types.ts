@@ -1,7 +1,9 @@
 /**
  * D2C (Direct-to-Consumer) intake form data model.
- * Captures user information during the self-service quote funnel.
+ * Captures user information during the self-service application funnel.
  */
+
+import type { CanadianProvince } from "@/lib/financial/settling-requirements";
 
 export type HealthClass =
   | "preferred_plus"
@@ -14,14 +16,14 @@ export type Gender = "male" | "female";
 /**
  * D2C intake form state.
  * All fields are optional during funnel progression,
- * but will be validated before quote generation.
+ * but will be validated before estimate generation.
  */
 export interface D2cIntake {
   /** ISO date string (YYYY-MM-DD) */
   dateOfBirth: string;
   gender: Gender | "";
-  /** US state abbreviation */
-  state: string;
+  /** Canadian province or territory */
+  province: CanadianProvince | "";
   tobaccoUse: boolean;
   /** Annual income in dollars */
   annualIncome: number;
