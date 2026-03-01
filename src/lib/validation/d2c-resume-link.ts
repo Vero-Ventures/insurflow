@@ -41,22 +41,36 @@ export const resumeLinkTokenSchema = z
   .regex(RESUME_LINK_TOKEN_REGEX, "Invalid resume link token format");
 
 /**
- * Schema for resume link verification response
+ * Schema for resume link verification response.
+ *
+ * When valid is true, clientId and redirectUrl are required.
+ * When valid is false, errorCode and message describe the failure.
  */
-export const resumeLinkVerifyResponseSchema = z.object({
-  /** Whether the link is valid */
-  valid: z.boolean(),
-  /** The client ID if valid */
-  clientId: z.string().uuid().optional(),
-  /** Redirect URL if the link is valid */
-  redirectUrl: z.string().optional(),
-  /** Error code if invalid */
-  errorCode: z
-    .enum(["EXPIRED", "NOT_FOUND", "ALREADY_USED", "CLIENT_NOT_DRAFT"])
-    .optional(),
-  /** Human-readable error message */
-  message: z.string().optional(),
-});
+export const resumeLinkVerifyResponseSchema = z
+  .object({
+    /** Whether the link is valid */
+    valid: z.boolean(),
+    /** The client ID if valid */
+    clientId: z.string().uuid().optional(),
+    /** Redirect URL when the link is valid */
+    redirectUrl: z.string().optional(),
+    /** Error code if invalid */
+    errorCode: z
+      .enum(["EXPIRED", "NOT_FOUND", "ALREADY_USED", "CLIENT_NOT_DRAFT"])
+      .optional(),
+    /** Human-readable error message */
+    message: z.string().optional(),
+  })
+  // When the link is valid, redirectUrl must be present
+  .refine((data) => !data.valid || typeof data.redirectUrl === "string", {
+    message: "redirectUrl must be present when valid is true",
+    path: ["redirectUrl"],
+  })
+  // When the link is valid, clientId must be present
+  .refine((data) => !data.valid || typeof data.clientId === "string", {
+    message: "clientId must be present when valid is true",
+    path: ["clientId"],
+  });
 
 /**
  * Schema for create resume link response

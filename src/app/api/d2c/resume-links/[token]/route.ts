@@ -44,16 +44,16 @@ export const GET = withApiHandler(
   async (_request, { logger, session, params }) => {
     const token = params.token;
 
-    // Token is required in path
+    // Token is required in path - return 404 for consistency with NOT_FOUND mapping
     if (!token) {
       await logger.warn("Missing resume link token");
       return NextResponse.json(
         {
           valid: false,
           errorCode: "NOT_FOUND",
-          message: "Resume link token is required",
+          message: "Resume link not found",
         },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

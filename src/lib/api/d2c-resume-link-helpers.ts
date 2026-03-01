@@ -52,7 +52,12 @@ export function isLinkExpired(
 }
 
 /**
- * Builds the relative resume URL for a token.
+ * Builds the relative resume URL path for a token.
+ *
+ * Note: Returns a relative path (e.g., "/d2c/resume/token123").
+ * The frontend or API consumer should prepend the appropriate base URL
+ * (e.g., window.location.origin or configured app URL) when displaying
+ * to users for copy/paste.
  *
  * @param token - The resume link token
  * @returns The relative URL path for resuming
@@ -73,9 +78,17 @@ export interface CreateResumeLinkResult {
 
 export interface CreateResumeLinkError {
   success: false;
-  errorCode: "CLIENT_NOT_FOUND" | "CLIENT_NOT_DRAFT";
+  errorCode:
+    | "CLIENT_NOT_FOUND"
+    | "CLIENT_NOT_DRAFT"
+    | "TOKEN_GENERATION_FAILED";
   message: string;
 }
+
+/**
+ * Maximum number of retry attempts for token generation on collision.
+ */
+const MAX_TOKEN_GENERATION_ATTEMPTS = 3;
 
 /**
  * Creates a new resume link for a draft client.
@@ -84,6 +97,8 @@ export interface CreateResumeLinkError {
  * - Client must exist and not be soft-deleted
  * - Client must be owned by the requesting user
  * - Client must be in "draft" status
+ *
+ * Handles rare token collisions by retrying with a new token (bounded attempts).
  *
  * @param clientId - The client ID to create a resume link for
  * @param userId - The user ID requesting the link (must own the client)
@@ -124,23 +139,49 @@ export async function createResumeLink(
     };
   }
 
-  // Generate secure token and calculate expiry
-  const token = generateSecureToken();
-  const expiresAt = calculateExpiry();
+  // Retry token generation on collision (rare but possible)
+  for (let attempt = 1; attempt <= MAX_TOKEN_GENERATION_ATTEMPTS; attempt++) {
+    const token = generateSecureToken();
+    const expiresAt = calculateExpiry();
 
-  // Insert the resume link
-  await db.insert(d2cResumeLink).values({
-    token,
-    clientId,
-    userId,
-    expiresAt,
-  });
+    try {
+      // Insert the resume link
+      await db.insert(d2cResumeLink).values({
+        token,
+        clientId,
+        userId,
+        expiresAt,
+      });
 
+      return {
+        success: true,
+        token,
+        expiresAt,
+        resumeUrl: buildResumeUrl(token),
+      };
+    } catch (error) {
+      // Check if this is a unique constraint violation (token collision)
+      const isUniqueViolation =
+        error instanceof Error &&
+        (error.message.includes("unique") ||
+          error.message.includes("duplicate") ||
+          error.message.includes("23505")); // PostgreSQL unique_violation code
+
+      if (isUniqueViolation && attempt < MAX_TOKEN_GENERATION_ATTEMPTS) {
+        // Retry with a new token
+        continue;
+      }
+
+      // Re-throw if not a collision or max attempts reached
+      throw error;
+    }
+  }
+
+  // This should be unreachable, but handle gracefully
   return {
-    success: true,
-    token,
-    expiresAt,
-    resumeUrl: buildResumeUrl(token),
+    success: false,
+    errorCode: "TOKEN_GENERATION_FAILED",
+    message: "Failed to generate a unique token. Please try again.",
   };
 }
 

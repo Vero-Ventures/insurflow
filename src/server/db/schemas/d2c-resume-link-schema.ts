@@ -52,8 +52,8 @@ export const d2cResumeLink = pgTable(
 
     /** Timestamp when the link was created */
     createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     // Note: token already has unique constraint which creates an index
