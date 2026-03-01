@@ -52,12 +52,11 @@ export const d2cResumeLink = pgTable(
 
     /** Timestamp when the link was created */
     createdAt: timestamp("created_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
+      .defaultNow()
       .notNull(),
   },
   (t) => [
-    // Fast lookup by token (primary access pattern)
-    index("d2c_resume_link_token_idx").on(t.token),
+    // Note: token already has unique constraint which creates an index
     // Find links by user (for management/cleanup)
     index("d2c_resume_link_user_id_idx").on(t.userId),
     // Find links by client (for cleanup on draft deletion)

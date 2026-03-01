@@ -203,18 +203,20 @@ describe("GET /api/d2c/resume-links/[token]", () => {
     expect(body.errorCode).toBe("NOT_FOUND");
   });
 
-  it("returns 403 when unauthorized", async () => {
+  it("returns 404 when link belongs to different user (prevents token enumeration)", async () => {
+    // Security: Returns NOT_FOUND instead of 403/UNAUTHORIZED to prevent
+    // attackers from determining if a guessed token exists
     mockVerifyResumeLink.mockResolvedValue({
       valid: false,
-      errorCode: "UNAUTHORIZED",
-      message: "Unauthorized",
+      errorCode: "NOT_FOUND",
+      message: "Resume link not found or has been revoked",
     });
 
     const response = await getResumeLink(generateValidToken());
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
     const body = await response.json();
-    expect(body.errorCode).toBe("UNAUTHORIZED");
+    expect(body.errorCode).toBe("NOT_FOUND");
   });
 
   it("returns 400 when link expired", async () => {

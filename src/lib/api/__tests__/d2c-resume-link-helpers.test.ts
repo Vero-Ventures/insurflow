@@ -226,7 +226,7 @@ describe("verifyResumeLink", () => {
     }
   });
 
-  it("returns UNAUTHORIZED when link belongs to different user", async () => {
+  it("returns NOT_FOUND when link belongs to different user (prevents token enumeration)", async () => {
     mockResumeLinkFindFirst.mockResolvedValue(
       createMockResumeLink({ userId: TEST_UUIDS.otherUserId }),
     );
@@ -235,7 +235,8 @@ describe("verifyResumeLink", () => {
 
     expect(result.valid).toBe(false);
     if (!result.valid) {
-      expect(result.errorCode).toBe("UNAUTHORIZED");
+      // Returns NOT_FOUND instead of UNAUTHORIZED to prevent information leakage
+      expect(result.errorCode).toBe("NOT_FOUND");
     }
   });
 

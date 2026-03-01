@@ -191,20 +191,13 @@ export async function verifyResumeLink(
     },
   });
 
-  if (!link) {
+  // Check existence and authorization in single step to prevent token enumeration
+  // (returning different errors for non-existent vs unauthorized would leak info)
+  if (!link || link.userId !== userId) {
     return {
       valid: false,
       errorCode: "NOT_FOUND",
       message: "Resume link not found or has been revoked",
-    };
-  }
-
-  // Check authorization - link must belong to the requesting user
-  if (link.userId !== userId) {
-    return {
-      valid: false,
-      errorCode: "UNAUTHORIZED",
-      message: "You are not authorized to use this resume link",
     };
   }
 

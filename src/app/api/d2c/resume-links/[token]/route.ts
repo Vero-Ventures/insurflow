@@ -31,7 +31,7 @@ import {
  *
  * Response (error):
  * - valid: false
- * - errorCode: EXPIRED | NOT_FOUND | ALREADY_USED | CLIENT_NOT_DRAFT | UNAUTHORIZED
+ * - errorCode: EXPIRED | NOT_FOUND | ALREADY_USED | CLIENT_NOT_DRAFT
  * - message: Human-readable error message
  */
 export const GET = withApiHandler(
@@ -80,12 +80,9 @@ export const GET = withApiHandler(
       });
 
       // Map error codes to HTTP status codes
-      const statusCode =
-        result.errorCode === "UNAUTHORIZED"
-          ? 403
-          : result.errorCode === "NOT_FOUND"
-            ? 404
-            : 400;
+      // Note: UNAUTHORIZED is intentionally not a separate case - it returns NOT_FOUND
+      // to prevent token enumeration attacks (information leakage)
+      const statusCode = result.errorCode === "NOT_FOUND" ? 404 : 400;
 
       return NextResponse.json(
         {
