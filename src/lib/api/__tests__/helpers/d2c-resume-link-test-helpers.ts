@@ -101,11 +101,14 @@ export function createDbMocks() {
 
   const mockValues = vi.fn().mockReturnThis();
   const mockSet = vi.fn().mockReturnThis();
-  const mockWhere = vi.fn().mockResolvedValue(undefined);
+  const mockWhere = vi.fn().mockReturnThis();
+  // Mock returning() to return an array (simulates successful atomic update)
+  const mockReturning = vi.fn().mockResolvedValue([{ id: "test-link-id" }]);
 
   mockInsert.mockReturnValue({ values: mockValues });
   mockUpdate.mockReturnValue({ set: mockSet });
   mockSet.mockReturnValue({ where: mockWhere });
+  mockWhere.mockReturnValue({ returning: mockReturning });
 
   return {
     mockClientFindFirst,
@@ -115,6 +118,7 @@ export function createDbMocks() {
     mockValues,
     mockSet,
     mockWhere,
+    mockReturning,
     createMockDb: () => ({
       query: {
         client: { findFirst: mockClientFindFirst },

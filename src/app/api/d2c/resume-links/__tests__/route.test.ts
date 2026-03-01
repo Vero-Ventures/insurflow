@@ -180,12 +180,13 @@ describe("GET /api/d2c/resume-links/[token]", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 400 for invalid token format", async () => {
+  it("returns 404 for invalid token format (consistency with NOT_FOUND)", async () => {
     const response = await getResumeLink("invalid-short-token");
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     const body = await response.json();
     expect(body.valid).toBe(false);
+    expect(body.errorCode).toBe("NOT_FOUND");
   });
 
   it("returns 404 when token not found", async () => {
@@ -253,6 +254,7 @@ describe("GET /api/d2c/resume-links/[token]", () => {
       clientId: TEST_UUIDS.validClientId,
       linkId: TEST_UUIDS.validLinkId,
     });
+    mockMarkResumeLinkUsed.mockResolvedValue(true);
 
     const response = await getResumeLink(generateValidToken());
 
@@ -262,5 +264,22 @@ describe("GET /api/d2c/resume-links/[token]", () => {
     expect(body.clientId).toBe(TEST_UUIDS.validClientId);
     expect(body.redirectUrl).toContain(TEST_UUIDS.validClientId);
     expect(mockMarkResumeLinkUsed).toHaveBeenCalledWith(TEST_UUIDS.validLinkId);
+  });
+
+  it("returns 400 when concurrent request consumed the link (atomic protection)", async () => {
+    mockVerifyResumeLink.mockResolvedValue({
+      valid: true,
+      clientId: TEST_UUIDS.validClientId,
+      linkId: TEST_UUIDS.validLinkId,
+    });
+    // Simulate race condition: another request marked the link used first
+    mockMarkResumeLinkUsed.mockResolvedValue(false);
+
+    const response = await getResumeLink(generateValidToken());
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.valid).toBe(false);
+    expect(body.errorCode).toBe("ALREADY_USED");
   });
 });

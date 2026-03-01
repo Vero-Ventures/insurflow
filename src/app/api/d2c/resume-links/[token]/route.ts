@@ -57,7 +57,7 @@ export const GET = withApiHandler(
       );
     }
 
-    // Validate token format
+    // Validate token format - return 404 for consistency (don't leak validation details)
     const tokenValidation = resumeLinkTokenSchema.safeParse(token);
     if (!tokenValidation.success) {
       await logger.warn("Invalid resume link token format");
@@ -65,9 +65,9 @@ export const GET = withApiHandler(
         {
           valid: false,
           errorCode: "NOT_FOUND",
-          message: "Invalid resume link",
+          message: "Resume link not found",
         },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
@@ -94,8 +94,23 @@ export const GET = withApiHandler(
       );
     }
 
-    // Mark the link as used
-    await markResumeLinkUsed(result.linkId);
+    // Atomically mark the link as used (prevents race conditions)
+    const wasMarked = await markResumeLinkUsed(result.linkId);
+
+    // If marking failed, another request consumed the link first
+    if (!wasMarked) {
+      await logger.warn("Resume link was consumed by concurrent request", {
+        linkId: result.linkId,
+      });
+      return NextResponse.json(
+        {
+          valid: false,
+          errorCode: "ALREADY_USED",
+          message: "This resume link has already been used",
+        },
+        { status: 400 },
+      );
+    }
 
     logger.addContext({ clientId: result.clientId });
     await logger.info("Resume link verified and consumed successfully", {

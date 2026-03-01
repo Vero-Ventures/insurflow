@@ -48,15 +48,11 @@ export const resumeLinkVerifyResponseSchema = z.object({
   valid: z.boolean(),
   /** The client ID if valid */
   clientId: z.string().uuid().optional(),
+  /** Redirect URL if the link is valid */
+  redirectUrl: z.string().optional(),
   /** Error code if invalid */
   errorCode: z
-    .enum([
-      "EXPIRED",
-      "NOT_FOUND",
-      "ALREADY_USED",
-      "CLIENT_NOT_DRAFT",
-      "UNAUTHORIZED",
-    ])
+    .enum(["EXPIRED", "NOT_FOUND", "ALREADY_USED", "CLIENT_NOT_DRAFT"])
     .optional(),
   /** Human-readable error message */
   message: z.string().optional(),
@@ -70,7 +66,7 @@ export const createResumeLinkResponseSchema = z.object({
   token: z.string(),
   /** When the link expires */
   expiresAt: z.string().datetime(),
-  /** Full resume URL (relative) */
+  /** Relative resume URL path */
   resumeUrl: z.string(),
 });
 

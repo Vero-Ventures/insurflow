@@ -307,9 +307,10 @@ describe("markResumeLinkUsed", () => {
     vi.clearAllMocks();
   });
 
-  it("updates the link with usedAt timestamp", async () => {
-    await markResumeLinkUsed(TEST_UUIDS.validLinkId);
+  it("returns true when link is successfully marked as used", async () => {
+    const result = await markResumeLinkUsed(TEST_UUIDS.validLinkId);
 
+    expect(result).toBe(true);
     expect(mockUpdate).toHaveBeenCalled();
   });
 });

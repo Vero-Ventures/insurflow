@@ -73,7 +73,7 @@ export interface CreateResumeLinkResult {
 
 export interface CreateResumeLinkError {
   success: false;
-  errorCode: "CLIENT_NOT_FOUND" | "CLIENT_NOT_DRAFT" | "UNAUTHORIZED";
+  errorCode: "CLIENT_NOT_FOUND" | "CLIENT_NOT_DRAFT";
   message: string;
 }
 
@@ -155,7 +155,7 @@ export interface VerifyResumeLinkResult {
 
 export interface VerifyResumeLinkError {
   valid: false;
-  errorCode: ResumeLinkVerifyResponse["errorCode"];
+  errorCode: NonNullable<ResumeLinkVerifyResponse["errorCode"]>;
   message: string;
 }
 
@@ -244,19 +244,28 @@ export async function verifyResumeLink(
 }
 
 /**
- * Marks a resume link as used.
+ * Atomically marks a resume link as used.
  *
- * Should be called after successfully resuming a draft to prevent reuse.
+ * Uses an atomic UPDATE with WHERE used_at IS NULL to prevent race conditions
+ * where two concurrent requests could both pass verification before either
+ * updates usedAt. Returns whether the update was successful.
  *
  * @param linkId - The resume link ID to mark as used
+ * @returns true if the link was successfully marked as used, false if already used
  */
-export async function markResumeLinkUsed(linkId: string): Promise<void> {
+export async function markResumeLinkUsed(linkId: string): Promise<boolean> {
   const db = getDb();
 
-  await db
+  // Atomic update: only succeeds if usedAt is currently NULL
+  // Using RETURNING to verify a row was actually updated
+  const result = await db
     .update(d2cResumeLink)
     .set({ usedAt: new Date() })
-    .where(eq(d2cResumeLink.id, linkId));
+    .where(and(eq(d2cResumeLink.id, linkId), isNull(d2cResumeLink.usedAt)))
+    .returning();
+
+  // If no rows returned, the link was already used (race condition prevented)
+  return result.length > 0;
 }
 
 /**
