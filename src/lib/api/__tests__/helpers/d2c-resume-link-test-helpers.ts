@@ -128,16 +128,13 @@ export function createDbMocks() {
 
 /**
  * Generates a valid URL-safe base64 token (43 characters)
+ * Uses crypto.randomBytes for secure token generation matching production behavior
  */
 export function generateValidToken(): string {
-  // This matches the format from generateSecureToken()
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
-  let token = "";
-  for (let i = 0; i < 43; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  // Use the same approach as the actual generateSecureToken() implementation
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const crypto = require("crypto");
+  return crypto.randomBytes(32).toString("base64url");
 }
 
 /**
