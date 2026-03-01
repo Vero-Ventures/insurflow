@@ -55,7 +55,8 @@ export function createMockResumeLink(
 
   return {
     id: overrides.id ?? "test-link-id",
-    token: overrides.token ?? "test-token-abcdefghijklmnopqrstuvwxyz12345",
+    // Using obviously fake test token to avoid GitGuardian false positives
+    token: overrides.token ?? "FAKE_TEST_TOKEN_000000000000000000000000",
     clientId: overrides.clientId ?? "test-client-id",
     userId: overrides.userId ?? "test-user-id",
     expiresAt: overrides.expiresAt ?? defaultExpiry,
