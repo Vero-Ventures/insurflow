@@ -12,6 +12,7 @@
  * - debts-schema.ts: Debt entity
  * - beneficiaries-schema.ts: Beneficiary & assetAllocation entities
  * - corporate-schema.ts: Business, keyPerson, shareholder, corporateInsuranceNeed
+ * - d2c-resume-link-schema.ts: D2C resume link for save/resume functionality
  */
 
 import { relations } from "drizzle-orm";
@@ -63,6 +64,9 @@ export {
 export { policy } from "./policies-schema";
 export { auditLog } from "./audit-logs-schema";
 
+// D2C tables
+export { d2cResumeLink } from "./d2c-resume-link-schema";
+
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
 // ============================================================================
@@ -86,6 +90,15 @@ export {
 export { policyRelations } from "./policies-schema";
 export { auditLogRelations } from "./audit-logs-schema";
 
+// D2C relations
+export { d2cResumeLinkRelations } from "./d2c-resume-link-schema";
+
+// D2C types
+export type {
+  D2cResumeLink,
+  D2cResumeLinkInsert,
+} from "./d2c-resume-link-schema";
+
 // Audit log types
 export type {
   AuditLog,
@@ -108,6 +121,7 @@ import { business } from "./corporate-schema";
 import { assetAllocation } from "./beneficiaries-schema";
 import { userProfile } from "./user-profile-schema";
 import { policy } from "./policies-schema";
+import { d2cResumeLink } from "./d2c-resume-link-schema";
 
 /**
  * Complete user relations including clients.
@@ -121,11 +135,12 @@ export const userRelations = relations(user, ({ many, one }) => ({
     fields: [user.id],
     references: [userProfile.userId],
   }),
+  d2cResumeLinks: many(d2cResumeLink),
 }));
 
 /**
  * Complete client relations with all child entities.
- * Links clients to assets, debts, beneficiaries, businesses, and policies.
+ * Links clients to assets, debts, beneficiaries, businesses, policies, and D2C resume links.
  */
 export const clientRelations = relations(client, ({ one, many }) => ({
   user: one(user, { fields: [client.userId], references: [user.id] }),
@@ -134,6 +149,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   beneficiaries: many(beneficiary),
   businesses: many(business),
   policies: many(policy),
+  d2cResumeLinks: many(d2cResumeLink),
 }));
 
 /**

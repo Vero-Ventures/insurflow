@@ -1,0 +1,119 @@
+/**
+ * @fileoverview D2C Resume Link verification API route.
+ *
+ * GET /api/d2c/resume-links/[token] - Verify and consume a resume link
+ *
+ * Security:
+ * - Requires authentication
+ * - Link must belong to the authenticated user
+ * - Link must not be expired or already used
+ * - Associated client must still be in draft status
+ */
+
+import { NextResponse } from "next/server";
+import { withApiHandler } from "@/lib/api/route-helpers";
+import { resumeLinkTokenSchema } from "@/lib/validation/d2c-resume-link";
+import {
+  verifyResumeLink,
+  markResumeLinkUsed,
+} from "@/lib/api/d2c-resume-link-helpers";
+
+/**
+ * GET /api/d2c/resume-links/[token] - Verify and use a resume link
+ *
+ * Path parameters:
+ * - token: The resume link token
+ *
+ * Response (success):
+ * - valid: true
+ * - clientId: UUID of the draft client
+ * - redirectUrl: URL to redirect to for resuming
+ *
+ * Response (error):
+ * - valid: false
+ * - errorCode: EXPIRED | NOT_FOUND | ALREADY_USED | CLIENT_NOT_DRAFT | UNAUTHORIZED
+ * - message: Human-readable error message
+ */
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/d2c/resume-links/[token]",
+    method: "GET",
+    // Not requiring advisor - this is for D2C consumers
+    requireAdvisor: false,
+  },
+  async (_request, { logger, session, params }) => {
+    const token = params.token;
+
+    // Token is required in path
+    if (!token) {
+      await logger.warn("Missing resume link token");
+      return NextResponse.json(
+        {
+          valid: false,
+          errorCode: "NOT_FOUND",
+          message: "Resume link token is required",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Validate token format
+    const tokenValidation = resumeLinkTokenSchema.safeParse(token);
+    if (!tokenValidation.success) {
+      await logger.warn("Invalid resume link token format");
+      return NextResponse.json(
+        {
+          valid: false,
+          errorCode: "NOT_FOUND",
+          message: "Invalid resume link",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify the resume link
+    const result = await verifyResumeLink(token, session.user.id);
+
+    if (!result.valid) {
+      await logger.warn("Resume link verification failed", {
+        errorCode: result.errorCode,
+      });
+
+      // Map error codes to HTTP status codes
+      const statusCode =
+        result.errorCode === "UNAUTHORIZED"
+          ? 403
+          : result.errorCode === "NOT_FOUND"
+            ? 404
+            : 400;
+
+      return NextResponse.json(
+        {
+          valid: false,
+          errorCode: result.errorCode,
+          message: result.message,
+        },
+        { status: statusCode },
+      );
+    }
+
+    // Mark the link as used
+    await markResumeLinkUsed(result.linkId);
+
+    logger.addContext({ clientId: result.clientId });
+    await logger.info("Resume link verified and consumed successfully", {
+      statusCode: 200,
+    });
+
+    // Build the redirect URL for the client application
+    const redirectUrl = `/d2c/intake?clientId=${result.clientId}`;
+
+    return {
+      data: {
+        valid: true,
+        clientId: result.clientId,
+        redirectUrl,
+      },
+    };
+  },
+);
