@@ -170,8 +170,8 @@ export const GET = withApiHandler(
     };
     const assumptionsUsed: EstimateAssumptionsUsed = {
       replacementDurationYears: clientData.replacementDurationYears == null,
-      estateBuffer: true,
-      includeSpouseIncome: false,
+      estateBuffer: true, // always true — we always use DEFAULT_ESTATE_BUFFER, no overrides
+      includeSpouseIncome: true, // always true — no override mechanism in this route
     };
     const confidence = computeEstimateConfidence({
       completeness,
