@@ -30,14 +30,15 @@ export default function ApplyReviewPage() {
   }, []);
 
   function handleProceedToSubmit() {
-    // Persist consent flags so the submit page can pass them to the server action
+    // Persist actual checkbox state so the submit page can pass it to the server action.
+    // Only callable when allConsentsAccepted is true, but we store real values for correctness.
     if (typeof window !== "undefined") {
       sessionStorage.setItem(
         "d2c_consents",
         JSON.stringify({
-          consentTransmit: true,
-          healthInfoAuth: true,
-          esignIntent: true,
+          consentTransmit,
+          healthInfoAuth,
+          esignIntent,
         }),
       );
     }
