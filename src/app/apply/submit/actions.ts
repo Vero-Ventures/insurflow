@@ -39,8 +39,8 @@ export async function submitApplicationAction(formData: FormData) {
     redirect("/apply/review");
   }
 
-  const now = new Date();
   const db = getDb();
+  const dbNow = sql`now()`;
 
   // Persist consent timestamps using COALESCE so each field is only written
   // once — if the column already has a value it is preserved unchanged.
@@ -51,9 +51,9 @@ export async function submitApplicationAction(formData: FormData) {
     .update(client)
     .set({
       status: "active",
-      consentTransmitToCarrierAt: sql`COALESCE(${client.consentTransmitToCarrierAt}, ${now})`,
-      healthInfoAuthorizationAt: sql`COALESCE(${client.healthInfoAuthorizationAt}, ${now})`,
-      esignIntentAcknowledgedAt: sql`COALESCE(${client.esignIntentAcknowledgedAt}, ${now})`,
+      consentTransmitToCarrierAt: sql`COALESCE(${client.consentTransmitToCarrierAt}, ${dbNow})`,
+      healthInfoAuthorizationAt: sql`COALESCE(${client.healthInfoAuthorizationAt}, ${dbNow})`,
+      esignIntentAcknowledgedAt: sql`COALESCE(${client.esignIntentAcknowledgedAt}, ${dbNow})`,
     })
     .where(
       and(
