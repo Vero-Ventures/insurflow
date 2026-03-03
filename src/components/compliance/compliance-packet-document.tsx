@@ -450,9 +450,7 @@ export function CompliancePacketDocument({
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Professional Fees</Text>
               <Text style={styles.rowValue}>
-                {fmtCurrency(
-                  settlingRequirements.professionalFees.totalProfessionalFees,
-                )}
+                {fmtCurrency(settlingRequirements.professionalFees.total)}
               </Text>
             </View>
             <View style={styles.row}>
@@ -533,34 +531,38 @@ export function CompliancePacketDocument({
         {trace.sections.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Calculation Trace</Text>
-            {trace.sections.map((section) => (
-              <View key={section.key} style={styles.traceSection}>
-                <Text style={styles.traceSectionLabel}>
-                  {section.label}
-                  {section.result != null
-                    ? ` = ${fmtCurrency(section.result)}`
-                    : ""}
-                </Text>
-                {section.items.map((item) => (
-                  <View key={item.key} style={styles.traceItem}>
-                    <Text style={styles.traceItemLabel}>
-                      {item.label} ({item.kind})
-                    </Text>
-                    <Text style={styles.traceItemValue}>
-                      {item.value != null
-                        ? typeof item.value === "number"
-                          ? item.unit === "currency"
-                            ? fmtCurrency(item.value)
-                            : item.unit === "percent"
-                              ? `${item.value}%`
+            {trace.sections.map(
+              (section: import("@/types/calculation-trace").TraceSection) => (
+                <View key={section.key} style={styles.traceSection}>
+                  <Text style={styles.traceSectionLabel}>
+                    {section.label}
+                    {section.result != null
+                      ? ` = ${fmtCurrency(section.result)}`
+                      : ""}
+                  </Text>
+                  {section.items.map(
+                    (item: import("@/types/calculation-trace").TraceItem) => (
+                      <View key={item.key} style={styles.traceItem}>
+                        <Text style={styles.traceItemLabel}>
+                          {item.label} ({item.kind})
+                        </Text>
+                        <Text style={styles.traceItemValue}>
+                          {item.value != null
+                            ? typeof item.value === "number"
+                              ? item.unit === "currency"
+                                ? fmtCurrency(item.value)
+                                : item.unit === "percent"
+                                  ? `${item.value}%`
+                                  : String(item.value)
                               : String(item.value)
-                          : String(item.value)
-                        : "—"}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ))}
+                            : "—"}
+                        </Text>
+                      </View>
+                    ),
+                  )}
+                </View>
+              ),
+            )}
           </View>
         )}
 

@@ -37,6 +37,15 @@ function createTestInput(
       liquidAssets: 50000,
       totalInsuranceNeeds: 815000,
       totalInsuranceNeedsBand: { low: 733500, target: 815000, high: 896500 },
+      inputsUsed: {
+        clientIncome: 100000,
+        spouseIncome: 0,
+        includeSpouseIncome: false,
+        incomeReplacementPercent: 70,
+        replacementDurationYears: 10,
+        estateBufferType: "fixed",
+        estateBufferValue: 15000,
+      },
     },
     settlingRequirements: null,
     confidence: {
@@ -140,7 +149,7 @@ describe("buildCompliancePacket", () => {
           legalFees: 5000,
           accountingFees: 3500,
           executorFees: 10000,
-          totalProfessionalFees: 18500,
+          total: 18500,
         },
         funeralExpenses: 12000,
         totalSettlingRequirements: 38500,
@@ -149,7 +158,8 @@ describe("buildCompliancePacket", () => {
           estateValue: 500000,
           state: "CA" as const,
           stateName: "California",
-          annualIncome: 100000,
+          finalYearIncome: 100000,
+          assetCount: 0,
         },
       };
       const packet = buildCompliancePacket(

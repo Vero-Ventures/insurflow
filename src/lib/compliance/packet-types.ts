@@ -11,7 +11,7 @@
 import type { InsuranceNeedsResult } from "@/lib/financial/insurance-needs";
 import type { USSettlingRequirementsResult } from "@/lib/financial/settling-requirements-us";
 import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
-import type { CalculationTrace } from "@/lib/financial/calculation-trace";
+import type { CalculationTrace } from "@/types/calculation-trace";
 
 // =============================================================================
 // Consumer Context

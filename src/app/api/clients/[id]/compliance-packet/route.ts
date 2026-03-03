@@ -121,10 +121,14 @@ export const GET = withApiHandler(
     const coverageSource: "policies" | "legacy" =
       policyCount > 0 ? "policies" : "legacy";
 
-    const existingLifeInsuranceCoverage = resolveExistingCoverage(
-      policiesData,
-      clientData.existingLifeInsuranceCoverage,
-    );
+    const existingLifeInsuranceCoverage = resolveExistingCoverage({
+      totalPolicyCount: policyCount,
+      activePolicyCoverage: policiesData.reduce(
+        (sum, p) => sum + decimalToNumber(p.faceAmount),
+        0,
+      ),
+      legacyCoverage: decimalToNumber(clientData.existingLifeInsuranceCoverage),
+    }).existingCoverage;
 
     const debtsProvided = totalDebts > 0;
     const assetsProvided = totalAssets > 0;
@@ -186,7 +190,8 @@ export const GET = withApiHandler(
         settlingResult = calculateUSSettlingRequirementsRounded({
           estateValue: totalAssets,
           state: stateCode as USState,
-          annualIncome: decimalToNumber(clientData.clientIncome),
+          finalYearIncome: decimalToNumber(clientData.clientIncome),
+          assets: [],
         });
       } catch {
         await logger.warn("Settling requirements calculation failed", {
@@ -248,7 +253,11 @@ export const GET = withApiHandler(
     const packet = buildCompliancePacket(packetInput);
 
     const doc = createElement(CompliancePacketDocument, { packet });
-    const buffer = await pdf(doc).toBuffer();
+    const buffer = await pdf(
+      doc as unknown as import("react").ReactElement<
+        import("@react-pdf/renderer").DocumentProps
+      >,
+    ).toBuffer();
 
     const fullName = `${clientData.firstName} ${clientData.lastName}`;
     const filename = `${safeFilename(fullName)}-compliance-packet.pdf`;
