@@ -16,6 +16,7 @@ import {
   integer,
   pgTable,
   text,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth-schema";
@@ -135,6 +136,27 @@ export const client = pgTable(
 
     /** Additional goals or notes (informational only) */
     additionalGoals: text("additional_goals"),
+
+    // -------------------------------------------------------------------------
+    // Consent & Authorization Timestamps (Issue #165)
+    // Set server-side at submission time; null until explicitly consented.
+    // Once set, these must NOT be overwritten.
+    // -------------------------------------------------------------------------
+
+    /** Timestamp when user consented to transmit application data to carrier. */
+    consentTransmitToCarrierAt: timestamp("consent_transmit_to_carrier_at", {
+      withTimezone: true,
+    }),
+
+    /** Timestamp when user authorized collection/sharing of health information. */
+    healthInfoAuthorizationAt: timestamp("health_info_authorization_at", {
+      withTimezone: true,
+    }),
+
+    /** Timestamp when user acknowledged e-sign intent. */
+    esignIntentAcknowledgedAt: timestamp("esign_intent_acknowledged_at", {
+      withTimezone: true,
+    }),
 
     // -------------------------------------------------------------------------
     // Status
