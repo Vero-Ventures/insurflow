@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
-import ConsentSubmitForm from "./consent-submit-form";
 
 export async function submitApplicationAction(formData: FormData) {
   "use server";
@@ -18,7 +17,6 @@ export async function submitApplicationAction(formData: FormData) {
   }
 
   // Server-side consent validation — all three must be explicitly present.
-  // This mirrors the client-side sessionStorage check in ConsentSubmitForm.
   const consentTransmit = formData.get("consentTransmit") === "true";
   const healthInfoAuth = formData.get("healthInfoAuth") === "true";
   const esignIntent = formData.get("esignIntent") === "true";
@@ -50,6 +48,7 @@ export async function submitApplicationAction(formData: FormData) {
     })
     .where(and(eq(client.userId, session.user.id), isNull(client.deletedAt)))
     .returning();
+
   if (updated.length === 0) {
     // No client row found — submission cannot be recorded.
     redirect("/apply/review");
@@ -69,19 +68,18 @@ export default async function ApplySubmitPage() {
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
       <div className="mx-auto w-full max-w-2xl space-y-6">
         <section className="space-y-2">
-          <p className="text-primary text-sm font-semibold tracking-wide uppercase">
-            Step 4 of 4
-          </p>
           <h1 className="font-display text-foreground text-3xl tracking-tight sm:text-4xl">
-            Confirm and submit
+            Application submitted
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Review complete. Confirm below to submit your application.
+            Your application has been received. We will be in touch.
           </p>
         </section>
 
         <Card className="border-border/60 bg-card/80 p-6">
-          <ConsentSubmitForm action={submitApplicationAction} />
+          <p className="text-sm">
+            You can track the status of your application from your dashboard.
+          </p>
         </Card>
       </div>
     </main>

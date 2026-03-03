@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/client-utils";
 import { loadD2cIntake } from "@/lib/d2c/intake-storage";
 import { complianceConfig } from "@/lib/d2c/compliance-config";
+import { submitApplicationAction } from "@/app/apply/submit/page";
 
 export default function ApplyReviewPage() {
   const router = useRouter();
@@ -28,22 +29,6 @@ export default function ApplyReviewPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
     setIsHydrated(true);
   }, []);
-
-  function handleProceedToSubmit() {
-    // Persist actual checkbox state so the submit page can pass it to the server action.
-    // Only callable when allConsentsAccepted is true, but we store real values for correctness.
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "d2c_consents",
-        JSON.stringify({
-          consentTransmit,
-          healthInfoAuth,
-          esignIntent,
-        }),
-      );
-    }
-    router.push("/apply/submit");
-  }
 
   if (!isHydrated) {
     return <main className="min-h-[calc(100vh-3.5rem)]" />;
@@ -151,30 +136,55 @@ export default function ApplyReviewPage() {
           </div>
         </Card>
 
-        <div className="flex justify-between gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/apply/estimate")}
-          >
-            Back to estimate
-          </Button>
+        {/* Submit form — consent values sent directly to server action, no client-side storage */}
+        <form action={submitApplicationAction}>
+          <input
+            type="hidden"
+            name="consentTransmit"
+            value={consentTransmit ? "true" : "false"}
+          />
+          <input
+            type="hidden"
+            name="healthInfoAuth"
+            value={healthInfoAuth ? "true" : "false"}
+          />
+          <input
+            type="hidden"
+            name="esignIntent"
+            value={esignIntent ? "true" : "false"}
+          />
+          <input
+            type="hidden"
+            name="consentConfirmed"
+            value={allConsentsAccepted ? "true" : "false"}
+          />
 
-          <SignedOut>
-            <Button asChild className="bg-emerald hover:bg-emerald/90">
-              <Link href="/auth/sign-up?role=client">Sign up to submit</Link>
-            </Button>
-          </SignedOut>
-
-          <SignedIn>
+          <div className="flex justify-between gap-3">
             <Button
-              className="bg-emerald hover:bg-emerald/90"
-              disabled={!allConsentsAccepted}
-              onClick={handleProceedToSubmit}
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/apply/estimate")}
             >
-              Proceed to submit
+              Back to estimate
             </Button>
-          </SignedIn>
-        </div>
+
+            <SignedOut>
+              <Button asChild className="bg-emerald hover:bg-emerald/90">
+                <Link href="/auth/sign-up?role=client">Sign up to submit</Link>
+              </Button>
+            </SignedOut>
+
+            <SignedIn>
+              <Button
+                type="submit"
+                className="bg-emerald hover:bg-emerald/90"
+                disabled={!allConsentsAccepted}
+              >
+                Submit application
+              </Button>
+            </SignedIn>
+          </div>
+        </form>
       </div>
     </main>
   );
