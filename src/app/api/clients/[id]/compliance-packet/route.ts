@@ -44,10 +44,10 @@ function decimalToNumber(value: string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function hasClientValue(value: string | null | undefined): boolean {
-  if (!value) return false;
-  const num = parseFloat(value);
-  return Number.isFinite(num) && num > 0;
+function hasClientValue(value: string | number | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  const asString = String(value).trim();
+  return asString !== "";
 }
 
 function safeFilename(name: string): string {
@@ -90,6 +90,7 @@ export const GET = withApiHandler(
             sql<string>`coalesce(sum(case when ${asset.isLiquid} = true then ${asset.currentValue} else 0 end), '0')`.as(
               "liquidAssets",
             ),
+          assetCount: sql<number>`count(*)`.as("assetCount"),
         })
         .from(asset)
         .where(and(eq(asset.clientId, clientId!), isNull(asset.deletedAt))),
@@ -99,19 +100,20 @@ export const GET = withApiHandler(
             sql<string>`coalesce(sum(${debt.currentBalance}), '0')`.as(
               "totalDebts",
             ),
+          debtCount: sql<number>`count(*)`.as("debtCount"),
         })
         .from(debt)
         .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt))),
       db
-        .select()
+        .select({
+          totalActivePolicyCoverage:
+            sql<string>`coalesce(sum(case when ${policy.status} = 'active' then ${policy.faceAmount} else 0 end), '0')`.as(
+              "totalActivePolicyCoverage",
+            ),
+          totalPolicyCount: sql<number>`count(*)`.as("totalPolicyCount"),
+        })
         .from(policy)
-        .where(
-          and(
-            eq(policy.clientId, clientId!),
-            isNull(policy.deletedAt),
-            eq(policy.status, "active"),
-          ),
-        ),
+        .where(and(eq(policy.clientId, clientId!), isNull(policy.deletedAt))),
     ]);
 
     const totalAssets = decimalToNumber(assetsData[0]?.totalAssets);
@@ -119,21 +121,23 @@ export const GET = withApiHandler(
     const totalDebts = decimalToNumber(debtsData[0]?.totalDebts);
 
     // ── Resolve existing coverage (mirror calculate route) ─────────────
-    const policyCount = policiesData.length;
-    const coverageSource: "policies" | "legacy" =
-      policyCount > 0 ? "policies" : "legacy";
+    const assetCount = Number(assetsData[0]?.assetCount ?? 0);
+    const debtCount = Number(debtsData[0]?.debtCount ?? 0);
+    const policyCount = Number(policiesData[0]?.totalPolicyCount ?? 0);
 
-    const existingLifeInsuranceCoverage = resolveExistingCoverage({
-      totalPolicyCount: policyCount,
-      activePolicyCoverage: policiesData.reduce(
-        (sum, p) => sum + decimalToNumber(p.faceAmount),
-        0,
-      ),
-      legacyCoverage: decimalToNumber(clientData.existingLifeInsuranceCoverage),
-    }).existingCoverage;
+    const { existingCoverage: existingLifeInsuranceCoverage, coverageSource } =
+      resolveExistingCoverage({
+        totalPolicyCount: policyCount,
+        activePolicyCoverage: decimalToNumber(
+          policiesData[0]?.totalActivePolicyCoverage,
+        ),
+        legacyCoverage: decimalToNumber(
+          clientData.existingLifeInsuranceCoverage,
+        ),
+      });
 
-    const debtsProvided = totalDebts > 0;
-    const assetsProvided = totalAssets > 0;
+    const debtsProvided = debtCount > 0;
+    const assetsProvided = assetCount > 0;
 
     // ── Build insurance needs input ────────────────────────────────────
     const includeSpouseIncome = clientData.hasSpouse;
