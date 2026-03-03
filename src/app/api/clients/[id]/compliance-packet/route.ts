@@ -193,10 +193,11 @@ export const GET = withApiHandler(
           finalYearIncome: decimalToNumber(clientData.clientIncome),
           assets: [],
         });
-      } catch {
+      } catch (error) {
         await logger.warn("Settling requirements calculation failed", {
           clientId,
           state: stateCode,
+          error,
         });
       }
     }

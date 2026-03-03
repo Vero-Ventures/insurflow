@@ -222,13 +222,15 @@ export function ClientReportView({
       const anchor = document.createElement("a");
       anchor.href = url;
 
-      const safeFirstName = client.firstName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
-      const safeLastName = client.lastName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
-      anchor.download = `${safeFirstName}-${safeLastName}-compliance-packet.pdf`;
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "compliance-packet.pdf";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch?.[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      anchor.download = filename;
 
       document.body.appendChild(anchor);
       anchor.click();
