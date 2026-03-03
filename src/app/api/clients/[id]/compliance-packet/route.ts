@@ -36,27 +36,18 @@ import { calculateAge } from "@/lib/client-utils";
 /** Keep this route on Node runtime for PDF generation */
 export const runtime = "nodejs";
 
-/**
- * Safely convert decimal string to number
- */
 function decimalToNumber(value: string | null | undefined): number {
   if (!value) return 0;
   const parsed = parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-/**
- * Check if a client value was explicitly provided (non-null, non-zero)
- */
 function hasClientValue(value: string | null | undefined): boolean {
   if (!value) return false;
   const num = parseFloat(value);
   return Number.isFinite(num) && num > 0;
 }
 
-/**
- * Create a safe filename from a name string
- */
 function safeFilename(name: string): string {
   return name
     .toLowerCase()
@@ -64,15 +55,6 @@ function safeFilename(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-/**
- * GET /api/clients/[id]/compliance-packet
- *
- * Generates a compliance-ready PDF packet containing:
- * - Estimate summary + assumptions + methodology notes
- * - Consumer/application context + calculation metadata
- * - Calculation trace ("show your work")
- * - Source citations and disclaimers
- */
 export const GET = withApiHandler(
   {
     endpoint: "/api/clients/[id]/compliance-packet",
@@ -82,7 +64,6 @@ export const GET = withApiHandler(
   async (_request, { logger, clientId, session }) => {
     const db = getDb();
 
-    // Fetch client data
     const clientData = await db.query.client.findFirst({
       where: and(
         eq(client.id, clientId!),
@@ -95,7 +76,7 @@ export const GET = withApiHandler(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // Fetch financial data in parallel
+    // ── Fetch financial data (mirror calculate route exactly) ──────────
     const [assetsData, debtsData, policiesData] = await Promise.all([
       db
         .select({
@@ -112,16 +93,15 @@ export const GET = withApiHandler(
         .where(and(eq(asset.clientId, clientId!), isNull(asset.deletedAt))),
       db
         .select({
-          totalDebts: sql<string>`coalesce(sum(${debt.amount}), '0')`.as(
-            "totalDebts",
-          ),
+          totalDebts:
+            sql<string>`coalesce(sum(${debt.currentBalance}), '0')`.as(
+              "totalDebts",
+            ),
         })
         .from(debt)
         .where(and(eq(debt.clientId, clientId!), isNull(debt.deletedAt))),
       db
-        .select({
-          coverageAmount: policy.coverageAmount,
-        })
+        .select()
         .from(policy)
         .where(
           and(
@@ -136,15 +116,20 @@ export const GET = withApiHandler(
     const liquidAssets = decimalToNumber(assetsData[0]?.liquidAssets);
     const totalDebts = decimalToNumber(debtsData[0]?.totalDebts);
 
-    // Resolve existing coverage (policies first, then fallback to client field)
+    // ── Resolve existing coverage (mirror calculate route) ─────────────
+    const policyCount = policiesData.length;
+    const coverageSource: "policies" | "legacy" =
+      policyCount > 0 ? "policies" : "legacy";
+
     const existingLifeInsuranceCoverage = resolveExistingCoverage(
-      policiesData.map((p) => ({
-        coverageAmount: p.coverageAmount,
-      })),
+      policiesData,
       clientData.existingLifeInsuranceCoverage,
     );
 
-    // Build insurance needs input
+    const debtsProvided = totalDebts > 0;
+    const assetsProvided = totalAssets > 0;
+
+    // ── Build insurance needs input ────────────────────────────────────
     const includeSpouseIncome = clientData.hasSpouse;
     const estateBuffer = DEFAULT_ESTATE_BUFFER;
 
@@ -165,11 +150,10 @@ export const GET = withApiHandler(
       estateBuffer,
     };
 
-    // Run insurance needs calculation with trace
     const { result: insuranceResult, trace } =
       calculateInsuranceNeedsRoundedWithTrace(calculationInput);
 
-    // Compute confidence
+    // ── Confidence (mirror calculate route exactly) ────────────────────
     const completeness: EstimateCompleteness = {
       clientIncome: hasClientValue(clientData.clientIncome),
       spouseIncome: hasClientValue(clientData.spouseIncome),
@@ -178,24 +162,23 @@ export const GET = withApiHandler(
       ),
       replacementDurationYears: clientData.replacementDurationYears != null,
       existingCoverage:
-        policiesData.length > 0 ||
+        coverageSource === "policies" ||
         hasClientValue(clientData.existingLifeInsuranceCoverage),
-      debtsData: totalDebts > 0,
-      assetsData: totalAssets > 0,
+      debtsData: debtsProvided,
+      assetsData: assetsProvided,
       estateBuffer: true,
     };
     const assumptionsUsed: EstimateAssumptionsUsed = {
       replacementDurationYears: clientData.replacementDurationYears == null,
       estateBuffer: true,
-      includeSpouseIncome:
-        includeSpouseIncome && !hasClientValue(clientData.spouseIncome),
+      includeSpouseIncome: false,
     };
     const confidence = computeEstimateConfidence({
       completeness,
       assumptionsUsed,
     });
 
-    // Calculate settling requirements if state is valid
+    // ── Settling requirements ──────────────────────────────────────────
     let settlingResult = null;
     const stateCode = clientData.state;
     if (isValidUSState(stateCode)) {
@@ -206,7 +189,6 @@ export const GET = withApiHandler(
           annualIncome: decimalToNumber(clientData.clientIncome),
         });
       } catch {
-        // Non-blocking — settling is supplementary
         await logger.warn("Settling requirements calculation failed", {
           clientId,
           state: stateCode,
@@ -214,11 +196,16 @@ export const GET = withApiHandler(
       }
     }
 
-    // Build packet
+    // ── Build packet ───────────────────────────────────────────────────
     const clientAge = calculateAge(clientData.dateOfBirth);
     const stateName = isValidUSState(stateCode)
       ? US_STATE_NAMES[stateCode as USState]
       : stateCode;
+
+    const estateBufferValue =
+      estateBuffer.type === "fixed"
+        ? estateBuffer.amount
+        : estateBuffer.percentage;
 
     const packetInput: PacketBuilderInput = {
       client: {
@@ -249,10 +236,7 @@ export const GET = withApiHandler(
         liquidAssets,
         totalAssets,
         estateBufferType: estateBuffer.type,
-        estateBufferValue:
-          estateBuffer.type === "fixed"
-            ? estateBuffer.amount
-            : estateBuffer.percentage,
+        estateBufferValue,
       },
       methodologies: [
         INSURANCE_NEEDS_METHODOLOGY,
@@ -263,7 +247,6 @@ export const GET = withApiHandler(
 
     const packet = buildCompliancePacket(packetInput);
 
-    // Generate PDF
     const doc = createElement(CompliancePacketDocument, { packet });
     const buffer = await pdf(doc).toBuffer();
 

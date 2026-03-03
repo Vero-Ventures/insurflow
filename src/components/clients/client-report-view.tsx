@@ -22,6 +22,7 @@ import {
   DollarSign,
   Clock,
   Shield,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Client } from "@/types/client";
@@ -93,6 +94,7 @@ export function ClientReportView({
   const [debts, setDebts] = useState<Debt[]>(demoDebts || []);
   const [isLoadingData, setIsLoadingData] = useState(!isDemo);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [isDownloadingPacket, setIsDownloadingPacket] = useState(false);
 
   // Insurance needs calculation (skipped in demo mode)
   const {
@@ -201,6 +203,47 @@ export function ClientReportView({
     }
   };
 
+  const handleDownloadCompliancePacket = async () => {
+    if (isDownloadingPacket || isDemo) return;
+
+    try {
+      setIsDownloadingPacket(true);
+      const response = await fetch(
+        `/api/clients/${clientId}/compliance-packet`,
+        { credentials: "include" },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate compliance packet");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+
+      const safeFirstName = client.firstName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
+      const safeLastName = client.lastName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
+      anchor.download = `${safeFirstName}-${safeLastName}-compliance-packet.pdf`;
+
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Compliance packet downloaded successfully");
+    } catch (error) {
+      console.error("Failed to download compliance packet:", error);
+      toast.error("Failed to download compliance packet. Please try again.");
+    } finally {
+      setIsDownloadingPacket(false);
+    }
+  };
+
   // Generate initials for avatar
   const initials =
     `${client.firstName.charAt(0)}${client.lastName.charAt(0)}`.toUpperCase();
@@ -248,17 +291,32 @@ export function ClientReportView({
                 </div>
               </div>
             </div>
-            {pdfDownloadUrl && (
-              <Button
-                onClick={handleDownloadPdf}
-                disabled={isDownloadingPdf}
-                variant="secondary"
-                className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 print:hidden"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
-              </Button>
-            )}
+            <div className="flex gap-2 print:hidden">
+              {pdfDownloadUrl && (
+                <Button
+                  onClick={handleDownloadPdf}
+                  disabled={isDownloadingPdf}
+                  variant="secondary"
+                  className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
+                </Button>
+              )}
+              {!isDemo && (
+                <Button
+                  onClick={handleDownloadCompliancePacket}
+                  disabled={isDownloadingPacket}
+                  variant="secondary"
+                  className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  {isDownloadingPacket
+                    ? "Preparing Packet..."
+                    : "Compliance Packet"}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>
