@@ -181,7 +181,7 @@ export function AppNavigationMenu() {
               size="sm"
               className="from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] hover:to-[oklch(0.45_0.10_230)]/90"
             >
-              <Link href="/auth/sign-up">Start Application</Link>
+              <Link href="/auth/sign-up?role=client">Start Application</Link>
             </Button>
           </SignedOut>
         </div>

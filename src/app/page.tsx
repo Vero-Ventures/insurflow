@@ -23,67 +23,67 @@ import { Button } from "@/components/ui/button";
 const features = [
   {
     icon: Clock,
-    title: "5-Minute Intake",
+    title: "Fast Eligibility Intake",
     description:
-      "Complete a short eligibility check in minutes. Get a personalized coverage estimate before you finish your coffee.",
+      "Complete a short intake and move straight into a clear, non-binding estimate.",
     stat: "5 min",
     statLabel: "Typical intake",
   },
   {
     icon: Calculator,
-    title: "Smart Estimates",
+    title: "Clear Estimate Preview",
     description:
-      "Automatic income replacement and debt coverage calculations that update in real-time as you enter your details.",
-    stat: "$500K+",
-    statLabel: "Avg. coverage calculated",
+      "Understand your estimated coverage range, assumptions, and what affects the result.",
+    stat: "D2C",
+    statLabel: "Consumer-first",
   },
   {
     icon: FileText,
-    title: "Clear Next Steps",
+    title: "Guided Application",
     description:
-      "Review your estimate, understand the assumptions, and move to application when you're ready.",
-    stat: "100%",
-    statLabel: "Transparency",
+      "Move from estimate to application submission with a simple review and consent step.",
+    stat: "1 flow",
+    statLabel: "Estimate to submit",
   },
   {
     icon: Sparkles,
-    title: "Guided Experience",
+    title: "Live Status Timeline",
     description:
-      "Plain-language guidance throughout the process helps you make confident decisions about your coverage.",
-    stat: "D2C",
-    statLabel: "Consumer-first",
+      "Track your application from received to review updates with clear status events.",
+    stat: "Live",
+    statLabel: "Status tracking",
   },
 ];
 
 const painPoints = [
-  "Spending hours researching coverage options online",
-  "Not knowing how much coverage you actually need",
-  "Confusing jargon and unclear pricing from carriers",
-  "Feeling unsure about your protection gaps and next steps",
+  "Long, confusing insurance research before you can apply",
+  "Unclear estimate language that sounds like a guaranteed quote",
+  "Disconnected steps between estimate and application",
+  "No simple way to track what happens after you submit",
 ];
 
 const solutions = [
-  "Complete intake in under 5 minutes with guided questions",
-  "Get a personalized estimate based on your actual situation",
-  "Plain-language explanations of what you need and why",
-  "Leave with a clear action plan and confidence in your coverage",
+  "A short, guided intake built for first-time applicants",
+  "Conservative non-binding estimate language you can understand",
+  "One D2C flow from eligibility to application submission",
+  "Transparent provider status updates in your account",
 ];
 
-const demoFlowSteps = [
+const applicationFlowSteps = [
   {
     title: "1) Intake",
     description:
-      "Answer a few simple questions about your household and financial situation in plain language.",
+      "Capture your eligibility details with plain-language, Canada-first fields.",
   },
   {
     title: "2) Estimate",
     description:
-      "See your recommended coverage, understand the assumptions, and review confidence at a glance.",
+      "Review a clear, non-binding estimate preview and supporting assumptions.",
   },
   {
-    title: "3) Apply",
+    title: "3) Submit + Track",
     description:
-      "When you're ready, submit your application directly and track status through to approval.",
+      "Create your account, submit your application, and follow status updates in one place.",
   },
 ];
 
@@ -123,10 +123,10 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className="animate-fade-up animation-delay-100 text-foreground font-display mb-6 text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Stop guessing with{" "}
+            Your path to a{" "}
             <span className="relative">
               <span className="from-primary to-emerald relative z-10 bg-gradient-to-r via-[oklch(0.55_0.12_200)] bg-clip-text text-transparent">
-                slow spreadsheets
+                term life application
               </span>
               <span className="bg-emerald/20 absolute right-0 -bottom-1 left-0 h-3 -skew-x-6" />
             </span>
@@ -134,12 +134,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow helps Canadians find the right term life coverage in{" "}
+            InsurFlow helps you complete eligibility intake, review a
+            non-binding estimate, and submit your application in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
             </span>{" "}
-            with clear estimates, transparent assumptions, and a simple
-            application path.
+            with transparent application status tracking after submission.
           </p>
 
           {/* CTA Buttons */}
@@ -181,18 +181,19 @@ export default function Home() {
               variant="secondary"
               className="bg-emerald/10 text-emerald mb-4"
             >
-              Demo Flow
+              Application Flow
             </Badge>
             <h2 className="text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              How the demo works
+              How it works
             </h2>
             <p className="text-muted-foreground mt-3 text-base sm:text-lg">
-              A simple three-step process from intake to application.
+              A simple three-step walkthrough from intake to submission and
+              status tracking.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {demoFlowSteps.map((step, index) => (
+            {applicationFlowSteps.map((step, index) => (
               <Card
                 key={step.title}
                 className={`animate-fade-up border-border/60 bg-card/70 animation-delay-${(index + 1) * 100}`}
@@ -314,11 +315,11 @@ export default function Home() {
               Platform Capabilities
             </Badge>
             <h2 className="animate-fade-up text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              Everything you need to make confident decisions
+              Everything you need for D2C term life intake and submission
             </h2>
             <p className="animate-fade-up animation-delay-100 text-muted-foreground mx-auto mt-4 max-w-2xl">
-              From intake to application, InsurFlow guides you through term life
-              coverage with transparent estimates and clear next steps.
+              From eligibility intake to application status updates, InsurFlow
+              keeps the process clear, fast, and consumer-friendly.
             </p>
           </div>
 
@@ -373,12 +374,12 @@ export default function Home() {
           </div>
 
           <h2 className="animate-fade-up animation-delay-100 text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
-            Ready to take control of your plan?
+            Ready to start your application?
           </h2>
 
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
-            Check your term life coverage needs and start your application in
-            minutes.
+            Start with a short eligibility check, review your estimate, and
+            continue to account-gated application submission.
           </p>
 
           <div className="animate-fade-up animation-delay-300 mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -387,13 +388,13 @@ export default function Home() {
               size="lg"
               className="animate-pulse-glow from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-lg hover:to-[oklch(0.45_0.10_230)]/90"
             >
-              <Link href="/apply/intake">
+              <Link href="/auth/sign-up?role=client">
                 Start Application
-                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg">
-              <Link href="/auth/sign-in">Sign In</Link>
+              <Link href="/demo">View Demo</Link>
             </Button>
           </div>
 
