@@ -8,7 +8,8 @@ const redirectMock = vi.fn((path: string) => {
 const getSessionMock = vi.fn();
 
 // Drizzle update chain mock
-const whereMock = vi.fn().mockResolvedValue([]);
+const returningMock = vi.fn().mockResolvedValue([{ id: "c1" }]);
+const whereMock = vi.fn(() => ({ returning: returningMock }));
 const setMock = vi.fn(() => ({ where: whereMock }));
 const updateMock = vi.fn(() => ({ set: setMock }));
 
@@ -36,6 +37,8 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(),
   isNull: vi.fn(),
   and: vi.fn(),
+  // Returns a sentinel so tests can assert COALESCE expressions are used
+  sql: vi.fn().mockReturnValue({ isSqlExpr: true }),
 }));
 
 /** Calls fn and catches redirect throws; returns the caught message or null. */
@@ -58,7 +61,8 @@ describe("ApplySubmitPage", () => {
     updateMock.mockClear();
     setMock.mockClear();
     whereMock.mockClear();
-    whereMock.mockResolvedValue([]);
+    returningMock.mockClear();
+    returningMock.mockResolvedValue([{ id: "c1" }]);
   });
 
   it("redirects signed-out users to sign-up", async () => {
@@ -162,7 +166,7 @@ describe("ApplySubmitPage", () => {
       expect(updateMock).toHaveBeenCalledTimes(1);
       expect(setMock).toHaveBeenCalledTimes(1);
 
-      // Verify the three timestamp fields are set to Date instances
+      // Verify all three fields use SQL (COALESCE) expressions, not bare Date values
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const setCall = (setMock.mock.calls as any)[0][0] as Record<
         string,
@@ -171,16 +175,28 @@ describe("ApplySubmitPage", () => {
       expect(setCall).toHaveProperty("consentTransmitToCarrierAt");
       expect(setCall).toHaveProperty("healthInfoAuthorizationAt");
       expect(setCall).toHaveProperty("esignIntentAcknowledgedAt");
-      expect(setCall.consentTransmitToCarrierAt).toBeInstanceOf(Date);
-      expect(setCall.healthInfoAuthorizationAt).toBeInstanceOf(Date);
-      expect(setCall.esignIntentAcknowledgedAt).toBeInstanceOf(Date);
+      // Must be SQL expressions — not raw Date objects
+      expect(setCall.consentTransmitToCarrierAt).not.toBeInstanceOf(Date);
+      expect(setCall.healthInfoAuthorizationAt).not.toBeInstanceOf(Date);
+      expect(setCall.esignIntentAcknowledgedAt).not.toBeInstanceOf(Date);
+      expect(setCall.consentTransmitToCarrierAt).toMatchObject({
+        isSqlExpr: true,
+      });
+      expect(setCall.healthInfoAuthorizationAt).toMatchObject({
+        isSqlExpr: true,
+      });
+      expect(setCall.esignIntentAcknowledgedAt).toMatchObject({
+        isSqlExpr: true,
+      });
 
       // Redirected to dashboard
       expect(redirectMock).toHaveBeenCalledWith("/dashboard");
     });
 
-    it("all three consent timestamps are set to the same server time", async () => {
+    it("redirects to review when DB finds no matching client row (0 rows updated)", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
+      // Simulate no matching client record
+      returningMock.mockResolvedValue([]);
       const mod = await import("@/app/apply/submit/page");
 
       const formData = new FormData();
@@ -190,20 +206,8 @@ describe("ApplySubmitPage", () => {
       formData.set("consentConfirmed", "true");
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const setCall = (setMock.mock.calls as any)[0][0] as {
-        consentTransmitToCarrierAt: Date;
-        healthInfoAuthorizationAt: Date;
-        esignIntentAcknowledgedAt: Date;
-      };
-
-      // All timestamps share the same moment
-      expect(setCall.consentTransmitToCarrierAt.getTime()).toBe(
-        setCall.healthInfoAuthorizationAt.getTime(),
-      );
-      expect(setCall.consentTransmitToCarrierAt.getTime()).toBe(
-        setCall.esignIntentAcknowledgedAt.getTime(),
-      );
+      expect(redirectMock).toHaveBeenCalledWith("/apply/review");
+      expect(redirectMock).not.toHaveBeenCalledWith("/dashboard");
     });
   });
 });
