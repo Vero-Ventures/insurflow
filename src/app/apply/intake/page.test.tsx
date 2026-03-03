@@ -6,6 +6,16 @@ const pushMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
+  useSearchParams: () => ({
+    get: () => null,
+  }),
+}));
+
+// Mock the auth client to simulate unauthenticated user (sessionStorage fallback)
+vi.mock("@/server/better-auth/client", () => ({
+  authClient: {
+    useSession: () => ({ data: null, isPending: false }),
+  },
 }));
 
 // Mock sessionStorage

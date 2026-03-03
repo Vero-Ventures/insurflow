@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/client-utils";
 import { loadD2cIntake, saveD2cIntake } from "@/lib/d2c/intake-storage";
+import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
+import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 
@@ -27,6 +29,71 @@ function getAgeFromDateOfBirth(dateOfBirth: string): number {
   return Math.max(0, age);
 }
 
+/**
+ * Loads intake data, preferring DB draft when clientId is available
+ * and sessionStorage is empty (direct navigation / cross-device resume).
+ */
+function useIntakeData(clientId: string | null) {
+  const [intake, setIntake] = useState(() => loadD2cIntake());
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const stored = loadD2cIntake();
+      const hasStoredData =
+        stored.province !== "" ||
+        stored.dateOfBirth !== "" ||
+        stored.annualIncome > 0;
+
+      // If sessionStorage already has data, use it (normal flow from intake page)
+      if (hasStoredData) {
+        if (!cancelled) {
+          setIntake(stored);
+          setIsReady(true);
+        }
+        return;
+      }
+
+      // If we have a clientId but no sessionStorage data, try loading from DB
+      // (cross-device resume or direct navigation with clientId)
+      if (clientId) {
+        try {
+          const res = await fetch("/api/d2c/draft");
+          if (res.ok) {
+            const json = (await res.json()) as {
+              data?: { draft?: DraftClientRecord };
+            };
+            const draft = json.data?.draft;
+            if (draft && !cancelled) {
+              const loaded = clientFieldsToD2cIntake(draft);
+              setIntake(loaded);
+              saveD2cIntake(loaded);
+              setIsReady(true);
+              return;
+            }
+          }
+        } catch {
+          // Fall through to stored data
+        }
+      }
+
+      if (!cancelled) {
+        setIntake(stored);
+        setIsReady(true);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
+
+  return { intake, isReady };
+}
+
 export default function ApplyEstimatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,7 +102,7 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
 
-  const intake = useMemo(() => loadD2cIntake(), []);
+  const { intake, isReady } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
 
   const needs = useMemo(
@@ -61,9 +128,10 @@ export default function ApplyEstimatePage() {
       : needs.totalInsuranceNeeds;
 
   useEffect(() => {
+    if (!isReady) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
     setIsHydrated(true);
-  }, []);
+  }, [isReady]);
 
   useEffect(() => {
     if (!isHydrated) return;

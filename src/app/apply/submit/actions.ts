@@ -5,6 +5,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { UUID_REGEX } from "@/lib/validation/client";
+import { invalidateClientResumeLinks } from "@/lib/api/d2c-resume-link-helpers";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -43,11 +44,13 @@ export async function submitApplicationAction(formData: FormData) {
 
   // Persist consent timestamps using COALESCE so each field is only written
   // once — if the column already has a value it is preserved unchanged.
+  // Transition the client from "draft" to "active" on successful submission.
   // .returning() lets us detect whether a matching client row was found;
   // if 0 rows are updated, the user is sent back to the review step.
   const updated = await db
     .update(client)
     .set({
+      status: "active",
       consentTransmitToCarrierAt: sql`COALESCE(${client.consentTransmitToCarrierAt}, ${now})`,
       healthInfoAuthorizationAt: sql`COALESCE(${client.healthInfoAuthorizationAt}, ${now})`,
       esignIntentAcknowledgedAt: sql`COALESCE(${client.esignIntentAcknowledgedAt}, ${now})`,
@@ -64,6 +67,14 @@ export async function submitApplicationAction(formData: FormData) {
   if (updated.length === 0) {
     // No client row found — submission cannot be recorded.
     redirect("/apply/review");
+  }
+
+  // Invalidate any active resume links for this draft (now that it's active).
+  // Best-effort: don't block submission if this fails.
+  try {
+    await invalidateClientResumeLinks(clientId);
+  } catch {
+    // Silently continue — link invalidation is best-effort
   }
 
   redirect(AUTHENTICATED_HOME_ROUTE);

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, Clock3, MapPin, Calendar } from "lucide-react";
-import {
-  loadD2cIntake,
-  saveD2cIntake,
-  DEFAULT_D2C_INTAKE,
-} from "@/lib/d2c/intake-storage";
-import type { D2cIntake } from "@/lib/d2c/intake-types";
+import { ArrowRight, Clock3, Loader2, MapPin, Calendar } from "lucide-react";
+import { useDraftPersistence } from "@/lib/d2c/use-draft-persistence";
 import {
   PROVINCE_NAMES,
   type CanadianProvince,
@@ -30,44 +24,26 @@ const TOTAL_STEPS = 4;
 const CURRENT_STEP = 1;
 
 /**
- * Custom hook to sync D2C intake state with sessionStorage.
- * Handles hydration by loading from storage on mount.
- */
-function useD2cIntake() {
-  const [intake, setIntake] = useState<D2cIntake>(DEFAULT_D2C_INTAKE);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  // Load from sessionStorage on mount - this is an intentional one-time
-  // sync from external storage, not a cascading render pattern.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrating from sessionStorage on mount is valid
-    setIntake(loadD2cIntake());
-    setIsHydrated(true);
-  }, []);
-
-  const updateField = <K extends keyof D2cIntake>(
-    field: K,
-    value: D2cIntake[K],
-  ) => {
-    setIntake((prev) => {
-      const updated = { ...prev, [field]: value };
-      saveD2cIntake(updated);
-      return updated;
-    });
-  };
-
-  return { intake, updateField, isHydrated };
-}
-
-/**
  * D2C eligibility intake page.
+ *
+ * For authenticated users, form state is persisted to the database
+ * via the draft API (auto-saved with debounce on each field change).
+ * For unauthenticated users, sessionStorage is used as fallback.
  */
 export default function D2cIntakePage() {
   const router = useRouter();
-  const { intake, updateField, isHydrated } = useD2cIntake();
+  const searchParams = useSearchParams();
+  const initialClientId = searchParams.get("clientId");
+
+  const { intake, updateField, isHydrated, clientId, isSaving } =
+    useDraftPersistence({ initialClientId });
 
   const handleContinue = () => {
-    router.push("/apply/estimate");
+    // Pass clientId forward so the estimate step can reference the draft
+    const estimateUrl = clientId
+      ? `/apply/estimate?clientId=${encodeURIComponent(clientId)}`
+      : "/apply/estimate";
+    router.push(estimateUrl);
   };
 
   const isFormValid =
@@ -320,7 +296,16 @@ export default function D2cIntakePage() {
                 </div>
               </div>
 
-              <div className="border-border/60 flex justify-end border-t pt-4">
+              <div className="border-border/60 flex items-center justify-end gap-3 border-t pt-4">
+                {isSaving && (
+                  <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+                    <Loader2
+                      className="h-3 w-3 animate-spin"
+                      aria-hidden="true"
+                    />
+                    Saving...
+                  </span>
+                )}
                 <Button
                   type="submit"
                   className="bg-emerald hover:bg-emerald/90 gap-2"
