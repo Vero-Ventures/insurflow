@@ -11,6 +11,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  callIgnoringRedirect,
+  createValidConsentForm,
+  MOCK_CLIENT_SCHEMA,
+} from "./__tests__/consent-test-helpers";
+
 // ---------------------------------------------------------------------------
 // Stable UUIDs for the two "seeded" client rows
 // ---------------------------------------------------------------------------
@@ -52,15 +58,7 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("@/server/db/schemas", () => ({
-  client: {
-    id: "id",
-    userId: "userId",
-    deletedAt: "deletedAt",
-    createdAt: "createdAt",
-    consentTransmitToCarrierAt: "consentTransmitToCarrierAt",
-    healthInfoAuthorizationAt: "healthInfoAuthorizationAt",
-    esignIntentAcknowledgedAt: "esignIntentAcknowledgedAt",
-  },
+  client: MOCK_CLIENT_SCHEMA,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -69,30 +67,6 @@ vi.mock("drizzle-orm", () => ({
   and: (...args: unknown[]) => andMock(...args),
   sql: vi.fn().mockReturnValue({ isSqlExpr: true }),
 }));
-
-/** Call an async fn and catch redirect throws. */
-async function callIgnoringRedirect(fn: () => Promise<unknown>) {
-  try {
-    await fn();
-    return null;
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith("redirect:")) {
-      return err.message;
-    }
-    throw err;
-  }
-}
-
-/** Build a formData payload targeting a specific clientId. */
-function buildConsentForm(clientId: string): FormData {
-  const fd = new FormData();
-  fd.set("consentTransmit", "true");
-  fd.set("healthInfoAuth", "true");
-  fd.set("esignIntent", "true");
-  fd.set("consentConfirmed", "true");
-  fd.set("clientId", clientId);
-  return fd;
-}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -109,7 +83,9 @@ describe("consent submission scope — regression", () => {
     const mod = await import("@/app/apply/submit/actions");
 
     await callIgnoringRedirect(() =>
-      mod.submitApplicationAction(buildConsentForm(CLIENT_A_ID)),
+      mod.submitApplicationAction(
+        createValidConsentForm({ clientId: CLIENT_A_ID }),
+      ),
     );
 
     // The where() builder must have been called exactly once
@@ -127,7 +103,9 @@ describe("consent submission scope — regression", () => {
     const mod = await import("@/app/apply/submit/actions");
 
     await callIgnoringRedirect(() =>
-      mod.submitApplicationAction(buildConsentForm(CLIENT_A_ID)),
+      mod.submitApplicationAction(
+        createValidConsentForm({ clientId: CLIENT_A_ID }),
+      ),
     );
 
     const eqCalls = eqMock.mock.calls as [string, string][];
@@ -142,7 +120,9 @@ describe("consent submission scope — regression", () => {
 
     // Submit for CLIENT_A only
     await callIgnoringRedirect(() =>
-      mod.submitApplicationAction(buildConsentForm(CLIENT_A_ID)),
+      mod.submitApplicationAction(
+        createValidConsentForm({ clientId: CLIENT_A_ID }),
+      ),
     );
 
     // Assert the WHERE clause targets CLIENT_A
@@ -169,7 +149,9 @@ describe("consent submission scope — regression", () => {
 
     const foreignId = "cccc0000-cccc-4ccc-8ccc-cccccccccccc";
     await callIgnoringRedirect(() =>
-      mod.submitApplicationAction(buildConsentForm(foreignId)),
+      mod.submitApplicationAction(
+        createValidConsentForm({ clientId: foreignId }),
+      ),
     );
 
     // Should redirect back to review

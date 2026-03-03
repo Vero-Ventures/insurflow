@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  callIgnoringRedirect,
+  createValidConsentForm,
+  MOCK_CLIENT_SCHEMA,
+  TEST_USER_ID,
+} from "./__tests__/consent-test-helpers";
+
 const redirectMock = vi.fn((path: string) => {
   // Simulate Next.js redirect() which always throws — prevents execution from
   // continuing past a redirect call, matching production behaviour.
@@ -26,15 +33,7 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("@/server/db/schemas", () => ({
-  client: {
-    id: "id",
-    userId: "userId",
-    deletedAt: "deletedAt",
-    createdAt: "createdAt",
-    consentTransmitToCarrierAt: "consentTransmitToCarrierAt",
-    healthInfoAuthorizationAt: "healthInfoAuthorizationAt",
-    esignIntentAcknowledgedAt: "esignIntentAcknowledgedAt",
-  },
+  client: MOCK_CLIENT_SCHEMA,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -45,17 +44,10 @@ vi.mock("drizzle-orm", () => ({
   sql: vi.fn().mockReturnValue({ isSqlExpr: true }),
 }));
 
-/** Calls fn and catches redirect throws; returns the caught message or null. */
-async function callIgnoringRedirect(fn: () => Promise<unknown>) {
-  try {
-    await fn();
-    return null;
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith("redirect:")) {
-      return err.message;
-    }
-    throw err;
-  }
+/** Helper: set up an authenticated session and return the actions module. */
+async function loadActionsWithSession(userId = TEST_USER_ID) {
+  getSessionMock.mockResolvedValue({ user: { id: userId } });
+  return import("@/app/apply/submit/actions");
 }
 
 describe("ApplySubmitPage", () => {
@@ -79,7 +71,7 @@ describe("ApplySubmitPage", () => {
   });
 
   it("renders confirmation page for signed-in users without mutating status", async () => {
-    getSessionMock.mockResolvedValue({ user: { id: "u1" } });
+    getSessionMock.mockResolvedValue({ user: { id: TEST_USER_ID } });
 
     const mod = await import("@/app/apply/submit/page");
     const page = await mod.default();
@@ -93,108 +85,71 @@ describe("ApplySubmitPage", () => {
       getSessionMock.mockResolvedValue(null);
       const mod = await import("@/app/apply/submit/actions");
 
-      const formData = new FormData();
-      await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
+      await callIgnoringRedirect(() =>
+        mod.submitApplicationAction(new FormData()),
+      );
 
       expect(redirectMock).toHaveBeenCalledWith("/auth/sign-up?role=client");
     });
 
     it("redirects to review when consentTransmit is missing", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      // consentTransmit intentionally omitted
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
+      const formData = createValidConsentForm({ consentTransmit: undefined });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("redirects to review when healthInfoAuth is missing", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      // healthInfoAuth intentionally omitted
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
+      const formData = createValidConsentForm({ healthInfoAuth: undefined });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("redirects to review when esignIntent is missing", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      // esignIntent intentionally omitted
-      formData.set("consentConfirmed", "true");
+      const formData = createValidConsentForm({ esignIntent: undefined });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("redirects to review when final consentConfirmed is missing", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      // consentConfirmed intentionally omitted
+      const formData = createValidConsentForm({ consentConfirmed: undefined });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("redirects to review when clientId is missing", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
-      // clientId intentionally omitted
+      const formData = createValidConsentForm({ clientId: undefined });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("redirects to review when clientId is not a valid UUID", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
-      formData.set("clientId", "not-a-uuid");
+      const formData = createValidConsentForm({ clientId: "not-a-uuid" });
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
     });
 
     it("persists consent timestamps and redirects to dashboard when all consents present", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
-      formData.set("clientId", "00000000-0000-4000-8000-000000000001");
+      const formData = createValidConsentForm();
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       // DB update was called
@@ -229,17 +184,10 @@ describe("ApplySubmitPage", () => {
     });
 
     it("redirects to review when DB finds no matching client row (0 rows updated)", async () => {
-      getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      // Simulate no matching client record
       returningMock.mockResolvedValue([]);
-      const mod = await import("@/app/apply/submit/actions");
+      const mod = await loadActionsWithSession();
 
-      const formData = new FormData();
-      formData.set("consentTransmit", "true");
-      formData.set("healthInfoAuth", "true");
-      formData.set("esignIntent", "true");
-      formData.set("consentConfirmed", "true");
-      formData.set("clientId", "00000000-0000-4000-8000-000000000001");
+      const formData = createValidConsentForm();
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
