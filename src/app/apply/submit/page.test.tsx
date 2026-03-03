@@ -30,6 +30,8 @@ vi.mock("@/server/db/schemas", () => ({
     userId: "userId",
     deletedAt: "deletedAt",
     consentTransmitToCarrierAt: "consentTransmitToCarrierAt",
+    healthInfoAuthorizationAt: "healthInfoAuthorizationAt",
+    esignIntentAcknowledgedAt: "esignIntentAcknowledgedAt",
   },
 }));
 
