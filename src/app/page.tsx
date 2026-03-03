@@ -184,7 +184,7 @@ export default function Home() {
               Demo Flow
             </Badge>
             <h2 className="text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              How the demo works
+              How it works
             </h2>
             <p className="text-muted-foreground mt-3 text-base sm:text-lg">
               A simple three-step walkthrough from intake to submission and
