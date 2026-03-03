@@ -5,9 +5,11 @@ import ApplyEstimatePage from "@/app/apply/estimate/page";
 
 const pushMock = vi.fn();
 const replaceMock = vi.fn();
+const getMock = vi.fn().mockReturnValue(null);
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
+  useSearchParams: () => ({ get: getMock }),
 }));
 
 describe("ApplyEstimatePage", () => {
@@ -53,5 +55,21 @@ describe("ApplyEstimatePage", () => {
 
     fireEvent.click(continueButton);
     expect(pushMock).toHaveBeenCalledWith("/apply/review");
+  });
+
+  it("forwards clientId search param to review URL when present", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+    expect(pushMock).toHaveBeenCalledWith(
+      `/apply/review?clientId=${testClientId}`,
+    );
   });
 });

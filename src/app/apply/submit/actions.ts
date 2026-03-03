@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
+import { UUID_REGEX } from "@/lib/validation/client";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -31,6 +32,12 @@ export async function submitApplicationAction(formData: FormData) {
     redirect("/apply/review");
   }
 
+  // Validate the target client ID — must be a valid UUID for this submission.
+  const clientId = formData.get("clientId");
+  if (typeof clientId !== "string" || !UUID_REGEX.test(clientId)) {
+    redirect("/apply/review");
+  }
+
   const now = new Date();
   const db = getDb();
 
@@ -45,7 +52,13 @@ export async function submitApplicationAction(formData: FormData) {
       healthInfoAuthorizationAt: sql`COALESCE(${client.healthInfoAuthorizationAt}, ${now})`,
       esignIntentAcknowledgedAt: sql`COALESCE(${client.esignIntentAcknowledgedAt}, ${now})`,
     })
-    .where(and(eq(client.userId, session.user.id), isNull(client.deletedAt)))
+    .where(
+      and(
+        eq(client.id, clientId),
+        eq(client.userId, session.user.id),
+        isNull(client.deletedAt),
+      ),
+    )
     .returning();
 
   if (updated.length === 0) {

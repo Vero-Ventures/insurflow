@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +29,8 @@ function getAgeFromDateOfBirth(dateOfBirth: string): number {
 
 export default function ApplyEstimatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientId = searchParams.get("clientId");
   const [isHydrated, setIsHydrated] = useState(false);
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
@@ -153,7 +155,12 @@ export default function ApplyEstimatePage() {
         <div className="flex justify-end">
           <Button
             className="bg-emerald hover:bg-emerald/90"
-            onClick={() => router.push("/apply/review")}
+            onClick={() => {
+              const reviewUrl = clientId
+                ? `/apply/review?clientId=${encodeURIComponent(clientId)}`
+                : "/apply/review";
+              router.push(reviewUrl);
+            }}
           >
             Continue to review
           </Button>
