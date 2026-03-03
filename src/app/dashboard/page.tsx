@@ -120,9 +120,11 @@ export default async function DashboardPage() {
 
   let draftCompleteness = 0;
   if (draftClient) {
-    const intake = clientFieldsToD2cIntake(
-      draftClient as unknown as ClientDraftFields,
-    );
+    // Map DB column `state` to adapter's `province` field
+    const intake = clientFieldsToD2cIntake({
+      ...draftClient,
+      province: draftClient.state,
+    } as unknown as ClientDraftFields);
     draftCompleteness = getDraftCompleteness(intake);
   }
 

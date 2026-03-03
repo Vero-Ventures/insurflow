@@ -22,14 +22,45 @@ import { UUID_REGEX } from "@/lib/validation/client";
 import { z } from "zod";
 
 /**
- * Validation schema for draft update request body.
+ * Zod schema mirroring D2cIntake with all fields optional for PATCH.
+ * Enforces type safety server-side so the adapter receives valid data.
  */
+const partialIntakeSchema = z
+  .object({
+    dateOfBirth: z.string().optional(),
+    gender: z.enum(["male", "female", ""]).optional(),
+    province: z
+      .enum([
+        "AB",
+        "BC",
+        "MB",
+        "NB",
+        "NL",
+        "NS",
+        "NT",
+        "NU",
+        "ON",
+        "PE",
+        "QC",
+        "SK",
+        "YT",
+        "",
+      ])
+      .optional(),
+    tobaccoUse: z.boolean().optional(),
+    annualIncome: z.number().optional(),
+    coverageAmount: z.number().optional(),
+    termYears: z.number().optional(),
+    healthClass: z
+      .enum(["preferred_plus", "preferred", "standard_plus", "standard", ""])
+      .optional(),
+  })
+  .refine((val) => Object.keys(val).length > 0, {
+    message: "intake must contain at least one field",
+  });
+
 const updateDraftSchema = z.object({
-  intake: z
-    .record(z.string(), z.unknown())
-    .refine((val) => Object.keys(val).length > 0, {
-      message: "intake must contain at least one field",
-    }),
+  intake: partialIntakeSchema,
 });
 
 /**
@@ -73,9 +104,10 @@ export const PATCH = withApiHandler(
       return handleValidationError(logger, validationResult.error);
     }
 
-    // Convert intake form fields to DB fields via adapter
+    // Convert intake form fields to DB fields via adapter.
+    // Zod has validated the shape matches D2cIntake (all fields optional).
     const clientFields = d2cIntakeToClientFields(
-      validationResult.data.intake as unknown as D2cIntake,
+      validationResult.data.intake as D2cIntake,
     );
 
     const result = await updateDraft(clientId, session.user.id, clientFields);

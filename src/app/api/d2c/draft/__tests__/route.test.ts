@@ -62,7 +62,7 @@ function createMockDraftRecord(overrides: Record<string, unknown> = {}) {
     lastName: "",
     dateOfBirth: "2000-01-01",
     sex: "M",
-    state: "NY",
+    province: "NY",
     smoker: false,
     healthRating: "standard",
     clientIncome: "0",
