@@ -23,13 +23,13 @@ describe("role experience helpers", () => {
     ).toBe("advisor");
   });
 
-  it("uses role hint when profile does not have an account type", () => {
+  it("ignores advisor role hint when profile does not have an account type", () => {
     expect(
       resolveOnboardingAccountType({
         profileAccountType: undefined,
         roleIntent: "advisor",
       }),
-    ).toBe("advisor");
+    ).toBeUndefined();
   });
 
   it("returns role-specific dashboard content", () => {
