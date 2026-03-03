@@ -34,6 +34,10 @@ import { CompliancePacketDocument } from "@/components/compliance/compliance-pac
 import { pdf } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { calculateAge } from "@/lib/client-utils";
+import {
+  extractPolicyCoverageAggregate,
+  hasClientValue,
+} from "./route-helpers";
 
 /** Keep this route on Node runtime for PDF generation */
 export const runtime = "nodejs";
@@ -42,12 +46,6 @@ function decimalToNumber(value: string | null | undefined): number {
   if (!value) return 0;
   const parsed = parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function hasClientValue(value: string | number | null | undefined): boolean {
-  if (value === null || value === undefined) return false;
-  const asString = String(value).trim();
-  return asString !== "";
 }
 
 function safeFilename(name: string): string {
@@ -123,14 +121,15 @@ export const GET = withApiHandler(
     // ── Resolve existing coverage (mirror calculate route) ─────────────
     const assetCount = Number(assetsData[0]?.assetCount ?? 0);
     const debtCount = Number(debtsData[0]?.debtCount ?? 0);
-    const policyCount = Number(policiesData[0]?.totalPolicyCount ?? 0);
+    const policyAggregate = extractPolicyCoverageAggregate({
+      totalPolicyCount: policiesData[0]?.totalPolicyCount,
+      totalActivePolicyCoverage: policiesData[0]?.totalActivePolicyCoverage,
+    });
 
     const { existingCoverage: existingLifeInsuranceCoverage, coverageSource } =
       resolveExistingCoverage({
-        totalPolicyCount: policyCount,
-        activePolicyCoverage: decimalToNumber(
-          policiesData[0]?.totalActivePolicyCoverage,
-        ),
+        totalPolicyCount: policyAggregate.totalPolicyCount,
+        activePolicyCoverage: policyAggregate.activePolicyCoverage,
         legacyCoverage: decimalToNumber(
           clientData.existingLifeInsuranceCoverage,
         ),
