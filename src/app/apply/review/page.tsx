@@ -31,21 +31,32 @@ export default async function ApplyReviewPage({
 
   const { clientId } = await searchParams;
 
-  // clientId must be present and valid UUID
-  if (!clientId || !UUID_REGEX.test(clientId)) {
-    redirect("/apply/intake");
-  }
-
-  // Verify the client row exists, belongs to this user, and is not deleted
   const db = getDb();
-  const row = await db.query.client.findFirst({
-    columns: { id: true },
-    where: and(
-      eq(client.id, clientId),
-      eq(client.userId, session.user.id),
-      isNull(client.deletedAt),
-    ),
-  });
+  const row = clientId
+    ? await (async () => {
+        if (!UUID_REGEX.test(clientId)) {
+          redirect("/apply/intake");
+        }
+
+        return db.query.client.findFirst({
+          columns: { id: true },
+          where: and(
+            eq(client.id, clientId),
+            eq(client.userId, session.user.id),
+            eq(client.status, "draft"),
+            isNull(client.deletedAt),
+          ),
+        });
+      })()
+    : await db.query.client.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(client.userId, session.user.id),
+          eq(client.status, "draft"),
+          isNull(client.deletedAt),
+        ),
+        orderBy: (clientTable, { desc }) => [desc(clientTable.updatedAt)],
+      });
 
   if (!row) {
     redirect("/apply/intake");
