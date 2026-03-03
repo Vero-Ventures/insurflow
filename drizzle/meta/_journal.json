@@ -71,6 +71,13 @@
       "when": 1772391487966,
       "tag": "0009_wet_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772513924709,
+      "tag": "0010_consent_timestamps",
+      "breakpoints": true
     }
   ]
 }
