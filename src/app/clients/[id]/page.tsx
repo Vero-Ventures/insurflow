@@ -69,9 +69,6 @@ import {
 } from "@/lib/client-detail-tabs";
 import { deriveClientJourneyStatus } from "@/lib/client-journey-status";
 
-const reportDownloadStorageKey = (clientId: string) =>
-  `insurflow:report-downloaded:${clientId}`;
-
 function ClientDetailContent() {
   const params = useParams();
   const router = useRouter();
@@ -87,19 +84,11 @@ function ClientDetailContent() {
   const [activeTab, setActiveTab] = useState<ClientDetailTab>(() =>
     resolveClientTab(searchParams.get("tab")),
   );
-  const [hasDownloadedReport, setHasDownloadedReport] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setActiveTab(resolveClientTab(searchParams.get("tab")));
   }, [searchParams]);
-
-  useEffect(() => {
-    const storedValue = window.localStorage.getItem(
-      reportDownloadStorageKey(clientId),
-    );
-    setHasDownloadedReport(storedValue === "true");
-  }, [clientId]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -270,13 +259,7 @@ function ClientDetailContent() {
     hasProfileData: completionStatus.profile,
     hasFinancialInputs: completionStatus.financialInputs,
     hasInsuranceEstimate: Boolean(insuranceResult),
-    hasDownloadedReport,
   });
-
-  const markReportDownloaded = () => {
-    setHasDownloadedReport(true);
-    window.localStorage.setItem(reportDownloadStorageKey(clientId), "true");
-  };
 
   return (
     <div className="container mx-auto px-4 pt-20">
@@ -335,10 +318,9 @@ function ClientDetailContent() {
                 Estimate {journeyStatus.estimateGenerated ? "ready" : "pending"}
               </Badge>
               <Badge
-                variant={journeyStatus.reportDownloaded ? "default" : "outline"}
+                variant={journeyStatus.reportReady ? "default" : "outline"}
               >
-                Report{" "}
-                {journeyStatus.reportDownloaded ? "downloaded" : "pending"}
+                Report {journeyStatus.reportReady ? "ready" : "pending"}
               </Badge>
               <span className="text-muted-foreground text-xs">
                 Journey progress: {journeyStatus.completedStages}/
@@ -569,7 +551,6 @@ function ClientDetailContent() {
             client={client}
             clientId={clientId}
             pdfDownloadUrl={`/api/clients/${clientId}/report-pdf`}
-            onReportDownloaded={markReportDownloaded}
           />
         </TabsContent>
       </Tabs>

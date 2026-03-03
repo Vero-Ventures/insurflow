@@ -23,49 +23,49 @@ import { Button } from "@/components/ui/button";
 const features = [
   {
     icon: Clock,
-    title: "5-Minute Analysis",
+    title: "5-Minute Intake",
     description:
-      "Complete comprehensive financial needs analysis in minutes, not hours. Your clients won't finish their coffee.",
-    stat: "90%",
-    statLabel: "Time saved",
+      "Complete a short eligibility check in minutes. Get a personalized coverage estimate before you finish your coffee.",
+    stat: "5 min",
+    statLabel: "Typical intake",
   },
   {
     icon: Calculator,
-    title: "Smart Calculations",
+    title: "Smart Estimates",
     description:
-      "Automatic income replacement, estate settling, and debt payoff calculations with real-time updates.",
-    stat: "$2.4M",
+      "Automatic income replacement and debt coverage calculations that update in real-time as you enter your details.",
+    stat: "$500K+",
     statLabel: "Avg. coverage calculated",
   },
   {
     icon: FileText,
-    title: "Instant Compliance",
+    title: "Clear Next Steps",
     description:
-      'Generate "Reasons Why" letters and cover letters that satisfy regulatory requirements instantly.',
+      "Review your estimate, understand the assumptions, and move to application when you're ready.",
     stat: "100%",
-    statLabel: "Compliance rate",
+    statLabel: "Transparency",
   },
   {
     icon: Sparkles,
-    title: "AI-Powered Insights",
+    title: "Guided Experience",
     description:
-      "Leverage GenAI to draft personalized documents and surface recommendations your competitors miss.",
-    stat: "3x",
-    statLabel: "Client engagement",
+      "Plain-language guidance throughout the process helps you make confident decisions about your coverage.",
+    stat: "D2C",
+    statLabel: "Consumer-first",
   },
 ];
 
 const painPoints = [
-  "Spending 2+ hours on spreadsheets for each client analysis",
-  "Manually calculating income replacement and estate requirements",
-  "Writing compliance documents from scratch every time",
+  "Spending hours researching coverage options online",
+  "Not knowing how much coverage you actually need",
+  "Confusing jargon and unclear pricing from carriers",
   "Feeling unsure about your protection gaps and next steps",
 ];
 
 const solutions = [
-  "Complete analysis in under 5 minutes with guided workflows",
-  "Automatic calculations that update in real-time as you input data",
-  "One-click AI generation of compliant 'Reasons Why' letters",
+  "Complete intake in under 5 minutes with guided questions",
+  "Get a personalized estimate based on your actual situation",
+  "Plain-language explanations of what you need and why",
   "Leave with a clear action plan and confidence in your coverage",
 ];
 
@@ -73,17 +73,17 @@ const demoFlowSteps = [
   {
     title: "1) Intake",
     description:
-      "Capture essential household details in a plain-language flow that keeps momentum with first-time prospects.",
+      "Answer a few simple questions about your household and financial situation in plain language.",
   },
   {
     title: "2) Estimate",
     description:
-      "See coverage needs, assumptions, and confidence at a glance so decisions stay grounded in real numbers.",
+      "See your recommended coverage, understand the assumptions, and review confidence at a glance.",
   },
   {
-    title: "3) Advisor Handoff",
+    title: "3) Apply",
     description:
-      "Transition into advisor-ready next steps with clear recommendations and a practical follow-up path.",
+      "When you're ready, submit your application directly and track status through to approval.",
   },
 ];
 
@@ -116,7 +116,7 @@ export default function Home() {
               variant="outline"
               className="border-emerald bg-emerald/5 text-emerald mb-8 px-4 py-1.5 text-sm font-medium"
             >
-              <Zap className="mr-1.5 h-3.5 w-3.5" />
+              <Zap className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               Client Preview
             </Badge>
           </div>
@@ -134,12 +134,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow helps advisors move cold outreach conversations into a
-            real client journey in{" "}
+            InsurFlow helps Canadians find the right term life coverage in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
             </span>{" "}
-            with clear protection estimates, assumptions, and next steps.
+            with clear estimates, transparent assumptions, and a simple
+            application path.
           </p>
 
           {/* CTA Buttons */}
@@ -150,18 +150,24 @@ export default function Home() {
           {/* Trust indicators */}
           <div className="animate-fade-up animation-delay-400 text-muted-foreground mt-12 flex flex-wrap items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <Shield className="text-emerald h-4 w-4" />
-              <span>SOC 2 Compliant</span>
+              <Shield className="text-emerald h-4 w-4" aria-hidden="true" />
+              <span>Secure & Private</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="text-emerald h-4 w-4" />
-              <span>FINRA Aligned</span>
+              <CheckCircle2
+                className="text-emerald h-4 w-4"
+                aria-hidden="true"
+              />
+              <span>Canada-first</span>
             </div>
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="animate-fade-in animation-delay-700 absolute bottom-8 left-1/2 -translate-x-1/2">
+        <div
+          className="animate-fade-in animation-delay-700 absolute bottom-8 left-1/2 -translate-x-1/2"
+          aria-hidden="true"
+        >
           <div className="border-muted-foreground/30 flex h-8 w-5 items-start justify-center rounded-full border-2 p-1">
             <div className="bg-muted-foreground/50 h-2 w-1 animate-bounce rounded-full" />
           </div>
@@ -181,8 +187,7 @@ export default function Home() {
               How the demo works
             </h2>
             <p className="text-muted-foreground mt-3 text-base sm:text-lg">
-              A simple three-step walkthrough that mirrors how advisors guide
-              real planning conversations.
+              A simple three-step process from intake to application.
             </p>
           </div>
 
@@ -210,9 +215,9 @@ export default function Home() {
               size="lg"
               className="bg-emerald hover:bg-emerald/90 text-base text-white"
             >
-              <Link href="/demo">
-                Start Demo
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href="/apply/intake">
+                Start Application
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
           </div>
@@ -228,6 +233,7 @@ export default function Home() {
             viewBox="0 0 400 800"
             fill="none"
             preserveAspectRatio="none"
+            aria-hidden="true"
           >
             <path
               d="M0,0 Q200,200 100,400 T200,800"
@@ -274,14 +280,17 @@ export default function Home() {
             <div className="animate-slide-in-right animation-delay-200 rounded-2xl bg-emerald-500/10 p-8 backdrop-blur-sm dark:bg-emerald-400/10">
               <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-emerald-300 dark:text-emerald-400">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                 </span>
                 The InsurFlow Way
               </h3>
               <ul className="space-y-4">
                 {solutions.map((solution, i) => (
                   <li key={i} className="flex items-start gap-3 text-white/90">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400" />
+                    <CheckCircle2
+                      className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400"
+                      aria-hidden="true"
+                    />
                     {solution}
                   </li>
                 ))}
@@ -308,8 +317,8 @@ export default function Home() {
               Everything you need to make confident decisions
             </h2>
             <p className="animate-fade-up animation-delay-100 text-muted-foreground mx-auto mt-4 max-w-2xl">
-              From client intake to compliance documentation, InsurFlow
-              streamlines your entire workflow with intelligent automation.
+              From intake to application, InsurFlow guides you through term life
+              coverage with transparent estimates and clear next steps.
             </p>
           </div>
 
@@ -325,7 +334,7 @@ export default function Home() {
                 <CardHeader className="relative">
                   <div className="mb-4 flex items-start justify-between">
                     <div className="from-primary/10 to-emerald/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br transition-transform duration-300 group-hover:scale-110">
-                      <feature.icon className="h-6 w-6" />
+                      <feature.icon className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <div className="text-right">
                       <div className="text-primary font-display text-2xl font-normal">
@@ -368,8 +377,8 @@ export default function Home() {
           </h2>
 
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
-            Join the preview and experience a client-first insurance planning
-            workflow designed around your life goals.
+            Check your term life coverage needs and start your application in
+            minutes.
           </p>
 
           <div className="animate-fade-up animation-delay-300 mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -378,18 +387,18 @@ export default function Home() {
               size="lg"
               className="animate-pulse-glow from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-lg hover:to-[oklch(0.45_0.10_230)]/90"
             >
-              <Link href="/demo">
-                Start Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
+              <Link href="/apply/intake">
+                Start Application
+                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg">
-              <Link href="/auth/sign-up">Get Early Access</Link>
+              <Link href="/auth/sign-in">Sign In</Link>
             </Button>
           </div>
 
           <p className="animate-fade-up animation-delay-400 text-muted-foreground mt-6 text-sm">
-            No credit card required. Setup takes 2 minutes.
+            No credit card required. Takes about 5 minutes.
           </p>
         </div>
       </section>

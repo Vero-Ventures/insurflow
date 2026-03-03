@@ -8,12 +8,11 @@ describe("deriveClientJourneyStatus", () => {
       hasProfileData: true,
       hasFinancialInputs: true,
       hasInsuranceEstimate: true,
-      hasDownloadedReport: true,
     });
 
     expect(status.intakeComplete).toBe(true);
     expect(status.estimateGenerated).toBe(true);
-    expect(status.reportDownloaded).toBe(true);
+    expect(status.reportReady).toBe(true);
     expect(status.completedStages).toBe(3);
     expect(status.totalStages).toBe(3);
   });
@@ -23,12 +22,11 @@ describe("deriveClientJourneyStatus", () => {
       hasProfileData: true,
       hasFinancialInputs: false,
       hasInsuranceEstimate: true,
-      hasDownloadedReport: true,
     });
 
     expect(status.intakeComplete).toBe(false);
     expect(status.estimateGenerated).toBe(false);
-    expect(status.reportDownloaded).toBe(false);
+    expect(status.reportReady).toBe(false);
     expect(status.completedStages).toBe(0);
   });
 
@@ -37,12 +35,11 @@ describe("deriveClientJourneyStatus", () => {
       hasProfileData: true,
       hasFinancialInputs: true,
       hasInsuranceEstimate: false,
-      hasDownloadedReport: true,
     });
 
     expect(status.intakeComplete).toBe(true);
     expect(status.estimateGenerated).toBe(false);
-    expect(status.reportDownloaded).toBe(false);
+    expect(status.reportReady).toBe(false);
     expect(status.completedStages).toBe(1);
   });
 });

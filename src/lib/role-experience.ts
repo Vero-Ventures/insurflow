@@ -1,8 +1,9 @@
 import {
+  APPLY_ESTIMATE_ROUTE,
+  APPLY_INTAKE_ROUTE,
+  APPLY_REVIEW_ROUTE,
   ADVISOR_WORKSPACE_ROUTE,
   CLIENT_INTAKE_START_ROUTE,
-  USER_PROFILE_ROUTE,
-  USER_SETTINGS_ROUTE,
 } from "@/lib/app-routes";
 
 export type AccountType = "client" | "advisor";
@@ -91,33 +92,33 @@ export function getDashboardExperience(
   }
 
   return {
-    eyebrow: "Your Planning Dashboard",
-    heading: "Manage your production account",
+    eyebrow: "My Application",
+    heading: "Track and continue your application",
     description:
-      "Keep your profile and preferences current so advisors can deliver accurate recommendations and follow-ups.",
+      "Resume your intake, review your estimate preview, and submit your application when you are ready.",
     cards: [
       {
-        title: "Review Profile",
+        title: "Continue Application",
         description:
-          "Verify your account details and contact information before your next planning conversation.",
-        href: USER_PROFILE_ROUTE,
-        ctaLabel: "Open Profile",
+          "Pick up where you left off and review the latest application details.",
+        href: APPLY_REVIEW_ROUTE,
+        ctaLabel: "Open Review",
         icon: "clipboard",
       },
       {
-        title: "Update Settings",
+        title: "Update Estimate",
         description:
-          "Adjust account preferences, security controls, and communication settings.",
-        href: USER_SETTINGS_ROUTE,
-        ctaLabel: "Open Settings",
+          "Adjust your intake details and refresh your estimate preview.",
+        href: APPLY_ESTIMATE_ROUTE,
+        ctaLabel: "View Estimate",
         icon: "chart",
       },
       {
-        title: "Security and Privacy",
+        title: "Start New Intake",
         description:
-          "Review account protection settings and keep your access secure.",
-        href: `${USER_SETTINGS_ROUTE}#security`,
-        ctaLabel: "Review Security",
+          "Start over with a new intake if your household details changed.",
+        href: APPLY_INTAKE_ROUTE,
+        ctaLabel: "Start Intake",
         icon: "handoff",
       },
     ],
@@ -142,7 +143,7 @@ export function getAccountTypeConfirmation(
     return {
       title: "Client account selected",
       description:
-        "You will see a client-focused dashboard with intake, estimate, and handoff guidance.",
+        "You will see an application-focused dashboard with intake, estimate preview, and submission guidance.",
       tone: "client",
     };
   }

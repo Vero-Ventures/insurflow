@@ -2,13 +2,12 @@ export type ClientJourneyInputs = {
   hasProfileData: boolean;
   hasFinancialInputs: boolean;
   hasInsuranceEstimate: boolean;
-  hasDownloadedReport: boolean;
 };
 
 export type ClientJourneyStatus = {
   intakeComplete: boolean;
   estimateGenerated: boolean;
-  reportDownloaded: boolean;
+  reportReady: boolean;
   completedStages: number;
   totalStages: number;
 };
@@ -20,18 +19,18 @@ export function deriveClientJourneyStatus(
 ): ClientJourneyStatus {
   const intakeComplete = inputs.hasProfileData && inputs.hasFinancialInputs;
   const estimateGenerated = intakeComplete && inputs.hasInsuranceEstimate;
-  const reportDownloaded = estimateGenerated && inputs.hasDownloadedReport;
+  const reportReady = estimateGenerated;
 
   const completedStages = [
     intakeComplete,
     estimateGenerated,
-    reportDownloaded,
+    reportReady,
   ].filter(Boolean).length;
 
   return {
     intakeComplete,
     estimateGenerated,
-    reportDownloaded,
+    reportReady,
     completedStages,
     totalStages: TOTAL_STAGES,
   };

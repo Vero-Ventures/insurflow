@@ -37,7 +37,7 @@ describe("role experience helpers", () => {
     const clientExperience = getDashboardExperience("client");
 
     expect(advisorExperience.heading).toMatch(/advisor workspace/i);
-    expect(clientExperience.heading).toMatch(/production account/i);
+    expect(clientExperience.heading).toMatch(/continue your application/i);
     expect(advisorExperience.cards[0]?.title).not.toBe(
       clientExperience.cards[0]?.title,
     );
@@ -62,6 +62,9 @@ describe("role experience helpers", () => {
     );
     expect(getAccountTypeConfirmation("client")?.title).toMatch(
       /client account selected/i,
+    );
+    expect(getAccountTypeConfirmation("client")?.description).toMatch(
+      /application-focused dashboard/i,
     );
     expect(getAccountTypeConfirmation("")).toBeNull();
   });

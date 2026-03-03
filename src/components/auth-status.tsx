@@ -3,7 +3,7 @@
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 
 export function AuthStatus() {
@@ -13,7 +13,7 @@ export function AuthStatus() {
         <Button asChild size="lg" className="text-base">
           <Link href={AUTHENTICATED_HOME_ROUTE}>
             Go to Dashboard
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
       </SignedIn>
@@ -24,19 +24,10 @@ export function AuthStatus() {
           size="lg"
           className="from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-base shadow-lg transition-all hover:to-[oklch(0.45_0.10_230)]/90 hover:shadow-xl"
         >
-          <Link href="/demo">
-            <Play className="mr-1.5 h-4 w-4" />
-            Start Demo
-            <ArrowRight className="ml-2 h-4 w-4" />
+          <Link href="/apply/intake">
+            Start Application
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          size="lg"
-          className="border-border/60 text-base"
-        >
-          <Link href="/auth/sign-up">Get Early Access</Link>
         </Button>
         <Button
           asChild

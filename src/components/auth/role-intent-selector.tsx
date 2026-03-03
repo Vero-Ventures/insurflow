@@ -26,7 +26,7 @@ export function RoleIntentSelector({ selectedRole }: RoleIntentSelectorProps) {
   return (
     <div className="mb-5 space-y-2">
       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-        Choose account type
+        Choose how you will use InsurFlow
       </p>
       <div className="grid grid-cols-2 gap-2">
         <Link
@@ -38,7 +38,7 @@ export function RoleIntentSelector({ selectedRole }: RoleIntentSelectorProps) {
               : "border-border text-muted-foreground hover:text-foreground",
           )}
         >
-          Client
+          Applicant
         </Link>
         <Link
           href="/auth/sign-up?role=advisor"
@@ -49,7 +49,7 @@ export function RoleIntentSelector({ selectedRole }: RoleIntentSelectorProps) {
               : "border-border text-muted-foreground hover:text-foreground",
           )}
         >
-          Advisor
+          Licensed Partner
         </Link>
       </div>
       <p className="text-muted-foreground text-xs">
