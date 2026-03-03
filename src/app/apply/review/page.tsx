@@ -96,7 +96,7 @@ export default function ApplyReviewPage() {
               />
               <Label
                 htmlFor="consent-transmit"
-                className="text-sm leading-relaxed font-normal"
+                className="text-sm leading-relaxed font-normal whitespace-pre-line"
               >
                 {complianceConfig.transmitConsentText}
               </Label>
