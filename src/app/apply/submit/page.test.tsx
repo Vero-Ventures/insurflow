@@ -89,7 +89,7 @@ describe("ApplySubmitPage", () => {
   describe("submitApplicationAction", () => {
     it("redirects to sign-up when no session", async () => {
       getSessionMock.mockResolvedValue(null);
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
@@ -99,7 +99,7 @@ describe("ApplySubmitPage", () => {
 
     it("redirects to review when consentTransmit is missing", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       // consentTransmit intentionally omitted
@@ -113,7 +113,7 @@ describe("ApplySubmitPage", () => {
 
     it("redirects to review when healthInfoAuth is missing", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       formData.set("consentTransmit", "true");
@@ -127,7 +127,7 @@ describe("ApplySubmitPage", () => {
 
     it("redirects to review when esignIntent is missing", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       formData.set("consentTransmit", "true");
@@ -141,7 +141,7 @@ describe("ApplySubmitPage", () => {
 
     it("redirects to review when final consentConfirmed is missing", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       formData.set("consentTransmit", "true");
@@ -155,7 +155,7 @@ describe("ApplySubmitPage", () => {
 
     it("persists consent timestamps and redirects to dashboard when all consents present", async () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       formData.set("consentTransmit", "true");
@@ -199,7 +199,7 @@ describe("ApplySubmitPage", () => {
       getSessionMock.mockResolvedValue({ user: { id: "u1" } });
       // Simulate no matching client record
       returningMock.mockResolvedValue([]);
-      const mod = await import("@/app/apply/submit/page");
+      const mod = await import("@/app/apply/submit/actions");
 
       const formData = new FormData();
       formData.set("consentTransmit", "true");

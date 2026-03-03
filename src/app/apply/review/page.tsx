@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/client-utils";
 import { loadD2cIntake } from "@/lib/d2c/intake-storage";
 import { complianceConfig } from "@/lib/d2c/compliance-config";
-import { submitApplicationAction } from "@/app/apply/submit/page";
+import { submitApplicationAction } from "@/app/apply/submit/actions";
 
 export default function ApplyReviewPage() {
   const router = useRouter();
