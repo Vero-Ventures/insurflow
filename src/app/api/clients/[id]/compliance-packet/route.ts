@@ -2,6 +2,8 @@ import { getDb } from "@/server/db";
 import { asset, client, debt, policy } from "@/server/db/schemas";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { type ReactElement } from "react";
+import { type DocumentProps } from "@react-pdf/renderer";
 import { withApiHandler } from "@/lib/api/route-helpers";
 import {
   calculateInsuranceNeedsRoundedWithTrace,
@@ -193,11 +195,14 @@ export const GET = withApiHandler(
           finalYearIncome: decimalToNumber(clientData.clientIncome),
           assets: [],
         });
-      } catch (error) {
+      } catch (err) {
         await logger.warn("Settling requirements calculation failed", {
           clientId,
           state: stateCode,
-          error,
+          error:
+            err instanceof Error
+              ? { name: err.name, message: err.message, stack: err.stack }
+              : undefined,
         });
       }
     }
@@ -254,11 +259,7 @@ export const GET = withApiHandler(
     const packet = buildCompliancePacket(packetInput);
 
     const doc = createElement(CompliancePacketDocument, { packet });
-    const buffer = await pdf(
-      doc as unknown as import("react").ReactElement<
-        import("@react-pdf/renderer").DocumentProps
-      >,
-    ).toBuffer();
+    const buffer = await pdf(doc as ReactElement<DocumentProps>).toBuffer();
 
     const fullName = `${clientData.firstName} ${clientData.lastName}`;
     const filename = `${safeFilename(fullName)}-compliance-packet.pdf`;
