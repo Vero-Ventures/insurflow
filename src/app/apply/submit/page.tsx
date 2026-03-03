@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { Card } from "@/components/ui/card";
@@ -37,25 +37,23 @@ export async function submitApplicationAction(formData: FormData) {
   const now = new Date();
   const db = getDb();
 
-  // Atomically persist consent timestamps to the client record.
-  // The WHERE condition ensures timestamps are never overwritten once set.
-  // No-op if no matching draft client record exists yet (v1 limitation —
-  // client record creation is a future step in the D2C flow).
-  await db
+  // Persist consent timestamps using COALESCE so each field is only written
+  // once — if the column already has a value it is preserved unchanged.
+  // .returning() lets us detect whether a matching client row was found;
+  // if 0 rows are updated, the user is sent back to the review step.
+  const updated = await db
     .update(client)
     .set({
-      consentTransmitToCarrierAt: now,
-      healthInfoAuthorizationAt: now,
-      esignIntentAcknowledgedAt: now,
+      consentTransmitToCarrierAt: sql`COALESCE(${client.consentTransmitToCarrierAt}, ${now})`,
+      healthInfoAuthorizationAt: sql`COALESCE(${client.healthInfoAuthorizationAt}, ${now})`,
+      esignIntentAcknowledgedAt: sql`COALESCE(${client.esignIntentAcknowledgedAt}, ${now})`,
     })
-    .where(
-      and(
-        eq(client.userId, session.user.id),
-        isNull(client.deletedAt),
-        // Only set timestamps if they have not been recorded yet
-        isNull(client.consentTransmitToCarrierAt),
-      ),
-    );
+    .where(and(eq(client.userId, session.user.id), isNull(client.deletedAt)))
+    .returning();
+  if (updated.length === 0) {
+    // No client row found — submission cannot be recorded.
+    redirect("/apply/review");
+  }
 
   redirect(AUTHENTICATED_HOME_ROUTE);
 }
