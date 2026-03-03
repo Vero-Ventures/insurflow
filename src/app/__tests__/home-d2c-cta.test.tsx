@@ -22,7 +22,7 @@ vi.mock("next/image", () => ({
 import { AuthStatus } from "@/components/auth-status";
 
 describe("Home page D2C CTA", () => {
-  it("renders primary signed-out CTA linking to /apply/intake", () => {
+  it("renders primary signed-out CTA linking to sign-up with client role", () => {
     render(<AuthStatus />);
 
     const signedOutContainer = screen.getByTestId("signed-out");
@@ -30,18 +30,18 @@ describe("Home page D2C CTA", () => {
       name: /start application/i,
     });
 
-    expect(primaryCta.getAttribute("href")).toBe("/apply/intake");
+    expect(primaryCta.getAttribute("href")).toBe("/auth/sign-up?role=client");
   });
 
-  it("does not link to /demo for signed-out users", () => {
+  it("renders demo as the secondary signed-out CTA", () => {
     render(<AuthStatus />);
 
     const signedOutContainer = screen.getByTestId("signed-out");
     const links = within(signedOutContainer).getAllByRole("link");
+    const hrefs = links.map((link) => link.getAttribute("href"));
 
-    const demoLink = links.find(
-      (link) => link.getAttribute("href") === "/demo",
-    );
-    expect(demoLink).toBeUndefined();
+    expect(hrefs[0]).toBe("/auth/sign-up?role=client");
+    expect(hrefs[1]).toBe("/demo");
+    expect(hrefs[2]).toBe("/auth/sign-in");
   });
 });
