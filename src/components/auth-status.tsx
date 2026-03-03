@@ -12,8 +12,8 @@ export function AuthStatus() {
       <SignedIn>
         <Button asChild size="lg" className="text-base">
           <Link href={AUTHENTICATED_HOME_ROUTE}>
-            Go to Dashboard
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            Continue Application
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </SignedIn>
@@ -24,10 +24,18 @@ export function AuthStatus() {
           size="lg"
           className="from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-base shadow-lg transition-all hover:to-[oklch(0.45_0.10_230)]/90 hover:shadow-xl"
         >
-          <Link href="/apply/intake">
+          <Link href="/auth/sign-up">
             Start Application
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          size="lg"
+          className="border-border/60 text-base"
+        >
+          <Link href="/demo">View Demo</Link>
         </Button>
         <Button
           asChild

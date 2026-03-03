@@ -26,34 +26,21 @@ export function RoleIntentSelector({ selectedRole }: RoleIntentSelectorProps) {
   return (
     <div className="mb-5 space-y-2">
       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-        Choose how you will use InsurFlow
+        Account type
       </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Link
-          href="/auth/sign-up?role=client"
-          className={cn(
-            "inline-flex h-10 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-            selectedRole === "client"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Applicant
-        </Link>
-        <Link
-          href="/auth/sign-up?role=advisor"
-          className={cn(
-            "inline-flex h-10 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-            selectedRole === "advisor"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Licensed Partner
-        </Link>
-      </div>
+      <Link
+        href="/auth/sign-up?role=client"
+        className={cn(
+          "inline-flex h-10 w-full items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+          selectedRole === "client"
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-border text-muted-foreground hover:text-foreground",
+        )}
+      >
+        Applicant
+      </Link>
       <p className="text-muted-foreground text-xs">
-        You can still confirm this during onboarding before setup is complete.
+        You can confirm your details during onboarding before submission.
       </p>
     </div>
   );
