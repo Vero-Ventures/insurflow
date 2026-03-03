@@ -32,6 +32,15 @@ describe("role experience helpers", () => {
     ).toBeUndefined();
   });
 
+  it("uses client role hint when profile does not have an account type", () => {
+    expect(
+      resolveOnboardingAccountType({
+        profileAccountType: undefined,
+        roleIntent: "client",
+      }),
+    ).toBe("client");
+  });
+
   it("returns role-specific dashboard content", () => {
     const advisorExperience = getDashboardExperience("advisor");
     const clientExperience = getDashboardExperience("client");

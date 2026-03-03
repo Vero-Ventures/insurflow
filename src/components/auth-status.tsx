@@ -24,7 +24,7 @@ export function AuthStatus() {
           size="lg"
           className="from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-base shadow-lg transition-all hover:to-[oklch(0.45_0.10_230)]/90 hover:shadow-xl"
         >
-          <Link href="/auth/sign-up">
+          <Link href="/auth/sign-up?role=client">
             Start Application
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { RoleIntentSelector } from "@/components/auth/role-intent-selector";
-import { normalizeAccountType } from "@/lib/role-experience";
 
 export function generateStaticParams() {
   return Object.values(authViewPaths).map((path) => ({ path }));
@@ -52,19 +51,14 @@ const stats = [
 
 export default async function AuthPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ path: string }>;
-  searchParams: Promise<{ role?: string | string[] }>;
 }) {
   const { path } = await params;
-  const { role } = await searchParams;
 
   // Determine if this is sign-up or sign-in for contextual copy
   const isSignUp = path === "sign-up";
-  const selectedRole = normalizeAccountType(
-    Array.isArray(role) ? role[0] : role,
-  );
+  const selectedRole = "client" as const;
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col lg:flex-row">
@@ -154,9 +148,9 @@ export default async function AuthPage({
               Built for Canada-first D2C Term Life
             </h2>
             <p className="max-w-md leading-relaxed text-white/80">
-              Start with eligibility intake, review a non-binding estimate, and
-              submit your application directly. We keep carrier integration
-              provider-agnostic while status tracking stays transparent.
+              Start with a short eligibility check, review a non-binding
+              estimate, and submit your application. You can track each update
+              in one place.
             </p>
           </div>
 

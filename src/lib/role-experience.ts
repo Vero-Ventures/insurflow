@@ -47,7 +47,8 @@ export function resolveOnboardingAccountType({
   const persistedRole = normalizeAccountType(profileAccountType);
   if (persistedRole) return persistedRole;
 
-  if (roleIntent === "client") return "client";
+  const intentAccountType = normalizeAccountType(roleIntent);
+  if (intentAccountType === "client") return "client";
 
   return undefined;
 }

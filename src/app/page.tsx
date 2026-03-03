@@ -69,7 +69,7 @@ const solutions = [
   "Transparent provider status updates in your account",
 ];
 
-const demoFlowSteps = [
+const applicationFlowSteps = [
   {
     title: "1) Intake",
     description:
@@ -181,7 +181,7 @@ export default function Home() {
               variant="secondary"
               className="bg-emerald/10 text-emerald mb-4"
             >
-              Demo Flow
+              Application Flow
             </Badge>
             <h2 className="text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
               How it works
@@ -193,7 +193,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {demoFlowSteps.map((step, index) => (
+            {applicationFlowSteps.map((step, index) => (
               <Card
                 key={step.title}
                 className={`animate-fade-up border-border/60 bg-card/70 animation-delay-${(index + 1) * 100}`}
@@ -388,7 +388,7 @@ export default function Home() {
               size="lg"
               className="animate-pulse-glow from-primary hover:from-primary/90 bg-gradient-to-r to-[oklch(0.45_0.10_230)] text-lg hover:to-[oklch(0.45_0.10_230)]/90"
             >
-              <Link href="/auth/sign-up">
+              <Link href="/auth/sign-up?role=client">
                 Start Application
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
