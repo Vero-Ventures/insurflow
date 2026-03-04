@@ -15,13 +15,13 @@ import {
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
 import { buildClientTabHref } from "@/lib/client-detail-tabs";
+import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import {
   CLIENT_INTAKE_START_ROUTE,
   APPLY_INTAKE_ROUTE,
 } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import { getDraftCompleteness } from "@/lib/d2c/client-adapter";
-import type { ClientDraftFields } from "@/lib/d2c/client-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
@@ -89,42 +89,41 @@ export default async function DashboardPage() {
     columns: { accountType: true },
   });
 
-  const recentClient = await db.query.client.findFirst({
-    where: and(eq(client.userId, userId), isNull(client.deletedAt)),
-    orderBy: (client, { desc }) => [desc(client.updatedAt)],
-    columns: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      updatedAt: true,
-      status: true,
-      dateOfBirth: true,
-      sex: true,
-      state: true,
-      smoker: true,
-      healthRating: true,
-      clientIncome: true,
-      existingLifeInsuranceCoverage: true,
-      replacementDurationYears: true,
-    },
-  });
-
   const accountType = normalizeAccountType(profile?.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
 
-  // Compute draft progress for client accounts
-  const draftClient =
-    accountType === "client" && recentClient?.status === "draft"
-      ? recentClient
+  const recentClient =
+    accountType === "advisor"
+      ? await db.query.client.findFirst({
+          where: and(eq(client.userId, userId), isNull(client.deletedAt)),
+          orderBy: (client, { desc }) => [desc(client.updatedAt)],
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            updatedAt: true,
+            status: true,
+            dateOfBirth: true,
+            sex: true,
+            state: true,
+            smoker: true,
+            healthRating: true,
+            clientIncome: true,
+            existingLifeInsuranceCoverage: true,
+            replacementDurationYears: true,
+          },
+        })
       : null;
+
+  // Compute draft progress for client accounts
+  const draftResult =
+    accountType === "client" ? await findLatestDraft(userId) : null;
+  const draftClient =
+    draftResult && draftResult.found ? draftResult.draft : null;
 
   let draftCompleteness = 0;
   if (draftClient) {
-    // Map DB column `state` to adapter's `province` field
-    const intake = clientFieldsToD2cIntake({
-      ...draftClient,
-      province: draftClient.state,
-    } as unknown as ClientDraftFields);
+    const intake = clientFieldsToD2cIntake(draftClient);
     draftCompleteness = getDraftCompleteness(intake);
   }
 

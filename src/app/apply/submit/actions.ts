@@ -59,6 +59,7 @@ export async function submitApplicationAction(formData: FormData) {
       and(
         eq(client.id, clientId),
         eq(client.userId, session.user.id),
+        eq(client.status, "draft"),
         isNull(client.deletedAt),
       ),
     )

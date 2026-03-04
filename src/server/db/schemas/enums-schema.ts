@@ -16,8 +16,9 @@ import { pgEnum } from "drizzle-orm/pg-core";
 // GEOGRAPHIC ENUMS
 // ============================================================================
 
-/** US states and District of Columbia */
+/** US states, District of Columbia, and Canadian provinces/territories */
 export const stateEnum = pgEnum("state", [
+  // US states
   "AL",
   "AK",
   "AZ",
@@ -69,6 +70,20 @@ export const stateEnum = pgEnum("state", [
   "WI",
   "WY",
   "DC",
+  // Canadian provinces and territories
+  "AB",
+  "BC",
+  "MB",
+  "NB",
+  "NL",
+  "NS",
+  "NT",
+  "NU",
+  "ON",
+  "PE",
+  "QC",
+  "SK",
+  "YT",
 ]);
 
 // ============================================================================

@@ -139,44 +139,47 @@ export function decimalStringToNumber(
  * Converts D2C intake form state to a partial Client record suitable
  * for database insertion or update.
  *
- * Missing/empty fields are included with sensible defaults so the draft
- * can be created immediately on intake page load.
+ * Every field present in `intake` is emitted — including empty strings
+ * and zeros — so that user-cleared values are persisted to the DB
+ * (via their sentinel representations) rather than silently omitted.
  */
 export function d2cIntakeToClientFields(
-  intake: D2cIntake,
+  intake: Partial<D2cIntake>,
 ): Partial<ClientDraftFields> {
   const fields: Partial<ClientDraftFields> = {};
 
-  if (intake.dateOfBirth) {
-    fields.dateOfBirth = intake.dateOfBirth;
+  if ("dateOfBirth" in intake) {
+    fields.dateOfBirth = intake.dateOfBirth || SENTINEL_DEFAULTS.dateOfBirth;
   }
 
-  if (intake.gender) {
-    fields.sex = genderToSex(intake.gender);
+  if ("gender" in intake) {
+    fields.sex = genderToSex(intake.gender ?? "");
   }
 
-  if (intake.province) {
-    fields.province = intake.province;
+  if ("province" in intake) {
+    fields.province = intake.province || SENTINEL_DEFAULTS.province;
   }
 
-  fields.smoker = intake.tobaccoUse;
-
-  if (intake.healthClass) {
-    fields.healthRating = healthClassToRating(intake.healthClass);
+  if ("tobaccoUse" in intake) {
+    fields.smoker = intake.tobaccoUse ?? false;
   }
 
-  if (intake.annualIncome > 0) {
-    fields.clientIncome = numberToDecimalString(intake.annualIncome);
+  if ("healthClass" in intake) {
+    fields.healthRating = healthClassToRating(intake.healthClass ?? "");
   }
 
-  if (intake.coverageAmount > 0) {
+  if ("annualIncome" in intake) {
+    fields.clientIncome = numberToDecimalString(intake.annualIncome ?? 0);
+  }
+
+  if ("coverageAmount" in intake) {
     fields.existingLifeInsuranceCoverage = numberToDecimalString(
-      intake.coverageAmount,
+      intake.coverageAmount ?? 0,
     );
   }
 
-  if (intake.termYears > 0) {
-    fields.replacementDurationYears = intake.termYears;
+  if ("termYears" in intake) {
+    fields.replacementDurationYears = intake.termYears ?? 20;
   }
 
   return fields;
@@ -187,19 +190,62 @@ export function d2cIntakeToClientFields(
 // ============================================================================
 
 /**
+ * Sentinel defaults used when creating a draft before the user has
+ * entered any data.  When ALL of these match the stored record the
+ * draft is considered "untouched" and every field is mapped back to
+ * its empty/zero D2cIntake value so the completeness indicator reads 0 %.
+ */
+const SENTINEL_DEFAULTS = {
+  dateOfBirth: "2000-01-01",
+  province: "NY",
+  sex: "M",
+  smoker: false,
+  healthRating: "standard",
+  clientIncome: "0",
+  existingLifeInsuranceCoverage: "0",
+  replacementDurationYears: 20,
+} as const;
+
+function isDraftUntouched(c: ClientDraftFields): boolean {
+  return (
+    c.dateOfBirth === SENTINEL_DEFAULTS.dateOfBirth &&
+    c.province === SENTINEL_DEFAULTS.province &&
+    c.sex === SENTINEL_DEFAULTS.sex &&
+    c.smoker === SENTINEL_DEFAULTS.smoker &&
+    c.healthRating === SENTINEL_DEFAULTS.healthRating &&
+    decimalStringToNumber(c.clientIncome) === 0 &&
+    decimalStringToNumber(c.existingLifeInsuranceCoverage) === 0
+  );
+}
+
+/**
  * Converts a Client DB record back to D2cIntake form state.
  * Used when a consumer resumes a draft application.
+ *
+ * Sentinel detection:
+ * - Individual sentinels ("2000-01-01", "NY") are always mapped to "".
+ * - If the entire record matches the sentinel defaults the draft is
+ *   treated as untouched and sex / healthRating are also cleared so
+ *   they do not inflate the completeness indicator.
  */
 export function clientFieldsToD2cIntake(client: ClientDraftFields): D2cIntake {
+  const untouched = isDraftUntouched(client);
+
   return {
-    dateOfBirth: client.dateOfBirth ?? "",
-    gender: sexToGender(client.sex),
-    province: client.province as D2cIntake["province"],
-    tobaccoUse: client.smoker ?? false,
+    dateOfBirth:
+      client.dateOfBirth === SENTINEL_DEFAULTS.dateOfBirth
+        ? ""
+        : client.dateOfBirth,
+    gender: untouched ? "" : sexToGender(client.sex),
+    province:
+      client.province === SENTINEL_DEFAULTS.province
+        ? ""
+        : (client.province as D2cIntake["province"]),
+    tobaccoUse: untouched ? false : (client.smoker ?? false),
     annualIncome: decimalStringToNumber(client.clientIncome),
     coverageAmount: decimalStringToNumber(client.existingLifeInsuranceCoverage),
     termYears: client.replacementDurationYears ?? 20,
-    healthClass: healthRatingToClass(client.healthRating),
+    healthClass: untouched ? "" : healthRatingToClass(client.healthRating),
   };
 }
 

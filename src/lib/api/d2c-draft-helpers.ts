@@ -12,9 +12,9 @@
  * - Update is partial: only provided fields are overwritten.
  */
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { client } from "@/server/db/schemas";
+import { client, user } from "@/server/db/schemas";
 import type { ClientDraftFields } from "@/lib/d2c/client-adapter";
 
 /** Drizzle insert type for the client table. */
@@ -119,6 +119,38 @@ export async function findLatestDraft(
   };
 }
 
+/**
+ * Finds a specific draft by client ID and user ID.
+ *
+ * Returns the draft only if it is owned by the given userId,
+ * has status "draft", and is not soft-deleted.
+ */
+export async function findDraftById(
+  clientId: string,
+  userId: string,
+): Promise<FindDraftSuccess | FindDraftNotFound> {
+  const db = getDb();
+
+  const draft = await db.query.client.findFirst({
+    where: and(
+      eq(client.id, clientId),
+      eq(client.userId, userId),
+      eq(client.status, "draft"),
+      isNull(client.deletedAt),
+    ),
+    columns: DRAFT_SELECT_COLUMNS,
+  });
+
+  if (!draft) {
+    return { found: false };
+  }
+
+  return {
+    found: true,
+    draft: toDraftClientRecord(draft as unknown as DbClientRecord),
+  };
+}
+
 // ============================================================================
 // Create draft
 // ============================================================================
@@ -171,12 +203,6 @@ export async function createDraft(
   userId: string,
   initialFields?: Partial<ClientDraftFields>,
 ): Promise<CreateDraftSuccess | CreateDraftError> {
-  // Check for existing draft first (idempotent)
-  const existing = await findLatestDraft(userId);
-  if (existing.found) {
-    return { success: true, draft: existing.draft, existed: true };
-  }
-
   const db = getDb();
 
   const values = {
@@ -185,34 +211,60 @@ export async function createDraft(
     ...toDbFields(stripUndefined(initialFields ?? {})),
   } as ClientInsert;
 
-  const [inserted] = await db.insert(client).values(values).returning();
+  // Serialize draft creation per user to prevent duplicate drafts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (db as any).transaction(async (tx: any) => {
+    await tx.execute(
+      sql`SELECT id FROM ${user} WHERE id = ${userId} FOR UPDATE`,
+    );
 
-  if (!inserted) {
-    return {
-      success: false,
-      errorCode: "INSERT_FAILED",
-      message: "Failed to create draft client record",
-    };
-  }
+    const existing = await tx.query.client.findFirst({
+      where: and(
+        eq(client.userId, userId),
+        eq(client.status, "draft"),
+        isNull(client.deletedAt),
+      ),
+      columns: DRAFT_SELECT_COLUMNS,
+      orderBy: [desc(client.createdAt)],
+    });
 
-  // Re-fetch with the exact column set to maintain type consistency
-  const draft = await db.query.client.findFirst({
-    where: eq(client.id, inserted.id),
-    columns: DRAFT_SELECT_COLUMNS,
+    if (existing) {
+      return { existed: true, draft: existing };
+    }
+
+    const [inserted] = await tx.insert(client).values(values).returning();
+
+    if (!inserted) {
+      return { error: "INSERT_FAILED" as const };
+    }
+
+    const draft = await tx.query.client.findFirst({
+      where: eq(client.id, inserted.id),
+      columns: DRAFT_SELECT_COLUMNS,
+    });
+
+    if (!draft) {
+      return { error: "RETRIEVE_FAILED" as const };
+    }
+
+    return { existed: false, draft };
   });
 
-  if (!draft) {
+  if (!result || "error" in result) {
     return {
       success: false,
       errorCode: "INSERT_FAILED",
-      message: "Draft was created but could not be retrieved",
+      message:
+        result && "error" in result && result.error === "RETRIEVE_FAILED"
+          ? "Draft was created but could not be retrieved"
+          : "Failed to create draft client record",
     };
   }
 
   return {
     success: true,
-    draft: toDraftClientRecord(draft as unknown as DbClientRecord),
-    existed: false,
+    draft: toDraftClientRecord(result.draft as unknown as DbClientRecord),
+    existed: result.existed,
   };
 }
 

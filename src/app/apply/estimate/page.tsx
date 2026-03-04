@@ -6,7 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/client-utils";
-import { loadD2cIntake, saveD2cIntake } from "@/lib/d2c/intake-storage";
+import {
+  DEFAULT_D2C_INTAKE,
+  loadD2cIntake,
+  saveD2cIntake,
+} from "@/lib/d2c/intake-storage";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
@@ -31,41 +35,31 @@ function getAgeFromDateOfBirth(dateOfBirth: string): number {
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
- * and sessionStorage is empty (direct navigation / cross-device resume).
+ * to avoid stale sessionStorage resumes.
+ *
+ * When a clientId is present, fetches the specific draft via
+ * GET /api/d2c/draft/[clientId] rather than the generic collection
+ * endpoint, which could return a different (newer) draft.
  */
 function useIntakeData(clientId: string | null) {
-  const [intake, setIntake] = useState(() => loadD2cIntake());
+  const [intake, setIntake] = useState(DEFAULT_D2C_INTAKE);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const stored = loadD2cIntake();
-      const hasStoredData =
-        stored.province !== "" ||
-        stored.dateOfBirth !== "" ||
-        stored.annualIncome > 0;
-
-      // If sessionStorage already has data, use it (normal flow from intake page)
-      if (hasStoredData) {
-        if (!cancelled) {
-          setIntake(stored);
-          setIsReady(true);
-        }
-        return;
-      }
-
-      // If we have a clientId but no sessionStorage data, try loading from DB
-      // (cross-device resume or direct navigation with clientId)
+      // Case 1: clientId provided — always load from DB (source of truth)
       if (clientId) {
         try {
-          const res = await fetch("/api/d2c/draft");
+          const res = await fetch(
+            `/api/d2c/draft/${encodeURIComponent(clientId)}`,
+          );
           if (res.ok) {
             const json = (await res.json()) as {
-              data?: { draft?: DraftClientRecord };
+              draft?: DraftClientRecord;
             };
-            const draft = json.data?.draft;
+            const draft = json.draft;
             if (draft && !cancelled) {
               const loaded = clientFieldsToD2cIntake(draft);
               setIntake(loaded);
@@ -75,10 +69,20 @@ function useIntakeData(clientId: string | null) {
             }
           }
         } catch {
-          // Fall through to stored data
+          // Fall through — draft not accessible
         }
+
+        // Draft could not be loaded for this clientId — use empty defaults
+        // so the redirect-to-intake guard fires correctly.
+        if (!cancelled) {
+          setIntake(DEFAULT_D2C_INTAKE);
+          setIsReady(true);
+        }
+        return;
       }
 
+      // Case 2: No clientId — use sessionStorage (normal flow from intake page)
+      const stored = loadD2cIntake();
       if (!cancelled) {
         setIntake(stored);
         setIsReady(true);
@@ -136,9 +140,12 @@ export default function ApplyEstimatePage() {
   useEffect(() => {
     if (!isHydrated) return;
     if (!intake.province || !intake.dateOfBirth || intake.annualIncome <= 0) {
-      router.replace("/apply/intake");
+      const intakeUrl = clientId
+        ? `/apply/intake?clientId=${encodeURIComponent(clientId)}`
+        : "/apply/intake";
+      router.replace(intakeUrl);
     }
-  }, [intake, isHydrated, router]);
+  }, [intake, isHydrated, router, clientId]);
 
   useEffect(() => {
     if (!isHydrated) return;

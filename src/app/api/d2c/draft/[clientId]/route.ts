@@ -1,6 +1,7 @@
 /**
- * @fileoverview D2C Draft update API route.
+ * @fileoverview D2C Draft single-resource API routes.
  *
+ * GET   /api/d2c/draft/[clientId] - Retrieve a specific draft by ID
  * PATCH /api/d2c/draft/[clientId] - Update a draft with partial intake data
  *
  * Security:
@@ -15,9 +16,8 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
-import { updateDraft } from "@/lib/api/d2c-draft-helpers";
+import { findDraftById, updateDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
-import type { D2cIntake } from "@/lib/d2c/intake-types";
 import { UUID_REGEX } from "@/lib/validation/client";
 import { z } from "zod";
 
@@ -64,6 +64,56 @@ const updateDraftSchema = z.object({
 });
 
 /**
+ * GET /api/d2c/draft/[clientId] - Retrieve a specific draft
+ *
+ * Path parameters:
+ * - clientId: UUID of the draft client
+ *
+ * Response (found):
+ * - draft: The draft client record
+ *
+ * Response (not found):
+ * - 404 with error message
+ */
+export const GET = withApiHandler(
+  {
+    endpoint: "/api/d2c/draft/[clientId]",
+    method: "GET",
+    requireAdvisor: false,
+  },
+  async (_request, { logger, session, params }) => {
+    const clientId = params.clientId;
+
+    if (!clientId || !UUID_REGEX.test(clientId)) {
+      await logger.warn("Invalid client ID format", { clientId });
+      return NextResponse.json(
+        { error: "Invalid client ID format" },
+        { status: 400 },
+      );
+    }
+
+    logger.addContext({ clientId });
+
+    const result = await findDraftById(clientId, session.user.id);
+
+    if (!result.found) {
+      await logger.info("Draft not found", { statusCode: 404, clientId });
+      return NextResponse.json(
+        { error: "Draft not found or you do not have access" },
+        { status: 404 },
+      );
+    }
+
+    await logger.info("Draft retrieved successfully", {
+      statusCode: 200,
+      clientId: result.draft.id,
+    });
+
+    return { data: { draft: result.draft } };
+  },
+);
+
+/**
  * PATCH /api/d2c/draft/[clientId] - Update a draft application
  *
  * Path parameters:
@@ -106,9 +156,7 @@ export const PATCH = withApiHandler(
 
     // Convert intake form fields to DB fields via adapter.
     // Zod has validated the shape matches D2cIntake (all fields optional).
-    const clientFields = d2cIntakeToClientFields(
-      validationResult.data.intake as D2cIntake,
-    );
+    const clientFields = d2cIntakeToClientFields(validationResult.data.intake);
 
     const result = await updateDraft(clientId, session.user.id, clientFields);
 

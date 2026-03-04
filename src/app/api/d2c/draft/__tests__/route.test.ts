@@ -91,8 +91,9 @@ describe("POST /api/d2c/draft", () => {
     return POST(
       new Request("http://localhost/api/d2c/draft", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: body !== undefined ? JSON.stringify(body) : "{}",
+        headers:
+          body !== undefined ? { "Content-Type": "application/json" } : {},
+        body: body !== undefined ? JSON.stringify(body) : undefined,
       }),
       { params: Promise.resolve({}) },
     );
@@ -165,9 +166,23 @@ describe("POST /api/d2c/draft", () => {
       existed: false,
     });
 
-    const response = await postDraft({});
+    const response = await postDraft();
 
     expect(response.status).toBe(201);
+  });
+
+  it("returns 400 for malformed JSON", async () => {
+    const { POST } = await import("../route");
+    const response = await POST(
+      new Request("http://localhost/api/d2c/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{not-json}",
+      }),
+      { params: Promise.resolve({}) },
+    );
+
+    expect(response.status).toBe(400);
   });
 
   it("returns 500 when draft creation fails", async () => {

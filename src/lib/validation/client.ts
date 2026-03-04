@@ -1,9 +1,11 @@
 import { z } from "zod";
 
 /**
- * US states and District of Columbia
+ * US states, District of Columbia, and Canadian provinces/territories.
+ * Must stay in sync with the `stateEnum` in enums-schema.ts.
  */
 export const STATES = [
+  // US states
   "AL",
   "AK",
   "AZ",
@@ -55,6 +57,20 @@ export const STATES = [
   "WI",
   "WY",
   "DC",
+  // Canadian provinces and territories
+  "AB",
+  "BC",
+  "MB",
+  "NB",
+  "NL",
+  "NS",
+  "NT",
+  "NU",
+  "ON",
+  "PE",
+  "QC",
+  "SK",
+  "YT",
 ] as const;
 
 /**

@@ -6,11 +6,14 @@
  * - For unauthenticated users: falls back to sessionStorage
  *
  * On mount:
- * 1. If clientId search param exists → load that draft from DB
- * 2. If authenticated → create/find draft via POST /api/d2c/draft
+ * 1. If clientId search param exists → load that specific draft from DB
+ * 2. If authenticated (no clientId) → GET existing draft (don't create one)
  * 3. Otherwise → load from sessionStorage
  *
- * On field change:
+ * On first field change (authenticated, no draft yet):
+ * - POST /api/d2c/draft to create the draft, then PATCH for updates
+ *
+ * On subsequent field changes:
  * - Always update sessionStorage (immediate, for navigation between steps)
  * - If authenticated + has clientId → debounced PATCH to DB
  */
@@ -55,6 +58,10 @@ interface DraftPersistenceState {
 /**
  * Hook that manages D2C intake form state with DB persistence for
  * authenticated users and sessionStorage fallback for guests.
+ *
+ * Draft creation is deferred until the user actually modifies a field,
+ * avoiding a DB row with sentinel defaults being created the moment the
+ * intake page is opened.
  */
 export function useDraftPersistence(
   options: UseDraftPersistenceOptions = {},
@@ -72,10 +79,11 @@ export function useDraftPersistence(
     authClient.useSession();
   const isAuthenticated = !!session?.user;
 
-  // Refs to avoid stale closures in debounce
+  // Refs to avoid stale closures in debounce / ensureDraft
   const clientIdRef = useRef<string | null>(clientId);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAuthenticatedRef = useRef(isAuthenticated);
+  const draftCreationInFlightRef = useRef(false);
 
   // Keep refs in sync with state (useEffect to avoid render-phase ref updates)
   useEffect(() => {
@@ -96,15 +104,17 @@ export function useDraftPersistence(
     let cancelled = false;
 
     async function hydrate() {
-      // Case 1: clientId from URL param (resume link) — load from DB
+      // Case 1: clientId from URL param (resume link) — load specific draft
       if (initialClientId && isAuthenticated) {
         try {
-          const res = await fetch("/api/d2c/draft");
+          const res = await fetch(
+            `/api/d2c/draft/${encodeURIComponent(initialClientId)}`,
+          );
           if (res.ok) {
             const json = (await res.json()) as {
-              data?: { draft?: DraftClientRecord };
+              draft?: DraftClientRecord;
             };
-            const draft = json.data?.draft;
+            const draft = json.draft;
             if (draft && !cancelled) {
               const loaded = clientFieldsToD2cIntake(draft);
               setIntake(loaded);
@@ -119,49 +129,32 @@ export function useDraftPersistence(
         }
       }
 
-      // Case 2: Authenticated but no clientId — create/find draft
+      // Case 2: Authenticated but no clientId — check for existing draft
+      // (read-only GET, do NOT create a new draft on page load)
       if (isAuthenticated && !initialClientId) {
         try {
-          // Seed the draft with any existing sessionStorage data
-          const stored = loadD2cIntake();
-          const hasStoredData =
-            stored.province !== "" ||
-            stored.dateOfBirth !== "" ||
-            stored.annualIncome > 0;
-
-          const body = hasStoredData ? { intake: stored } : undefined;
-          const res = await fetch("/api/d2c/draft", {
-            method: "POST",
-            headers: body ? { "Content-Type": "application/json" } : {},
-            body: body ? JSON.stringify(body) : undefined,
-          });
-
+          const res = await fetch("/api/d2c/draft");
           if (res.ok) {
             const json = (await res.json()) as {
-              data?: { draft?: DraftClientRecord; existed?: boolean };
+              draft?: DraftClientRecord;
             };
-            const draft = json.data?.draft;
+            const draft = json.draft;
             if (draft && !cancelled) {
-              // If draft existed on server, use server data (source of truth)
-              if (json.data?.existed) {
-                const loaded = clientFieldsToD2cIntake(draft);
-                setIntake(loaded);
-                saveD2cIntake(loaded);
-              } else {
-                // New draft created — use local sessionStorage data
-                setIntake(stored);
-              }
+              const loaded = clientFieldsToD2cIntake(draft);
+              setIntake(loaded);
+              saveD2cIntake(loaded);
               setClientId(draft.id);
               setIsHydrated(true);
               return;
             }
           }
+          // 404 = no existing draft — fall through to sessionStorage
         } catch {
           // Fall through to sessionStorage
         }
       }
 
-      // Case 3: Unauthenticated or API failed — sessionStorage only
+      // Case 3: Unauthenticated, no existing draft, or API failed
       if (!cancelled) {
         setIntake(loadD2cIntake());
         setIsHydrated(true);
@@ -176,34 +169,81 @@ export function useDraftPersistence(
   }, [isSessionPending, isAuthenticated, initialClientId]);
 
   // ----------------------------------------------------------------
+  // Lazy draft creation (called on first field update when no draft)
+  // ----------------------------------------------------------------
+  const ensureDraft = useCallback(
+    async (currentIntake: D2cIntake): Promise<string | null> => {
+      // Already have a draft or creation is in flight
+      if (clientIdRef.current) return clientIdRef.current;
+      if (!isAuthenticatedRef.current) return null;
+      if (draftCreationInFlightRef.current) return null;
+
+      draftCreationInFlightRef.current = true;
+      try {
+        const res = await fetch("/api/d2c/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ intake: currentIntake }),
+        });
+
+        if (res.ok) {
+          const json = (await res.json()) as {
+            draft?: DraftClientRecord;
+            existed?: boolean;
+          };
+          const draft = json.draft;
+          if (draft) {
+            setClientId(draft.id);
+            clientIdRef.current = draft.id;
+            return draft.id;
+          }
+        }
+      } catch {
+        // Silent fail — sessionStorage still has the data
+      } finally {
+        draftCreationInFlightRef.current = false;
+      }
+
+      return null;
+    },
+    [],
+  );
+
+  // ----------------------------------------------------------------
   // Debounced DB save
   // ----------------------------------------------------------------
-  const saveToDB = useCallback((updatedIntake: D2cIntake) => {
-    if (!isAuthenticatedRef.current || !clientIdRef.current) return;
+  const saveToDB = useCallback(
+    (updatedIntake: D2cIntake) => {
+      if (!isAuthenticatedRef.current) return;
 
-    // Clear any pending debounce
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+      // Clear any pending debounce
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    debounceTimerRef.current = setTimeout(() => {
-      const cId = clientIdRef.current;
-      if (!cId) return;
+      debounceTimerRef.current = setTimeout(() => {
+        void (async () => {
+          // If no draft yet, create one first
+          const cId = clientIdRef.current ?? (await ensureDraft(updatedIntake));
+          if (!cId) return;
 
-      setIsSaving(true);
-      fetch(`/api/d2c/draft/${cId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intake: updatedIntake }),
-      })
-        .catch(() => {
-          // Silently fail — sessionStorage still has the data
-        })
-        .finally(() => {
-          setIsSaving(false);
-        });
-    }, AUTO_SAVE_DEBOUNCE_MS);
-  }, []);
+          setIsSaving(true);
+          try {
+            await fetch(`/api/d2c/draft/${encodeURIComponent(cId)}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ intake: updatedIntake }),
+            });
+          } catch {
+            // Silently fail — sessionStorage still has the data
+          } finally {
+            setIsSaving(false);
+          }
+        })();
+      }, AUTO_SAVE_DEBOUNCE_MS);
+    },
+    [ensureDraft],
+  );
 
   // Cleanup debounce timer on unmount
   useEffect(() => {

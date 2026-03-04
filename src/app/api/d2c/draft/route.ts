@@ -32,21 +32,28 @@ export const POST = withApiHandler(
     requireAdvisor: false,
   },
   async (request, { logger, session }) => {
-    // Body is optional — an empty POST creates a draft with defaults
+    // Body is optional — an empty POST creates a draft with defaults.
+    // Detect empty body by content-length or reading text once, then
+    // parse JSON only when there is content.  This avoids swallowing
+    // malformed JSON: if content exists but is not valid JSON, we
+    // return 400 instead of silently proceeding.
     let initialFields = {};
 
-    try {
+    const contentLength = request.headers.get("content-length");
+    const hasBody = contentLength !== null && contentLength !== "0";
+
+    if (hasBody) {
       const bodyResult = await parseJsonBody<{ intake?: Partial<D2cIntake> }>(
         request,
         logger,
       );
-      if (!("error" in bodyResult) && bodyResult.body.intake) {
-        initialFields = d2cIntakeToClientFields(
-          bodyResult.body.intake as D2cIntake,
-        );
+      if ("error" in bodyResult) {
+        return bodyResult.error;
       }
-    } catch {
-      // Empty body is fine — use defaults
+
+      if (bodyResult.body.intake) {
+        initialFields = d2cIntakeToClientFields(bodyResult.body.intake);
+      }
     }
 
     const result = await createDraft(session.user.id, initialFields);

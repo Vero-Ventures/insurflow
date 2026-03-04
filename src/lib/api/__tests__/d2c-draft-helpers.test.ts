@@ -25,6 +25,8 @@ import {
 const mockClientFindFirst = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
+const mockTransaction = vi.fn();
+const mockExecute = vi.fn();
 
 const mockValues = vi.fn().mockReturnThis();
 const mockSet = vi.fn().mockReturnThis();
@@ -44,6 +46,8 @@ vi.mock("@/server/db", () => ({
     },
     insert: mockInsert,
     update: mockUpdate,
+    transaction: mockTransaction,
+    execute: mockExecute,
   })),
 }));
 
@@ -121,11 +125,20 @@ describe("findLatestDraft", () => {
 describe("createDraft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTransaction.mockImplementation(async (callback: unknown) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (callback as any)({
+        query: {
+          client: { findFirst: mockClientFindFirst },
+        },
+        insert: mockInsert,
+        execute: mockExecute,
+      }),
+    );
   });
 
   it("returns existing draft if one already exists (idempotent)", async () => {
     const existingDraft = createMockDraft();
-    // First findFirst call (from findLatestDraft) returns existing
     mockClientFindFirst.mockResolvedValue(existingDraft);
 
     const result = await createDraft(TEST_UUIDS.validUserId);

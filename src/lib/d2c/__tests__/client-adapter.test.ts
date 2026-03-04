@@ -172,22 +172,26 @@ describe("d2cIntakeToClientFields", () => {
     expect(result.healthRating).toBe("preferred");
   });
 
-  it("omits fields with empty/zero values", () => {
+  it("maps empty/zero values to draft defaults", () => {
     const result = d2cIntakeToClientFields(DEFAULT_D2C_INTAKE);
 
-    // Empty strings should not be mapped
-    expect(result.dateOfBirth).toBeUndefined();
-    expect(result.sex).toBeUndefined();
-    expect(result.province).toBeUndefined();
-    expect(result.healthRating).toBeUndefined();
-
-    // Zero income/coverage should not be mapped
-    expect(result.clientIncome).toBeUndefined();
-    expect(result.existingLifeInsuranceCoverage).toBeUndefined();
-
-    // Boolean and positive number are always mapped
+    expect(result.dateOfBirth).toBe("2000-01-01");
+    expect(result.sex).toBe("M");
+    expect(result.province).toBe("NY");
+    expect(result.healthRating).toBe("standard");
+    expect(result.clientIncome).toBe("0");
+    expect(result.existingLifeInsuranceCoverage).toBe("0");
     expect(result.smoker).toBe(false);
     expect(result.replacementDurationYears).toBe(20);
+  });
+
+  it("only includes fields explicitly provided", () => {
+    const result = d2cIntakeToClientFields({ annualIncome: 75000 });
+
+    expect(result.clientIncome).toBe("75000.00");
+    expect(result.dateOfBirth).toBeUndefined();
+    expect(result.province).toBeUndefined();
+    expect(result.sex).toBeUndefined();
   });
 
   it("handles partial intake (only province and income)", () => {
@@ -201,7 +205,7 @@ describe("d2cIntakeToClientFields", () => {
 
     expect(result.province).toBe("BC");
     expect(result.clientIncome).toBe("60000.00");
-    expect(result.dateOfBirth).toBeUndefined();
+    expect(result.dateOfBirth).toBe("2000-01-01");
   });
 });
 
