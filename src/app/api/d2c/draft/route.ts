@@ -10,7 +10,11 @@
  */
 
 import { NextResponse } from "next/server";
-import { withApiHandler, parseJsonBody } from "@/lib/api/route-helpers";
+import {
+  withApiHandler,
+  parseJsonBody,
+  requireClientAccount,
+} from "@/lib/api/route-helpers";
 import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
 import type { D2cIntake } from "@/lib/d2c/intake-types";
@@ -32,6 +36,9 @@ export const POST = withApiHandler(
     requireAdvisor: false,
   },
   async (request, { logger, session }) => {
+    const clientGuard = await requireClientAccount(logger, session);
+    if (clientGuard) return clientGuard;
+
     // Body is optional — an empty POST creates a draft with defaults.
     // Detect empty body by content-length or reading text once, then
     // parse JSON only when there is content.  This avoids swallowing
@@ -106,6 +113,9 @@ export const GET = withApiHandler(
     requireAdvisor: false,
   },
   async (_request, { logger, session }) => {
+    const clientGuard = await requireClientAccount(logger, session);
+    if (clientGuard) return clientGuard;
+
     const result = await findLatestDraft(session.user.id);
 
     if (!result.found) {

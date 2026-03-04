@@ -44,6 +44,9 @@ function getAgeFromDateOfBirth(dateOfBirth: string): number {
 function useIntakeData(clientId: string | null) {
   const [intake, setIntake] = useState(DEFAULT_D2C_INTAKE);
   const [isReady, setIsReady] = useState(false);
+  const [resolvedClientId, setResolvedClientId] = useState<string | null>(
+    clientId,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +67,7 @@ function useIntakeData(clientId: string | null) {
               const loaded = clientFieldsToD2cIntake(draft);
               setIntake(loaded);
               saveD2cIntake(loaded);
+              setResolvedClientId(draft.id);
               setIsReady(true);
               return;
             }
@@ -76,6 +80,7 @@ function useIntakeData(clientId: string | null) {
         // so the redirect-to-intake guard fires correctly.
         if (!cancelled) {
           setIntake(DEFAULT_D2C_INTAKE);
+          setResolvedClientId(null);
           setIsReady(true);
         }
         return;
@@ -85,6 +90,7 @@ function useIntakeData(clientId: string | null) {
       const stored = loadD2cIntake();
       if (!cancelled) {
         setIntake(stored);
+        setResolvedClientId(null);
         setIsReady(true);
       }
     }
@@ -95,7 +101,7 @@ function useIntakeData(clientId: string | null) {
     };
   }, [clientId]);
 
-  return { intake, isReady };
+  return { intake, isReady, resolvedClientId };
 }
 
 export default function ApplyEstimatePage() {
@@ -106,7 +112,7 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
 
-  const { intake, isReady } = useIntakeData(clientId);
+  const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
 
   const needs = useMemo(
@@ -140,12 +146,12 @@ export default function ApplyEstimatePage() {
   useEffect(() => {
     if (!isHydrated) return;
     if (!intake.province || !intake.dateOfBirth || intake.annualIncome <= 0) {
-      const intakeUrl = clientId
-        ? `/apply/intake?clientId=${encodeURIComponent(clientId)}`
+      const intakeUrl = resolvedClientId
+        ? `/apply/intake?clientId=${encodeURIComponent(resolvedClientId)}`
         : "/apply/intake";
       router.replace(intakeUrl);
     }
-  }, [intake, isHydrated, router, clientId]);
+  }, [intake, isHydrated, router, resolvedClientId]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -231,8 +237,8 @@ export default function ApplyEstimatePage() {
           <Button
             className="bg-emerald hover:bg-emerald/90"
             onClick={() => {
-              const reviewUrl = clientId
-                ? `/apply/review?clientId=${encodeURIComponent(clientId)}`
+              const reviewUrl = resolvedClientId
+                ? `/apply/review?clientId=${encodeURIComponent(resolvedClientId)}`
                 : "/apply/review";
               router.push(reviewUrl);
             }}

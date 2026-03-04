@@ -16,6 +16,9 @@ describe("ApplyEstimatePage", () => {
   beforeEach(() => {
     pushMock.mockReset();
     replaceMock.mockReset();
+    getMock.mockReset();
+    getMock.mockReturnValue(null);
+    vi.restoreAllMocks();
     sessionStorage.clear();
     sessionStorage.setItem(
       "d2c_intake",
@@ -61,6 +64,26 @@ describe("ApplyEstimatePage", () => {
     const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     getMock.mockReturnValue(testClientId);
 
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft: {
+          id: testClientId,
+          firstName: "",
+          lastName: "",
+          dateOfBirth: "1990-05-15",
+          sex: "M",
+          province: "ON",
+          smoker: false,
+          healthRating: "standard",
+          clientIncome: "90000",
+          existingLifeInsuranceCoverage: "500000",
+          replacementDurationYears: 20,
+          status: "draft",
+        },
+      }),
+    } as Response);
+
     render(<ApplyEstimatePage />);
 
     const continueButton = await screen.findByRole("button", {
@@ -71,5 +94,20 @@ describe("ApplyEstimatePage", () => {
     expect(pushMock).toHaveBeenCalledWith(
       `/apply/review?clientId=${testClientId}`,
     );
+  });
+
+  it("redirects to intake without stale clientId when draft load fails", async () => {
+    const staleClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(staleClientId);
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+    } as Response);
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith("/apply/intake");
+    });
   });
 });

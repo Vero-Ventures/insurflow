@@ -15,6 +15,7 @@ import {
   withApiHandler,
   parseJsonBody,
   handleValidationError,
+  requireClientAccount,
 } from "@/lib/api/route-helpers";
 import { findDraftById, updateDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
@@ -82,6 +83,9 @@ export const GET = withApiHandler(
     requireAdvisor: false,
   },
   async (_request, { logger, session, params }) => {
+    const clientGuard = await requireClientAccount(logger, session);
+    if (clientGuard) return clientGuard;
+
     const clientId = params.clientId;
 
     if (!clientId || !UUID_REGEX.test(clientId)) {
@@ -132,6 +136,9 @@ export const PATCH = withApiHandler(
     requireAdvisor: false,
   },
   async (request, { logger, session, params }) => {
+    const clientGuard = await requireClientAccount(logger, session);
+    if (clientGuard) return clientGuard;
+
     const clientId = params.clientId;
 
     // Validate clientId format

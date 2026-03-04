@@ -127,6 +127,11 @@ export function useDraftPersistence(
         } catch {
           // Fall through to sessionStorage
         }
+
+        if (!cancelled) {
+          setClientId(null);
+          clientIdRef.current = null;
+        }
       }
 
       // Case 2: Authenticated but no clientId — check for existing draft

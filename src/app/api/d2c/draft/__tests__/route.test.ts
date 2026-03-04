@@ -107,6 +107,16 @@ describe("POST /api/d2c/draft", () => {
     expect(response.status).toBe(401);
   });
 
+  it("returns 403 for non-client accounts", async () => {
+    mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+
+    const response = await postDraft();
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body.error).toContain("Client account required");
+  });
+
   it("returns 201 when creating a new draft", async () => {
     const mockDraft = createMockDraftRecord();
     mockCreateDraft.mockResolvedValue({
@@ -229,6 +239,16 @@ describe("GET /api/d2c/draft", () => {
     expect(response.status).toBe(401);
   });
 
+  it("returns 403 for non-client accounts", async () => {
+    mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+
+    const response = await getDraft();
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body.error).toContain("Client account required");
+  });
+
   it("returns 200 with draft when one exists", async () => {
     const mockDraft = createMockDraftRecord();
     mockFindLatestDraft.mockResolvedValue({
@@ -286,6 +306,18 @@ describe("PATCH /api/d2c/draft/[clientId]", () => {
     });
 
     expect(response.status).toBe(401);
+  });
+
+  it("returns 403 for non-client accounts", async () => {
+    mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+
+    const response = await patchDraft(TEST_UUIDS.validClientId, {
+      intake: { annualIncome: 50000 },
+    });
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body.error).toContain("Client account required");
   });
 
   it("returns 400 for invalid client ID format", async () => {

@@ -2,19 +2,26 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import D2cIntakePage from "@/app/apply/intake/page";
 
-const pushMock = vi.fn();
+const { pushMock, searchParamGetMock, useSessionMock } = vi.hoisted(() => ({
+  pushMock: vi.fn(),
+  searchParamGetMock: vi.fn().mockReturnValue(null),
+  useSessionMock: vi.fn<
+    () => {
+      data: { user: { id: string } } | null;
+      isPending: boolean;
+    }
+  >(() => ({ data: null, isPending: false })),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
-  useSearchParams: () => ({
-    get: () => null,
-  }),
+  useSearchParams: () => ({ get: searchParamGetMock }),
 }));
 
 // Mock the auth client to simulate unauthenticated user (sessionStorage fallback)
 vi.mock("@/server/better-auth/client", () => ({
   authClient: {
-    useSession: () => ({ data: null, isPending: false }),
+    useSession: useSessionMock,
   },
 }));
 
@@ -39,9 +46,14 @@ Object.defineProperty(window, "sessionStorage", {
 describe("D2cIntakePage", () => {
   beforeEach(() => {
     pushMock.mockReset();
+    searchParamGetMock.mockReset();
+    searchParamGetMock.mockReturnValue(null);
+    useSessionMock.mockReset();
+    useSessionMock.mockReturnValue({ data: null, isPending: false });
     sessionStorageMock.clear();
     sessionStorageMock.getItem.mockClear();
     sessionStorageMock.setItem.mockClear();
+    vi.restoreAllMocks();
   });
 
   it("renders province field", async () => {
@@ -153,5 +165,39 @@ describe("D2cIntakePage", () => {
       expect(screen.getByRole("option", { name: /alberta/i })).toBeTruthy();
       expect(screen.getByRole("option", { name: /quebec/i })).toBeTruthy();
     });
+  });
+
+  it("drops stale clientId when resume draft cannot be loaded", async () => {
+    const staleClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    searchParamGetMock.mockReturnValue(staleClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user_123" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+    } as Response);
+
+    render(<D2cIntakePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/annual income/i)).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+      target: { value: "1990-05-15" },
+    });
+    fireEvent.change(screen.getByLabelText(/annual income/i), {
+      target: { value: "75000" },
+    });
+    fireEvent.click(screen.getByLabelText(/province/i));
+    fireEvent.click(await screen.findByRole("option", { name: /ontario/i }));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /continue to estimate/i }),
+    );
+
+    expect(pushMock).toHaveBeenCalledWith("/apply/estimate");
   });
 });
