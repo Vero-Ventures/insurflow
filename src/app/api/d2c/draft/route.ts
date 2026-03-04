@@ -39,10 +39,16 @@ export const POST = withApiHandler(
     // return 400 instead of silently proceeding.
     let initialFields = {};
 
+    // Detect whether to parse body:
+    // - If Content-Type is application/json, always try to parse (catches malformed JSON)
+    // - If Content-Length is "0", skip (explicitly empty)
+    // - Otherwise, skip (no body sent)
+    const contentType = request.headers.get("content-type");
     const contentLength = request.headers.get("content-length");
-    const hasBody = contentLength !== null && contentLength !== "0";
+    const hasJsonBody =
+      contentType?.includes("application/json") && contentLength !== "0";
 
-    if (hasBody) {
+    if (hasJsonBody) {
       const bodyResult = await parseJsonBody<{ intake?: Partial<D2cIntake> }>(
         request,
         logger,
