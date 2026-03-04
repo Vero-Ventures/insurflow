@@ -13,6 +13,7 @@
  * - beneficiaries-schema.ts: Beneficiary & assetAllocation entities
  * - corporate-schema.ts: Business, keyPerson, shareholder, corporateInsuranceNeed
  * - d2c-resume-link-schema.ts: D2C resume link for save/resume functionality
+ * - applications-schema.ts: D2C application lifecycle (application + applicationEvent)
  */
 
 import { relations } from "drizzle-orm";
@@ -37,6 +38,7 @@ export {
   insuranceNeedTypeEnum,
   policyTypeEnum,
   policyStatusEnum,
+  applicationStatusEnum,
 } from "./enums-schema";
 
 // Audit log enums
@@ -66,6 +68,7 @@ export { auditLog } from "./audit-logs-schema";
 
 // D2C tables
 export { d2cResumeLink } from "./d2c-resume-link-schema";
+export { application, applicationEvent } from "./applications-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -93,11 +96,26 @@ export { auditLogRelations } from "./audit-logs-schema";
 // D2C relations
 export { d2cResumeLinkRelations } from "./d2c-resume-link-schema";
 
+// Application relations
+export {
+  applicationRelations,
+  applicationEventRelations,
+} from "./applications-schema";
+
 // D2C types
 export type {
   D2cResumeLink,
   D2cResumeLinkInsert,
 } from "./d2c-resume-link-schema";
+
+// Application types
+export type {
+  Application,
+  ApplicationInsert,
+  ApplicationEvent,
+  ApplicationEventInsert,
+  ApplicationStatus,
+} from "./applications-schema";
 
 // Audit log types
 export type {
@@ -122,6 +140,7 @@ import { assetAllocation } from "./beneficiaries-schema";
 import { userProfile } from "./user-profile-schema";
 import { policy } from "./policies-schema";
 import { d2cResumeLink } from "./d2c-resume-link-schema";
+import { application } from "./applications-schema";
 
 /**
  * Complete user relations including clients.
@@ -136,11 +155,12 @@ export const userRelations = relations(user, ({ many, one }) => ({
     references: [userProfile.userId],
   }),
   d2cResumeLinks: many(d2cResumeLink),
+  applications: many(application),
 }));
 
 /**
  * Complete client relations with all child entities.
- * Links clients to assets, debts, beneficiaries, businesses, policies, and D2C resume links.
+ * Links clients to assets, debts, beneficiaries, businesses, policies, D2C resume links, and applications.
  */
 export const clientRelations = relations(client, ({ one, many }) => ({
   user: one(user, { fields: [client.userId], references: [user.id] }),
@@ -150,6 +170,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   businesses: many(business),
   policies: many(policy),
   d2cResumeLinks: many(d2cResumeLink),
+  applications: many(application),
 }));
 
 /**

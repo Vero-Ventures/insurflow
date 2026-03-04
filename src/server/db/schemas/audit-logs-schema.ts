@@ -51,6 +51,8 @@ export const auditEntityTypeEnum = pgEnum("audit_entity_type", [
   "corporate_insurance_need",
   "policy",
   "user_profile",
+  "application",
+  "application_event",
 ]);
 
 // ============================================================================
