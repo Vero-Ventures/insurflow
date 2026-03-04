@@ -83,6 +83,15 @@ describe("getMockPremiumRangeMonthly", () => {
     expect(status.events.length).toBeGreaterThan(0);
   });
 
+  it("returns parseable timestamps for malformed submission IDs", async () => {
+    const status = await mockTermLifeProvider.getApplicationStatus({
+      submissionId: "not-a-uuid",
+    });
+
+    expect(status.events[0]?.at).toBe("2026-01-01T12:00:00.000Z");
+    expect(Number.isNaN(Date.parse(status.events[0]?.at ?? ""))).toBe(false);
+  });
+
   it("verifies webhook signatures", async () => {
     const verified = await mockTermLifeProvider.verifyWebhook({
       payload: "{}",

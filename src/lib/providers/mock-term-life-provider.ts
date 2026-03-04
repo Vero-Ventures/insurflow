@@ -48,8 +48,9 @@ function toDeterministicSubmissionId(draftId: string): string {
 }
 
 function getSubmittedAt(submissionId: string): string {
-  const suffix = Number.parseInt(submissionId.slice(0, 2), 16) % 28;
-  const day = String(1 + suffix).padStart(2, "0");
+  const parsedPrefix = Number.parseInt(submissionId.slice(0, 2), 16);
+  const suffix = Number.isFinite(parsedPrefix) ? parsedPrefix % 28 : 0;
+  const day = String(suffix + 1).padStart(2, "0");
   return `2026-01-${day}T12:00:00.000Z`;
 }
 
