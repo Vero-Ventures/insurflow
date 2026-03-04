@@ -35,10 +35,11 @@ export function DraftResumeLink({ clientId }: DraftResumeLinkProps) {
       }
 
       const json = (await res.json()) as {
+        resumeUrl?: string;
         data?: { resumeUrl?: string };
       };
 
-      const resumePath = json.data?.resumeUrl;
+      const resumePath = json.resumeUrl ?? json.data?.resumeUrl;
       if (!resumePath) {
         setState("error");
         return;

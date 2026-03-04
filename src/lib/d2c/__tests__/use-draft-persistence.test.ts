@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDraftPersistence } from "../use-draft-persistence";
+import { D2C_INTAKE_STORAGE_KEY } from "../intake-storage";
 
 const mockUseSession = vi.fn();
 
@@ -128,5 +129,82 @@ describe("useDraftPersistence", () => {
 
     expect(patchBodies).toHaveLength(2);
     expect(patchBodies[1]?.intake?.annualIncome).toBe(200000);
+  });
+
+  it("does not hydrate authenticated users from sessionStorage when no draft exists", async () => {
+    const postBodies: Array<{ intake?: { annualIncome?: number } }> = [];
+
+    sessionStorage.setItem(
+      D2C_INTAKE_STORAGE_KEY,
+      JSON.stringify({ annualIncome: 777777 }),
+    );
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (method === "GET" && url.endsWith("/api/d2c/draft")) {
+          return Promise.resolve(new Response(null, { status: 404 }));
+        }
+
+        if (method === "POST" && url.endsWith("/api/d2c/draft")) {
+          postBodies.push(JSON.parse(String(init?.body ?? "{}")));
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                draft: {
+                  id: "client-2",
+                  firstName: "",
+                  lastName: "",
+                  dateOfBirth: "2000-01-01",
+                  sex: "M",
+                  province: "NY",
+                  smoker: false,
+                  healthRating: "standard",
+                  clientIncome: "0",
+                  existingLifeInsuranceCoverage: "0",
+                  replacementDurationYears: 20,
+                  status: "draft",
+                },
+              }),
+              {
+                status: 201,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+
+        if (method === "PATCH" && url.endsWith("/api/d2c/draft/client-2")) {
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    const { result } = renderHook(() => useDraftPersistence());
+
+    await waitFor(() => {
+      expect(result.current.isHydrated).toBe(true);
+    });
+
+    expect(result.current.intake.annualIncome).toBe(0);
+
+    vi.useFakeTimers();
+
+    act(() => {
+      result.current.updateField("annualIncome", 123000);
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+
+    expect(postBodies).toHaveLength(1);
+    expect(postBodies[0]?.intake?.annualIncome).toBe(123000);
   });
 });

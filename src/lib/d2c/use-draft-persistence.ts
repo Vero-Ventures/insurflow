@@ -163,7 +163,12 @@ export function useDraftPersistence(
 
       // Case 3: Unauthenticated, no existing draft, or API failed
       if (!cancelled) {
-        setIntake(loadD2cIntake());
+        if (isAuthenticated) {
+          setIntake(DEFAULT_D2C_INTAKE);
+          saveD2cIntake(DEFAULT_D2C_INTAKE);
+        } else {
+          setIntake(loadD2cIntake());
+        }
         setIsHydrated(true);
       }
     }
