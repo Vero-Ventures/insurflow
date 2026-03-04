@@ -144,7 +144,7 @@ export const DEFAULT_PAGE_SIZE = 10;
 
 import { STATES } from "@/lib/validation/client";
 
-/** Human-readable labels for US state codes */
+/** Human-readable labels for US state and Canadian province/territory codes */
 export const STATE_LABELS: Record<string, string> = {
   AL: "Alabama",
   AK: "Alaska",
@@ -197,6 +197,20 @@ export const STATE_LABELS: Record<string, string> = {
   WI: "Wisconsin",
   WY: "Wyoming",
   DC: "District of Columbia",
+  // Canadian provinces and territories
+  AB: "Alberta",
+  BC: "British Columbia",
+  MB: "Manitoba",
+  NB: "New Brunswick",
+  NL: "Newfoundland and Labrador",
+  NS: "Nova Scotia",
+  NT: "Northwest Territories",
+  NU: "Nunavut",
+  ON: "Ontario",
+  PE: "Prince Edward Island",
+  QC: "Quebec",
+  SK: "Saskatchewan",
+  YT: "Yukon",
 };
 
 /** State options for dropdowns, derived from the canonical STATES array */

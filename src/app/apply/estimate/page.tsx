@@ -6,7 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/client-utils";
-import { loadD2cIntake, saveD2cIntake } from "@/lib/d2c/intake-storage";
+import {
+  DEFAULT_D2C_INTAKE,
+  loadD2cIntake,
+  saveD2cIntake,
+} from "@/lib/d2c/intake-storage";
+import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
+import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 
@@ -27,6 +33,77 @@ function getAgeFromDateOfBirth(dateOfBirth: string): number {
   return Math.max(0, age);
 }
 
+/**
+ * Loads intake data, preferring DB draft when clientId is available
+ * to avoid stale sessionStorage resumes.
+ *
+ * When a clientId is present, fetches the specific draft via
+ * GET /api/d2c/draft/[clientId] rather than the generic collection
+ * endpoint, which could return a different (newer) draft.
+ */
+function useIntakeData(clientId: string | null) {
+  const [intake, setIntake] = useState(DEFAULT_D2C_INTAKE);
+  const [isReady, setIsReady] = useState(false);
+  const [resolvedClientId, setResolvedClientId] = useState<string | null>(
+    clientId,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      // Case 1: clientId provided — always load from DB (source of truth)
+      if (clientId) {
+        try {
+          const res = await fetch(
+            `/api/d2c/draft/${encodeURIComponent(clientId)}`,
+          );
+          if (res.ok) {
+            const json = (await res.json()) as {
+              draft?: DraftClientRecord;
+            };
+            const draft = json.draft;
+            if (draft && !cancelled) {
+              const loaded = clientFieldsToD2cIntake(draft);
+              setIntake(loaded);
+              saveD2cIntake(loaded);
+              setResolvedClientId(draft.id);
+              setIsReady(true);
+              return;
+            }
+          }
+        } catch {
+          // Fall through — draft not accessible
+        }
+
+        // Draft could not be loaded for this clientId — use empty defaults
+        // so the redirect-to-intake guard fires correctly.
+        if (!cancelled) {
+          setIntake(DEFAULT_D2C_INTAKE);
+          setResolvedClientId(null);
+          setIsReady(true);
+        }
+        return;
+      }
+
+      // Case 2: No clientId — use sessionStorage (normal flow from intake page)
+      const stored = loadD2cIntake();
+      if (!cancelled) {
+        setIntake(stored);
+        setResolvedClientId(null);
+        setIsReady(true);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
+
+  return { intake, isReady, resolvedClientId };
+}
+
 export default function ApplyEstimatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,7 +112,7 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
 
-  const intake = useMemo(() => loadD2cIntake(), []);
+  const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
 
   const needs = useMemo(
@@ -61,16 +138,20 @@ export default function ApplyEstimatePage() {
       : needs.totalInsuranceNeeds;
 
   useEffect(() => {
+    if (!isReady) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
     setIsHydrated(true);
-  }, []);
+  }, [isReady]);
 
   useEffect(() => {
     if (!isHydrated) return;
     if (!intake.province || !intake.dateOfBirth || intake.annualIncome <= 0) {
-      router.replace("/apply/intake");
+      const intakeUrl = resolvedClientId
+        ? `/apply/intake?clientId=${encodeURIComponent(resolvedClientId)}`
+        : "/apply/intake";
+      router.replace(intakeUrl);
     }
-  }, [intake, isHydrated, router]);
+  }, [intake, isHydrated, router, resolvedClientId]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -156,8 +237,8 @@ export default function ApplyEstimatePage() {
           <Button
             className="bg-emerald hover:bg-emerald/90"
             onClick={() => {
-              const reviewUrl = clientId
-                ? `/apply/review?clientId=${encodeURIComponent(clientId)}`
+              const reviewUrl = resolvedClientId
+                ? `/apply/review?clientId=${encodeURIComponent(resolvedClientId)}`
                 : "/apply/review";
               router.push(reviewUrl);
             }}

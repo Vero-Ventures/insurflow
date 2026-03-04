@@ -305,3 +305,27 @@ export async function requireAdvisorAccount(
     { status: 403 },
   );
 }
+
+export async function requireClientAccount(
+  logger: Logger,
+  session: Session,
+): Promise<NextResponse | null> {
+  const db = getDb();
+  const profile = await db.query.userProfile.findFirst({
+    where: eq(userProfile.userId, session.user.id),
+    columns: { accountType: true },
+  });
+
+  if (profile?.accountType === "client") {
+    return null;
+  }
+
+  await logger.warn("Forbidden: client account required", {
+    statusCode: 403,
+  });
+
+  return NextResponse.json(
+    { error: "Client account required" },
+    { status: 403 },
+  );
+}

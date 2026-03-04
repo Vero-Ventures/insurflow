@@ -12,3 +12,5 @@ export const APPLY_INTAKE_ROUTE = "/apply/intake";
 export const APPLY_ESTIMATE_ROUTE = "/apply/estimate";
 export const APPLY_REVIEW_ROUTE = "/apply/review";
 export const APPLY_SUBMIT_ROUTE = "/apply/submit";
+
+export const D2C_RESUME_ROUTE = "/d2c/resume";
