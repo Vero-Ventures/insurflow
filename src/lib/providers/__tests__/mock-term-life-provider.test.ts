@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getMockPremiumRangeMonthly } from "@/lib/providers/mock-term-life-provider";
+import {
+  getMockPremiumRangeMonthly,
+  mockTermLifeProvider,
+} from "@/lib/providers/mock-term-life-provider";
 
 describe("getMockPremiumRangeMonthly", () => {
   it("returns a non-binding CAD range", () => {
@@ -41,5 +44,56 @@ describe("getMockPremiumRangeMonthly", () => {
     expect(highCoverage.highMonthlyPremiumCad).toBeGreaterThan(
       lowCoverage.highMonthlyPremiumCad,
     );
+  });
+
+  it("submits applications with deterministic IDs", async () => {
+    const first = await mockTermLifeProvider.submitApplication({
+      draftId: "11111111-1111-4111-8111-111111111111",
+      applicant: {
+        firstName: "Alex",
+        lastName: "Smith",
+      },
+    });
+    const second = await mockTermLifeProvider.submitApplication({
+      draftId: "11111111-1111-4111-8111-111111111111",
+      applicant: {
+        firstName: "Alex",
+        lastName: "Smith",
+      },
+    });
+
+    expect(first.submissionId).toBe(second.submissionId);
+    expect(first.status).toBe("submitted");
+  });
+
+  it("returns status history for known submissions", async () => {
+    const submission = await mockTermLifeProvider.submitApplication({
+      draftId: "22222222-2222-4222-8222-222222222222",
+      applicant: {
+        firstName: "Taylor",
+        lastName: "Green",
+      },
+    });
+
+    const status = await mockTermLifeProvider.getApplicationStatus({
+      submissionId: submission.submissionId,
+    });
+
+    expect(status.status).toBe("submitted");
+    expect(status.events.length).toBeGreaterThan(0);
+  });
+
+  it("verifies webhook signatures", async () => {
+    const verified = await mockTermLifeProvider.verifyWebhook({
+      payload: "{}",
+      signature: "mock-valid-signature",
+    });
+    const rejected = await mockTermLifeProvider.verifyWebhook({
+      payload: "{}",
+      signature: "invalid-signature",
+    });
+
+    expect(verified.ok).toBe(true);
+    expect(rejected.ok).toBe(false);
   });
 });

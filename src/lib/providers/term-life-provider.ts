@@ -1,17 +1,9 @@
-export type PremiumRangeEstimate = {
-  lowMonthlyPremiumCad: number;
-  highMonthlyPremiumCad: number;
-  currency: "CAD";
-  nonBinding: true;
-};
+import type {
+  EstimateRangeInput,
+  PremiumRangeEstimate,
+} from "@/lib/providers/carrier-provider";
 
-export type EstimatePremiumRangeInput = {
-  age: number;
-  tobaccoUse: boolean;
-  province: string;
-  termYears: number;
-  coverageAmount: number;
-};
+export type EstimatePremiumRangeInput = EstimateRangeInput;
 
 export interface TermLifeProvider {
   estimatePremiumRange(
