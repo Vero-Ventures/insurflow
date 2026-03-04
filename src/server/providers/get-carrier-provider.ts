@@ -3,9 +3,10 @@ import type { CarrierProvider } from "@/lib/providers/carrier-provider";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 
 export function getCarrierProvider(): CarrierProvider {
-  if (env.CARRIER_PROVIDER === "mock") {
-    return mockTermLifeProvider;
+  switch (env.CARRIER_PROVIDER) {
+    case "mock":
+      return mockTermLifeProvider;
+    default:
+      return mockTermLifeProvider;
   }
-
-  return mockTermLifeProvider;
 }

@@ -52,7 +52,7 @@ export type VerifyWebhookResult = {
 };
 
 export interface CarrierProvider {
-  providerName: "mock";
+  providerName: string;
   getEstimateRange(input: EstimateRangeInput): Promise<PremiumRangeEstimate>;
   submitApplication(
     input: SubmitApplicationInput,
