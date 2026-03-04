@@ -13,11 +13,47 @@ import { NextResponse } from "next/server";
 import {
   withApiHandler,
   parseJsonBody,
+  handleValidationError,
   requireClientAccount,
 } from "@/lib/api/route-helpers";
 import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
 import type { D2cIntake } from "@/lib/d2c/intake-types";
+import { z } from "zod";
+
+const optionalIntakeSchema = z.object({
+  dateOfBirth: z.string().optional(),
+  gender: z.enum(["male", "female", ""]).optional(),
+  province: z
+    .enum([
+      "AB",
+      "BC",
+      "MB",
+      "NB",
+      "NL",
+      "NS",
+      "NT",
+      "NU",
+      "ON",
+      "PE",
+      "QC",
+      "SK",
+      "YT",
+      "",
+    ])
+    .optional(),
+  tobaccoUse: z.boolean().optional(),
+  annualIncome: z.number().optional(),
+  coverageAmount: z.number().optional(),
+  termYears: z.number().optional(),
+  healthClass: z
+    .enum(["preferred_plus", "preferred", "standard_plus", "standard", ""])
+    .optional(),
+});
+
+const createDraftSchema = z.object({
+  intake: optionalIntakeSchema.optional(),
+});
 
 /**
  * POST /api/d2c/draft - Create or return an existing draft
@@ -64,8 +100,13 @@ export const POST = withApiHandler(
         return bodyResult.error;
       }
 
-      if (bodyResult.body.intake) {
-        initialFields = d2cIntakeToClientFields(bodyResult.body.intake);
+      const validationResult = createDraftSchema.safeParse(bodyResult.body);
+      if (!validationResult.success) {
+        return handleValidationError(logger, validationResult.error);
+      }
+
+      if (validationResult.data.intake) {
+        initialFields = d2cIntakeToClientFields(validationResult.data.intake);
       }
     }
 

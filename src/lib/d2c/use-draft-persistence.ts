@@ -84,6 +84,8 @@ export function useDraftPersistence(
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAuthenticatedRef = useRef(isAuthenticated);
   const draftCreationInFlightRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const pendingIntakeRef = useRef<D2cIntake | null>(null);
 
   // Keep refs in sync with state (useEffect to avoid render-phase ref updates)
   useEffect(() => {
@@ -217,6 +219,43 @@ export function useDraftPersistence(
   // ----------------------------------------------------------------
   // Debounced DB save
   // ----------------------------------------------------------------
+  const flushSaveQueue = useCallback(() => {
+    if (saveInFlightRef.current || !isAuthenticatedRef.current) return;
+
+    saveInFlightRef.current = true;
+    setIsSaving(true);
+
+    void (async () => {
+      try {
+        while (pendingIntakeRef.current) {
+          const intakeToSave = pendingIntakeRef.current;
+          pendingIntakeRef.current = null;
+
+          const cId = clientIdRef.current ?? (await ensureDraft(intakeToSave));
+          if (!cId) continue;
+
+          try {
+            await fetch(`/api/d2c/draft/${encodeURIComponent(cId)}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ intake: intakeToSave }),
+            });
+          } catch {
+            // Silently fail — sessionStorage still has the data
+          }
+        }
+      } finally {
+        saveInFlightRef.current = false;
+        setIsSaving(false);
+
+        // Handle updates queued after the loop exited but before saveInFlight flipped.
+        if (pendingIntakeRef.current) {
+          flushSaveQueue();
+        }
+      }
+    })();
+  }, [ensureDraft]);
+
   const saveToDB = useCallback(
     (updatedIntake: D2cIntake) => {
       if (!isAuthenticatedRef.current) return;
@@ -227,27 +266,11 @@ export function useDraftPersistence(
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        void (async () => {
-          // If no draft yet, create one first
-          const cId = clientIdRef.current ?? (await ensureDraft(updatedIntake));
-          if (!cId) return;
-
-          setIsSaving(true);
-          try {
-            await fetch(`/api/d2c/draft/${encodeURIComponent(cId)}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ intake: updatedIntake }),
-            });
-          } catch {
-            // Silently fail — sessionStorage still has the data
-          } finally {
-            setIsSaving(false);
-          }
-        })();
+        pendingIntakeRef.current = updatedIntake;
+        flushSaveQueue();
       }, AUTO_SAVE_DEBOUNCE_MS);
     },
-    [ensureDraft],
+    [flushSaveQueue],
   );
 
   // Cleanup debounce timer on unmount

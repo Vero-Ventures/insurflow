@@ -195,6 +195,12 @@ describe("POST /api/d2c/draft", () => {
     expect(response.status).toBe(400);
   });
 
+  it("returns 400 when intake is not an object", async () => {
+    const response = await postDraft({ intake: "not-an-object" });
+
+    expect(response.status).toBe(400);
+  });
+
   it("returns 500 when draft creation fails", async () => {
     mockCreateDraft.mockResolvedValue({
       success: false,
