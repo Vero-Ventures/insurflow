@@ -69,3 +69,24 @@ export const timestampsNoSoftDelete = () => ({
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+/**
+ * Timestamp columns for immutable, append-only records.
+ *
+ * Includes only:
+ * - `createdAt`: DB-level default (`DEFAULT now()`), immutable after insert
+ *
+ * Use this for event logs and audit tables where rows must never be updated
+ * after insertion. Matches the `auditLog` table pattern.
+ *
+ * @example
+ * export const myEventLog = pgTable("my_event_log", {
+ *   id: primaryId(),
+ *   ...timestampsCreatedOnly(),
+ * });
+ */
+export const timestampsCreatedOnly = () => ({
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

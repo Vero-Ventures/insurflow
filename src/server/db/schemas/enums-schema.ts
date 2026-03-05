@@ -240,3 +240,18 @@ export const policyStatusEnum = pgEnum("policy_status", [
   "paid_up",
   "pending",
 ]);
+
+// ============================================================================
+// APPLICATION ENUMS
+// ============================================================================
+
+/** D2C application lifecycle status (provider-agnostic) */
+export const applicationStatusEnum = pgEnum("application_status", [
+  "draft",
+  "submitted",
+  "received",
+  "in_review",
+  "additional_info_requested",
+  "approved",
+  "declined",
+]);
