@@ -37,10 +37,9 @@ CREATE TABLE IF NOT EXISTS "application_event" (
 	"application_id" uuid NOT NULL,
 	"status" "application_status" NOT NULL,
 	"source" text NOT NULL,
-	"occurred_at" timestamp with time zone NOT NULL,
+	"occurred_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"metadata" jsonb,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 DO $$ BEGIN

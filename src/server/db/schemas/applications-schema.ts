@@ -36,11 +36,7 @@ import { relations } from "drizzle-orm";
 import { user } from "./auth-schema";
 import { client } from "./clients-schema";
 import { applicationStatusEnum } from "./enums-schema";
-import {
-  primaryId,
-  timestamps,
-  timestampsNoSoftDelete,
-} from "./schema-helpers";
+import { primaryId, timestamps, timestampsCreatedOnly } from "./schema-helpers";
 
 // ============================================================================
 // APPLICATION TABLE
@@ -174,11 +170,12 @@ export const applicationEvent = pgTable(
     /**
      * Authoritative timestamp of when the event occurred in the real world.
      * For webhook events this is the provider's event time, not DB insertion time.
-     * Defaults to DB insertion time when no external timestamp is available.
+     * Defaults to DB insertion time (`DEFAULT now()`) when no external timestamp
+     * is available. Uses a DB-level default so raw SQL inserts also get a value.
      */
     occurredAt: timestamp("occurred_at", { withTimezone: true })
       .notNull()
-      .$defaultFn(() => new Date()),
+      .defaultNow(),
 
     /**
      * Sanitized event metadata. Must not contain raw PII.
@@ -186,7 +183,7 @@ export const applicationEvent = pgTable(
      */
     metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
 
-    ...timestampsNoSoftDelete(),
+    ...timestampsCreatedOnly(),
   },
   (t) => [
     index("application_event_application_id_idx").on(t.applicationId),

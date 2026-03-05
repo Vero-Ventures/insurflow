@@ -1,6 +1,6 @@
 {
-  "id": "af7abbf3-4de9-4f21-957d-0a612316a334",
-  "prevId": "143a22de-0b28-43fb-98c2-8c310cfb8776",
+  "id": "37633439-1db6-4aaf-a8bc-7fb5dd5ed7c9",
+  "prevId": "af7abbf3-4de9-4f21-957d-0a612316a334",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -218,7 +218,8 @@
           "name": "occurred_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "metadata": {
           "name": "metadata",
@@ -230,13 +231,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {

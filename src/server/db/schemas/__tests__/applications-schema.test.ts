@@ -188,7 +188,6 @@ describe("applicationEvent table", () => {
       "occurred_at",
       "metadata",
       "created_at",
-      "updated_at",
     ];
     const columnNames = Object.values(columns).map((c) => c.name);
     for (const col of requiredColumns) {
@@ -199,6 +198,11 @@ describe("applicationEvent table", () => {
   it("does NOT have soft-delete (immutable event log)", () => {
     const columnNames = Object.values(columns).map((c) => c.name);
     expect(columnNames).not.toContain("deleted_at");
+  });
+
+  it("does NOT have updatedAt (mutation is forbidden on immutable log)", () => {
+    const columnNames = Object.values(columns).map((c) => c.name);
+    expect(columnNames).not.toContain("updated_at");
   });
 
   it("applicationId column is non-nullable", () => {
@@ -213,9 +217,11 @@ describe("applicationEvent table", () => {
     expect(columns.source.notNull).toBe(true);
   });
 
-  it("occurredAt column is non-nullable with a default", () => {
+  it("occurredAt column is non-nullable with a DB-level default", () => {
     expect(columns.occurredAt.notNull).toBe(true);
+    // Must be a DB-level default (not just app-layer) so raw SQL inserts also work
     expect(columns.occurredAt.hasDefault).toBe(true);
+    expect(columns.occurredAt.defaultFn).toBeUndefined();
   });
 
   it("metadata column is nullable (optional sanitized context)", () => {
@@ -302,7 +308,16 @@ describe("type inference", () => {
       const _source: string = e.source;
       const _occurredAt: Date = e.occurredAt;
       const _metadata: Record<string, unknown> | null | undefined = e.metadata;
-      void [_id, _applicationId, _status, _source, _occurredAt, _metadata];
+      const _createdAt: Date = e.createdAt;
+      void [
+        _id,
+        _applicationId,
+        _status,
+        _source,
+        _occurredAt,
+        _metadata,
+        _createdAt,
+      ];
     };
     expect(_typeCheck).toBeDefined();
   });
@@ -312,6 +327,16 @@ describe("type inference", () => {
     const _typeCheck = (e: ApplicationEventInsert) => {
       // @ts-expect-error — deletedAt must not exist on applicationEvent
       const _bad = e.deletedAt;
+      void _bad;
+    };
+    expect(_typeCheck).toBeDefined();
+  });
+
+  it("ApplicationEvent type does NOT include updatedAt", () => {
+    // Compile-time check: immutable log rows have no updatedAt field
+    const _typeCheck = (e: ApplicationEventInsert) => {
+      // @ts-expect-error — updatedAt must not exist on applicationEvent
+      const _bad = e.updatedAt;
       void _bad;
     };
     expect(_typeCheck).toBeDefined();
