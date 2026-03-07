@@ -47,14 +47,14 @@ describe("getMockPremiumRangeMonthly", () => {
   });
 
   it("submits applications with deterministic IDs", async () => {
-    const first = await mockTermLifeProvider.submitApplication({
+    const first = await mockTermLifeProvider.submitApplication!({
       draftId: "11111111-1111-4111-8111-111111111111",
       applicant: {
         firstName: "Alex",
         lastName: "Smith",
       },
     });
-    const second = await mockTermLifeProvider.submitApplication({
+    const second = await mockTermLifeProvider.submitApplication!({
       draftId: "11111111-1111-4111-8111-111111111111",
       applicant: {
         firstName: "Alex",
@@ -67,7 +67,7 @@ describe("getMockPremiumRangeMonthly", () => {
   });
 
   it("returns status history for known submissions", async () => {
-    const submission = await mockTermLifeProvider.submitApplication({
+    const submission = await mockTermLifeProvider.submitApplication!({
       draftId: "22222222-2222-4222-8222-222222222222",
       applicant: {
         firstName: "Taylor",
@@ -75,7 +75,7 @@ describe("getMockPremiumRangeMonthly", () => {
       },
     });
 
-    const status = await mockTermLifeProvider.getApplicationStatus({
+    const status = await mockTermLifeProvider.getApplicationStatus!({
       submissionId: submission.submissionId,
     });
 
@@ -84,7 +84,7 @@ describe("getMockPremiumRangeMonthly", () => {
   });
 
   it("returns parseable timestamps for malformed submission IDs", async () => {
-    const status = await mockTermLifeProvider.getApplicationStatus({
+    const status = await mockTermLifeProvider.getApplicationStatus!({
       submissionId: "not-a-uuid",
     });
 
@@ -93,16 +93,23 @@ describe("getMockPremiumRangeMonthly", () => {
   });
 
   it("verifies webhook signatures", async () => {
-    const verified = await mockTermLifeProvider.verifyWebhook({
-      payload: "{}",
-      signature: "mock-valid-signature",
-    });
-    const rejected = await mockTermLifeProvider.verifyWebhook({
-      payload: "{}",
-      signature: "invalid-signature",
-    });
+    const mockHeaders = new Headers();
+    mockHeaders.set("x-mock-signature", "mock-valid-signature");
 
-    expect(verified.ok).toBe(true);
-    expect(rejected.ok).toBe(false);
+    const verified = await mockTermLifeProvider.verifyWebhook(
+      JSON.stringify({ clientId: "test-client-id" }),
+      mockHeaders,
+    );
+
+    const invalidHeaders = new Headers();
+    invalidHeaders.set("x-mock-signature", "invalid-signature");
+
+    const rejected = await mockTermLifeProvider.verifyWebhook(
+      JSON.stringify({ clientId: "test-client-id" }),
+      invalidHeaders,
+    );
+
+    expect(verified.success).toBe(true);
+    expect(rejected.success).toBe(false);
   });
 });

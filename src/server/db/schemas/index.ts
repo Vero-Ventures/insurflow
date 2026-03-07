@@ -70,6 +70,9 @@ export { auditLog } from "./audit-logs-schema";
 export { d2cResumeLink } from "./d2c-resume-link-schema";
 export { application, applicationEvent } from "./applications-schema";
 
+// Webhook event tables
+export { webhookEvent } from "./webhook-events-schema";
+
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
 // ============================================================================
@@ -102,6 +105,9 @@ export {
   applicationEventRelations,
 } from "./applications-schema";
 
+// Webhook event relations
+export { webhookEventRelations } from "./webhook-events-schema";
+
 // D2C types
 export type {
   D2cResumeLink,
@@ -125,6 +131,9 @@ export type {
   AuditEntityType,
 } from "./audit-logs-schema";
 
+// Webhook event types
+export type { WebhookEvent, WebhookEventInsert } from "./webhook-events-schema";
+
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
 // ============================================================================
@@ -141,6 +150,7 @@ import { userProfile } from "./user-profile-schema";
 import { policy } from "./policies-schema";
 import { d2cResumeLink } from "./d2c-resume-link-schema";
 import { application } from "./applications-schema";
+import { webhookEvent } from "./webhook-events-schema";
 
 /**
  * Complete user relations including clients.
@@ -171,6 +181,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   policies: many(policy),
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
+  webhookEvents: many(webhookEvent),
 }));
 
 /**

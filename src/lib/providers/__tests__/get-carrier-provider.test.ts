@@ -11,7 +11,7 @@ describe("getCarrierProvider", () => {
 
     const mod = await import("@/server/providers/get-carrier-provider");
 
-    expect(mod.getCarrierProvider().providerName).toBe("mock");
+    expect(mod.getCarrierProvider().providerId).toBe("mock");
   });
 
   it("falls back to mock for unsupported values", async () => {
@@ -24,6 +24,6 @@ describe("getCarrierProvider", () => {
 
     const mod = await import("@/server/providers/get-carrier-provider");
 
-    expect(mod.getCarrierProvider().providerName).toBe("mock");
+    expect(mod.getCarrierProvider().providerId).toBe("mock");
   });
 });

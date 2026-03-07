@@ -6,8 +6,7 @@ import type {
   PremiumRangeEstimate,
   SubmitApplicationInput,
   SubmitApplicationResult,
-  VerifyWebhookInput,
-  VerifyWebhookResult,
+  WebhookVerificationResult,
 } from "@/lib/providers/carrier-provider";
 import type {
   EstimatePremiumRangeInput,
@@ -89,17 +88,37 @@ async function getApplicationStatus(
 }
 
 async function verifyWebhook(
-  input: VerifyWebhookInput,
-): Promise<VerifyWebhookResult> {
-  const ok = input.signature === "mock-valid-signature";
+  body: unknown,
+  headers: Headers,
+): Promise<WebhookVerificationResult> {
+  // Simple mock verification: check for a specific header
+  const signature = headers.get("x-mock-signature");
+  if (signature !== "mock-valid-signature") {
+    return { success: false, error: "Invalid signature", statusCode: 401 };
+  }
+
+  // Parse body if it's a string
+  let parsed: unknown;
+  try {
+    parsed = typeof body === "string" ? JSON.parse(body) : body;
+  } catch {
+    return { success: false, error: "Invalid JSON body", statusCode: 400 };
+  }
+
   return {
-    ok,
-    providerEventId: ok ? "mock-event-verified" : undefined,
+    success: true,
+    event: {
+      clientId: (parsed as Record<string, unknown>).clientId as string,
+      providerEventId: "mock-event-verified",
+      status: "received",
+      eventTimestamp: new Date(),
+      metadata: null,
+    },
   };
 }
 
 export const mockTermLifeProvider: CarrierProvider & TermLifeProvider = {
-  providerName: "mock",
+  providerId: "mock",
   getEstimateRange,
   submitApplication,
   getApplicationStatus,
