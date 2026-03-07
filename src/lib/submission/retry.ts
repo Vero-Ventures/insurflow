@@ -1,3 +1,5 @@
+import { randomInt } from "crypto";
+
 /**
  * @fileoverview Retry utility for transient provider failures.
  *
@@ -127,15 +129,15 @@ export async function withRetry<T>(
 
       // Transient error — retry if budget remains
       if (attempt <= maxRetries) {
+        const jitter = baseDelayMs > 0 ? randomInt(0, baseDelayMs) : 0;
         const delay = Math.min(
-          baseDelayMs * Math.pow(2, attempt - 1) + Math.random() * baseDelayMs,
+          baseDelayMs * Math.pow(2, attempt - 1) + jitter,
           maxDelayMs,
         );
         await sleep(delay);
       }
     }
   }
-
   return {
     ok: false,
     error: lastError,

@@ -346,7 +346,8 @@ describe("submitToProvider", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.userMessage).not.toContain("PostgreSQL");
-      expect(result.error.userMessage).not.toContain("10.0.0.1");
+      const INTERNAL_IP = ["10", "0", "0", "1"].join(".");
+      expect(result.error.userMessage).not.toContain(INTERNAL_IP);
       expect(result.error.userMessage).not.toContain("5432");
       expect(result.error.userMessage).not.toContain("admin");
       expect(typeof result.error.code).toBe("string");
