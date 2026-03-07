@@ -139,7 +139,7 @@ describe("sanitizeErrorForAudit", () => {
       phone: "555-1234",
       ssn: "123-45-6789",
       date_of_birth: "1990-01-01",
-      password: "secret",
+      password: "test_password",
       token: "abc123",
       payload: '{"raw": "data"}',
       rawBody: '{"sensitive": true}',
