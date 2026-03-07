@@ -70,7 +70,8 @@ describe("sanitizeErrorForAudit", () => {
     const result = sanitizeErrorForAudit(error);
 
     expect(result.errorName).toBe("Error");
-    expect(result.errorMessage).toBe("Connection refused");
+    expect(result.errorCategory).toBe("network_error");
+    expect(result).not.toHaveProperty("errorMessage");
   });
 
   it("extracts status codes from error objects", () => {
@@ -80,20 +81,40 @@ describe("sanitizeErrorForAudit", () => {
     const result = sanitizeErrorForAudit(error);
 
     expect(result.statusCode).toBe(500);
+    expect(result.errorCategory).toBe("server_error");
   });
 
-  it("truncates long error messages", () => {
-    const longMessage = "x".repeat(300);
-    const error = new Error(longMessage);
+  it("never includes raw error messages in audit output", () => {
+    const error = new Error(
+      "PostgreSQL connection refused at 10.0.0.1:5432 for user admin",
+    );
     const result = sanitizeErrorForAudit(error);
 
-    expect((result.errorMessage as string).length).toBeLessThanOrEqual(203); // 200 + "..."
-    expect((result.errorMessage as string).endsWith("...")).toBe(true);
+    expect(result).not.toHaveProperty("errorMessage");
+    expect(result.errorCategory).toBe("network_error");
   });
 
-  it("handles string errors", () => {
-    const result = sanitizeErrorForAudit("simple error string");
-    expect(result.errorMessage).toBe("simple error string");
+  it("classifies timeout errors", () => {
+    const error = new Error("ETIMEDOUT");
+    const result = sanitizeErrorForAudit(error);
+
+    expect(result.errorCategory).toBe("timeout");
+    expect(result).not.toHaveProperty("errorMessage");
+  });
+
+  it("classifies client errors by status code", () => {
+    const error = Object.assign(new Error("Bad request"), { statusCode: 400 });
+    const result = sanitizeErrorForAudit(error);
+
+    expect(result.errorCategory).toBe("client_error");
+    expect(result).not.toHaveProperty("errorMessage");
+  });
+
+  it("handles string errors without exposing raw content", () => {
+    const result = sanitizeErrorForAudit("raw error string with PII data");
+
+    expect(result).not.toHaveProperty("errorMessage");
+    expect(result.errorCategory).toBe("unknown");
   });
 
   it("merges safe context fields", () => {

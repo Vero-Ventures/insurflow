@@ -115,7 +115,7 @@ export async function submitToProvider(
   } catch (error) {
     console.error(
       "[submitToProvider] Failed to create application record:",
-      error,
+      sanitizeErrorForAudit(error),
     );
     return {
       ok: false,
@@ -185,7 +185,11 @@ export async function submitToProvider(
     if (!updated) {
       // Another request beat us — fetch current state
       const existing = await db.query.application.findFirst({
-        where: and(eq(application.id, app.id), isNull(application.deletedAt)),
+        where: and(
+          eq(application.id, app.id),
+          eq(application.userId, userId),
+          isNull(application.deletedAt),
+        ),
       });
 
       if (existing) {
@@ -208,7 +212,7 @@ export async function submitToProvider(
     // The provider call succeeded but we failed to persist — log and return error
     console.error(
       "[submitToProvider] Failed to update application after provider success:",
-      error,
+      sanitizeErrorForAudit(error),
     );
     return { ok: false, error: sanitizeUserError("INTERNAL_ERROR") };
   }
@@ -232,6 +236,7 @@ async function findOrCreateApplication(
   const existing = await db.query.application.findFirst({
     where: and(
       eq(application.idempotencyKey, idempotencyKey),
+      eq(application.userId, userId),
       isNull(application.deletedAt),
     ),
   });
@@ -263,6 +268,7 @@ async function findOrCreateApplication(
       const raced = await db.query.application.findFirst({
         where: and(
           eq(application.idempotencyKey, idempotencyKey),
+          eq(application.userId, userId),
           isNull(application.deletedAt),
         ),
       });

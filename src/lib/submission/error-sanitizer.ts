@@ -72,11 +72,7 @@ export function sanitizeErrorForAudit(
 
   if (error instanceof Error) {
     safe.errorName = error.name;
-    // Truncate message to avoid leaking raw payloads
-    safe.errorMessage =
-      error.message.length > 200
-        ? error.message.slice(0, 200) + "..."
-        : error.message;
+    safe.errorCategory = classifyError(error);
 
     if ("statusCode" in error) {
       safe.statusCode = (error as { statusCode: number }).statusCode;
@@ -88,8 +84,7 @@ export function sanitizeErrorForAudit(
       safe.errorCode = (error as { code: string }).code;
     }
   } else if (typeof error === "string") {
-    safe.errorMessage =
-      error.length > 200 ? error.slice(0, 200) + "..." : error;
+    safe.errorCategory = "unknown";
   }
 
   // Merge safe context, stripping known PII field names
@@ -102,6 +97,47 @@ export function sanitizeErrorForAudit(
   }
 
   return safe;
+}
+
+// ============================================================================
+// Error classification
+// ============================================================================
+
+/**
+ * Classifies an error into a safe operational category.
+ * Never exposes raw error messages — returns a canonical string only.
+ */
+function classifyError(error: Error): string {
+  const msg = error.message.toLowerCase();
+
+  if (
+    msg.includes("econnrefused") ||
+    msg.includes("econnreset") ||
+    msg.includes("connection refused") ||
+    msg.includes("fetch failed") ||
+    msg.includes("network")
+  ) {
+    return "network_error";
+  }
+  if (msg.includes("etimedout") || msg.includes("timeout")) {
+    return "timeout";
+  }
+  if (msg.includes("socket hang up")) {
+    return "connection_closed";
+  }
+
+  if ("statusCode" in error) {
+    const code = (error as { statusCode: number }).statusCode;
+    if (code >= 500) return "server_error";
+    if (code >= 400) return "client_error";
+  }
+  if ("status" in error) {
+    const code = (error as { status: number }).status;
+    if (code >= 500) return "server_error";
+    if (code >= 400) return "client_error";
+  }
+
+  return "unknown";
 }
 
 /** Fields that may contain PII and must never appear in audit metadata. */

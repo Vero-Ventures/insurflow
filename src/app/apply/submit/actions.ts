@@ -7,6 +7,7 @@ import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { UUID_REGEX } from "@/lib/validation/client";
 import { invalidateClientResumeLinks } from "@/lib/api/d2c-resume-link-helpers";
 import { submitToProvider } from "@/lib/submission/submit-application";
+import { sanitizeErrorForAudit } from "@/lib/submission/error-sanitizer";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -146,7 +147,7 @@ async function submitToProviderSafely(
     // Don't block the user from reaching their dashboard.
     console.error(
       "[submitApplicationAction] Provider submission failed:",
-      error instanceof Error ? error.message : "Unknown error",
+      sanitizeErrorForAudit(error),
     );
   }
 }
