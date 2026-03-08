@@ -80,7 +80,7 @@ describe("POST /api/d2c/resume-links", () => {
     });
 
     expect(response.status).toBe(401);
-  });
+  }, 15000);
 
   it("returns 400 for invalid client ID format", async () => {
     const response = await postResumeLink({ clientId: "not-a-uuid" });

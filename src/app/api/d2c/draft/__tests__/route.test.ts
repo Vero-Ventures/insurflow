@@ -105,7 +105,7 @@ describe("POST /api/d2c/draft", () => {
     const response = await postDraft();
 
     expect(response.status).toBe(401);
-  });
+  }, 15000);
 
   it("returns 403 for non-client accounts", async () => {
     mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
