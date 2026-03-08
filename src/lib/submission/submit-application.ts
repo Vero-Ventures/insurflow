@@ -188,12 +188,21 @@ export async function submitToProvider(
 
   app = claimed;
 
+  if (!provider.submitApplication) {
+    return {
+      ok: false,
+      error: sanitizeUserError("PROVIDER_UNAVAILABLE"),
+    };
+  }
+
+  const submitApplication = provider.submitApplication;
+
   // -----------------------------------------------------------------------
   // Step 3: Call carrier provider with retry for transient failures
   // -----------------------------------------------------------------------
   const providerResult = await withRetry(
     () =>
-      provider.submitApplication({
+      submitApplication({
         draftId: clientId,
         applicant,
       }),
@@ -202,7 +211,7 @@ export async function submitToProvider(
 
   if (!providerResult.ok) {
     // Log failure event (audit) without PII
-    await recordFailureEvent(db, app.id, providerResult, provider.providerName);
+    await recordFailureEvent(db, app.id, providerResult, provider.providerId);
     await restoreDraftAfterProviderFailure(db, app.id);
 
     const errorCode: SubmissionErrorCode = providerResult.exhausted
@@ -223,7 +232,7 @@ export async function submitToProvider(
       .update(application)
       .set({
         status: "submitted",
-        providerKey: provider.providerName,
+        providerKey: provider.providerId,
         providerApplicationId: providerResult.value.submissionId,
         submittedAt: new Date(),
         consentCapturedAt: new Date(),
@@ -265,7 +274,7 @@ export async function submitToProvider(
     await recordSuccessEvent(
       db,
       updated.id,
-      provider.providerName,
+      provider.providerId,
       providerResult.value.submissionId,
     );
 

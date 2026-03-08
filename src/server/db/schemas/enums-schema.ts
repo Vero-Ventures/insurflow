@@ -219,6 +219,33 @@ export const insuranceNeedTypeEnum = pgEnum("insurance_need_type", [
 ]);
 
 // ============================================================================
+// APPLICATION STATUS ENUMS
+// ============================================================================
+
+/**
+ * D2C application lifecycle status (provider-agnostic).
+ * Covers the full lifecycle from draft through carrier decision.
+ *
+ * States:
+ * - draft: Application started but not submitted
+ * - submitted: Sent to carrier, awaiting acknowledgment
+ * - received: Carrier acknowledged receipt
+ * - in_review: Under underwriting review
+ * - additional_info_requested: Carrier needs more information
+ * - approved: Application approved
+ * - declined: Application declined
+ */
+export const applicationStatusEnum = pgEnum("application_status", [
+  "draft",
+  "submitted",
+  "received",
+  "in_review",
+  "additional_info_requested",
+  "approved",
+  "declined",
+]);
+
+// ============================================================================
 // POLICY ENUMS
 // ============================================================================
 
@@ -239,19 +266,4 @@ export const policyStatusEnum = pgEnum("policy_status", [
   "surrendered",
   "paid_up",
   "pending",
-]);
-
-// ============================================================================
-// APPLICATION ENUMS
-// ============================================================================
-
-/** D2C application lifecycle status (provider-agnostic) */
-export const applicationStatusEnum = pgEnum("application_status", [
-  "draft",
-  "submitted",
-  "received",
-  "in_review",
-  "additional_info_requested",
-  "approved",
-  "declined",
 ]);

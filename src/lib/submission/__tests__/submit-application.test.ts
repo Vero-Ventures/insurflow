@@ -27,7 +27,7 @@ function createMockProvider(
   overrides?: Partial<CarrierProvider>,
 ): CarrierProvider {
   return {
-    providerName: "mock",
+    providerId: "mock",
     getEstimateRange: vi.fn().mockResolvedValue({
       lowMonthlyPremiumCad: 50,
       highMonthlyPremiumCad: 100,
