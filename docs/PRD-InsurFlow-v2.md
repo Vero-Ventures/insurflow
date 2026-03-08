@@ -1,6 +1,8 @@
 # InsurFlow v2.0 Product Direction (Archived)
 
-> Status note (2026-02-28): This document reflects the prior advisor-first/client-demo direction and is retained for historical reference. For the active direction, use `docs/product-direction-alignment.md`.
+> Status note (2026-02-28): This document reflects the prior advisor-first/client-demo direction and is retained for historical reference only.
+>
+> Do not use this file for active scope or roadmap decisions. For the active D2C carrier-agnostic direction, use `docs/product-direction-alignment.md`.
 
 ## Document Info
 

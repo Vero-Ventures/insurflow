@@ -1,10 +1,12 @@
 # Advisor Demo and Outreach Guide (Archived)
 
-> Status note (2026-02-28): This advisor outreach guide is archived after the D2C pivot. Keep for historical context only. Current direction is documented in `docs/product-direction-alignment.md`.
+> Status note (2026-02-28): This advisor outreach guide is archived after the D2C pivot and is retained for historical context only.
+>
+> Do not use this file as active product direction guidance. Current direction is documented in `docs/product-direction-alignment.md`.
 
 ## Purpose
 
-This document captures practical guidance for advisor-led outreach while InsurFlow is in client-first MVP mode.
+This document captures practical guidance for a prior advisor-led outreach mode.
 
 It is intentionally concise and focused on what helps advisors convert demo interest into next conversations.
 
