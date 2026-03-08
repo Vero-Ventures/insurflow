@@ -265,7 +265,7 @@ describe("sanitizeMetadata", () => {
   it("strips sensitive fields (case-insensitive key match)", () => {
     const result = sanitizeMetadata({
       note: "ok",
-      [passwordLikeKey]: "masked-value",
+      [passwordLikeKey]: "omitted",
       token: "redacted",
       ssn: "000-00-0000",
     });
@@ -275,8 +275,8 @@ describe("sanitizeMetadata", () => {
   it("returns null when all fields are sensitive", () => {
     expect(
       sanitizeMetadata({
-        [passwordLikeKey]: "masked-value",
-        [secretLikeKey]: "masked-value",
+        [passwordLikeKey]: "omitted",
+        [secretLikeKey]: "omitted",
       }),
     ).toBeNull();
   });
