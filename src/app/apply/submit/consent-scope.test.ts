@@ -45,6 +45,10 @@ const whereMock = vi.fn(() => ({ returning: returningMock }));
 const setMock = vi.fn(() => ({ where: whereMock }));
 const updateMock = vi.fn(() => ({ set: setMock }));
 
+// Mock query chain for idempotent repeat-click check
+const findFirstMock = vi.fn().mockResolvedValue(null);
+const queryMock = { client: { findFirst: findFirstMock } };
+
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => redirectMock(path),
 }));
@@ -54,11 +58,22 @@ vi.mock("@/server/better-auth/server", () => ({
 }));
 
 vi.mock("@/server/db", () => ({
-  getDb: () => ({ update: updateMock }),
+  getDb: () => ({ update: updateMock, query: queryMock }),
 }));
 
 vi.mock("@/server/db/schemas", () => ({
   client: MOCK_CLIENT_SCHEMA,
+}));
+
+// Mock provider submission — best-effort, not tested here
+vi.mock("@/lib/submission/submit-application", () => ({
+  submitToProvider: vi
+    .fn()
+    .mockResolvedValue({ ok: true, alreadySubmitted: false }),
+}));
+
+vi.mock("@/server/providers/get-carrier-provider", () => ({
+  getCarrierProvider: vi.fn().mockReturnValue({ providerName: "mock" }),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -76,7 +91,10 @@ describe("consent submission scope — regression", () => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue({ user: { id: USER_ID } });
     // Simulate exactly 1 row updated (the targeted row)
-    returningMock.mockResolvedValue([{ id: CLIENT_A_ID }]);
+    returningMock.mockResolvedValue([
+      { id: CLIENT_A_ID, firstName: "Test", lastName: "User" },
+    ]);
+    findFirstMock.mockResolvedValue(null);
   });
 
   it("includes eq(client.id, targetClientId) in the WHERE clause", async () => {

@@ -15,10 +15,16 @@ const redirectMock = vi.fn((path: string) => {
 const getSessionMock = vi.fn();
 
 // Drizzle update chain mock
-const returningMock = vi.fn().mockResolvedValue([{ id: "c1" }]);
+const returningMock = vi
+  .fn()
+  .mockResolvedValue([{ id: "c1", firstName: "Test", lastName: "User" }]);
 const whereMock = vi.fn(() => ({ returning: returningMock }));
 const setMock = vi.fn(() => ({ where: whereMock }));
 const updateMock = vi.fn(() => ({ set: setMock }));
+
+// Mock query chain for idempotent repeat-click check
+const findFirstMock = vi.fn().mockResolvedValue(null);
+const queryMock = { client: { findFirst: findFirstMock } };
 
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => redirectMock(path),
@@ -29,11 +35,22 @@ vi.mock("@/server/better-auth/server", () => ({
 }));
 
 vi.mock("@/server/db", () => ({
-  getDb: () => ({ update: updateMock }),
+  getDb: () => ({ update: updateMock, query: queryMock }),
 }));
 
 vi.mock("@/server/db/schemas", () => ({
   client: MOCK_CLIENT_SCHEMA,
+}));
+
+// Mock provider submission — best-effort, not tested here
+vi.mock("@/lib/submission/submit-application", () => ({
+  submitToProvider: vi
+    .fn()
+    .mockResolvedValue({ ok: true, alreadySubmitted: false }),
+}));
+
+vi.mock("@/server/providers/get-carrier-provider", () => ({
+  getCarrierProvider: vi.fn().mockReturnValue({ providerName: "mock" }),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -58,7 +75,11 @@ describe("ApplySubmitPage", () => {
     setMock.mockClear();
     whereMock.mockClear();
     returningMock.mockClear();
-    returningMock.mockResolvedValue([{ id: "c1" }]);
+    findFirstMock.mockClear();
+    returningMock.mockResolvedValue([
+      { id: "c1", firstName: "Test", lastName: "User" },
+    ]);
+    findFirstMock.mockResolvedValue(null);
   });
 
   it("redirects signed-out users to sign-up", async () => {
