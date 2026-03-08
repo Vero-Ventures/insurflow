@@ -163,10 +163,17 @@ function createMockDb() {
       set: vi.fn().mockImplementation((setVals: Partial<MockApp>) => ({
         where: vi.fn().mockImplementation(() => ({
           returning: vi.fn().mockImplementation(() => {
-            // Find the application to update (simplified: find draft app)
+            let targetStatus: string | null = null;
+            if (setVals.status === "received") targetStatus = "draft";
+            if (setVals.status === "submitted") targetStatus = "received";
+            if (setVals.status === "draft") targetStatus = "received";
+
             const app = Object.values(applications).find(
-              (a) => a.status === "draft" && a.deletedAt === null,
+              (a) =>
+                a.deletedAt === null &&
+                (targetStatus === null || a.status === targetStatus),
             );
+
             if (!app) return Promise.resolve([]);
 
             // Apply updates
@@ -467,5 +474,77 @@ describe("submitToProvider", () => {
     }
     // 1 initial + 2 retries = 3
     expect(provider.submitApplication).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not re-submit to provider after persist failure following provider success", async () => {
+    const app = {
+      id: "app-1",
+      clientId: CLIENT_ID,
+      userId: USER_ID,
+      idempotencyKey: `sub_${CLIENT_ID}`,
+      status: "draft",
+      providerKey: null,
+      providerApplicationId: null,
+      submittedAt: null,
+      consentCapturedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    };
+
+    let created = false;
+    let failSubmitPersistOnce = true;
+
+    const dbWithPersistFailure = {
+      query: {
+        application: {
+          findFirst: vi.fn().mockImplementation(() => {
+            return Promise.resolve(created ? app : null);
+          }),
+        },
+      },
+      insert: vi.fn().mockImplementation(() => ({
+        values: vi.fn().mockImplementation(() => ({
+          returning: vi.fn().mockImplementation(() => {
+            created = true;
+            return Promise.resolve([app]);
+          }),
+        })),
+      })),
+      update: vi.fn().mockImplementation(() => ({
+        set: vi.fn().mockImplementation((setVals: Partial<typeof app>) => ({
+          where: vi.fn().mockImplementation(() => ({
+            returning: vi.fn().mockImplementation(() => {
+              if (setVals.status === "submitted" && failSubmitPersistOnce) {
+                failSubmitPersistOnce = false;
+                return Promise.reject(new Error("db write failed"));
+              }
+
+              Object.assign(app, setVals, { updatedAt: new Date() });
+              return Promise.resolve([app]);
+            }),
+          })),
+        })),
+      })),
+    };
+
+    const first = await submitToProvider(
+      DEFAULT_INPUT,
+      provider,
+      dbWithPersistFailure as never,
+    );
+    expect(first.ok).toBe(false);
+
+    const second = await submitToProvider(
+      DEFAULT_INPUT,
+      provider,
+      dbWithPersistFailure as never,
+    );
+
+    expect(provider.submitApplication).toHaveBeenCalledTimes(1);
+    expect(second.ok).toBe(false);
+    if (!second.ok) {
+      expect(second.error.code).toBe("SUBMISSION_IN_PROGRESS");
+    }
   });
 });

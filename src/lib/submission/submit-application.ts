@@ -124,8 +124,15 @@ export async function submitToProvider(
   }
 
   // -----------------------------------------------------------------------
-  // Step 2: Guard — if already submitted or beyond, return existing
+  // Step 2: Guard — if already submitted or currently processing, return
   // -----------------------------------------------------------------------
+  if (app.status === "received") {
+    return {
+      ok: false,
+      error: sanitizeUserError("SUBMISSION_IN_PROGRESS"),
+    };
+  }
+
   if (app.status !== "draft") {
     return {
       ok: true,
@@ -133,6 +140,53 @@ export async function submitToProvider(
       alreadySubmitted: true,
     };
   }
+
+  // -----------------------------------------------------------------------
+  // Step 2b: Claim draft -> received before external side effects
+  // -----------------------------------------------------------------------
+  const [claimed] = await db
+    .update(application)
+    .set({ status: "received" })
+    .where(
+      and(
+        eq(application.id, app.id),
+        eq(application.status, "draft"),
+        isNull(application.deletedAt),
+      ),
+    )
+    .returning();
+
+  if (!claimed) {
+    const existing = await db.query.application.findFirst({
+      where: and(
+        eq(application.id, app.id),
+        eq(application.userId, userId),
+        isNull(application.deletedAt),
+      ),
+    });
+
+    if (!existing) {
+      return { ok: false, error: sanitizeUserError("INTERNAL_ERROR") };
+    }
+
+    if (existing.status === "received") {
+      return {
+        ok: false,
+        error: sanitizeUserError("SUBMISSION_IN_PROGRESS"),
+      };
+    }
+
+    if (existing.status !== "draft") {
+      return { ok: true, application: existing, alreadySubmitted: true };
+    }
+
+    return {
+      ok: false,
+      error: sanitizeUserError("SUBMISSION_IN_PROGRESS"),
+    };
+  }
+
+  app = claimed;
 
   // -----------------------------------------------------------------------
   // Step 3: Call carrier provider with retry for transient failures
@@ -149,6 +203,7 @@ export async function submitToProvider(
   if (!providerResult.ok) {
     // Log failure event (audit) without PII
     await recordFailureEvent(db, app.id, providerResult, provider.providerName);
+    await restoreDraftAfterProviderFailure(db, app.id);
 
     const errorCode: SubmissionErrorCode = providerResult.exhausted
       ? "PROVIDER_UNAVAILABLE"
@@ -176,7 +231,7 @@ export async function submitToProvider(
       .where(
         and(
           eq(application.id, app.id),
-          eq(application.status, "draft"),
+          eq(application.status, "received"),
           isNull(application.deletedAt),
         ),
       )
@@ -191,6 +246,13 @@ export async function submitToProvider(
           isNull(application.deletedAt),
         ),
       });
+
+      if (existing?.status === "received") {
+        return {
+          ok: false,
+          error: sanitizeUserError("SUBMISSION_IN_PROGRESS"),
+        };
+      }
 
       if (existing) {
         return { ok: true, application: existing, alreadySubmitted: true };
@@ -214,7 +276,10 @@ export async function submitToProvider(
       "[submitToProvider] Failed to update application after provider success:",
       sanitizeErrorForAudit(error),
     );
-    return { ok: false, error: sanitizeUserError("INTERNAL_ERROR") };
+    return {
+      ok: false,
+      error: sanitizeUserError("SUBMISSION_IN_PROGRESS"),
+    };
   }
 }
 
@@ -308,6 +373,32 @@ async function recordFailureEvent(
   } catch (error) {
     // Best-effort — don't block the main flow
     console.error("[submitToProvider] Failed to record failure event:", error);
+  }
+}
+
+/**
+ * Best-effort rollback so users can retry after provider-side validation/network failures.
+ */
+async function restoreDraftAfterProviderFailure(
+  db: Database,
+  applicationId: string,
+): Promise<void> {
+  try {
+    await db
+      .update(application)
+      .set({ status: "draft" })
+      .where(
+        and(
+          eq(application.id, applicationId),
+          eq(application.status, "received"),
+          isNull(application.deletedAt),
+        ),
+      );
+  } catch (error) {
+    console.error(
+      "[submitToProvider] Failed to restore draft status after provider failure:",
+      sanitizeErrorForAudit(error),
+    );
   }
 }
 
