@@ -32,6 +32,7 @@ This replaces older tier-based planning docs and sequencing language.
 Core D2C v1 outcomes:
 
 - Guided intake flow for consumer context capture.
+- Canada-first terminology in product copy (province, not state).
 - Estimate preview with conservative non-binding language.
 - Account-gated application submission flow.
 - Application status tracking powered by mock provider events.
@@ -55,6 +56,7 @@ The codebase already includes:
 
 ## Explicitly Out of Scope (D2C v1)
 
+- Any workflow beyond application submission and status tracking
 - Payments or billing
 - Policy purchase/binding
 - Policy issuance

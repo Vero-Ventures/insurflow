@@ -16,7 +16,7 @@ If this file and code differ, trust the code.
 
 The previous ERD doc described older assumptions (including non-US enums and modules not currently implemented). That created confusion during product and backlog updates.
 
-This version aligns with the current client-first MVP direction and existing schema.
+This version aligns with the current D2C carrier-agnostic direction and existing schema.
 
 ---
 
@@ -40,10 +40,17 @@ Client planning domain:
 - `keyPeople`
 - `shareholders`
 
+D2C application domain:
+
+- `d2cResumeLinks`
+- `applications`
+- `applicationEvents`
+- `webhookEvents`
+
 Notes:
 
-- Client geography uses US `state` enum.
-- Domain focuses on advisor-managed planning records and calculations.
+- Product-facing intake language is Canada-first (province), while the DB enum identifier remains `state` and includes both US states and Canadian provinces/territories.
+- Current schema includes both legacy advisor-planning entities and D2C application lifecycle entities.
 
 ---
 

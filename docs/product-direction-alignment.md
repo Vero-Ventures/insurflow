@@ -2,6 +2,8 @@
 
 This page is the shared picture of what InsurFlow is building now.
 
+Use this document as the source of truth for active product scope.
+
 ## What InsurFlow Is
 
 InsurFlow is a direct-to-consumer (D2C) term life application funnel.
@@ -31,6 +33,7 @@ We submit applications to a carrier integration boundary and track status respon
 - We implement a `CarrierProvider` interface + mock provider now.
 - We use the mock provider to ship end-to-end product flow without vendor lock-in.
 - We keep the interface minimal for v1 and easy to refactor when a real API is chosen.
+- We do not include provider-specific purchase or issuance behavior in v1.
 
 ## V1 User Journey (D2C)
 
@@ -48,6 +51,10 @@ V1 ends at:
 
 - Application submission
 - Application status tracking
+
+Stop line rule:
+
+- Any feature beyond submission and status tracking is post-v1.
 
 V1 explicitly excludes:
 
