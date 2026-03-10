@@ -11,7 +11,7 @@ describe("DashboardPage", () => {
     const accountType = normalizeAccountType(undefined) ?? "client";
     const experience = getDashboardExperience(accountType);
 
-    expect(experience.heading).toMatch(/continue your application/i);
+    expect(experience.heading).toMatch(/keep going with your application/i);
     expect(experience.cards[0]?.href).toBe("/apply/review");
   });
 

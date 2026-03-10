@@ -55,12 +55,11 @@ export default async function OnboardingPage({
             Welcome to InsurFlow
           </p>
           <h1 className="font-display text-foreground text-4xl tracking-tight">
-            Let&apos;s personalize your planning workspace
+            Let&apos;s set up your account
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-sm sm:text-base">
-            We are shifting to a client-first experience. Tell us a little about
-            your household and goals so your dashboard and recommendations are
-            tailored from day one.
+            Share a few details about your household and goals so your dashboard
+            and application steps feel tailored from day one.
           </p>
         </div>
 

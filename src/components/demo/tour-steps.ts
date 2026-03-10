@@ -26,14 +26,14 @@ function createTourSteps(inputs: TourStepInput[]): TourStep[] {
 export const demoIntakeTourSteps: TourStep[] = createTourSteps([
   [
     "[data-tour='intake-heading']",
-    "Capture Core Inputs",
-    "This section captures household and financial context to drive a first-pass recommendation.",
+    "Start with the basics",
+    "This section captures the key household details needed for a first estimate.",
     "bottom",
   ],
   [
     "[data-tour='intake-form']",
-    "Structured Intake",
-    "The guided form keeps data entry lightweight while still collecting enough signal for meaningful analysis.",
+    "Guided form",
+    "The form keeps questions short while collecting enough detail for a useful estimate.",
     "bottom",
   ],
 ]);
@@ -41,32 +41,32 @@ export const demoIntakeTourSteps: TourStep[] = createTourSteps([
 export const demoEstimateTourSteps: TourStep[] = createTourSteps([
   [
     "[data-tour='estimate-heading']",
-    "Interactive Estimate",
-    "This recommendation responds immediately to assumption changes so advisors can model scenarios live.",
+    "Interactive estimate",
+    "Your estimate updates as assumptions change so you can quickly compare outcomes.",
     "bottom",
   ],
   [
     "[data-tour='assumptions-controls']",
-    "Assumption Controls",
-    "Adjust income replacement, duration, and liquid asset offsets to pressure-test outcomes.",
+    "Assumption controls",
+    "Adjust income replacement, duration, and liquid asset offsets to test different outcomes.",
     "bottom",
   ],
   [
     "[data-tour='estimate-kpis']",
-    "Coverage Snapshot",
-    "Recommended coverage and coverage gap are presented side by side for clear conversation framing.",
+    "Coverage snapshot",
+    "Recommended coverage and coverage gap are shown side by side for easy comparison.",
     "top",
   ],
   [
     "[data-tour='estimate-transparency']",
-    "Calculation Transparency",
-    "Open this section to show the exact methodology and state-specific reference tables behind the estimate.",
+    "Calculation transparency",
+    "Open this section to review the methodology and reference tables used for this demo estimate.",
     "top",
   ],
   [
     "[data-tour='showcase-next']",
-    "Continue to Showcase",
-    "Next you will see AI and report deliverables generated from this analysis.",
+    "Continue",
+    "Next you will see the AI explanation and report preview for this estimate.",
     "top",
     "Click to continue",
   ],
@@ -75,20 +75,20 @@ export const demoEstimateTourSteps: TourStep[] = createTourSteps([
 export const demoShowcaseTourSteps: TourStep[] = createTourSteps([
   [
     "[data-tour='ai-letter-preview']",
-    "AI Narrative Output",
-    "The letter preview turns the numbers into recommendation reasoning advisors can refine before delivery.",
+    "AI explanation",
+    "The letter preview turns estimate numbers into clear plain-language reasoning.",
     "bottom",
   ],
   [
     "[data-tour='report-preview']",
-    "Client Report Preview",
-    "The report card condenses assumptions and recommendation values into an advisor-ready summary.",
+    "Report preview",
+    "The report card summarizes assumptions and recommendation values in one place.",
     "bottom",
   ],
   [
     "[data-tour='showcase-handoff']",
-    "Advisor Handoff",
-    "Continue with confidence: both analysis and communication artifacts are now ready.",
+    "Next steps",
+    "Continue when you are ready to review what happens after this estimate.",
     "top",
     "Click to continue",
   ],

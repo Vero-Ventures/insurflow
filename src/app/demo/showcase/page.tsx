@@ -43,11 +43,11 @@ export default function DemoShowcasePage() {
           </div>
 
           <h1 className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl">
-            Turn calculations into advisor-ready deliverables
+            See your explanation and report preview
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            This guided showcase demonstrates how one analysis becomes a
-            compliance-ready narrative and a client-facing report.
+            This walkthrough shows how your estimate can be turned into a clear
+            explanation and a shareable report summary.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function DemoShowcasePage() {
               </h2>
             </div>
             <p className="text-muted-foreground mt-2 text-sm">
-              Auto-generated explanation using the selected assumptions and
+              Auto-generated explanation based on your selected assumptions and
               intake profile.
             </p>
             <div className="bg-muted/40 mt-4 max-h-[280px] overflow-y-auto rounded-lg p-4 text-sm leading-relaxed">
@@ -83,8 +83,8 @@ export default function DemoShowcasePage() {
               </h2>
             </div>
             <p className="text-muted-foreground mt-2 text-sm">
-              Export-ready summary advisors can review before meeting the
-              client.
+              Export-ready summary you can review before speaking with an
+              advisor.
             </p>
             <div className="mt-4 grid gap-3">
               <div className="bg-muted/40 rounded-lg p-4">
@@ -121,7 +121,7 @@ export default function DemoShowcasePage() {
             onClick={() => router.push("/demo/handoff")}
             className="bg-emerald hover:bg-emerald/90 gap-2"
           >
-            Continue to Advisor Handoff
+            Continue to next steps
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

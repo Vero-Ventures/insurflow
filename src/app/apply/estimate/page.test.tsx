@@ -40,7 +40,7 @@ describe("ApplyEstimatePage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /non-binding estimate preview/i }),
+        screen.getByRole("heading", { name: /estimate preview/i }),
       ).toBeTruthy();
     });
 

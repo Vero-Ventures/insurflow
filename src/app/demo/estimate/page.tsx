@@ -55,11 +55,11 @@ export default function DemoEstimatePage() {
             className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl"
             data-tour="estimate-heading"
           >
-            Your estimated coverage need
+            Your coverage estimate
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            This snapshot uses your intake answers to provide a first estimate.
-            Your advisor will validate every number with you.
+            This snapshot uses your intake answers to provide a first,
+            non-binding estimate.
           </p>
         </div>
 
@@ -68,11 +68,10 @@ export default function DemoEstimatePage() {
           data-tour="assumptions-controls"
         >
           <h2 className="text-foreground text-lg font-semibold">
-            Adjust assumptions live
+            Try different assumptions
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            In guided mode, you can quickly test sensitivity before showing
-            advisor-ready outputs.
+            Move the sliders to see how your estimate changes.
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <label className="space-y-2 text-sm">
@@ -178,18 +177,16 @@ export default function DemoEstimatePage() {
               Why this matters
             </h3>
             <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              This gives your advisor a clear starting point so your review can
-              focus on practical choices, affordability, and protection goals
-              that fit your family.
+              This gives you a clear starting point so you can compare options
+              based on affordability and protection goals.
             </p>
           </Card>
         </div>
 
         <Card className="mt-6 border-amber-300/40 bg-amber-50/40 p-4">
           <p className="text-sm leading-relaxed">
-            This is an estimate, not final advice. A licensed advisor must
-            review your full financial details before any recommendation is
-            finalized.
+            This is a non-binding estimate, not a quote or final advice. Final
+            recommendations require a full review of your details.
           </p>
         </Card>
 
@@ -223,7 +220,7 @@ export default function DemoEstimatePage() {
             onClick={() => router.push("/demo/showcase")}
             className="bg-emerald hover:bg-emerald/90 gap-2"
           >
-            Continue to AI and Report Showcase
+            Continue to explanation and report
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

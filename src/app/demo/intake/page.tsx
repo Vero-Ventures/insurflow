@@ -88,7 +88,7 @@ export default function DemoIntakePage() {
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
             Answer two quick questions to get a first estimate. You can add more
-            details if you want a tighter result.
+            details if you want a more tailored result.
           </p>
         </div>
 
@@ -251,7 +251,7 @@ export default function DemoIntakePage() {
                   type="submit"
                   className="bg-emerald hover:bg-emerald/90 gap-2"
                 >
-                  See Estimate now
+                  See estimate now
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -304,7 +304,7 @@ export default function DemoIntakePage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <FileText className="mt-0.5 h-3.5 w-3.5" />
-                  AI letter and report preview for advisor follow-up
+                  AI explanation and report preview
                 </li>
               </ul>
             </Card>

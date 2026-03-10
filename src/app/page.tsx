@@ -23,50 +23,50 @@ import { Button } from "@/components/ui/button";
 const features = [
   {
     icon: Clock,
-    title: "Fast Eligibility Intake",
+    title: "Quick Eligibility Check",
     description:
-      "Complete a short intake and move straight into a clear, non-binding estimate.",
+      "Answer a few questions and move straight into a clear, non-binding estimate.",
     stat: "5 min",
     statLabel: "Typical intake",
   },
   {
     icon: Calculator,
-    title: "Clear Estimate Preview",
+    title: "Easy Estimate Preview",
     description:
-      "Understand your estimated coverage range, assumptions, and what affects the result.",
-    stat: "D2C",
-    statLabel: "Consumer-first",
+      "See your estimated coverage range, what it means, and what can affect it.",
+    stat: "Plain",
+    statLabel: "Clear language",
   },
   {
     icon: FileText,
-    title: "Guided Application",
+    title: "Simple Application Steps",
     description:
-      "Move from estimate to application submission with a simple review and consent step.",
+      "Move from estimate to submission with a guided review and consent step.",
     stat: "1 flow",
     statLabel: "Estimate to submit",
   },
   {
     icon: Sparkles,
-    title: "Live Status Timeline",
+    title: "Live Status Updates",
     description:
-      "Track your application from received to review updates with clear status events.",
+      "Track your application from received to reviewed with clear status updates.",
     stat: "Live",
     statLabel: "Status tracking",
   },
 ];
 
 const painPoints = [
-  "Long, confusing insurance research before you can apply",
-  "Unclear estimate language that sounds like a guaranteed quote",
+  "Too much research before you can even start",
+  "Estimate wording that feels confusing or too technical",
   "Disconnected steps between estimate and application",
-  "No simple way to track what happens after you submit",
+  "No clear view of what happens after you submit",
 ];
 
 const solutions = [
-  "A short, guided intake built for first-time applicants",
-  "Conservative non-binding estimate language you can understand",
-  "One D2C flow from eligibility to application submission",
-  "Transparent provider status updates in your account",
+  "A short guided intake built for first-time applicants",
+  "Non-binding estimate language in plain terms",
+  "One clear flow from eligibility to submission",
+  "Transparent status updates in your account",
 ];
 
 const applicationFlowSteps = [
@@ -123,10 +123,10 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className="animate-fade-up animation-delay-100 text-foreground font-display mb-6 text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Your path to a{" "}
+            Your path to{" "}
             <span className="relative">
               <span className="from-primary to-emerald relative z-10 bg-gradient-to-r via-[oklch(0.55_0.12_200)] bg-clip-text text-transparent">
-                term life application
+                term life coverage
               </span>
               <span className="bg-emerald/20 absolute right-0 -bottom-1 left-0 h-3 -skew-x-6" />
             </span>
@@ -134,12 +134,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow helps you complete eligibility intake, review a
-            non-binding estimate, and submit your application in{" "}
+            InsurFlow helps you answer a few questions, review a non-binding
+            estimate, and submit your application in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
             </span>{" "}
-            with transparent application status tracking after submission.
+            with clear status updates after submission.
           </p>
 
           {/* CTA Buttons */}
@@ -315,11 +315,11 @@ export default function Home() {
               Platform Capabilities
             </Badge>
             <h2 className="animate-fade-up text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              Everything you need for D2C term life intake and submission
+              Everything you need to apply with confidence
             </h2>
             <p className="animate-fade-up animation-delay-100 text-muted-foreground mx-auto mt-4 max-w-2xl">
-              From eligibility intake to application status updates, InsurFlow
-              keeps the process clear, fast, and consumer-friendly.
+              From eligibility to submission, InsurFlow keeps the process clear,
+              fast, and easy to follow.
             </p>
           </div>
 
@@ -379,7 +379,7 @@ export default function Home() {
 
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
             Start with a short eligibility check, review your estimate, and
-            continue to account-gated application submission.
+            continue to a simple, guided submission flow.
           </p>
 
           <div className="animate-fade-up animation-delay-300 mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

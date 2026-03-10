@@ -21,7 +21,7 @@ vi.mock("next/image", () => ({
 
 import { AuthStatus } from "@/components/auth-status";
 
-describe("Home page D2C CTA", () => {
+describe("Home page primary CTA", () => {
   it("renders primary signed-out CTA linking to sign-up with client role", () => {
     render(<AuthStatus />);
 

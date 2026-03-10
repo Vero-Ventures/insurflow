@@ -219,6 +219,30 @@ export const STATE_OPTIONS = STATES.map((code) => ({
   label: STATE_LABELS[code] ?? code,
 }));
 
+/** Canadian provinces and territories for Canada-first consumer onboarding UI */
+export const CANADIAN_PROVINCE_TERRITORY_CODES = [
+  "AB",
+  "BC",
+  "MB",
+  "NB",
+  "NL",
+  "NS",
+  "NT",
+  "NU",
+  "ON",
+  "PE",
+  "QC",
+  "SK",
+  "YT",
+] as const;
+
+/** Province/territory dropdown options for Canada-first UI flows */
+export const CANADIAN_PROVINCE_TERRITORY_OPTIONS =
+  CANADIAN_PROVINCE_TERRITORY_CODES.map((code) => ({
+    value: code,
+    label: STATE_LABELS[code] ?? code,
+  }));
+
 /**
  * Get display label for state code
  */

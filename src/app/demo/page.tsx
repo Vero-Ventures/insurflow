@@ -55,11 +55,11 @@ export default function DemoPage() {
         {/* Hero Section */}
         <div className="animate-fade-up mx-auto max-w-3xl text-center">
           <h1 className="font-display text-foreground mb-4 text-4xl font-semibold tracking-tight lg:text-5xl">
-            Experience the Client Journey
+            Try the application experience
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-base leading-relaxed sm:text-lg">
-            Configure one realistic scenario, run the intake in minutes, and
-            jump straight into advisor-ready analysis output.
+            Pick a realistic scenario, run a short intake, and see an estimate
+            walkthrough in minutes.
           </p>
 
           <div className="mx-auto mt-6 mb-2 flex w-fit rounded-full border p-1">
@@ -92,11 +92,11 @@ export default function DemoPage() {
           <Card className="border-border/60 bg-card/50 p-5 sm:p-6">
             <div className="mb-4">
               <h2 className="text-foreground text-xl font-semibold">
-                Choose a planning scenario
+                Choose a scenario
               </h2>
               <p className="text-muted-foreground mt-1 text-sm">
-                Pick one path to pre-load context and make the walkthrough feel
-                like a real advisor session.
+                Pick one path to preload details and make the walkthrough feel
+                realistic.
               </p>
             </div>
 
@@ -201,7 +201,7 @@ export default function DemoPage() {
                   {state.demoMode === "guided"
                     ? "Expect 8-10 minutes."
                     : "Expect 3-4 minutes."}{" "}
-                  No sign-up required.
+                  No sign-up needed.
                 </p>
               </div>
             </Card>
@@ -212,8 +212,8 @@ export default function DemoPage() {
               </p>
               <ul className="text-muted-foreground mt-2 space-y-2 text-sm">
                 <li>- Structured intake with scenario context</li>
-                <li>- Live estimate adjustments before advisor review</li>
-                <li>- AI letter and client-report handoff preview</li>
+                <li>- Live estimate adjustments and clear assumptions</li>
+                <li>- AI explanation and report preview</li>
               </ul>
             </Card>
           </div>

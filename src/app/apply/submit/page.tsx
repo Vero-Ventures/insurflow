@@ -18,7 +18,7 @@ export default async function ApplySubmitPage() {
             Application submitted
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Your application has been received. We will be in touch.
+            Thanks, your application has been received. We will be in touch.
           </p>
         </section>
 

@@ -93,32 +93,29 @@ export function getDashboardExperience(
 
   return {
     eyebrow: "My Application",
-    heading: "Track and continue your application",
+    heading: "Keep going with your application",
     description:
-      "Resume your intake, review your estimate preview, and submit your application when you are ready.",
+      "Pick up where you left off, review your estimate, and submit when you are ready.",
     cards: [
       {
-        title: "Continue Application",
-        description:
-          "Pick up where you left off and review the latest application details.",
+        title: "Continue your application",
+        description: "Return to your latest draft and keep moving forward.",
         href: APPLY_REVIEW_ROUTE,
-        ctaLabel: "Open Review",
+        ctaLabel: "Open review",
         icon: "clipboard",
       },
       {
-        title: "Update Estimate",
-        description:
-          "Adjust your intake details and refresh your estimate preview.",
+        title: "Update your estimate",
+        description: "Change your details and refresh your estimate preview.",
         href: APPLY_ESTIMATE_ROUTE,
-        ctaLabel: "View Estimate",
+        ctaLabel: "View estimate",
         icon: "chart",
       },
       {
-        title: "Start New Intake",
-        description:
-          "Start over with a new intake if your household details changed.",
+        title: "Start a new application",
+        description: "Start over if your household details have changed.",
         href: APPLY_INTAKE_ROUTE,
-        ctaLabel: "Start Intake",
+        ctaLabel: "Start intake",
         icon: "handoff",
       },
     ],
@@ -143,7 +140,7 @@ export function getAccountTypeConfirmation(
     return {
       title: "Client account selected",
       description:
-        "You will see an application-focused dashboard with intake, estimate preview, and submission guidance.",
+        "You will see an application dashboard with intake, estimate, and submission guidance.",
       tone: "client",
     };
   }

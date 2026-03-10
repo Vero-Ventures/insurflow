@@ -47,18 +47,18 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
             Step 3 of 4
           </p>
           <h1 className="font-display text-foreground text-3xl tracking-tight sm:text-4xl">
-            Review &amp; Consent
+            Review and consent
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Review your application details and accept the required disclosures
-            before proceeding.
+            Review your details and accept the required disclosures before
+            submitting.
           </p>
         </section>
 
         {/* Application summary */}
         <Card className="border-border/60 bg-card/80 p-6">
           <h2 className="mb-4 text-sm font-semibold tracking-wide uppercase">
-            Your application details
+            Your details
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <p className="text-sm">

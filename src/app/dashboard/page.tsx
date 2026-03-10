@@ -218,7 +218,7 @@ export default async function DashboardPage() {
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardHeader className="space-y-2">
                 <p className="text-emerald text-xs font-semibold tracking-wide uppercase">
-                  Draft in progress
+                  Application in progress
                 </p>
                 <CardTitle className="text-xl">
                   Resume your application
@@ -250,7 +250,7 @@ export default async function DashboardPage() {
                     <Link
                       href={`${APPLY_INTAKE_ROUTE}?clientId=${encodeURIComponent(draftClient.id)}`}
                     >
-                      Continue Application
+                      Continue application
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
