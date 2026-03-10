@@ -14,7 +14,14 @@
 import { NextResponse } from "next/server";
 import { withApiHandler, requireClientAccount } from "@/lib/api/route-helpers";
 import { findApplicationStatus } from "@/lib/api/d2c-application-helpers";
-import { UUID_REGEX } from "@/lib/validation/client";
+import { validateUUID } from "@/lib/api/client-helpers";
+
+function applicationNotFoundResponse() {
+  return NextResponse.json(
+    { error: "Application not found or you do not have access" },
+    { status: 404 },
+  );
+}
 
 /**
  * GET /api/d2c/applications/[clientId]/status
@@ -41,14 +48,11 @@ export const GET = withApiHandler(
     const clientGuard = await requireClientAccount(logger, session);
     if (clientGuard) return clientGuard;
 
-    const clientId = params.clientId;
-
-    if (!clientId || !UUID_REGEX.test(clientId)) {
+    const clientId = params.clientId ?? "";
+    const clientIdError = validateUUID(clientId, "client ID");
+    if (clientIdError) {
       await logger.warn("Invalid client ID format", { clientId });
-      return NextResponse.json(
-        { error: "Invalid client ID format" },
-        { status: 400 },
-      );
+      return clientIdError;
     }
 
     logger.addContext({ clientId });
@@ -57,10 +61,7 @@ export const GET = withApiHandler(
 
     if (!result.found) {
       await logger.info("Application not found", { statusCode: 404, clientId });
-      return NextResponse.json(
-        { error: "Application not found or you do not have access" },
-        { status: 404 },
-      );
+      return applicationNotFoundResponse();
     }
 
     await logger.info("Application status retrieved successfully", {
