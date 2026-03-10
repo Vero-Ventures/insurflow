@@ -50,3 +50,37 @@ describe("DashboardPage session fallback", () => {
     expect(findClientMock).toHaveBeenCalledTimes(1);
   }, 15000);
 });
+
+describe("DashboardPage missing profile guard", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    findClientMock.mockResolvedValue(null);
+  });
+
+  it("redirects to /onboarding when user has no profile", async () => {
+    getSessionMock.mockResolvedValue({
+      user: { id: "user_456", name: "New User" },
+      session: { userId: "user_456" },
+    });
+    findProfileMock.mockResolvedValue(null);
+
+    const { default: DashboardPage } = await import("./page");
+
+    await expect(DashboardPage()).rejects.toThrow("redirect:/onboarding");
+    expect(redirectMock).toHaveBeenCalledWith("/onboarding");
+  }, 15000);
+
+  it("renders successfully when profile exists", async () => {
+    getSessionMock.mockResolvedValue({
+      user: { id: "user_789", name: "Complete User" },
+      session: { userId: "user_789" },
+    });
+    findProfileMock.mockResolvedValue({ accountType: "client" });
+
+    const { default: DashboardPage } = await import("./page");
+    const page = await DashboardPage();
+
+    expect(page).toBeTruthy();
+    expect(redirectMock).not.toHaveBeenCalled();
+  }, 15000);
+});
