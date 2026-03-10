@@ -125,6 +125,10 @@ describe("D2C intake storage", () => {
         coverageAmount: 500000,
         termYears: 20,
         healthClass: "standard",
+        hasSpouse: true,
+        spouseAge: 40,
+        youngestChildAge: 12,
+        additionalGoals: "Protect family cash flow",
       };
 
       saveD2cIntake(intake);

@@ -39,6 +39,10 @@ export interface ClientDraftFields {
   clientIncome: string;
   existingLifeInsuranceCoverage: string;
   replacementDurationYears: number;
+  hasSpouse: boolean;
+  spouseAge: number | null;
+  youngestChildAge: number | null;
+  additionalGoals: string | null;
   status: "draft" | "active" | "archived";
 }
 
@@ -182,6 +186,25 @@ export function d2cIntakeToClientFields(
     fields.replacementDurationYears = intake.termYears ?? 20;
   }
 
+  if ("hasSpouse" in intake) {
+    fields.hasSpouse = intake.hasSpouse ?? false;
+    if (!intake.hasSpouse) {
+      fields.spouseAge = null;
+    }
+  }
+
+  if ("spouseAge" in intake) {
+    fields.spouseAge = intake.spouseAge ?? null;
+  }
+
+  if ("youngestChildAge" in intake) {
+    fields.youngestChildAge = intake.youngestChildAge ?? null;
+  }
+
+  if ("additionalGoals" in intake) {
+    fields.additionalGoals = intake.additionalGoals?.trim() || null;
+  }
+
   return fields;
 }
 
@@ -246,6 +269,10 @@ export function clientFieldsToD2cIntake(client: ClientDraftFields): D2cIntake {
     coverageAmount: decimalStringToNumber(client.existingLifeInsuranceCoverage),
     termYears: client.replacementDurationYears ?? 20,
     healthClass: untouched ? "" : healthRatingToClass(client.healthRating),
+    hasSpouse: client.hasSpouse ?? false,
+    spouseAge: client.spouseAge ?? null,
+    youngestChildAge: client.youngestChildAge ?? null,
+    additionalGoals: client.additionalGoals ?? "",
   };
 }
 

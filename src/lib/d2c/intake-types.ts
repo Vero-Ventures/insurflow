@@ -32,4 +32,8 @@ export interface D2cIntake {
   /** Term length in years */
   termYears: number;
   healthClass: HealthClass | "";
+  hasSpouse: boolean;
+  spouseAge: number | null;
+  youngestChildAge: number | null;
+  additionalGoals: string;
 }
