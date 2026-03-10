@@ -189,7 +189,7 @@ export default function ApplyEstimatePage() {
       <div className="mx-auto w-full max-w-4xl space-y-6">
         <section className="space-y-2">
           <p className="text-primary text-sm font-semibold tracking-wide uppercase">
-            Step 2 of 4
+            Step 3 of 4
           </p>
           <h1 className="font-display text-foreground text-3xl tracking-tight sm:text-4xl">
             Your estimate preview
