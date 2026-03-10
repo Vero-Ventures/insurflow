@@ -202,6 +202,13 @@ describe("d2cIntakeToClientFields", () => {
     expect(result.sex).toBeUndefined();
   });
 
+  it("forces spouseAge to null when hasSpouse is false", () => {
+    const result = d2cIntakeToClientFields({ hasSpouse: false, spouseAge: 41 });
+
+    expect(result.hasSpouse).toBe(false);
+    expect(result.spouseAge).toBeNull();
+  });
+
   it("handles partial intake (only province and income)", () => {
     const partial: D2cIntake = {
       ...DEFAULT_D2C_INTAKE,

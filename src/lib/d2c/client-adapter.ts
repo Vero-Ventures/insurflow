@@ -186,15 +186,15 @@ export function d2cIntakeToClientFields(
     fields.replacementDurationYears = intake.termYears ?? 20;
   }
 
+  if ("spouseAge" in intake) {
+    fields.spouseAge = intake.spouseAge ?? null;
+  }
+
   if ("hasSpouse" in intake) {
     fields.hasSpouse = intake.hasSpouse ?? false;
     if (!intake.hasSpouse) {
       fields.spouseAge = null;
     }
-  }
-
-  if ("spouseAge" in intake) {
-    fields.spouseAge = intake.spouseAge ?? null;
   }
 
   if ("youngestChildAge" in intake) {
