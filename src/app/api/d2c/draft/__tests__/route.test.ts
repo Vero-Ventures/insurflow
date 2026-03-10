@@ -68,6 +68,10 @@ function createMockDraftRecord(overrides: Record<string, unknown> = {}) {
     clientIncome: "0",
     existingLifeInsuranceCoverage: "0",
     replacementDurationYears: 20,
+    hasSpouse: false,
+    spouseAge: null,
+    youngestChildAge: null,
+    additionalGoals: null,
     status: "draft",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -165,6 +169,27 @@ describe("POST /api/d2c/draft", () => {
       },
     });
 
+    expect(mockCreateDraft).toHaveBeenCalled();
+  });
+
+  it("accepts fact finding fields in draft creation", async () => {
+    const mockDraft = createMockDraftRecord();
+    mockCreateDraft.mockResolvedValue({
+      success: true,
+      draft: mockDraft,
+      existed: false,
+    });
+
+    const response = await postDraft({
+      intake: {
+        hasSpouse: true,
+        spouseAge: 42,
+        youngestChildAge: 11,
+        additionalGoals: "Plan for mortgage and education",
+      },
+    });
+
+    expect(response.status).toBe(201);
     expect(mockCreateDraft).toHaveBeenCalled();
   });
 
@@ -359,6 +384,32 @@ describe("PATCH /api/d2c/draft/[clientId]", () => {
 
     const response = await patchDraft(TEST_UUIDS.validClientId, {
       intake: { tobaccoUse: true },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.draft).toBeDefined();
+  });
+
+  it("accepts fact finding fields on patch", async () => {
+    const updatedDraft = createMockDraftRecord({
+      hasSpouse: true,
+      spouseAge: 44,
+      youngestChildAge: 12,
+      additionalGoals: "Preserve family budget continuity",
+    });
+    mockUpdateDraft.mockResolvedValue({
+      success: true,
+      draft: updatedDraft,
+    });
+
+    const response = await patchDraft(TEST_UUIDS.validClientId, {
+      intake: {
+        hasSpouse: true,
+        spouseAge: 44,
+        youngestChildAge: 12,
+        additionalGoals: "Preserve family budget continuity",
+      },
     });
 
     expect(response.status).toBe(200);

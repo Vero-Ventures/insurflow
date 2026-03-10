@@ -157,6 +157,10 @@ describe("d2cIntakeToClientFields", () => {
     coverageAmount: 500000,
     termYears: 20,
     healthClass: "preferred",
+    hasSpouse: true,
+    spouseAge: 39,
+    youngestChildAge: 8,
+    additionalGoals: "Keep mortgage protection in place",
   };
 
   it("maps all populated fields correctly", () => {
@@ -170,6 +174,10 @@ describe("d2cIntakeToClientFields", () => {
     expect(result.existingLifeInsuranceCoverage).toBe("500000.00");
     expect(result.replacementDurationYears).toBe(20);
     expect(result.healthRating).toBe("preferred");
+    expect(result.hasSpouse).toBe(true);
+    expect(result.spouseAge).toBe(39);
+    expect(result.youngestChildAge).toBe(8);
+    expect(result.additionalGoals).toBe("Keep mortgage protection in place");
   });
 
   it("maps empty/zero values to draft defaults", () => {
@@ -192,6 +200,13 @@ describe("d2cIntakeToClientFields", () => {
     expect(result.dateOfBirth).toBeUndefined();
     expect(result.province).toBeUndefined();
     expect(result.sex).toBeUndefined();
+  });
+
+  it("forces spouseAge to null when hasSpouse is false", () => {
+    const result = d2cIntakeToClientFields({ hasSpouse: false, spouseAge: 41 });
+
+    expect(result.hasSpouse).toBe(false);
+    expect(result.spouseAge).toBeNull();
   });
 
   it("handles partial intake (only province and income)", () => {
@@ -225,6 +240,10 @@ describe("clientFieldsToD2cIntake", () => {
     clientIncome: "85000.00",
     existingLifeInsuranceCoverage: "500000.00",
     replacementDurationYears: 20,
+    hasSpouse: true,
+    spouseAge: 41,
+    youngestChildAge: 10,
+    additionalGoals: "Plan for education costs",
     status: "draft",
   };
 
@@ -239,6 +258,10 @@ describe("clientFieldsToD2cIntake", () => {
     expect(result.coverageAmount).toBe(500000);
     expect(result.termYears).toBe(20);
     expect(result.healthClass).toBe("preferred");
+    expect(result.hasSpouse).toBe(true);
+    expect(result.spouseAge).toBe(41);
+    expect(result.youngestChildAge).toBe(10);
+    expect(result.additionalGoals).toBe("Plan for education costs");
   });
 
   it("handles 'substandard' health rating gracefully", () => {
@@ -276,6 +299,10 @@ describe("round-trip: D2cIntake -> Client -> D2cIntake", () => {
       coverageAmount: 750000,
       termYears: 30,
       healthClass: "standard_plus",
+      hasSpouse: true,
+      spouseAge: 37,
+      youngestChildAge: 5,
+      additionalGoals: "Bridge mortgage and tuition",
     };
 
     const clientFields = d2cIntakeToClientFields(original);
@@ -293,6 +320,10 @@ describe("round-trip: D2cIntake -> Client -> D2cIntake", () => {
       existingLifeInsuranceCoverage:
         clientFields.existingLifeInsuranceCoverage ?? "0",
       replacementDurationYears: clientFields.replacementDurationYears ?? 20,
+      hasSpouse: clientFields.hasSpouse ?? false,
+      spouseAge: clientFields.spouseAge ?? null,
+      youngestChildAge: clientFields.youngestChildAge ?? null,
+      additionalGoals: clientFields.additionalGoals ?? "",
       status: "draft",
     };
 
@@ -306,6 +337,10 @@ describe("round-trip: D2cIntake -> Client -> D2cIntake", () => {
     expect(restored.coverageAmount).toBe(original.coverageAmount);
     expect(restored.termYears).toBe(original.termYears);
     expect(restored.healthClass).toBe(original.healthClass);
+    expect(restored.hasSpouse).toBe(original.hasSpouse);
+    expect(restored.spouseAge).toBe(original.spouseAge);
+    expect(restored.youngestChildAge).toBe(original.youngestChildAge);
+    expect(restored.additionalGoals).toBe(original.additionalGoals);
   });
 });
 
@@ -330,6 +365,10 @@ describe("getDraftCompleteness", () => {
       coverageAmount: 500000,
       termYears: 20,
       healthClass: "preferred",
+      hasSpouse: false,
+      spouseAge: null,
+      youngestChildAge: null,
+      additionalGoals: "",
     };
 
     const result = getDraftCompleteness(complete);

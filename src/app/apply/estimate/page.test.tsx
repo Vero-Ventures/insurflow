@@ -47,6 +47,7 @@ describe("ApplyEstimatePage", () => {
     expect(
       screen.getByText(/not an offer, quote, or policy approval/i),
     ).toBeTruthy();
+    expect(screen.getByText(/step 3 of 4/i)).toBeTruthy();
   });
 
   it("navigates to review step", async () => {

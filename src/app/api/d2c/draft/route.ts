@@ -46,6 +46,10 @@ const optionalIntakeSchema = z.object({
   annualIncome: z.number().optional(),
   coverageAmount: z.number().optional(),
   termYears: z.number().optional(),
+  hasSpouse: z.boolean().optional(),
+  spouseAge: z.number().int().min(18).max(120).nullable().optional(),
+  youngestChildAge: z.number().int().min(0).max(17).nullable().optional(),
+  additionalGoals: z.string().max(2000).optional(),
   healthClass: z
     .enum(["preferred_plus", "preferred", "standard_plus", "standard", ""])
     .optional(),

@@ -88,7 +88,7 @@ describe("D2cIntakePage", () => {
     });
   });
 
-  it("navigates to /apply/estimate when continue button is clicked with valid form", async () => {
+  it("navigates to /apply/fact-finding when continue button is clicked with valid form", async () => {
     render(<D2cIntakePage />);
 
     // Wait for hydration
@@ -115,11 +115,11 @@ describe("D2cIntakePage", () => {
 
     // Click continue
     const continueButton = screen.getByRole("button", {
-      name: /continue to estimate/i,
+      name: /continue to fact finding/i,
     });
     fireEvent.click(continueButton);
 
-    expect(pushMock).toHaveBeenCalledWith("/apply/estimate");
+    expect(pushMock).toHaveBeenCalledWith("/apply/fact-finding");
   });
 
   it("disables continue button when required fields are empty", async () => {
@@ -127,7 +127,7 @@ describe("D2cIntakePage", () => {
 
     await waitFor(() => {
       const continueButton = screen.getByRole("button", {
-        name: /continue to estimate/i,
+        name: /continue to fact finding/i,
       });
       expect(continueButton.getAttribute("disabled")).not.toBeNull();
     });
@@ -195,9 +195,9 @@ describe("D2cIntakePage", () => {
     fireEvent.click(await screen.findByRole("option", { name: /ontario/i }));
 
     fireEvent.click(
-      screen.getByRole("button", { name: /continue to estimate/i }),
+      screen.getByRole("button", { name: /continue to fact finding/i }),
     );
 
-    expect(pushMock).toHaveBeenCalledWith("/apply/estimate");
+    expect(pushMock).toHaveBeenCalledWith("/apply/fact-finding");
   });
 });

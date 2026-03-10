@@ -11,6 +11,10 @@ export const DEFAULT_D2C_INTAKE: D2cIntake = {
   coverageAmount: 0,
   termYears: 20,
   healthClass: "",
+  hasSpouse: false,
+  spouseAge: null,
+  youngestChildAge: null,
+  additionalGoals: "",
 };
 
 /**

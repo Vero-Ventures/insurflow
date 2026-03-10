@@ -39,11 +39,11 @@ export default function D2cIntakePage() {
     useDraftPersistence({ initialClientId });
 
   const handleContinue = () => {
-    // Pass clientId forward so the estimate step can reference the draft
-    const estimateUrl = clientId
-      ? `/apply/estimate?clientId=${encodeURIComponent(clientId)}`
-      : "/apply/estimate";
-    router.push(estimateUrl);
+    // Pass clientId forward so the fact finding step can reference the draft
+    const factFindingUrl = clientId
+      ? `/apply/fact-finding?clientId=${encodeURIComponent(clientId)}`
+      : "/apply/fact-finding";
+    router.push(factFindingUrl);
   };
 
   const isFormValid =
@@ -311,7 +311,7 @@ export default function D2cIntakePage() {
                   className="bg-emerald hover:bg-emerald/90 gap-2"
                   disabled={!isFormValid}
                 >
-                  Continue to estimate
+                  Continue to Fact Finding
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
