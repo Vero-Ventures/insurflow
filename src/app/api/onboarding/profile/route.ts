@@ -92,22 +92,11 @@ export const PUT = withApiHandler(
     const now = new Date();
     const db = getDb();
 
-    await db
-      .insert(userProfile)
-      .values({
-        userId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        state: data.state,
-        householdStatus: data.householdStatus,
-        primaryGoal: data.primaryGoal,
-        communicationPreference: data.communicationPreference,
-        accountType: data.accountType,
-        onboardingCompletedAt: now,
-      })
-      .onConflictDoUpdate({
-        target: userProfile.userId,
-        set: {
+    try {
+      await db
+        .insert(userProfile)
+        .values({
+          userId,
           firstName: data.firstName,
           lastName: data.lastName,
           state: data.state,
@@ -116,18 +105,53 @@ export const PUT = withApiHandler(
           communicationPreference: data.communicationPreference,
           accountType: data.accountType,
           onboardingCompletedAt: now,
-          updatedAt: now,
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: userProfile.userId,
+          set: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            state: data.state,
+            householdStatus: data.householdStatus,
+            primaryGoal: data.primaryGoal,
+            communicationPreference: data.communicationPreference,
+            accountType: data.accountType,
+            onboardingCompletedAt: now,
+            updatedAt: now,
+          },
+        });
+    } catch (dbError) {
+      await logger.error(
+        "Onboarding profile upsert failed",
+        dbError instanceof Error ? dbError : new Error(String(dbError)),
+      );
+      return NextResponse.json(
+        { error: "Unable to save your profile. Please try again." },
+        { status: 500 },
+      );
+    }
 
     if (user && "id" in user && user.id) {
-      await db
-        .update(user)
-        .set({
-          name: fullName,
-          updatedAt: now,
-        })
-        .where(eq(user.id, userId));
+      try {
+        await db
+          .update(user)
+          .set({
+            name: fullName,
+            updatedAt: now,
+          })
+          .where(eq(user.id, userId));
+      } catch (nameError) {
+        await logger.warn("User name sync failed (non-blocking)", {
+          error:
+            nameError instanceof Error
+              ? {
+                  name: nameError.name,
+                  message: nameError.message,
+                  stack: nameError.stack,
+                }
+              : { name: "Unknown", message: String(nameError) },
+        });
+      }
     } else {
       await logger.warn("Skipped user name sync: auth user table unavailable", {
         hasUserTable: Boolean(user),
