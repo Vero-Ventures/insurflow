@@ -37,6 +37,10 @@ const DRAFT_SELECT_COLUMNS = {
   clientIncome: true,
   existingLifeInsuranceCoverage: true,
   replacementDurationYears: true,
+  hasSpouse: true,
+  spouseAge: true,
+  youngestChildAge: true,
+  additionalGoals: true,
   status: true,
   createdAt: true,
   updatedAt: true,
@@ -58,6 +62,10 @@ export type DraftClientRecord = {
   clientIncome: string;
   existingLifeInsuranceCoverage: string;
   replacementDurationYears: number;
+  hasSpouse: boolean;
+  spouseAge: number | null;
+  youngestChildAge: number | null;
+  additionalGoals: string | null;
   status: "draft" | "active" | "archived";
   createdAt: Date;
   updatedAt: Date;
