@@ -27,19 +27,19 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-describe("Home page D2C direction", () => {
+describe("Home page consumer direction", () => {
   it("uses consumer-first journey language", () => {
     render(<Home />);
 
     expect(
       screen.getByRole("heading", {
-        name: /your path to a term life application/i,
+        name: /your path to term life coverage/i,
       }),
     ).toBeTruthy();
-    expect(screen.getAllByText(/eligibility intake/i).length).toBeGreaterThan(
-      0,
-    );
-    expect(screen.getByText(/application status tracking/i)).toBeTruthy();
+    expect(screen.getAllByText(/eligibility check/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/with clear status updates after submission/i),
+    ).toBeTruthy();
     expect(screen.queryByText(/advisor handoff/i)).toBeNull();
   });
 });

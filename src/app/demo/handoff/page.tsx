@@ -47,11 +47,11 @@ export default function DemoHandoffPage() {
           </div>
 
           <h1 className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl">
-            Review your estimate with an advisor
+            Next steps after your estimate
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            You are at the final step. A human advisor helps validate your
-            estimate and make sure the recommendation fits real-life goals.
+            You are at the final step. A licensed advisor can help validate your
+            estimate and tailor final recommendations to your goals.
           </p>
         </div>
 
@@ -83,18 +83,18 @@ export default function DemoHandoffPage() {
             variant="outline"
             className="border-emerald/30 bg-emerald/10 text-emerald"
           >
-            Advisor view note
+            Demo summary
           </Badge>
           <p className="mt-2 text-sm leading-relaxed">
-            Your intake, interactive estimate, AI draft letter, and report
-            preview are ready for advisor follow-up.
+            Your intake, estimate, AI explanation, and report preview are ready
+            for a follow-up conversation.
           </p>
         </Card>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button asChild className="bg-emerald hover:bg-emerald/90 gap-2">
             <Link href="/auth/sign-up">
-              Connect with an Advisor
+              Connect with an advisor
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

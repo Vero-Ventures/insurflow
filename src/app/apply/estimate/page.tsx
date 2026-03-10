@@ -192,11 +192,11 @@ export default function ApplyEstimatePage() {
             Step 2 of 4
           </p>
           <h1 className="font-display text-foreground text-3xl tracking-tight sm:text-4xl">
-            Your non-binding estimate preview
+            Your estimate preview
           </h1>
           <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">
-            This estimate is based on your intake details for {intake.province}.
-            It is not an offer, quote, or policy approval.
+            This non-binding estimate is based on your intake details for{" "}
+            {intake.province}. It is not an offer, quote, or policy approval.
           </p>
         </section>
 
@@ -215,7 +215,7 @@ export default function ApplyEstimatePage() {
 
           <Card className="border-border/60 bg-card/80 p-6">
             <p className="text-muted-foreground text-sm">
-              Estimated monthly range
+              Estimated monthly cost range
             </p>
             <p className="text-foreground mt-2 text-3xl font-semibold">
               {formatCurrency(premiumLow)} - {formatCurrency(premiumHigh)}
@@ -228,9 +228,9 @@ export default function ApplyEstimatePage() {
         </section>
 
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
-          This is a conservative, non-binding estimate preview only. Final
-          premium, eligibility, and coverage depend on full underwriting,
-          disclosures, and carrier review.
+          This is a conservative, non-binding estimate only. Final premium,
+          eligibility, and coverage depend on full underwriting, disclosures,
+          and carrier review.
         </Card>
 
         <div className="flex justify-end">

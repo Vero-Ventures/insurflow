@@ -86,11 +86,11 @@ export default function D2cIntakePage() {
           </div>
 
           <h1 className="font-display text-foreground text-2xl font-semibold tracking-tight lg:text-3xl">
-            Let&apos;s get started
+            Let&apos;s get your estimate started
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            Share a few details to see a conservative, non-binding estimate
-            preview before starting your application.
+            Share a few details to see a non-binding estimate preview before
+            continuing your application.
           </p>
         </div>
 
@@ -105,10 +105,10 @@ export default function D2cIntakePage() {
             >
               <div className="space-y-1">
                 <p className="text-foreground text-sm font-semibold">
-                  Basic Information
+                  Your details
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  All fields are required for eligibility assessment.
+                  These fields are required to generate your estimate preview.
                 </p>
               </div>
 
@@ -155,7 +155,7 @@ export default function D2cIntakePage() {
                   </span>
                 </Label>
                 <p className="text-muted-foreground text-xs">
-                  Your age affects premium rates. Must be 18-70 years old.
+                  Your age affects premium rates. You must be 18-70 years old.
                 </p>
                 <Input
                   id="date-of-birth"
@@ -311,7 +311,7 @@ export default function D2cIntakePage() {
                   className="bg-emerald hover:bg-emerald/90 gap-2"
                   disabled={!isFormValid}
                 >
-                  Continue to Estimate
+                  Continue to estimate
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -371,7 +371,7 @@ export default function D2cIntakePage() {
               </p>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                 We use bank-level encryption to protect your data. Your
-                information is used only to generate your estimate preview and
+                information is only used to generate your estimate preview and
                 application details.
               </p>
             </Card>

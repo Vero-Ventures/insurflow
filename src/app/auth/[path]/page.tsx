@@ -20,21 +20,20 @@ export function generateStaticParams() {
 const features = [
   {
     icon: Clock,
-    title: "Fast Eligibility Check",
+    title: "Quick Eligibility Check",
     description:
-      "Complete a short intake and see your estimate preview in minutes",
+      "Answer a few questions and see your estimate preview in minutes",
   },
   {
     icon: FileText,
-    title: "Simple Application Flow",
+    title: "Simple Application Steps",
     description:
-      "Move from estimate to application submission in one guided journey",
+      "Move from estimate to submission in one clear, guided journey",
   },
   {
     icon: BarChart3,
-    title: "Clear Status Tracking",
-    description:
-      "Track your application with clear, easy-to-understand status updates",
+    title: "Clear Status Updates",
+    description: "Track your application with clear updates at each step",
   },
   {
     icon: Smartphone,
@@ -45,7 +44,7 @@ const features = [
 
 const stats = [
   { value: "5 min", label: "Typical Intake" },
-  { value: "D2C", label: "Consumer-first" },
+  { value: "Plain", label: "Clear language" },
   { value: "Live", label: "Status Timeline" },
 ];
 
@@ -124,7 +123,7 @@ export default async function AuthPage({
               </div>
             </div>
             <p className="max-w-md text-base leading-relaxed font-medium text-white/90 lg:text-lg">
-              Check your term life coverage needs and submit an application in{" "}
+              Check your term life coverage needs and submit your application in{" "}
               <span className="text-emerald-400">under 5 minutes</span>.
             </p>
           </div>
@@ -145,12 +144,12 @@ export default async function AuthPage({
           <div className="hidden space-y-4 lg:block">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
               <Shield className="text-emerald h-5 w-5" />
-              Built for Canada-first D2C Term Life
+              Built for Canada-first term life applications
             </h2>
             <p className="max-w-md leading-relaxed text-white/80">
               Start with a short eligibility check, review a non-binding
-              estimate, and submit your application. You can track each update
-              in one place.
+              estimate, and submit your application with clear updates in one
+              place.
             </p>
           </div>
 
@@ -199,7 +198,7 @@ export default async function AuthPage({
             </h2>
             <p className="text-muted-foreground mt-2 text-sm">
               {isSignUp
-                ? "Start with a short profile setup for personalized guidance"
+                ? "Set up your profile in minutes to personalize your experience"
                 : "Sign in to continue to InsurFlow"}
             </p>
           </div>

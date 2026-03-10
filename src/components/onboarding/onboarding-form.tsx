@@ -13,9 +13,9 @@ import {
   type OnboardingProfileInput,
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
+import { CANADIAN_PROVINCE_TERRITORY_OPTIONS } from "@/lib/constants";
 import { getAccountTypeConfirmation } from "@/lib/role-experience";
 import { cn } from "@/lib/utils";
-import { STATES } from "@/lib/validation/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
         throw new Error(payload?.error ?? "Unable to save onboarding details");
       }
 
-      toast.success("Profile completed. Welcome to InsurFlow.");
+      toast.success("Profile saved. Welcome to InsurFlow.");
       router.replace(AUTHENTICATED_HOME_ROUTE);
       router.refresh();
     } catch (error) {
@@ -93,10 +93,10 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
     <Card className="border-border/60 shadow-sm">
       <CardHeader>
         <CardTitle className="font-display text-2xl">
-          Complete your profile
+          Tell us a few basics
         </CardTitle>
         <p className="text-muted-foreground text-sm">
-          This helps us tailor your insurance guidance and planning experience.
+          This helps us personalize your estimate and application journey.
         </p>
       </CardHeader>
 
@@ -132,7 +132,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
 
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="state">
-              State
+              Province/Territory
             </label>
             <select
               id="state"
@@ -141,10 +141,10 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
               className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               required
             >
-              <option value="">Select your state</option>
-              {STATES.map((stateCode) => (
-                <option key={stateCode} value={stateCode}>
-                  {stateCode}
+              <option value="">Select your province or territory</option>
+              {CANADIAN_PROVINCE_TERRITORY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -275,7 +275,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
             <CheckCircle2 className="mr-2 h-4 w-4" />
-            {isSubmitting ? "Saving your profile..." : "Finish onboarding"}
+            {isSubmitting ? "Saving your profile..." : "Save and continue"}
           </Button>
         </form>
       </CardContent>
