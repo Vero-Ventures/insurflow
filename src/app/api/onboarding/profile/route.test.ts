@@ -71,21 +71,21 @@ vi.mock("@/server/db/schemas/auth-schema", () => ({
   user: undefined,
 }));
 
+const VALID_BODY = {
+  firstName: "Ada",
+  lastName: "Lovelace",
+  state: "CA",
+  householdStatus: "single",
+  primaryGoal: "family_protection",
+  communicationPreference: "email",
+  accountType: "advisor",
+};
+
 describe("PUT /api/onboarding/profile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    parseJsonBodyMock.mockResolvedValue({
-      body: {
-        firstName: "Ada",
-        lastName: "Lovelace",
-        state: "CA",
-        householdStatus: "single",
-        primaryGoal: "family_protection",
-        communicationPreference: "email",
-        accountType: "advisor",
-      },
-    });
+    parseJsonBodyMock.mockResolvedValue({ body: VALID_BODY });
 
     insertMock.mockReturnValue({
       values: vi.fn().mockReturnValue({
@@ -116,5 +116,29 @@ describe("PUT /api/onboarding/profile", () => {
     expect(body.isComplete).toBe(true);
     expect(insertMock).toHaveBeenCalledTimes(1);
     expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 with user-friendly message when profile upsert fails", async () => {
+    insertMock.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi
+          .fn()
+          .mockRejectedValue(new Error("DB connection lost")),
+      }),
+    });
+
+    const { PUT } = await import("./route");
+
+    const response = await PUT(
+      new Request("http://localhost/api/onboarding", {
+        method: "PUT",
+        body: JSON.stringify({}),
+      }),
+      { params: Promise.resolve({}) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Unable to save your profile. Please try again.");
   });
 });

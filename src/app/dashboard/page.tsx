@@ -89,7 +89,11 @@ export default async function DashboardPage() {
     columns: { accountType: true },
   });
 
-  const accountType = normalizeAccountType(profile?.accountType) ?? "client";
+  if (!profile) {
+    redirect("/onboarding");
+  }
+
+  const accountType = normalizeAccountType(profile.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
 
   const recentClient =
