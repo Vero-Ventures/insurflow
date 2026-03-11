@@ -15,6 +15,8 @@ interface LifeEventHistoryProps {
   error: string | null;
   onRecalculate?: (event: LifeEvent) => void;
   isRecalculating?: boolean;
+  onDelete?: (event: LifeEvent) => void;
+  isDeleting?: boolean;
 }
 
 export function LifeEventHistory({
@@ -23,6 +25,8 @@ export function LifeEventHistory({
   error,
   onRecalculate,
   isRecalculating,
+  onDelete,
+  isDeleting,
 }: LifeEventHistoryProps) {
   if (isLoading) {
     return (
@@ -63,6 +67,8 @@ export function LifeEventHistory({
           event={event}
           onRecalculate={onRecalculate}
           isRecalculating={isRecalculating}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
         />
       ))}
     </div>

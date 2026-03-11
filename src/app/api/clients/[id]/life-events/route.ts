@@ -258,6 +258,10 @@ const recalculateEventSchema = z.object({
   beforeSnapshot: insuranceNeedsSnapshotSchema,
 });
 
+const deleteEventSchema = z.object({
+  eventId: z.string().uuid(),
+});
+
 /**
  * PATCH /api/clients/[id]/life-events
  *
@@ -335,5 +339,67 @@ export const PATCH = withApiHandler(
     });
 
     return { data: { event: updated } };
+  },
+);
+
+// ============================================================================
+// DELETE /api/clients/[id]/life-events
+// ============================================================================
+
+/**
+ * DELETE /api/clients/[id]/life-events
+ *
+ * Deletes a life event recalculation record.
+ *
+ * Request body:
+ * - eventId: UUID of the life event record to delete
+ */
+export const DELETE = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/life-events",
+    method: "DELETE",
+    requireClient: true,
+  },
+  async (request, { logger, clientId }) => {
+    const bodyResult = await parseJsonBody(request, logger);
+    if ("error" in bodyResult) return bodyResult.error;
+
+    const validationResult = deleteEventSchema.safeParse(bodyResult.body);
+    if (!validationResult.success) {
+      return handleValidationError(
+        logger,
+        validationResult.error,
+        "Invalid delete parameters",
+      );
+    }
+
+    const { eventId } = validationResult.data;
+
+    const db = getDb();
+
+    const [deleted] = await db
+      .delete(lifeEventRecalculation)
+      .where(
+        and(
+          eq(lifeEventRecalculation.id, eventId),
+          eq(lifeEventRecalculation.clientId, clientId!),
+        ),
+      )
+      .returning();
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Life event not found" },
+        { status: 404 },
+      );
+    }
+
+    await logger.info("Life event recalculation deleted", {
+      statusCode: 200,
+      eventId,
+      clientId,
+    });
+
+    return { data: { deletedId: eventId } };
   },
 );

@@ -47,6 +47,7 @@ export interface UseLifeEventsReturn {
   isLoading: boolean;
   isTriggeringEvent: boolean;
   isRecalculating: boolean;
+  isDeleting: boolean;
   error: string | null;
   triggerLifeEvent: (params: {
     lifeEvent: LifeEventType;
@@ -58,6 +59,8 @@ export interface UseLifeEventsReturn {
     eventId: string;
     currentResult: InsuranceNeedsResult;
   }) => Promise<LifeEvent | null>;
+  /** Delete a life event record */
+  deleteEvent: (eventId: string) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -98,6 +101,7 @@ export function useLifeEvents(
   const [isLoading, setIsLoading] = useState(false);
   const [isTriggeringEvent, setIsTriggeringEvent] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -220,14 +224,50 @@ export function useLifeEvents(
     [clientId],
   );
 
+  const deleteEvent = useCallback(
+    async (eventId: string): Promise<boolean> => {
+      setIsDeleting(true);
+
+      try {
+        const response = await fetch(`/api/clients/${clientId}/life-events`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ eventId }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(
+            (data as { error?: string }).error ?? "Failed to delete life event",
+          );
+        }
+
+        setEvents((prev) => prev.filter((e) => e.id !== eventId));
+        toast.success("Life event deleted");
+        return true;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to delete life event";
+        toast.error(message);
+        return false;
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    [clientId],
+  );
+
   return {
     events,
     isLoading,
     isTriggeringEvent,
     isRecalculating,
+    isDeleting,
     error,
     triggerLifeEvent,
     recalculateEvent,
+    deleteEvent,
     refresh: fetchEvents,
   };
 }

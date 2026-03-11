@@ -141,9 +141,11 @@ function ClientDetailContent() {
     isLoading: isLifeEventsLoading,
     isTriggeringEvent,
     isRecalculating,
+    isDeleting: isDeletingLifeEvent,
     error: lifeEventsError,
     triggerLifeEvent,
     recalculateEvent,
+    deleteEvent,
   } = useLifeEvents({
     clientId,
     enabled: !!client,
@@ -587,6 +589,10 @@ function ClientDetailContent() {
                 });
               }}
               isRecalculating={isRecalculating}
+              onDelete={(event) => {
+                deleteEvent(event.id);
+              }}
+              isDeleting={isDeletingLifeEvent}
             />
           </div>
         </TabsContent>

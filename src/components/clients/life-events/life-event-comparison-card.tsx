@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Minus,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/client-utils";
 import type { LifeEvent } from "@/lib/hooks/use-life-events";
@@ -62,12 +63,18 @@ interface LifeEventComparisonCardProps {
   onRecalculate?: (event: LifeEvent) => void;
   /** Whether a recalculation is currently in progress */
   isRecalculating?: boolean;
+  /** Callback to delete this life event record */
+  onDelete?: (event: LifeEvent) => void;
+  /** Whether a deletion is currently in progress */
+  isDeleting?: boolean;
 }
 
 export function LifeEventComparisonCard({
   event,
   onRecalculate,
   isRecalculating,
+  onDelete,
+  isDeleting,
 }: LifeEventComparisonCardProps) {
   const { beforeSnapshot: before, afterSnapshot: after } = event;
 
@@ -93,6 +100,19 @@ export function LifeEventComparisonCard({
                   }`}
                 />
                 Recalculate
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(event)}
+                disabled={isDeleting}
+                title="Delete this life event record"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Delete
               </Button>
             )}
             <span className="text-muted-foreground text-xs">
