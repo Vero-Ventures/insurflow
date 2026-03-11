@@ -132,17 +132,17 @@ export function LifeEventTriggerDialog({
                 {(Object.keys(LIFE_EVENT_LABELS) as LifeEventType[]).map(
                   (type) => (
                     <SelectItem key={type} value={type}>
-                      <span className="font-medium">
-                        {LIFE_EVENT_LABELS[type]}
-                      </span>
-                      <span className="text-muted-foreground ml-2 text-sm">
-                        — {LIFE_EVENT_DESCRIPTIONS[type]}
-                      </span>
+                      {LIFE_EVENT_LABELS[type]}
                     </SelectItem>
                   ),
                 )}
               </SelectContent>
             </Select>
+            {selectedEvent && (
+              <p className="text-muted-foreground text-xs">
+                {LIFE_EVENT_DESCRIPTIONS[selectedEvent]}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
