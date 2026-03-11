@@ -20,6 +20,7 @@ import {
   type EstimateAssumptionsUsed,
 } from "@/lib/financial/confidence-scoring";
 import { resolveExistingCoverage } from "@/lib/policy-utils";
+import { decimalToNumber } from "@/lib/financial/compute-snapshot";
 
 /**
  * Zod schema for estate buffer configuration
@@ -48,15 +49,6 @@ const calculateRequestSchema = z
   })
   .strict()
   .optional();
-
-/**
- * Helper to safely convert decimal string to number
- */
-function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
 
 /** True when client record has a non-empty value for a decimal/number field */
 function hasClientValue(value: string | number | null | undefined): boolean {

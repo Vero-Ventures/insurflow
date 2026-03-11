@@ -76,9 +76,7 @@ export const lifeEventRecalculation = pgTable(
     notes: text("notes"),
 
     /** Timestamp when the life event was recorded */
-    triggeredAt: timestamp("triggered_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
+    triggeredAt: timestamp("triggered_at", { withTimezone: true }).notNull(),
 
     /**
      * Insurance needs snapshot BEFORE the life event.
