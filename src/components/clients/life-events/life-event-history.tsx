@@ -13,12 +13,16 @@ interface LifeEventHistoryProps {
   events: LifeEvent[];
   isLoading: boolean;
   error: string | null;
+  onRecalculate?: (event: LifeEvent) => void;
+  isRecalculating?: boolean;
 }
 
 export function LifeEventHistory({
   events,
   isLoading,
   error,
+  onRecalculate,
+  isRecalculating,
 }: LifeEventHistoryProps) {
   if (isLoading) {
     return (
@@ -54,7 +58,12 @@ export function LifeEventHistory({
   return (
     <div className="space-y-3">
       {events.map((event) => (
-        <LifeEventComparisonCard key={event.id} event={event} />
+        <LifeEventComparisonCard
+          key={event.id}
+          event={event}
+          onRecalculate={onRecalculate}
+          isRecalculating={isRecalculating}
+        />
       ))}
     </div>
   );

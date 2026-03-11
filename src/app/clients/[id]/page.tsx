@@ -577,6 +577,15 @@ function ClientDetailContent() {
               events={lifeEvents}
               isLoading={isLifeEventsLoading}
               error={lifeEventsError}
+              onRecalculate={(event) => {
+                if (!insuranceResult) return;
+                triggerLifeEvent({
+                  lifeEvent: event.lifeEvent,
+                  notes: event.notes ?? undefined,
+                  currentResult: insuranceResult,
+                });
+              }}
+              isRecalculating={isTriggeringEvent}
             />
           </div>
         </TabsContent>

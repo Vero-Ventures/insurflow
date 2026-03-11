@@ -2,7 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowRight,
+  TrendingDown,
+  TrendingUp,
+  Minus,
+  RefreshCw,
+} from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/client-utils";
 import type { LifeEvent } from "@/lib/hooks/use-life-events";
 import { LIFE_EVENT_LABELS } from "./life-event-trigger-dialog";
@@ -51,10 +58,16 @@ function DeltaBadge({ before, after }: { before: number; after: number }) {
 
 interface LifeEventComparisonCardProps {
   event: LifeEvent;
+  /** Callback to re-trigger recalculation for this event type */
+  onRecalculate?: (event: LifeEvent) => void;
+  /** Whether a recalculation is currently in progress */
+  isRecalculating?: boolean;
 }
 
 export function LifeEventComparisonCard({
   event,
+  onRecalculate,
+  isRecalculating,
 }: LifeEventComparisonCardProps) {
   const { beforeSnapshot: before, afterSnapshot: after } = event;
 
@@ -65,9 +78,27 @@ export function LifeEventComparisonCard({
           <CardTitle className="text-base">
             {LIFE_EVENT_LABELS[event.lifeEvent]}
           </CardTitle>
-          <span className="text-muted-foreground text-xs">
-            {formatDateTime(event.triggeredAt)}
-          </span>
+          <div className="flex items-center gap-2">
+            {onRecalculate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRecalculate(event)}
+                disabled={isRecalculating}
+                title="Recalculate with current client data"
+              >
+                <RefreshCw
+                  className={`mr-1 h-3.5 w-3.5 ${
+                    isRecalculating ? "animate-spin" : ""
+                  }`}
+                />
+                Recalculate
+              </Button>
+            )}
+            <span className="text-muted-foreground text-xs">
+              {formatDateTime(event.triggeredAt)}
+            </span>
+          </div>
         </div>
         {event.notes && (
           <p className="text-muted-foreground text-sm">{event.notes}</p>
