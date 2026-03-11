@@ -246,3 +246,94 @@ export const POST = withApiHandler(
     return { data: { event }, status: 201 };
   },
 );
+
+// ============================================================================
+// PATCH /api/clients/[id]/life-events
+// ============================================================================
+
+const recalculateEventSchema = z.object({
+  /** The ID of the life event record to update */
+  eventId: z.string().uuid(),
+  /** The current estimate the advisor sees — becomes the new beforeSnapshot */
+  beforeSnapshot: insuranceNeedsSnapshotSchema,
+});
+
+/**
+ * PATCH /api/clients/[id]/life-events
+ *
+ * Recalculates (updates) an existing life event record.
+ * Replaces both beforeSnapshot and afterSnapshot with fresh data
+ * and updates triggeredAt to now.
+ */
+export const PATCH = withApiHandler(
+  {
+    endpoint: "/api/clients/[id]/life-events",
+    method: "PATCH",
+    requireClient: true,
+  },
+  async (request, { logger, clientId, session }) => {
+    const bodyResult = await parseJsonBody(request, logger);
+    if ("error" in bodyResult) return bodyResult.error;
+
+    const validationResult = recalculateEventSchema.safeParse(bodyResult.body);
+    if (!validationResult.success) {
+      return handleValidationError(
+        logger,
+        validationResult.error,
+        "Invalid recalculate parameters",
+      );
+    }
+
+    const { eventId, beforeSnapshot } = validationResult.data;
+
+    const db = getDb();
+
+    // Verify the event belongs to this client
+    const existing = await db.query.lifeEventRecalculation.findFirst({
+      where: and(
+        eq(lifeEventRecalculation.id, eventId),
+        eq(lifeEventRecalculation.clientId, clientId!),
+      ),
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Life event not found" },
+        { status: 404 },
+      );
+    }
+
+    // Compute fresh "after" snapshot
+    const afterSnapshot = await computeCurrentSnapshot(
+      clientId!,
+      session.user.id,
+    );
+
+    if (!afterSnapshot) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    const [updated] = await db
+      .update(lifeEventRecalculation)
+      .set({
+        beforeSnapshot,
+        afterSnapshot,
+        triggeredAt: new Date(),
+      })
+      .where(
+        and(
+          eq(lifeEventRecalculation.id, eventId),
+          eq(lifeEventRecalculation.clientId, clientId!),
+        ),
+      )
+      .returning();
+
+    await logger.info("Life event recalculation updated", {
+      statusCode: 200,
+      eventId,
+      clientId,
+    });
+
+    return { data: { event: updated } };
+  },
+);

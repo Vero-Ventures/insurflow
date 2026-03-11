@@ -46,10 +46,16 @@ export interface UseLifeEventsReturn {
   events: LifeEvent[];
   isLoading: boolean;
   isTriggeringEvent: boolean;
+  isRecalculating: boolean;
   error: string | null;
   triggerLifeEvent: (params: {
     lifeEvent: LifeEventType;
     notes?: string;
+    currentResult: InsuranceNeedsResult;
+  }) => Promise<LifeEvent | null>;
+  /** Re-run calculation for an existing event, updating it in place */
+  recalculateEvent: (params: {
+    eventId: string;
     currentResult: InsuranceNeedsResult;
   }) => Promise<LifeEvent | null>;
   refresh: () => Promise<void>;
@@ -91,6 +97,7 @@ export function useLifeEvents(
   const [events, setEvents] = useState<LifeEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTriggeringEvent, setIsTriggeringEvent] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -169,12 +176,58 @@ export function useLifeEvents(
     [clientId],
   );
 
+  const recalculateEvent = useCallback(
+    async (params: {
+      eventId: string;
+      currentResult: InsuranceNeedsResult;
+    }): Promise<LifeEvent | null> => {
+      setIsRecalculating(true);
+
+      try {
+        const response = await fetch(`/api/clients/${clientId}/life-events`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            eventId: params.eventId,
+            beforeSnapshot: toSnapshot(params.currentResult),
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(
+            (data as { error?: string }).error ?? "Failed to recalculate",
+          );
+        }
+
+        const data = (await response.json()) as { event: LifeEvent };
+        // Replace the event in the list in-place
+        setEvents((prev) =>
+          prev.map((e) => (e.id === data.event.id ? data.event : e)),
+        );
+        toast.success("Recalculation updated");
+        return data.event;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to recalculate";
+        toast.error(message);
+        return null;
+      } finally {
+        setIsRecalculating(false);
+      }
+    },
+    [clientId],
+  );
+
   return {
     events,
     isLoading,
     isTriggeringEvent,
+    isRecalculating,
     error,
     triggerLifeEvent,
+    recalculateEvent,
     refresh: fetchEvents,
   };
 }

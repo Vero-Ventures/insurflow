@@ -140,8 +140,10 @@ function ClientDetailContent() {
     events: lifeEvents,
     isLoading: isLifeEventsLoading,
     isTriggeringEvent,
+    isRecalculating,
     error: lifeEventsError,
     triggerLifeEvent,
+    recalculateEvent,
   } = useLifeEvents({
     clientId,
     enabled: !!client,
@@ -579,13 +581,12 @@ function ClientDetailContent() {
               error={lifeEventsError}
               onRecalculate={(event) => {
                 if (!insuranceResult) return;
-                triggerLifeEvent({
-                  lifeEvent: event.lifeEvent,
-                  notes: event.notes ?? undefined,
+                recalculateEvent({
+                  eventId: event.id,
                   currentResult: insuranceResult,
                 });
               }}
-              isRecalculating={isTriggeringEvent}
+              isRecalculating={isRecalculating}
             />
           </div>
         </TabsContent>
