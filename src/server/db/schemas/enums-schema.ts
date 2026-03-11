@@ -246,6 +246,19 @@ export const applicationStatusEnum = pgEnum("application_status", [
 ]);
 
 // ============================================================================
+// LIFE EVENT ENUMS
+// ============================================================================
+
+/** Life event types that can trigger an insurance needs recalculation */
+export const lifeEventTypeEnum = pgEnum("life_event_type", [
+  "income_change",
+  "new_child",
+  "debt_change",
+  "marriage",
+  "divorce",
+]);
+
+// ============================================================================
 // POLICY ENUMS
 // ============================================================================
 
