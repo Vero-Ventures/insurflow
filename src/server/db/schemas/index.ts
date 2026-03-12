@@ -39,6 +39,7 @@ export {
   policyTypeEnum,
   policyStatusEnum,
   applicationStatusEnum,
+  lifeEventTypeEnum,
 } from "./enums-schema";
 
 // Audit log enums
@@ -72,6 +73,9 @@ export { application, applicationEvent } from "./applications-schema";
 
 // Webhook event tables
 export { webhookEvent } from "./webhook-events-schema";
+
+// Life event tables
+export { lifeEventRecalculation } from "./life-events-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -108,6 +112,9 @@ export {
 // Webhook event relations
 export { webhookEventRelations } from "./webhook-events-schema";
 
+// Life event relations
+export { lifeEventRecalculationRelations } from "./life-events-schema";
+
 // D2C types
 export type {
   D2cResumeLink,
@@ -134,6 +141,14 @@ export type {
 // Webhook event types
 export type { WebhookEvent, WebhookEventInsert } from "./webhook-events-schema";
 
+// Life event types
+export type {
+  LifeEventRecalculation,
+  LifeEventRecalculationInsert,
+  LifeEventType,
+  InsuranceNeedsSnapshot,
+} from "./life-events-schema";
+
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
 // ============================================================================
@@ -151,6 +166,7 @@ import { policy } from "./policies-schema";
 import { d2cResumeLink } from "./d2c-resume-link-schema";
 import { application } from "./applications-schema";
 import { webhookEvent } from "./webhook-events-schema";
+import { lifeEventRecalculation } from "./life-events-schema";
 
 /**
  * Complete user relations including clients.
@@ -166,6 +182,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   }),
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
+  lifeEventRecalculations: many(lifeEventRecalculation),
 }));
 
 /**
@@ -182,6 +199,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
   webhookEvents: many(webhookEvent),
+  lifeEventRecalculations: many(lifeEventRecalculation),
 }));
 
 /**

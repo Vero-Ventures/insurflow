@@ -52,6 +52,7 @@ import { PoliciesSection } from "@/components/clients/policies-section";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
 import { useAdvancedIncomeReplacement } from "@/lib/hooks/use-advanced-income-replacement";
 import { useSettlingRequirements } from "@/lib/hooks/use-settling-requirements";
+import { useLifeEvents } from "@/lib/hooks/use-life-events";
 import {
   InsuranceNeedsCard,
   InsuranceNeedsChart,
@@ -61,6 +62,10 @@ import {
   SettlingRequirementsCard,
   SettlingRequirementsChart,
 } from "@/components/clients/settling-requirements";
+import {
+  LifeEventTriggerDialog,
+  LifeEventHistory,
+} from "@/components/clients/life-events";
 import { ClientReportView } from "@/components/clients/client-report-view";
 import { ScenarioComparisonView } from "@/components/scenario-comparison/scenario-comparison-view";
 import {
@@ -126,6 +131,22 @@ function ClientDetailContent() {
     recalculate: recalculateSettling,
     calculatedAt: settlingCalculatedAt,
   } = useSettlingRequirements({
+    clientId,
+    enabled: !!client,
+  });
+
+  // Life events hook
+  const {
+    events: lifeEvents,
+    isLoading: isLifeEventsLoading,
+    isTriggeringEvent,
+    isRecalculating,
+    isDeleting: isDeletingLifeEvent,
+    error: lifeEventsError,
+    triggerLifeEvent,
+    recalculateEvent,
+    deleteEvent,
+  } = useLifeEvents({
     clientId,
     enabled: !!client,
   });
@@ -542,6 +563,37 @@ function ClientDetailContent() {
             </h3>
 
             <ScenarioComparisonView />
+          </div>
+
+          {/* Life Events */}
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-foreground text-lg font-semibold">
+                Life Event Timeline
+              </h3>
+              <LifeEventTriggerDialog
+                currentResult={insuranceResult}
+                isTriggeringEvent={isTriggeringEvent}
+                onTrigger={triggerLifeEvent}
+              />
+            </div>
+            <LifeEventHistory
+              events={lifeEvents}
+              isLoading={isLifeEventsLoading}
+              error={lifeEventsError}
+              onRecalculate={(event) => {
+                if (!insuranceResult) return;
+                recalculateEvent({
+                  eventId: event.id,
+                  currentResult: insuranceResult,
+                });
+              }}
+              isRecalculating={isRecalculating}
+              onDelete={(event) => {
+                deleteEvent(event.id);
+              }}
+              isDeleting={isDeletingLifeEvent}
+            />
           </div>
         </TabsContent>
 
