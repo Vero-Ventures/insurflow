@@ -44,9 +44,11 @@ describe("isValidDate", () => {
 
 describe("isValidClientAge", () => {
   const getDateYearsAgo = (years: number): string => {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() - years);
-    return date.toISOString().split("T")[0]!;
+    const now = new Date();
+    const year = now.getUTCFullYear() - years;
+    const month = now.getUTCMonth();
+    const day = now.getUTCDate();
+    return new Date(Date.UTC(year, month, day)).toISOString().split("T")[0]!;
   };
 
   it("accepts ages within valid range (18-120)", () => {
