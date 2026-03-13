@@ -23,50 +23,50 @@ import { Button } from "@/components/ui/button";
 const features = [
   {
     icon: Clock,
-    title: "Quick Eligibility Check",
+    title: "See your estimate in plain language",
     description:
-      "Answer a few questions and move straight into a clear, non-binding estimate.",
+      "Answer a few questions and review a clear, non-binding estimate with no confusing jargon.",
     stat: "5 min",
     statLabel: "Typical intake",
   },
   {
     icon: Calculator,
-    title: "Easy Estimate Preview",
+    title: "Move from estimate to application in one flow",
     description:
-      "See your estimated coverage range, what it means, and what can affect it.",
-    stat: "Plain",
-    statLabel: "Clear language",
-  },
-  {
-    icon: FileText,
-    title: "Simple Application Steps",
-    description:
-      "Move from estimate to submission with a guided review and consent step.",
+      "No need to start over. Your answers carry through to a simple guided submission.",
     stat: "1 flow",
     statLabel: "Estimate to submit",
   },
   {
-    icon: Sparkles,
-    title: "Live Status Updates",
+    icon: FileText,
+    title: "See what happens after you apply",
     description:
-      "Track your application from received to reviewed with clear status updates.",
+      "Track your application status from submitted to reviewed — no guessing required.",
     stat: "Live",
     statLabel: "Status tracking",
+  },
+  {
+    icon: Sparkles,
+    title: "Built for first-time applicants",
+    description:
+      "Plain-language questions, Canadian-focused fields, and clear guidance at every step.",
+    stat: "Simple",
+    statLabel: "No jargon",
   },
 ];
 
 const painPoints = [
-  "Too much research before you can even start",
-  "Estimate wording that feels confusing or too technical",
-  "Disconnected steps between estimate and application",
-  "No clear view of what happens after you submit",
+  "Confusing insurance language you need a dictionary to decode",
+  "Too many forms upfront before you know anything",
+  "No clear estimate until you've already committed time",
+  "No visibility into what happens after you submit",
 ];
 
 const solutions = [
-  "A short guided intake built for first-time applicants",
-  "Non-binding estimate language in plain terms",
-  "One clear flow from eligibility to submission",
-  "Transparent status updates in your account",
+  "A short guided intake with plain-language questions",
+  "A clear non-binding estimate before you commit",
+  "One continuous flow from estimate to submission",
+  "Transparent status updates you can check anytime",
 ];
 
 const applicationFlowSteps = [
@@ -123,10 +123,10 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className="animate-fade-up animation-delay-100 text-foreground font-display mb-6 text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Your path to{" "}
+            A simpler way to apply for{" "}
             <span className="relative">
               <span className="from-primary to-emerald relative z-10 bg-gradient-to-r via-[oklch(0.55_0.12_200)] bg-clip-text text-transparent">
-                term life coverage
+                term life insurance
               </span>
               <span className="bg-emerald/20 absolute right-0 -bottom-1 left-0 h-3 -skew-x-6" />
             </span>
@@ -134,12 +134,12 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="animate-fade-up animation-delay-200 text-muted-foreground mb-8 max-w-2xl text-lg sm:text-xl">
-            InsurFlow helps you answer a few questions, review a non-binding
-            estimate, and submit your application in{" "}
+            Answer a few simple questions, review a clear non-binding estimate,
+            and submit your application in{" "}
             <span className="text-foreground font-semibold">
               under 5 minutes
-            </span>{" "}
-            with clear status updates after submission.
+            </span>
+            . No confusing forms, no jargon, no guessing what happens next.
           </p>
 
           {/* CTA Buttons */}
@@ -158,7 +158,11 @@ export default function Home() {
                 className="text-emerald h-4 w-4"
                 aria-hidden="true"
               />
-              <span>Canada-first</span>
+              <span>No credit card required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="text-emerald h-4 w-4" aria-hidden="true" />
+              <span>Takes about 5 minutes</span>
             </div>
           </div>
         </div>
@@ -254,7 +258,7 @@ export default function Home() {
         <div className="relative z-10 container mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <h2 className="animate-fade-up font-display text-3xl font-normal tracking-tight sm:text-4xl">
-              Built for people who want clarity, not complexity
+              Applying for life insurance usually feels harder than it should
             </h2>
           </div>
 
@@ -312,7 +316,7 @@ export default function Home() {
               variant="secondary"
               className="bg-primary/5 text-primary mb-4"
             >
-              Platform Capabilities
+              What you can do in a few minutes
             </Badge>
             <h2 className="animate-fade-up text-foreground font-display text-3xl font-normal tracking-tight sm:text-4xl">
               Everything you need to apply with confidence
