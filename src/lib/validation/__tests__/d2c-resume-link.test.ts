@@ -17,6 +17,12 @@ import {
   TEST_UUIDS,
 } from "@/lib/api/__tests__/helpers/d2c-resume-link-test-helpers";
 
+function buildDeterministicValidToken(parts: string[]): string {
+  const token = parts.join("");
+  expect(token.length).toBe(43);
+  return token;
+}
+
 describe("createResumeLinkSchema", () => {
   it("accepts valid client ID", () => {
     const result = createResumeLinkSchema.safeParse({
@@ -47,16 +53,21 @@ describe("createResumeLinkSchema", () => {
 
 describe("resumeLinkTokenSchema", () => {
   it("accepts valid 43-character URL-safe base64 token", () => {
-    const token = generateValidToken();
-    const result = resumeLinkTokenSchema.safeParse(token);
+    const generatedToken = generateValidToken();
+    const result = resumeLinkTokenSchema.safeParse(generatedToken);
     expect(result.success).toBe(true);
   });
 
   it("accepts tokens with underscores and hyphens", () => {
-    // Must be exactly 43 characters (32 bytes base64url encoded)
-    const token = "ABCDEFGHIJ_KLMNOPQRST-UVWXYZ0123456789abcde";
-    expect(token.length).toBe(43); // Verify length
-    const result = resumeLinkTokenSchema.safeParse(token);
+    const tokenWithUrlSafeChars = buildDeterministicValidToken([
+      "A".repeat(20),
+      "_",
+      "B".repeat(10),
+      "-",
+      "C".repeat(11),
+    ]);
+
+    const result = resumeLinkTokenSchema.safeParse(tokenWithUrlSafeChars);
     expect(result.success).toBe(true);
   });
 
@@ -92,13 +103,22 @@ describe("resumeLinkTokenSchema", () => {
 
 describe("RESUME_LINK_TOKEN_REGEX", () => {
   it("matches valid tokens", () => {
-    // Tokens must be exactly 43 characters
-    const token1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij12345ab";
-    const token2 = "abcdefghijklmnopqrstuvwxyz0123456789_-ABCDE";
-    expect(token1.length).toBe(43);
-    expect(token2.length).toBe(43);
-    expect(RESUME_LINK_TOKEN_REGEX.test(token1)).toBe(true);
-    expect(RESUME_LINK_TOKEN_REGEX.test(token2)).toBe(true);
+    const validTokenAlpha = buildDeterministicValidToken([
+      "A".repeat(14),
+      "b".repeat(14),
+      "1".repeat(15),
+    ]);
+
+    const validTokenUrlSafe = buildDeterministicValidToken([
+      "x".repeat(12),
+      "_",
+      "y".repeat(15),
+      "-",
+      "z".repeat(14),
+    ]);
+
+    expect(RESUME_LINK_TOKEN_REGEX.test(validTokenAlpha)).toBe(true);
+    expect(RESUME_LINK_TOKEN_REGEX.test(validTokenUrlSafe)).toBe(true);
   });
 
   it("rejects invalid tokens", () => {
