@@ -33,13 +33,11 @@ describe("Home page consumer direction", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /your path to term life coverage/i,
+        name: /simpler way to apply for term life insurance/i,
       }),
     ).toBeTruthy();
-    expect(screen.getAllByText(/eligibility check/i).length).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/with clear status updates after submission/i),
-    ).toBeTruthy();
+    expect(screen.getAllByText(/estimate/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/no confusing forms, no jargon/i)).toBeTruthy();
     expect(screen.queryByText(/advisor handoff/i)).toBeNull();
   });
 });
