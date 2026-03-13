@@ -17,10 +17,8 @@ import {
   TEST_UUIDS,
 } from "@/lib/api/__tests__/helpers/d2c-resume-link-test-helpers";
 
-function buildDeterministicValidToken(parts: string[]): string {
-  const token = parts.join("");
-  expect(token.length).toBe(43);
-  return token;
+function buildDeterministicToken(parts: string[]): string {
+  return parts.join("");
 }
 
 describe("createResumeLinkSchema", () => {
@@ -59,7 +57,7 @@ describe("resumeLinkTokenSchema", () => {
   });
 
   it("accepts tokens with underscores and hyphens", () => {
-    const tokenWithUrlSafeChars = buildDeterministicValidToken([
+    const tokenWithUrlSafeChars = buildDeterministicToken([
       "A".repeat(20),
       "_",
       "B".repeat(10),
@@ -67,6 +65,7 @@ describe("resumeLinkTokenSchema", () => {
       "C".repeat(11),
     ]);
 
+    expect(tokenWithUrlSafeChars.length).toBe(43);
     const result = resumeLinkTokenSchema.safeParse(tokenWithUrlSafeChars);
     expect(result.success).toBe(true);
   });
@@ -103,13 +102,13 @@ describe("resumeLinkTokenSchema", () => {
 
 describe("RESUME_LINK_TOKEN_REGEX", () => {
   it("matches valid tokens", () => {
-    const validTokenAlpha = buildDeterministicValidToken([
+    const validTokenAlpha = buildDeterministicToken([
       "A".repeat(14),
       "b".repeat(14),
       "1".repeat(15),
     ]);
 
-    const validTokenUrlSafe = buildDeterministicValidToken([
+    const validTokenUrlSafe = buildDeterministicToken([
       "x".repeat(12),
       "_",
       "y".repeat(15),
@@ -117,6 +116,8 @@ describe("RESUME_LINK_TOKEN_REGEX", () => {
       "z".repeat(14),
     ]);
 
+    expect(validTokenAlpha.length).toBe(43);
+    expect(validTokenUrlSafe.length).toBe(43);
     expect(RESUME_LINK_TOKEN_REGEX.test(validTokenAlpha)).toBe(true);
     expect(RESUME_LINK_TOKEN_REGEX.test(validTokenUrlSafe)).toBe(true);
   });
