@@ -138,6 +138,16 @@ export async function persistWebhookEvent(
   );
 
   if (latestApplication) {
+    const webhookMetadata: Record<string, unknown> = {
+      providerKey: provider,
+      providerEventId: event.providerEventId,
+      webhookStatus: event.status,
+    };
+
+    if (event.metadata) {
+      Object.assign(webhookMetadata, event.metadata);
+    }
+
     await recordApplicationLifecycleEvent({
       db,
       applicationId: latestApplication.id,
@@ -146,12 +156,7 @@ export async function persistWebhookEvent(
       event: "webhook_received",
       occurredAt: event.eventTimestamp,
       context: options.auditContext,
-      metadata: {
-        providerKey: provider,
-        providerEventId: event.providerEventId,
-        webhookStatus: event.status,
-        ...(event.metadata ?? {}),
-      },
+      metadata: webhookMetadata,
     });
   }
 
@@ -191,6 +196,17 @@ export async function persistWebhookEvent(
   const updatedApplication = updated[0];
 
   if (updatedApplication) {
+    const statusMetadata: Record<string, unknown> = {
+      providerKey: provider,
+      providerEventId: event.providerEventId,
+      previousStatus: latestApplication?.status,
+      webhookStatus: event.status,
+    };
+
+    if (event.metadata) {
+      Object.assign(statusMetadata, event.metadata);
+    }
+
     await recordApplicationLifecycleEvent({
       db,
       applicationId: updatedApplication.id,
@@ -199,13 +215,7 @@ export async function persistWebhookEvent(
       event: "status_changed",
       occurredAt: event.eventTimestamp,
       context: options.auditContext,
-      metadata: {
-        providerKey: provider,
-        providerEventId: event.providerEventId,
-        previousStatus: latestApplication?.status,
-        webhookStatus: event.status,
-        ...(event.metadata ?? {}),
-      },
+      metadata: statusMetadata,
     });
   }
 

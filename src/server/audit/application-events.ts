@@ -46,7 +46,7 @@ const SENSITIVE_METADATA_KEYS = new Set([
 ]);
 
 function normalizeMetadataKey(key: string): string {
-  return key.toLowerCase().replace(/[_-]/g, "");
+  return key.toLowerCase().replaceAll(/[_-]/g, "");
 }
 
 function isSensitiveMetadataKey(key: string): boolean {
@@ -124,14 +124,19 @@ export function buildApplicationEventMetadata(
   const sanitizedMetadata = sanitizeApplicationEventMetadata(metadata);
   const actorType = context?.actorUserId ? "user" : "system";
 
+  const baseMetadata: Record<string, unknown> = {
+    event,
+    actorType,
+    actorUserId: context?.actorUserId ?? undefined,
+    requestId: context?.requestId ?? undefined,
+  };
+
+  if (sanitizedMetadata) {
+    Object.assign(baseMetadata, sanitizedMetadata);
+  }
+
   return Object.fromEntries(
-    Object.entries({
-      event,
-      actorType,
-      actorUserId: context?.actorUserId ?? undefined,
-      requestId: context?.requestId ?? undefined,
-      ...(sanitizedMetadata ?? {}),
-    }).filter(([, value]) => value !== undefined),
+    Object.entries(baseMetadata).filter(([, value]) => value !== undefined),
   );
 }
 
