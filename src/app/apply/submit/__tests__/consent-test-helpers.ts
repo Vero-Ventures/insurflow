@@ -18,6 +18,9 @@ export const TEST_USER_ID = "u1";
 /** A valid UUID used as default clientId in consent form payloads. */
 export const TEST_CLIENT_ID = "00000000-0000-4000-8000-000000000001";
 
+/** Default request ID used by server-action tests that read request headers. */
+export const TEST_REQUEST_ID = "req-consent-123";
+
 /** Mock client schema columns — mirrors the shape tests need from drizzle. */
 export const MOCK_CLIENT_SCHEMA = {
   id: "id",

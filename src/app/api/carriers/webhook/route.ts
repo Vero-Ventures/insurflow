@@ -25,6 +25,7 @@ import {
   listProviderIds,
 } from "@/lib/providers/carrier-registry";
 import { persistWebhookEvent } from "@/lib/api/webhook-helpers";
+import { createRequestApplicationEventContext } from "@/server/audit/request-context";
 
 // Node runtime required for crypto operations (HMAC verification)
 export const runtime = "nodejs";
@@ -128,7 +129,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     // 5. Persist event idempotently and update application status
-    const result = await persistWebhookEvent(providerId, event);
+    const result = await persistWebhookEvent(providerId, event, {
+      auditContext: createRequestApplicationEventContext(request),
+    });
 
     if (result.duplicate) {
       await logger.info("Duplicate event ignored", {

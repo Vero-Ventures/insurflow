@@ -4,6 +4,7 @@ import {
   callIgnoringRedirect,
   createValidConsentForm,
   MOCK_CLIENT_SCHEMA,
+  TEST_REQUEST_ID,
   TEST_USER_ID,
 } from "./__tests__/consent-test-helpers";
 
@@ -13,6 +14,11 @@ const redirectMock = vi.fn((path: string) => {
   throw new Error(`redirect:${path}`);
 });
 const getSessionMock = vi.fn();
+const headersMock = vi.fn();
+const submitToProviderMock = vi.fn().mockResolvedValue({
+  ok: true,
+  alreadySubmitted: false,
+});
 
 // Drizzle update chain mock
 const returningMock = vi
@@ -34,6 +40,10 @@ vi.mock("@/server/better-auth/server", () => ({
   getSession: () => getSessionMock(),
 }));
 
+vi.mock("next/headers", () => ({
+  headers: () => headersMock(),
+}));
+
 vi.mock("@/server/db", () => ({
   getDb: () => ({ update: updateMock, query: queryMock }),
 }));
@@ -44,9 +54,7 @@ vi.mock("@/server/db/schemas", () => ({
 
 // Mock provider submission — best-effort, not tested here
 vi.mock("@/lib/submission/submit-application", () => ({
-  submitToProvider: vi
-    .fn()
-    .mockResolvedValue({ ok: true, alreadySubmitted: false }),
+  submitToProvider: (...args: unknown[]) => submitToProviderMock(...args),
 }));
 
 vi.mock("@/server/providers/get-carrier-provider", () => ({
@@ -71,15 +79,20 @@ describe("ApplySubmitPage", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     getSessionMock.mockReset();
+    headersMock.mockReset();
     updateMock.mockClear();
     setMock.mockClear();
     whereMock.mockClear();
     returningMock.mockClear();
     findFirstMock.mockClear();
+    submitToProviderMock.mockClear();
     returningMock.mockResolvedValue([
       { id: "c1", firstName: "Test", lastName: "User" },
     ]);
     findFirstMock.mockResolvedValue(null);
+    headersMock.mockResolvedValue(
+      new Headers({ "x-request-id": TEST_REQUEST_ID }),
+    );
   });
 
   it("redirects signed-out users to sign-up", async () => {
@@ -202,6 +215,17 @@ describe("ApplySubmitPage", () => {
 
       // Redirected to dashboard
       expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+      expect(submitToProviderMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recordConsentCapture: true,
+          auditContext: {
+            actorUserId: TEST_USER_ID,
+            requestId: TEST_REQUEST_ID,
+          },
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     it("redirects to review when DB finds no matching client row (0 rows updated)", async () => {

@@ -8,6 +8,7 @@ import { UUID_REGEX } from "@/lib/validation/client";
 import { invalidateClientResumeLinks } from "@/lib/api/d2c-resume-link-helpers";
 import { submitToProvider } from "@/lib/submission/submit-application";
 import { sanitizeErrorForAudit } from "@/lib/submission/error-sanitizer";
+import { getServerActionApplicationEventContext } from "@/server/audit/request-context";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -44,6 +45,9 @@ export async function submitApplicationAction(formData: FormData) {
 
   const db = getDb();
   const dbNow = sql`now()`;
+  const auditContext = await getServerActionApplicationEventContext(
+    session.user.id,
+  );
 
   // Persist consent timestamps using COALESCE so each field is only written
   // once — if the column already has a value it is preserved unchanged.
@@ -96,6 +100,8 @@ export async function submitApplicationAction(formData: FormData) {
       existingActive.firstName,
       existingActive.lastName,
       db,
+      auditContext,
+      false,
     );
     redirect(AUTHENTICATED_HOME_ROUTE);
   }
@@ -115,6 +121,8 @@ export async function submitApplicationAction(formData: FormData) {
     clientRecord.firstName,
     clientRecord.lastName,
     db,
+    auditContext,
+    true,
   );
 
   redirect(AUTHENTICATED_HOME_ROUTE);
@@ -134,11 +142,21 @@ async function submitToProviderSafely(
   firstName: string,
   lastName: string,
   db: ReturnType<typeof getDb>,
+  auditContext: Awaited<
+    ReturnType<typeof getServerActionApplicationEventContext>
+  >,
+  recordConsentCapture: boolean,
 ): Promise<void> {
   try {
     const provider = getCarrierProvider();
     await submitToProvider(
-      { clientId, userId, applicant: { firstName, lastName } },
+      {
+        clientId,
+        userId,
+        applicant: { firstName, lastName },
+        auditContext,
+        recordConsentCapture,
+      },
       provider,
       db,
     );

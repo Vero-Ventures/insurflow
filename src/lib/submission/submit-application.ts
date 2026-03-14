@@ -31,12 +31,12 @@ import {
   type SanitizedError,
   type SubmissionErrorCode,
 } from "@/lib/submission/error-sanitizer";
-import type { Database } from "@/server/db";
 import {
-  application,
-  applicationEvent,
-  type Application,
-} from "@/server/db/schemas";
+  recordApplicationLifecycleEvent,
+  type ApplicationEventContext,
+} from "@/server/audit/application-events";
+import type { Database } from "@/server/db";
+import { application, type Application } from "@/server/db/schemas";
 
 // ============================================================================
 // Types
@@ -45,6 +45,10 @@ import {
 export interface SubmitApplicationInput {
   clientId: string;
   userId: string;
+  /** Request-scoped audit context for correlation and attribution. */
+  auditContext?: ApplicationEventContext;
+  /** Whether this request captured fresh consumer consent for submission. */
+  recordConsentCapture?: boolean;
   /** Applicant details for the provider (first/last name). */
   applicant: {
     firstName: string;
@@ -96,7 +100,13 @@ export async function submitToProvider(
   provider: CarrierProvider,
   db: Database,
 ): Promise<SubmitApplicationResult> {
-  const { clientId, userId, applicant } = input;
+  const {
+    clientId,
+    userId,
+    applicant,
+    auditContext,
+    recordConsentCapture = false,
+  } = input;
   const idempotencyKey = buildIdempotencyKey(clientId);
 
   // -----------------------------------------------------------------------
@@ -110,8 +120,13 @@ export async function submitToProvider(
       clientId,
       userId,
       idempotencyKey,
+      auditContext,
     );
     app = result.application;
+
+    if (recordConsentCapture && !result.existed) {
+      await recordInitialConsentEvents(db, app.id, auditContext);
+    }
   } catch (error) {
     console.error(
       "[submitToProvider] Failed to create application record:",
@@ -140,6 +155,15 @@ export async function submitToProvider(
       alreadySubmitted: true,
     };
   }
+
+  if (!provider.submitApplication) {
+    return {
+      ok: false,
+      error: sanitizeUserError("PROVIDER_UNAVAILABLE"),
+    };
+  }
+
+  const submitApplication = provider.submitApplication;
 
   // -----------------------------------------------------------------------
   // Step 2b: Claim draft -> received before external side effects
@@ -188,14 +212,7 @@ export async function submitToProvider(
 
   app = claimed;
 
-  if (!provider.submitApplication) {
-    return {
-      ok: false,
-      error: sanitizeUserError("PROVIDER_UNAVAILABLE"),
-    };
-  }
-
-  const submitApplication = provider.submitApplication;
+  await recordSubmissionAttemptEvent(db, app.id, auditContext);
 
   // -----------------------------------------------------------------------
   // Step 3: Call carrier provider with retry for transient failures
@@ -210,9 +227,15 @@ export async function submitToProvider(
   );
 
   if (!providerResult.ok) {
-    // Log failure event (audit) without PII
-    await recordFailureEvent(db, app.id, providerResult, provider.providerId);
-    await restoreDraftAfterProviderFailure(db, app.id);
+    const restoredToDraft = await restoreDraftAfterProviderFailure(db, app.id);
+    await recordFailureEvent(
+      db,
+      app.id,
+      providerResult,
+      provider.providerId,
+      auditContext,
+      restoredToDraft,
+    );
 
     const errorCode: SubmissionErrorCode = providerResult.exhausted
       ? "PROVIDER_UNAVAILABLE"
@@ -224,6 +247,8 @@ export async function submitToProvider(
     };
   }
 
+  const providerSubmittedAt = new Date(providerResult.value.submittedAt);
+
   // -----------------------------------------------------------------------
   // Step 4: Update application with provider response
   // -----------------------------------------------------------------------
@@ -234,7 +259,7 @@ export async function submitToProvider(
         status: "submitted",
         providerKey: provider.providerId,
         providerApplicationId: providerResult.value.submissionId,
-        submittedAt: new Date(),
+        submittedAt: providerSubmittedAt,
         consentCapturedAt: new Date(),
       })
       .where(
@@ -276,6 +301,8 @@ export async function submitToProvider(
       updated.id,
       provider.providerId,
       providerResult.value.submissionId,
+      providerSubmittedAt,
+      auditContext,
     );
 
     return { ok: true, application: updated, alreadySubmitted: false };
@@ -305,6 +332,7 @@ async function findOrCreateApplication(
   clientId: string,
   userId: string,
   idempotencyKey: string,
+  auditContext?: ApplicationEventContext,
 ): Promise<{ application: Application; existed: boolean }> {
   // Check for existing first (common case for retries/refreshes)
   const existing = await db.query.application.findFirst({
@@ -334,6 +362,8 @@ async function findOrCreateApplication(
     if (!inserted) {
       throw new Error("Insert returned no rows");
     }
+
+    await recordDraftCreatedEvent(db, inserted.id, clientId, auditContext);
 
     return { application: inserted, existed: false };
   } catch (error) {
@@ -365,24 +395,25 @@ async function recordFailureEvent(
   applicationId: string,
   failure: { error: unknown; attempts: number; exhausted: boolean },
   providerName: string,
+  auditContext: ApplicationEventContext | undefined,
+  restoredToDraft: boolean,
 ): Promise<void> {
-  try {
-    await db.insert(applicationEvent).values({
-      applicationId,
-      status: "draft",
-      source: "system",
-      metadata: {
-        event: "provider_submission_failed",
-        providerKey: providerName,
-        attempts: failure.attempts,
-        exhausted: failure.exhausted,
-        ...sanitizeErrorForAudit(failure.error),
-      },
-    });
-  } catch (error) {
-    // Best-effort — don't block the main flow
-    console.error("[submitToProvider] Failed to record failure event:", error);
-  }
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: restoredToDraft ? "draft" : "received",
+    source: "system",
+    event: "submission_failed",
+    context: auditContext,
+    metadata: {
+      previousStatus: "received",
+      providerKey: providerName,
+      attempts: failure.attempts,
+      exhausted: failure.exhausted,
+      restoredToDraft,
+      ...sanitizeErrorForAudit(failure.error),
+    },
+  });
 }
 
 /**
@@ -391,9 +422,9 @@ async function recordFailureEvent(
 async function restoreDraftAfterProviderFailure(
   db: Database,
   applicationId: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await db
+    const restored = await db
       .update(application)
       .set({ status: "draft" })
       .where(
@@ -402,12 +433,16 @@ async function restoreDraftAfterProviderFailure(
           eq(application.status, "received"),
           isNull(application.deletedAt),
         ),
-      );
+      )
+      .returning();
+
+    return restored.length > 0;
   } catch (error) {
     console.error(
       "[submitToProvider] Failed to restore draft status after provider failure:",
       sanitizeErrorForAudit(error),
     );
+    return false;
   }
 }
 
@@ -419,22 +454,95 @@ async function recordSuccessEvent(
   applicationId: string,
   providerName: string,
   providerApplicationId: string,
+  occurredAt: Date,
+  auditContext?: ApplicationEventContext,
 ): Promise<void> {
-  try {
-    await db.insert(applicationEvent).values({
-      applicationId,
-      status: "submitted",
-      source: "consumer",
-      metadata: {
-        event: "provider_submission_succeeded",
-        providerKey: providerName,
-        providerApplicationId,
-      },
-    });
-  } catch (error) {
-    // Best-effort — don't block the main flow
-    console.error("[submitToProvider] Failed to record success event:", error);
-  }
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: "submitted",
+    source: "consumer",
+    event: "submission_succeeded",
+    occurredAt,
+    context: auditContext,
+    metadata: {
+      previousStatus: "received",
+      providerKey: providerName,
+      providerApplicationId,
+    },
+  });
+}
+
+async function recordDraftCreatedEvent(
+  db: Database,
+  applicationId: string,
+  clientId: string,
+  auditContext?: ApplicationEventContext,
+): Promise<void> {
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: "draft",
+    source: "consumer",
+    event: "draft_created",
+    context: auditContext,
+    metadata: {
+      clientId,
+    },
+  });
+}
+
+async function recordInitialConsentEvents(
+  db: Database,
+  applicationId: string,
+  auditContext?: ApplicationEventContext,
+): Promise<void> {
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: "draft",
+    source: "consumer",
+    event: "draft_updated",
+    context: auditContext,
+    metadata: {
+      changeType: "consent_capture",
+    },
+  });
+
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: "draft",
+    source: "consumer",
+    event: "consent_captured",
+    context: auditContext,
+    metadata: {
+      consentTypes: [
+        "consentTransmit",
+        "healthInfoAuth",
+        "esignIntent",
+        "consentConfirmed",
+      ],
+    },
+  });
+}
+
+async function recordSubmissionAttemptEvent(
+  db: Database,
+  applicationId: string,
+  auditContext?: ApplicationEventContext,
+): Promise<void> {
+  await recordApplicationLifecycleEvent({
+    db,
+    applicationId,
+    status: "received",
+    source: "consumer",
+    event: "submission_attempted",
+    context: auditContext,
+    metadata: {
+      previousStatus: "draft",
+    },
+  });
 }
 
 /**

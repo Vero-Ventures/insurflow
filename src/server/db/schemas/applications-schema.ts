@@ -4,6 +4,7 @@
  * Implements provider-agnostic persistence for D2C submissions and status tracking:
  * - `application`: Core consumer application record (draft → submitted lifecycle)
  * - `applicationEvent`: Immutable status timeline entries for audit and display
+ *   with request correlation and actor metadata stored in sanitized `metadata`
  *
  * Design decisions:
  * - Provider correlation fields (`providerKey`, `providerApplicationId`) are nullable
@@ -179,7 +180,8 @@ export const applicationEvent = pgTable(
 
     /**
      * Sanitized event metadata. Must not contain raw PII.
-     * Safe to include: providerKey, providerEventId, previousStatus, statusReason.
+     * Safe to include: providerKey, providerEventId, previousStatus, statusReason,
+     * requestId, actorUserId, actorType.
      */
     metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
 

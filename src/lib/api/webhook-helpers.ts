@@ -17,6 +17,8 @@ import { getDb } from "@/server/db";
 import { application, webhookEvent, client } from "@/server/db/schemas";
 import type { NormalizedWebhookEvent } from "@/lib/providers/carrier-provider";
 import type { ApplicationStatus } from "@/server/db/schemas/applications-schema";
+import { recordApplicationLifecycleEvent } from "@/server/audit/application-events";
+import type { ApplicationEventContext } from "@/server/audit/application-events";
 
 // ============================================================================
 // TYPES
@@ -26,6 +28,15 @@ export type EventPersistResult =
   | { persisted: true; duplicate: false; statusUpdated: boolean }
   | { persisted: false; duplicate: true; statusUpdated: false }
   | { persisted: false; duplicate: false; error: string; statusUpdated: false };
+
+interface LatestApplicationLookup {
+  id: string;
+  status: ApplicationStatus;
+}
+
+export interface PersistWebhookEventOptions {
+  auditContext?: ApplicationEventContext;
+}
 
 // ============================================================================
 // HELPERS
@@ -86,6 +97,7 @@ export async function getLatestEventTimestamp(
 export async function persistWebhookEvent(
   provider: string,
   event: NormalizedWebhookEvent,
+  options: PersistWebhookEventOptions = {},
 ): Promise<EventPersistResult> {
   const db = getDb();
 
@@ -117,6 +129,30 @@ export async function persistWebhookEvent(
   // If no row returned, the event was a duplicate
   if (inserted.length === 0) {
     return { persisted: false, duplicate: true, statusUpdated: false };
+  }
+
+  const latestApplication = await getLatestProviderApplication(
+    db,
+    event.clientId,
+    provider,
+  );
+
+  if (latestApplication) {
+    await recordApplicationLifecycleEvent({
+      db,
+      applicationId: latestApplication.id,
+      status: latestApplication.status,
+      source: "webhook",
+      event: "webhook_received",
+      occurredAt: event.eventTimestamp,
+      context: options.auditContext,
+      metadata: {
+        providerKey: provider,
+        providerEventId: event.providerEventId,
+        webhookStatus: event.status,
+        ...(event.metadata ?? {}),
+      },
+    });
   }
 
   // 3. Update latest provider-correlated application status only if this event
@@ -152,11 +188,53 @@ export async function persistWebhookEvent(
     )
     .returning();
 
+  const updatedApplication = updated[0];
+
+  if (updatedApplication) {
+    await recordApplicationLifecycleEvent({
+      db,
+      applicationId: updatedApplication.id,
+      status: event.status,
+      source: "provider",
+      event: "status_changed",
+      occurredAt: event.eventTimestamp,
+      context: options.auditContext,
+      metadata: {
+        providerKey: provider,
+        providerEventId: event.providerEventId,
+        previousStatus: latestApplication?.status,
+        webhookStatus: event.status,
+        ...(event.metadata ?? {}),
+      },
+    });
+  }
+
   return {
     persisted: true,
     duplicate: false,
     statusUpdated: updated.length > 0,
   };
+}
+
+async function getLatestProviderApplication(
+  db: ReturnType<typeof getDb>,
+  clientId: string,
+  provider: string,
+): Promise<LatestApplicationLookup | null> {
+  const row = await db.query.application.findFirst({
+    where: and(
+      eq(application.clientId, clientId),
+      eq(application.providerKey, provider),
+      isNull(application.deletedAt),
+    ),
+    columns: {
+      id: true,
+      status: true,
+    },
+    orderBy: [desc(application.submittedAt), desc(application.createdAt)],
+  });
+
+  return row ?? null;
 }
 
 /**
