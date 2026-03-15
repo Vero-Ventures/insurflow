@@ -43,40 +43,34 @@ describe("isValidDate", () => {
 });
 
 describe("isValidClientAge", () => {
-  const getDateYearsAgo = (years: number): string => {
+  const getUtcDateYearsAgo = (years: number, dayOffset = 0): string => {
     const now = new Date();
     const year = now.getUTCFullYear() - years;
     const month = now.getUTCMonth();
-    const day = now.getUTCDate();
+    const day = now.getUTCDate() + dayOffset;
     return new Date(Date.UTC(year, month, day)).toISOString().split("T")[0]!;
   };
 
   it("accepts ages within valid range (18-120)", () => {
-    expect(isValidClientAge(getDateYearsAgo(18))).toBe(true);
-    expect(isValidClientAge(getDateYearsAgo(30))).toBe(true);
-    expect(isValidClientAge(getDateYearsAgo(65))).toBe(true);
-    expect(isValidClientAge(getDateYearsAgo(120))).toBe(true);
+    expect(isValidClientAge(getUtcDateYearsAgo(18))).toBe(true);
+    expect(isValidClientAge(getUtcDateYearsAgo(30))).toBe(true);
+    expect(isValidClientAge(getUtcDateYearsAgo(65))).toBe(true);
+    expect(isValidClientAge(getUtcDateYearsAgo(120))).toBe(true);
   });
 
   it("rejects ages below minimum", () => {
-    expect(isValidClientAge(getDateYearsAgo(17))).toBe(false);
-    expect(isValidClientAge(getDateYearsAgo(10))).toBe(false);
-    expect(isValidClientAge(getDateYearsAgo(0))).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(17))).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(10))).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(0))).toBe(false);
   });
 
   it("rejects ages above maximum", () => {
-    expect(isValidClientAge(getDateYearsAgo(121))).toBe(false);
-    expect(isValidClientAge(getDateYearsAgo(150))).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(121))).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(150))).toBe(false);
   });
 
   it("handles edge case of birthday not yet occurred this year", () => {
-    // Create a date that's exactly 18 years ago minus 1 day
-    // This person is still 17 until tomorrow
-    const date = new Date();
-    date.setFullYear(date.getFullYear() - 18);
-    date.setDate(date.getDate() + 1); // birthday is tomorrow
-    const dateStr = date.toISOString().split("T")[0]!;
-    expect(isValidClientAge(dateStr)).toBe(false);
+    expect(isValidClientAge(getUtcDateYearsAgo(18, 1))).toBe(false);
   });
 
   it("exports correct constants", () => {
