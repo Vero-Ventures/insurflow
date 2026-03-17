@@ -221,7 +221,7 @@ export default function ApplyEstimatePage() {
               {formatCurrency(premiumLow)} - {formatCurrency(premiumHigh)}
             </p>
             <p className="text-muted-foreground mt-2 text-xs">
-              Carrier-agnostic estimate range in CAD for a {intake.termYears}
+              Provider estimate range in CAD for a {intake.termYears}
               -year term.
             </p>
           </Card>
