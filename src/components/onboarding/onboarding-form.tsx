@@ -204,10 +204,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
               {accountTypeConfirmation ? (
                 <div
                   className={cn(
-                    "rounded-md border px-3 py-2 text-xs",
-                    accountTypeConfirmation.tone === "advisor"
-                      ? "border-sky-200 bg-sky-50 text-sky-900"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-900",
+                    "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900",
                   )}
                 >
                   <p className="font-semibold">

@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 import {
@@ -14,11 +13,7 @@ import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
 import { eq } from "drizzle-orm";
 
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ role?: string | string[] }>;
-}) {
+export default async function OnboardingPage() {
   const session = await getSession();
   const userId = getSessionUserId(session);
 
@@ -35,14 +30,8 @@ export default async function OnboardingPage({
     redirect(AUTHENTICATED_HOME_ROUTE);
   }
 
-  const params = await searchParams;
-  const roleFromParams = Array.isArray(params.role)
-    ? params.role[0]
-    : params.role;
-  const roleFromCookie = (await cookies()).get("insurflow_role_intent")?.value;
   const initialAccountType = resolveOnboardingAccountType({
     profileAccountType: profile?.accountType,
-    roleIntent: roleFromParams ?? roleFromCookie,
   });
 
   const prefill = deriveOnboardingPrefill(session.user.name);

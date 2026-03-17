@@ -70,7 +70,7 @@ describe("onboarding helpers", () => {
     ).toBe(false);
   });
 
-  it("accepts advisor account type in onboarding schema", () => {
+  it("only accepts applicant account type in onboarding schema", () => {
     const parsed = onboardingProfileSchema.safeParse({
       firstName: "Ada",
       lastName: "Lovelace",
@@ -81,6 +81,6 @@ describe("onboarding helpers", () => {
       accountType: "advisor",
     });
 
-    expect(parsed.success).toBe(true);
+    expect(parsed.success).toBe(false);
   });
 });

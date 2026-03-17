@@ -14,8 +14,8 @@ describe("DashboardPage", () => {
     expect(experience.cards[0]?.href).toBe("/apply/review");
   });
 
-  it("treats advisor accounts like consumer accounts for the dashboard", () => {
-    const experience = getDashboardExperience("advisor");
+  it("uses consumer dashboard messaging", () => {
+    const experience = getDashboardExperience("client");
 
     expect(experience.heading).toMatch(/application/i);
     expect(experience.cards[0]?.href).toBe("/apply/review");

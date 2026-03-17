@@ -4,12 +4,12 @@ import {
   APPLY_REVIEW_ROUTE,
 } from "@/lib/app-routes";
 
-export type AccountType = "client" | "advisor";
+export type AccountType = "client";
 
 type AccountTypeConfirmation = {
   title: string;
   description: string;
-  tone: "client" | "advisor";
+  tone: "client";
 };
 
 type DashboardCard = {
@@ -30,40 +30,29 @@ type DashboardExperience = {
 export function normalizeAccountType(
   value: string | null | undefined,
 ): AccountType | null {
-  if (value === "advisor") return "advisor";
   if (value === "client") return "client";
   return null;
 }
 
 export function resolveOnboardingAccountType({
   profileAccountType,
-  roleIntent,
 }: {
   profileAccountType: string | null | undefined;
-  roleIntent: string | null | undefined;
 }): AccountType | undefined {
   const persistedRole = normalizeAccountType(profileAccountType);
   if (persistedRole) return persistedRole;
 
-  const intentAccountType = normalizeAccountType(roleIntent);
-  if (intentAccountType === "client") return "client";
-
-  return undefined;
+  return "client";
 }
 
 export function getDashboardExperience(
-  accountType: AccountType,
+  _accountType: AccountType,
 ): DashboardExperience {
   return {
-    eyebrow: accountType === "advisor" ? "My Application" : "My Application",
-    heading:
-      accountType === "advisor"
-        ? "Continue the consumer application journey"
-        : "Keep going with your application",
+    eyebrow: "My Application",
+    heading: "Keep going with your application",
     description:
-      accountType === "advisor"
-        ? "InsurFlow is now focused on Canadian term life shoppers. Continue with the estimate, compare provider fit, and submit when ready."
-        : "Pick up where you left off, review your estimate, compare provider fit, and submit when you are ready.",
+      "Pick up where you left off, review your estimate, compare provider fit, and submit when you are ready.",
     cards: [
       {
         title: "Continue your application",
@@ -95,10 +84,7 @@ export function getAccountTypeConfirmation(
 ): AccountTypeConfirmation | null {
   const normalizedAccountType = normalizeAccountType(accountType);
 
-  if (
-    normalizedAccountType === "advisor" ||
-    normalizedAccountType === "client"
-  ) {
+  if (normalizedAccountType === "client") {
     return {
       title: "Consumer account selected",
       description:

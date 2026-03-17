@@ -630,7 +630,7 @@ export function ClientReportView({
         <p className="leading-relaxed">
           This report is generated for informational purposes only and should
           not be considered financial advice. Please consult with a licensed
-          financial advisor for personalized recommendations.
+          insurance professional for personalized recommendations.
         </p>
         <p className="mt-3 font-mono text-xs">
           Report ID: {clientId} | Last Updated:{" "}

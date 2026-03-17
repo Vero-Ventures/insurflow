@@ -42,7 +42,7 @@ function getMeetingConfidence(scenarios: Scenario[]): MeetingConfidence {
   return {
     label: "Medium",
     score: 65,
-    note: "This summary is useful for discussion, but some assumptions still need advisor validation.",
+    note: "This summary is useful for discussion, but some assumptions still need professional review.",
   };
 }
 
@@ -112,7 +112,7 @@ export function ScenarioMeetingSummary({
               </p>
             </div>
             <Badge variant="outline" className="h-6 self-start font-medium">
-              Advisor conversation view
+              Conversation view
             </Badge>
           </div>
         </CardHeader>

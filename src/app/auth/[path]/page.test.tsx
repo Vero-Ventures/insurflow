@@ -12,10 +12,6 @@ vi.mock("@daveyplate/better-auth-ui/server", () => ({
   authViewPaths: { signIn: "sign-in", signUp: "sign-up" },
 }));
 
-vi.mock("@/components/auth/role-intent-selector", () => ({
-  RoleIntentSelector: () => <div>role-selector</div>,
-}));
-
 vi.mock("next/image", () => ({
   default: ({
     priority: _priority,
@@ -35,6 +31,5 @@ describe("AuthPage", () => {
 
     expect(screen.getByText(/find the right provider/i)).toBeTruthy();
     expect(screen.getByText(/canadian term life shoppers/i)).toBeTruthy();
-    expect(screen.queryByText(/role-selector/i)).toBeNull();
   });
 });

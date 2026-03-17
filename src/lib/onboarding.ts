@@ -11,7 +11,7 @@ export type PrimaryGoal =
   | "estate_planning";
 
 export type CommunicationPreference = "email" | "phone" | "sms";
-export type AccountType = "client" | "advisor";
+export type AccountType = "client";
 
 export const HOUSEHOLD_STATUS_OPTIONS: Array<{
   value: HouseholdStatus;
@@ -58,7 +58,7 @@ export const onboardingProfileSchema = z.object({
     "estate_planning",
   ]),
   communicationPreference: z.enum(["email", "phone", "sms"]),
-  accountType: z.enum(["client", "advisor"]),
+  accountType: z.enum(["client"]),
 });
 
 export type OnboardingProfileInput = z.infer<typeof onboardingProfileSchema>;
