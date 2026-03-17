@@ -101,7 +101,7 @@ export async function submitApplicationAction(formData: FormData) {
       existingActive.lastName,
       db,
       auditContext,
-      false,
+      true,
     );
     redirect(AUTHENTICATED_HOME_ROUTE);
   }

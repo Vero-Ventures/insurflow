@@ -238,5 +238,33 @@ describe("ApplySubmitPage", () => {
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
       expect(redirectMock).not.toHaveBeenCalledWith("/dashboard");
     });
+
+    it("records consent capture on already-active retry submissions", async () => {
+      returningMock.mockResolvedValue([]);
+      findFirstMock.mockResolvedValue({
+        id: "c1",
+        firstName: "Test",
+        lastName: "User",
+      });
+
+      const mod = await loadActionsWithSession();
+
+      await callIgnoringRedirect(() =>
+        mod.submitApplicationAction(createValidConsentForm()),
+      );
+
+      expect(submitToProviderMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recordConsentCapture: true,
+          auditContext: {
+            actorUserId: TEST_USER_ID,
+            requestId: TEST_REQUEST_ID,
+          },
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+    });
   });
 });

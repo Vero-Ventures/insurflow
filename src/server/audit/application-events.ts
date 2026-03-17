@@ -45,6 +45,13 @@ const SENSITIVE_METADATA_KEYS = new Set([
   "token",
 ]);
 
+const RESERVED_APPLICATION_EVENT_METADATA_KEYS = new Set([
+  "event",
+  "actorType",
+  "actorUserId",
+  "requestId",
+]);
+
 function normalizeMetadataKey(key: string): string {
   return key.toLowerCase().replaceAll(/[_-]/g, "");
 }
@@ -124,16 +131,21 @@ export function buildApplicationEventMetadata(
   const sanitizedMetadata = sanitizeApplicationEventMetadata(metadata);
   const actorType = context?.actorUserId ? "user" : "system";
 
+  const callerMetadata = sanitizedMetadata
+    ? Object.fromEntries(
+        Object.entries(sanitizedMetadata).filter(
+          ([key]) => !RESERVED_APPLICATION_EVENT_METADATA_KEYS.has(key),
+        ),
+      )
+    : null;
+
   const baseMetadata: Record<string, unknown> = {
+    ...callerMetadata,
     event,
     actorType,
     actorUserId: context?.actorUserId ?? undefined,
     requestId: context?.requestId ?? undefined,
   };
-
-  if (sanitizedMetadata) {
-    Object.assign(baseMetadata, sanitizedMetadata);
-  }
 
   return Object.fromEntries(
     Object.entries(baseMetadata).filter(([, value]) => value !== undefined),

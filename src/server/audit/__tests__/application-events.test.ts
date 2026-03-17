@@ -61,6 +61,31 @@ describe("buildApplicationEventMetadata", () => {
     });
   });
 
+  it("does not allow metadata to override reserved audit fields", () => {
+    const result = buildApplicationEventMetadata(
+      "webhook_received",
+      {
+        actorUserId: "user-123",
+        requestId: "req-456",
+      },
+      {
+        event: "spoofed_event",
+        actorType: "provider",
+        actorUserId: "spoofed-user",
+        requestId: "spoofed-request",
+        providerEventId: "evt-1",
+      },
+    );
+
+    expect(result).toEqual({
+      event: "webhook_received",
+      actorType: "user",
+      actorUserId: "user-123",
+      requestId: "req-456",
+      providerEventId: "evt-1",
+    });
+  });
+
   it("defaults actorType to system when no actor user is present", () => {
     const result = buildApplicationEventMetadata(
       "webhook_received",
