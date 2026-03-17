@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ADVISOR_WORKSPACE_ROUTE } from "@/lib/app-routes";
 import {
   getDashboardExperience,
   normalizeAccountType,
@@ -15,10 +14,11 @@ describe("DashboardPage", () => {
     expect(experience.cards[0]?.href).toBe("/apply/review");
   });
 
-  it("returns advisor dashboard experience", () => {
+  it("treats advisor accounts like consumer accounts for the dashboard", () => {
     const experience = getDashboardExperience("advisor");
 
-    expect(experience.heading).toMatch(/advisor workspace/i);
-    expect(experience.cards[0]?.href).toBe(ADVISOR_WORKSPACE_ROUTE);
+    expect(experience.heading).toMatch(/application/i);
+    expect(experience.cards[0]?.href).toBe("/apply/review");
+    expect(experience.description).toMatch(/provider/i);
   });
 });

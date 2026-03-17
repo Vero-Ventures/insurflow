@@ -11,8 +11,6 @@ import {
   Zap,
 } from "lucide-react";
 
-import { RoleIntentSelector } from "@/components/auth/role-intent-selector";
-
 export function generateStaticParams() {
   return Object.values(authViewPaths).map((path) => ({ path }));
 }
@@ -57,8 +55,6 @@ export default async function AuthPage({
 
   // Determine if this is sign-up or sign-in for contextual copy
   const isSignUp = path === "sign-up";
-  const selectedRole = "client" as const;
-
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col lg:flex-row">
       {/* Branding Panel */}
@@ -117,13 +113,13 @@ export default async function AuthPage({
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <Zap className="h-3 w-3 text-emerald-400" />
                   <span className="text-xs font-medium text-emerald-400">
-                    Client Preview
+                    Consumer Preview
                   </span>
                 </div>
               </div>
             </div>
             <p className="max-w-md text-base leading-relaxed font-medium text-white/90 lg:text-lg">
-              Check your term life coverage needs and submit your application in{" "}
+              Understand your coverage needs and find the right provider in{" "}
               <span className="text-emerald-400">under 5 minutes</span>.
             </p>
           </div>
@@ -144,12 +140,12 @@ export default async function AuthPage({
           <div className="hidden space-y-4 lg:block">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
               <Shield className="text-emerald h-5 w-5" />
-              Built for Canada-first term life applications
+              Built for Canadian term life shoppers
             </h2>
             <p className="max-w-md leading-relaxed text-white/80">
               Start with a short eligibility check, review a non-binding
-              estimate, and submit your application with clear updates in one
-              place.
+              estimate, compare provider fit, and continue your application with
+              clear updates in one place.
             </p>
           </div>
 
@@ -202,8 +198,6 @@ export default async function AuthPage({
                 : "Sign in to continue to InsurFlow"}
             </p>
           </div>
-
-          {isSignUp ? <RoleIntentSelector selectedRole={selectedRole} /> : null}
 
           <AuthView
             path={path}

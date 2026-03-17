@@ -40,4 +40,21 @@ describe("OnboardingForm location selector", () => {
     expect(screen.queryByRole("option", { name: /alabama/i })).toBeNull();
     expect(screen.queryByRole("option", { name: /california/i })).toBeNull();
   });
+
+  it("only offers a consumer account option", () => {
+    render(
+      <OnboardingForm
+        initialProfile={{
+          firstName: "Ari",
+          lastName: "North",
+          state: "ON",
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText(/applicant type/i)).toBeTruthy();
+    expect(screen.getByRole("option", { name: /^applicant$/i })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: /advisor/i })).toBeNull();
+    expect(screen.queryByText(/advisor workflow/i)).toBeNull();
+  });
 });

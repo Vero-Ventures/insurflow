@@ -1,4 +1,8 @@
-# Advisor Carrier-Shopping Workflow (MVP)
+# Advisor Carrier-Shopping Workflow (Archived)
+
+> Status note (2026-03-16): This document reflects the previous advisor-assisted pivot and is now archived.
+>
+> Do not use this file for active product direction or roadmap decisions. InsurFlow is now focused on a consumer-first Canadian term life broker experience. Use `docs/product-direction-alignment.md` for current scope.
 
 ## Objective
 

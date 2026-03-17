@@ -117,7 +117,7 @@ export default function Home() {
               className="border-emerald bg-emerald/5 text-emerald mb-8 px-4 py-1.5 text-sm font-medium"
             >
               <Zap className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              Client Preview
+              Consumer Preview
             </Badge>
           </div>
 

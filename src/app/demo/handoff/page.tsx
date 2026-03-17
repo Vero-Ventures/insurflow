@@ -16,18 +16,18 @@ const CURRENT_STEP = 4;
 
 const nextSteps = [
   {
-    title: "Book your review",
-    description: "Pick a time that works for you.",
+    title: "Create your account",
+    description: "Save your progress and continue when you are ready.",
     icon: <CalendarClock className="h-4 w-4" />,
   },
   {
-    title: "Review your estimate together",
-    description: "Confirm your numbers and family priorities.",
+    title: "Review your estimate and application",
+    description: "Confirm your numbers, coverage priorities, and disclosures.",
     icon: <MessageCircle className="h-4 w-4" />,
   },
   {
-    title: "Get a personalized recommendation",
-    description: "Receive next steps tailored to your situation.",
+    title: "Get matched to a best-fit provider",
+    description: "Move toward the provider that best matches your application.",
     icon: <FileCheck2 className="h-4 w-4" />,
   },
 ];
@@ -50,8 +50,9 @@ export default function DemoHandoffPage() {
             Next steps after your estimate
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            You are at the final step. A licensed advisor can help validate your
-            estimate and tailor final recommendations to your goals.
+            You are at the final step. Create your account to save your
+            estimate, continue the application, and move toward a best-fit
+            provider.
           </p>
         </div>
 
@@ -87,14 +88,14 @@ export default function DemoHandoffPage() {
           </Badge>
           <p className="mt-2 text-sm leading-relaxed">
             Your intake, estimate, AI explanation, and report preview are ready
-            for a follow-up conversation.
+            for the next part of your application journey.
           </p>
         </Card>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button asChild className="bg-emerald hover:bg-emerald/90 gap-2">
             <Link href="/auth/sign-up">
-              Connect with an advisor
+              Create your account
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

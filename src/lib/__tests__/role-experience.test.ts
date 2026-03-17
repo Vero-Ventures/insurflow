@@ -41,17 +41,27 @@ describe("role experience helpers", () => {
     ).toBe("client");
   });
 
-  it("returns role-specific dashboard content", () => {
+  it("returns consumer dashboard content for both account types", () => {
     const advisorExperience = getDashboardExperience("advisor");
     const clientExperience = getDashboardExperience("client");
 
-    expect(advisorExperience.heading).toMatch(/advisor workspace/i);
+    expect(advisorExperience.heading).toMatch(/application/i);
     expect(clientExperience.heading).toMatch(
       /keep going with your application/i,
     );
-    expect(advisorExperience.cards[0]?.title).not.toBe(
+    expect(advisorExperience.cards[0]?.title).toBe(
       clientExperience.cards[0]?.title,
     );
+  });
+
+  it("maps advisor accounts into the consumer dashboard experience", () => {
+    const experience = getDashboardExperience("advisor");
+
+    expect(experience.heading).toMatch(/application/i);
+    expect(experience.description).toMatch(/provider/i);
+    expect(
+      experience.cards.every((card) => !card.href.startsWith("/clients")),
+    ).toBe(true);
   });
 
   it("uses production dashboard destinations instead of demo routes", () => {
@@ -64,18 +74,18 @@ describe("role experience helpers", () => {
     expect(
       clientExperience.cards.every((card) => !card.href.startsWith("/demo")),
     ).toBe(true);
-    expect(advisorExperience.cards[1]?.href).toContain("intent=create");
+    expect(advisorExperience.cards[1]?.href).toBe("/apply/estimate");
   });
 
   it("returns role confirmation copy for onboarding", () => {
     expect(getAccountTypeConfirmation("advisor")?.title).toMatch(
-      /advisor account selected/i,
+      /consumer account selected/i,
     );
     expect(getAccountTypeConfirmation("client")?.title).toMatch(
-      /client account selected/i,
+      /consumer account selected/i,
     );
     expect(getAccountTypeConfirmation("client")?.description).toMatch(
-      /application dashboard/i,
+      /provider/i,
     );
     expect(getAccountTypeConfirmation("")).toBeNull();
   });

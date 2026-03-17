@@ -83,8 +83,8 @@ export default function DemoShowcasePage() {
               </h2>
             </div>
             <p className="text-muted-foreground mt-2 text-sm">
-              Export-ready summary you can review before speaking with an
-              advisor.
+              Export-ready summary you can review before continuing to provider
+              matching.
             </p>
             <div className="mt-4 grid gap-3">
               <div className="bg-muted/40 rounded-lg p-4">

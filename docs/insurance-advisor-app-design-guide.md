@@ -1,6 +1,6 @@
 # Advisor Demo and Outreach Guide (Archived)
 
-> Status note (2026-02-28): This advisor outreach guide is archived after the D2C pivot and is retained for historical context only.
+> Status note (2026-03-16): This advisor outreach guide is archived after a later pivot to a consumer-first Canadian term life broker direction and is retained for historical context only.
 >
 > Do not use this file as active product direction guidance. Current direction is documented in `docs/product-direction-alignment.md`.
 
@@ -100,6 +100,6 @@ This feedback should directly drive iteration on `src/app/demo/*` before broad s
 
 ## Document Status
 
-This is a current-direction operations guide, not a long-form market research archive.
+This is an archived operations guide from a previous direction, not current product guidance.
 
-For product scope and delivery phases, see `docs/PRD-InsurFlow-v2.md`.
+For active product scope and delivery phases, see `docs/product-direction-alignment.md`.
