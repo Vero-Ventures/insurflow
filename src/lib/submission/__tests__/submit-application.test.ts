@@ -17,6 +17,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIdempotencyKey, submitToProvider } from "../submit-application";
 import type { CarrierProvider } from "@/lib/providers/carrier-provider";
+import {
+  findEventByName,
+  getEventNames,
+  TEST_CLIENT_ID,
+  TEST_USER_ID,
+} from "@/lib/api/__tests__/helpers/application-event-test-helpers";
 
 // ============================================================================
 // Mocks
@@ -199,11 +205,16 @@ function extractIdFromWhere(_where: unknown): string | null {
   return null;
 }
 
-const CLIENT_ID = "00000000-0000-4000-8000-000000000001";
-const USER_ID = "user-123";
+const CLIENT_ID = TEST_CLIENT_ID;
+const USER_ID = TEST_USER_ID;
 const DEFAULT_INPUT = {
   clientId: CLIENT_ID,
   userId: USER_ID,
+  auditContext: {
+    actorUserId: USER_ID,
+    requestId: "req-submit-123",
+  },
+  recordConsentCapture: true,
   applicant: { firstName: "Test", lastName: "User" },
 };
 
@@ -267,6 +278,27 @@ describe("submitToProvider", () => {
       );
     }
     expect(provider.submitApplication).toHaveBeenCalledTimes(1);
+
+    const eventNames = getEventNames(
+      db._events as unknown as Record<string, unknown>[],
+    );
+    expect(eventNames).toEqual([
+      "draft_created",
+      "draft_updated",
+      "consent_captured",
+      "submission_attempted",
+      "submission_succeeded",
+    ]);
+
+    const consentEvent = findEventByName(
+      db._events as unknown as Record<string, unknown>[],
+      "consent_captured",
+    );
+    expect(consentEvent?.metadata).toMatchObject({
+      requestId: "req-submit-123",
+      actorUserId: USER_ID,
+      actorType: "user",
+    });
   });
 
   // ---- Test 2: Repeated submit does not create duplicate provider submissions ----
@@ -370,32 +402,12 @@ describe("submitToProvider", () => {
       rawError,
     );
 
-    // Track what gets inserted as events
-    const insertedEvents: Array<Record<string, unknown>> = [];
-    db.insert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: Record<string, unknown>) => ({
-        returning: vi.fn().mockImplementation(() => {
-          // If this looks like an event insert (has applicationId and source)
-          if ("applicationId" in vals && "source" in vals) {
-            insertedEvents.push(vals);
-            return Promise.resolve([{ id: "evt-1", ...vals }]);
-          }
-          // Application insert
-          const app = {
-            id: "app-1",
-            status: "draft",
-            deletedAt: null,
-            ...vals,
-          };
-          return Promise.resolve([app]);
-        }),
-      })),
-    }));
-
-    await runWithTimers(submitToProvider(DEFAULT_INPUT, provider, db as never));
+    const promise = submitToProvider(DEFAULT_INPUT, provider, db as never);
+    await runWithTimers(promise);
+    await promise;
 
     // Check that event metadata does not contain PII
-    for (const event of insertedEvents) {
+    for (const event of db._events as unknown as Record<string, unknown>[]) {
       const metadata = event.metadata as Record<string, unknown> | null;
       if (metadata) {
         expect(metadata).not.toHaveProperty("firstName");
@@ -403,10 +415,46 @@ describe("submitToProvider", () => {
         expect(metadata).not.toHaveProperty("email");
         expect(metadata).not.toHaveProperty("ssn");
         expect(metadata).not.toHaveProperty("address");
-        // Should have safe operational fields
-        expect(metadata).toHaveProperty("providerKey");
+        expect(metadata).not.toHaveProperty("firstName");
+        expect(metadata).not.toHaveProperty("lastName");
       }
     }
+
+    const failureEvent = findEventByName(
+      db._events as unknown as Record<string, unknown>[],
+      "submission_failed",
+    );
+    expect(failureEvent?.metadata).toHaveProperty("providerKey");
+  });
+
+  it("records submission failure with correlation metadata and no raw applicant fields", async () => {
+    const permanentError = Object.assign(
+      new Error("Provider validation failed"),
+      {
+        statusCode: 400,
+      },
+    );
+    (provider.submitApplication as ReturnType<typeof vi.fn>).mockRejectedValue(
+      permanentError,
+    );
+
+    const result = await submitToProvider(DEFAULT_INPUT, provider, db as never);
+
+    expect(result.ok).toBe(false);
+
+    const failureEvent = findEventByName(
+      db._events as unknown as Record<string, unknown>[],
+      "submission_failed",
+    );
+    expect(failureEvent).toBeDefined();
+    expect(failureEvent?.metadata).toMatchObject({
+      requestId: "req-submit-123",
+      actorUserId: USER_ID,
+      previousStatus: "received",
+      restoredToDraft: true,
+    });
+    expect(failureEvent?.metadata).not.toHaveProperty("firstName");
+    expect(failureEvent?.metadata).not.toHaveProperty("lastName");
   });
 
   // ---- Test 7: Race condition handled via unique constraint ----

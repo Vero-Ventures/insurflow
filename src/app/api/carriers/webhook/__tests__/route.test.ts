@@ -335,6 +335,11 @@ describe("POST /api/carriers/webhook", () => {
         clientId: TEST_CLIENT_ID,
         providerEventId: "evt_001",
       }),
+      expect.objectContaining({
+        auditContext: expect.objectContaining({
+          requestId: expect.any(String),
+        }),
+      }),
     );
   });
 });

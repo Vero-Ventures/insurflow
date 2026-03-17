@@ -15,6 +15,7 @@ import {
   callIgnoringRedirect,
   createValidConsentForm,
   MOCK_CLIENT_SCHEMA,
+  TEST_REQUEST_ID,
 } from "./__tests__/consent-test-helpers";
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,7 @@ const redirectMock = vi.fn((path: string) => {
   throw new Error(`redirect:${path}`);
 });
 const getSessionMock = vi.fn();
+const headersMock = vi.fn();
 
 // Track the arguments passed to `eq()` so we can assert which id was targeted
 const eqMock = vi.fn(
@@ -55,6 +57,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/server/better-auth/server", () => ({
   getSession: () => getSessionMock(),
+}));
+
+vi.mock("next/headers", () => ({
+  headers: () => headersMock(),
 }));
 
 vi.mock("@/server/db", () => ({
@@ -90,6 +96,9 @@ describe("consent submission scope — regression", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue({ user: { id: USER_ID } });
+    headersMock.mockResolvedValue(
+      new Headers({ "x-request-id": TEST_REQUEST_ID }),
+    );
     // Simulate exactly 1 row updated (the targeted row)
     returningMock.mockResolvedValue([
       { id: CLIENT_A_ID, firstName: "Test", lastName: "User" },

@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { NormalizedWebhookEvent } from "@/lib/providers/carrier-provider";
+import { TEST_APPLICATION_ID } from "./helpers/application-event-test-helpers";
 
 // ============================================================================
 // Mock Setup
@@ -24,6 +25,10 @@ const mockOnConflictDoNothing = vi.fn();
 const mockReturning = vi.fn();
 const mockUpdate = vi.fn();
 const mockSet = vi.fn();
+const mockApplicationFindFirst = vi.fn();
+const mockRecordApplicationLifecycleEvent = vi
+  .fn()
+  .mockResolvedValue(undefined);
 
 // Chain builders
 mockSelect.mockReturnValue({ from: mockFrom });
@@ -36,7 +41,10 @@ mockWhere.mockReturnValue({
 mockOrderBy.mockReturnValue({ limit: mockLimit });
 mockLimit.mockResolvedValue([]);
 mockInsert.mockReturnValue({ values: mockValues });
-mockValues.mockReturnValue({ onConflictDoNothing: mockOnConflictDoNothing });
+mockValues.mockReturnValue({
+  onConflictDoNothing: mockOnConflictDoNothing,
+  returning: mockReturning,
+});
 mockOnConflictDoNothing.mockReturnValue({ returning: mockReturning });
 mockReturning.mockResolvedValue([]);
 mockUpdate.mockReturnValue({ set: mockSet });
@@ -47,7 +55,17 @@ vi.mock("@/server/db", () => ({
     select: mockSelect,
     insert: mockInsert,
     update: mockUpdate,
+    query: {
+      application: {
+        findFirst: mockApplicationFindFirst,
+      },
+    },
   })),
+}));
+
+vi.mock("@/server/audit/application-events", () => ({
+  recordApplicationLifecycleEvent: (...args: unknown[]) =>
+    mockRecordApplicationLifecycleEvent(...args),
 }));
 
 vi.mock("@/server/db/schemas", () => ({
@@ -71,8 +89,13 @@ vi.mock("@/server/db/schemas", () => ({
     clientId: "client_id",
     providerKey: "provider_key",
     status: "status",
+    submittedAt: "submitted_at",
+    createdAt: "created_at",
     deletedAt: "deleted_at",
     updatedAt: "updated_at",
+  },
+  applicationEvent: {
+    id: "id",
   },
 }));
 
@@ -93,6 +116,16 @@ function createTestEvent(
     metadata: { note: "test" },
     ...overrides,
   };
+}
+
+function findLifecycleCall(eventName: string) {
+  return mockRecordApplicationLifecycleEvent.mock.calls.find(
+    ([input]) =>
+      typeof input === "object" &&
+      input !== null &&
+      "event" in input &&
+      input.event === eventName,
+  )?.[0] as Record<string, unknown> | undefined;
 }
 
 // ============================================================================
@@ -120,6 +153,8 @@ describe("persistWebhookEvent", () => {
     mockReturning.mockResolvedValue([]);
     mockUpdate.mockReturnValue({ set: mockSet });
     mockSet.mockReturnValue({ where: mockWhere });
+    mockApplicationFindFirst.mockResolvedValue(null);
+    mockRecordApplicationLifecycleEvent.mockClear();
   });
 
   it("returns error when client does not exist", async () => {
@@ -151,14 +186,24 @@ describe("persistWebhookEvent", () => {
   it("returns persisted + statusUpdated when event is new and latest", async () => {
     // Client exists
     mockLimit.mockResolvedValueOnce([{ id: TEST_CLIENT_ID }]);
+    mockApplicationFindFirst.mockResolvedValueOnce({
+      id: TEST_APPLICATION_ID,
+      status: "submitted",
+    });
     // Insert succeeds (new event)
     mockReturning
       .mockResolvedValueOnce([{ id: "new-event-id" }])
       // Update succeeds (latest event)
-      .mockResolvedValueOnce([{ id: TEST_CLIENT_ID }]);
+      .mockResolvedValueOnce([
+        { id: TEST_APPLICATION_ID, status: "in_review" },
+      ]);
 
     const { persistWebhookEvent } = await import("@/lib/api/webhook-helpers");
-    const result = await persistWebhookEvent("mock", createTestEvent());
+    const result = await persistWebhookEvent("mock", createTestEvent(), {
+      auditContext: {
+        requestId: "req-webhook-1",
+      },
+    });
 
     expect(result.persisted).toBe(true);
     expect(result.duplicate).toBe(false);
@@ -166,11 +211,30 @@ describe("persistWebhookEvent", () => {
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ status: "in_review" }),
     );
+
+    expect(findLifecycleCall("webhook_received")).toMatchObject({
+      applicationId: TEST_APPLICATION_ID,
+      source: "webhook",
+      context: { requestId: "req-webhook-1" },
+    });
+    expect(findLifecycleCall("status_changed")).toMatchObject({
+      applicationId: TEST_APPLICATION_ID,
+      source: "provider",
+      context: { requestId: "req-webhook-1" },
+      metadata: expect.objectContaining({
+        previousStatus: "submitted",
+        providerEventId: "evt_001",
+      }),
+    });
   });
 
   it("returns persisted but not statusUpdated when newer event already exists", async () => {
     // Client exists
     mockLimit.mockResolvedValueOnce([{ id: TEST_CLIENT_ID }]);
+    mockApplicationFindFirst.mockResolvedValueOnce({
+      id: TEST_APPLICATION_ID,
+      status: "submitted",
+    });
     // Insert succeeds (new event)
     mockReturning
       .mockResolvedValueOnce([{ id: "new-event-id" }])
@@ -183,6 +247,8 @@ describe("persistWebhookEvent", () => {
     expect(result.persisted).toBe(true);
     expect(result.duplicate).toBe(false);
     expect(result.statusUpdated).toBe(false);
+    expect(findLifecycleCall("webhook_received")).toBeDefined();
+    expect(findLifecycleCall("status_changed")).toBeUndefined();
   });
 });
 
