@@ -1,48 +1,52 @@
 ## InsurFlow
 
-InsurFlow is a direct-to-consumer (D2C) term life application platform.
+InsurFlow is a direct-to-consumer (D2C) broker experience for Canadian term life insurance.
 
-The product direction is now **D2C, carrier-agnostic**:
+The current product direction is **consumer-first, Canada-first, provider-matching**:
 
-- Lead with a fast, guided eligibility and estimate journey.
-- Let consumers create an account and submit an application directly.
-- Track application status through provider events.
+- Lead with a fast, guided term life intake and estimate journey.
+- Help Canadian consumers understand their coverage needs in plain language.
+- Connect each consumer with the best-fit insurance provider through one guided flow.
+- Keep submission and application status tracking inside the product experience.
 
 ## Product Direction (Plain English)
 
-InsurFlow is the front door for term life discovery and application:
+InsurFlow is the front door for term life discovery, comparison, and application for Canadian consumers:
 
 - Fast guided intake
 - Clear, explainable non-binding estimate range
+- Provider matching in one flow
 - Submission and status tracking in one flow
 
-The existing calculation engine remains in place as a black-box input to the estimate experience.
+The existing calculation engine remains in place as an input to the estimate and recommendation experience.
 
 ## Current Direction (2026)
 
 We are prioritizing one core phase and then follow-on improvements:
 
-- **D2C v1**: Eligibility intake -> estimate preview -> account -> application submission -> status tracking (mock carrier).
-- **Post-v1**: Deeper provider integrations and additional lifecycle workflows.
+- **D2C broker v1**: Eligibility intake -> estimate preview -> account -> provider matching -> application submission -> status tracking.
+- **Post-v1**: Deeper provider integrations, better recommendation quality, and additional lifecycle workflows.
 
 This replaces older tier-based planning docs and sequencing language.
 
 ## MVP Scope
 
-Core D2C v1 outcomes:
+Core D2C broker v1 outcomes:
 
-- Guided intake flow for consumer context capture.
+- Guided intake flow for Canadian consumer context capture.
 - Canada-first terminology in product copy (province, not state).
 - Estimate preview with conservative non-binding language.
+- Clear best-fit provider recommendation or matching step.
 - Account-gated application submission flow.
-- Application status tracking powered by mock provider events.
+- Application status tracking powered by provider events.
 - Updated roadmap/docs language for D2C scope.
 
 What we are building now (tracked in GitHub issues):
 
-- Minimal `CarrierProvider` boundary + mock provider.
+- Minimal `CarrierProvider` boundary + mock provider while broker positioning is refined.
 - Applications + application events persistence.
 - Submission resilience (idempotency, retries, safe errors) and PII-safe audit logging.
+- Documentation and messaging aligned around Canadian term life consumers.
 
 ## What Exists Today
 
@@ -54,12 +58,15 @@ The codebase already includes:
 - AI letter generation endpoint.
 - Demo routes under `src/app/demo/*`.
 
+It also still contains some legacy advisor-first surfaces that should now be treated as stale unless explicitly marked otherwise in the docs.
+
 ## Explicitly Out of Scope (D2C v1)
 
 - Any workflow beyond application submission and status tracking
 - Payments or billing
 - Policy purchase/binding
 - Policy issuance
+- Broad advisor-workspace expansion as the primary go-to-market path
 
 ## Tech Stack
 
@@ -95,7 +102,9 @@ Useful commands:
 ## Documentation Index
 
 - Active product direction and scope: `docs/product-direction-alignment.md`
+- Marketing and audience context: `.agents/product-marketing-context.md`
 - Archived PRD (previous direction): `docs/PRD-InsurFlow-v2.md`
 - Archived design guide (previous direction): `docs/insurflow-v2-design-guide.md`
 - Archived advisor research notes: `docs/insurance-advisor-app-design-guide.md`
+- Archived advisor workflow spec: `docs/advisor-carrier-shopping-workflow.md`
 - Data model status and source of truth: `docs/V2_ERD_DESIGN.md`

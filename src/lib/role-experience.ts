@@ -2,16 +2,14 @@ import {
   APPLY_ESTIMATE_ROUTE,
   APPLY_INTAKE_ROUTE,
   APPLY_REVIEW_ROUTE,
-  ADVISOR_WORKSPACE_ROUTE,
-  CLIENT_INTAKE_START_ROUTE,
 } from "@/lib/app-routes";
 
-export type AccountType = "client" | "advisor";
+export type AccountType = "client";
 
 type AccountTypeConfirmation = {
   title: string;
   description: string;
-  tone: "client" | "advisor";
+  tone: "client";
 };
 
 type DashboardCard = {
@@ -19,7 +17,7 @@ type DashboardCard = {
   description: string;
   href: string;
   ctaLabel: string;
-  icon: "clipboard" | "chart" | "handoff" | "users";
+  icon: "clipboard" | "chart" | "handoff";
 };
 
 type DashboardExperience = {
@@ -32,70 +30,29 @@ type DashboardExperience = {
 export function normalizeAccountType(
   value: string | null | undefined,
 ): AccountType | null {
-  if (value === "advisor") return "advisor";
   if (value === "client") return "client";
   return null;
 }
 
 export function resolveOnboardingAccountType({
   profileAccountType,
-  roleIntent,
 }: {
   profileAccountType: string | null | undefined;
-  roleIntent: string | null | undefined;
 }): AccountType | undefined {
   const persistedRole = normalizeAccountType(profileAccountType);
   if (persistedRole) return persistedRole;
 
-  const intentAccountType = normalizeAccountType(roleIntent);
-  if (intentAccountType === "client") return "client";
-
-  return undefined;
+  return "client";
 }
 
 export function getDashboardExperience(
-  accountType: AccountType,
+  _accountType: AccountType,
 ): DashboardExperience {
-  if (accountType === "advisor") {
-    return {
-      eyebrow: "Advisor Workspace",
-      heading: "Open your advisor workspace",
-      description:
-        "Open your client workspace, run real estimates, and generate reports clients can take away from each meeting.",
-      cards: [
-        {
-          title: "Open Client Workspace",
-          description:
-            "Jump into your clients list and continue active planning cases.",
-          href: ADVISOR_WORKSPACE_ROUTE,
-          ctaLabel: "Open Clients",
-          icon: "users",
-        },
-        {
-          title: "Start Client Intake",
-          description:
-            "Create a new client record and capture the intake details used for production calculations.",
-          href: CLIENT_INTAKE_START_ROUTE,
-          ctaLabel: "Start Intake",
-          icon: "clipboard",
-        },
-        {
-          title: "Estimate and Share Report",
-          description:
-            "Open client analyses, review insurance recommendations, and download a shareable report.",
-          href: ADVISOR_WORKSPACE_ROUTE,
-          ctaLabel: "Open Reports",
-          icon: "handoff",
-        },
-      ],
-    };
-  }
-
   return {
     eyebrow: "My Application",
     heading: "Keep going with your application",
     description:
-      "Pick up where you left off, review your estimate, and submit when you are ready.",
+      "Pick up where you left off, review your estimate, compare provider fit, and submit when you are ready.",
     cards: [
       {
         title: "Continue your application",
@@ -127,20 +84,11 @@ export function getAccountTypeConfirmation(
 ): AccountTypeConfirmation | null {
   const normalizedAccountType = normalizeAccountType(accountType);
 
-  if (normalizedAccountType === "advisor") {
-    return {
-      title: "Advisor account selected",
-      description:
-        "You will see advisor workflow cards and client workspace access after onboarding.",
-      tone: "advisor",
-    };
-  }
-
   if (normalizedAccountType === "client") {
     return {
-      title: "Client account selected",
+      title: "Consumer account selected",
       description:
-        "You will see an application dashboard with intake, estimate, and submission guidance.",
+        "You will see an application dashboard with intake, estimate, provider-matching, and submission guidance.",
       tone: "client",
     };
   }

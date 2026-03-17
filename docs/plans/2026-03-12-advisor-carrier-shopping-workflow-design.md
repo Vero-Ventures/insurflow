@@ -1,4 +1,8 @@
-# Advisor Carrier-Shopping Workflow Implementation Plan
+# Advisor Carrier-Shopping Workflow Implementation Plan (Archived)
+
+> Status note (2026-03-16): This implementation plan belongs to the previous advisor-assisted pivot and is retained for historical context only.
+>
+> Do not use this plan for current execution. The active direction is the Canadian consumer term life broker model documented in `docs/product-direction-alignment.md`.
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

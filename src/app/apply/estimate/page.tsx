@@ -221,7 +221,7 @@ export default function ApplyEstimatePage() {
               {formatCurrency(premiumLow)} - {formatCurrency(premiumHigh)}
             </p>
             <p className="text-muted-foreground mt-2 text-xs">
-              Carrier-agnostic estimate range in CAD for a {intake.termYears}
+              Provider estimate range in CAD for a {intake.termYears}
               -year term.
             </p>
           </Card>
@@ -230,7 +230,7 @@ export default function ApplyEstimatePage() {
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
           This is a conservative, non-binding estimate only. Final premium,
           eligibility, and coverage depend on full underwriting, disclosures,
-          and carrier review.
+          and selected provider review.
         </Card>
 
         <div className="flex justify-end">

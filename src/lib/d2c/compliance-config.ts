@@ -17,7 +17,7 @@ export const complianceConfig = {
   // TODO: Replace with legal-approved copy
   transmitConsentText:
     "⚠️ Placeholder — Pending Legal Review\n" +
-    "I consent to InsurFlow transmitting my application data to the selected insurance carrier(s) for the purpose of underwriting and processing my application.",
+    "I consent to InsurFlow transmitting my application data to the selected insurance provider(s) for the purpose of underwriting and processing my application.",
 
   /**
    * Authorization to collect and share health information.

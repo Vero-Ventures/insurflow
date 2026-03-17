@@ -16,7 +16,7 @@ If this file and code differ, trust the code.
 
 The previous ERD doc described older assumptions (including non-US enums and modules not currently implemented). That created confusion during product and backlog updates.
 
-This version aligns with the current D2C carrier-agnostic direction and existing schema.
+This version aligns with the current D2C Canadian term life broker direction and existing schema.
 
 ---
 
@@ -50,7 +50,7 @@ D2C application domain:
 Notes:
 
 - Product-facing intake language is Canada-first (province), while the DB enum identifier remains `state` and includes both US states and Canadian provinces/territories.
-- Current schema includes both legacy advisor-planning entities and D2C application lifecycle entities.
+- Current schema includes both active D2C application lifecycle entities and legacy advisor-planning entities that no longer reflect the primary product direction.
 
 ---
 

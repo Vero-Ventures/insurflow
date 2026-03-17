@@ -1,8 +1,8 @@
 # InsurFlow v2.0 Client Journey Design Guide (Archived)
 
-> Status note (2026-02-28): This guide captures a previous advisor handoff-oriented UX and is archived for historical reference.
+> Status note (2026-03-16): This guide captures a previous advisor handoff-oriented UX and is archived for historical reference.
 >
-> Do not treat this as active product scope guidance. For the active D2C carrier-agnostic flow, use `docs/product-direction-alignment.md`.
+> Do not treat this as active product scope guidance. For the active Canadian consumer term life broker flow, use `docs/product-direction-alignment.md`.
 
 ## Purpose
 
@@ -134,6 +134,6 @@ Keep these out of MVP unless directly required for demo conversion.
 
 ## Change Management
 
-When a design decision changes the client journey, update this file in the same PR.
+This file is archived. Do not update it for current product decisions.
 
-If a decision is temporary, note it with a short "Decision" line and planned revisit date.
+For active journey changes, update `docs/product-direction-alignment.md` or create a new active design artifact.

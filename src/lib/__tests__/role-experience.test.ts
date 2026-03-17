@@ -8,75 +8,54 @@ import {
 } from "@/lib/role-experience";
 
 describe("role experience helpers", () => {
-  it("normalizes role intent from query values", () => {
-    expect(normalizeAccountType("advisor")).toBe("advisor");
+  it("normalizes supported account values", () => {
+    expect(normalizeAccountType("advisor")).toBe(null);
     expect(normalizeAccountType("client")).toBe("client");
     expect(normalizeAccountType("invalid")).toBe(null);
   });
 
-  it("prefers persisted profile account type over query role hint", () => {
+  it("uses persisted consumer account type when present", () => {
     expect(
       resolveOnboardingAccountType({
-        profileAccountType: "advisor",
-        roleIntent: "client",
-      }),
-    ).toBe("advisor");
-  });
-
-  it("ignores advisor role hint when profile does not have an account type", () => {
-    expect(
-      resolveOnboardingAccountType({
-        profileAccountType: undefined,
-        roleIntent: "advisor",
-      }),
-    ).toBeUndefined();
-  });
-
-  it("uses client role hint when profile does not have an account type", () => {
-    expect(
-      resolveOnboardingAccountType({
-        profileAccountType: undefined,
-        roleIntent: "client",
+        profileAccountType: "client",
       }),
     ).toBe("client");
   });
 
-  it("returns role-specific dashboard content", () => {
-    const advisorExperience = getDashboardExperience("advisor");
+  it("defaults onboarding to the consumer account type", () => {
+    expect(
+      resolveOnboardingAccountType({
+        profileAccountType: undefined,
+      }),
+    ).toBe("client");
+  });
+
+  it("returns consumer dashboard content", () => {
     const clientExperience = getDashboardExperience("client");
 
-    expect(advisorExperience.heading).toMatch(/advisor workspace/i);
     expect(clientExperience.heading).toMatch(
       /keep going with your application/i,
     );
-    expect(advisorExperience.cards[0]?.title).not.toBe(
-      clientExperience.cards[0]?.title,
-    );
+    expect(clientExperience.description).toMatch(/provider/i);
   });
 
   it("uses production dashboard destinations instead of demo routes", () => {
-    const advisorExperience = getDashboardExperience("advisor");
     const clientExperience = getDashboardExperience("client");
 
     expect(
-      advisorExperience.cards.every((card) => !card.href.startsWith("/demo")),
-    ).toBe(true);
-    expect(
       clientExperience.cards.every((card) => !card.href.startsWith("/demo")),
     ).toBe(true);
-    expect(advisorExperience.cards[1]?.href).toContain("intent=create");
+    expect(clientExperience.cards[1]?.href).toBe("/apply/estimate");
   });
 
   it("returns role confirmation copy for onboarding", () => {
-    expect(getAccountTypeConfirmation("advisor")?.title).toMatch(
-      /advisor account selected/i,
-    );
     expect(getAccountTypeConfirmation("client")?.title).toMatch(
-      /client account selected/i,
+      /consumer account selected/i,
     );
     expect(getAccountTypeConfirmation("client")?.description).toMatch(
-      /application dashboard/i,
+      /provider/i,
     );
+    expect(getAccountTypeConfirmation("advisor")).toBeNull();
     expect(getAccountTypeConfirmation("")).toBeNull();
   });
 });

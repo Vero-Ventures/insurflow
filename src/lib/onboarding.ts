@@ -11,7 +11,7 @@ export type PrimaryGoal =
   | "estate_planning";
 
 export type CommunicationPreference = "email" | "phone" | "sms";
-export type AccountType = "client" | "advisor";
+export type AccountType = "client";
 
 export const HOUSEHOLD_STATUS_OPTIONS: Array<{
   value: HouseholdStatus;
@@ -44,10 +44,7 @@ export const COMMUNICATION_PREFERENCE_OPTIONS: Array<{
 export const ACCOUNT_TYPE_OPTIONS: Array<{
   value: AccountType;
   label: string;
-}> = [
-  { value: "client", label: "Client" },
-  { value: "advisor", label: "Advisor" },
-];
+}> = [{ value: "client", label: "Applicant" }];
 
 export const onboardingProfileSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100),
@@ -61,7 +58,7 @@ export const onboardingProfileSchema = z.object({
     "estate_planning",
   ]),
   communicationPreference: z.enum(["email", "phone", "sms"]),
-  accountType: z.enum(["client", "advisor"]),
+  accountType: z.enum(["client"]),
 });
 
 export type OnboardingProfileInput = z.infer<typeof onboardingProfileSchema>;

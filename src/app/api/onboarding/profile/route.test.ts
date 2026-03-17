@@ -78,7 +78,7 @@ const VALID_BODY = {
   householdStatus: "single",
   primaryGoal: "family_protection",
   communicationPreference: "email",
-  accountType: "advisor",
+  accountType: "client",
 };
 
 describe("PUT /api/onboarding/profile", () => {

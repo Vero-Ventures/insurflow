@@ -4,7 +4,6 @@ import {
   ClipboardList,
   FileBarChart2,
   Handshake,
-  Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { redirect } from "next/navigation";
@@ -14,20 +13,16 @@ import {
   normalizeAccountType,
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
-import { buildClientTabHref } from "@/lib/client-detail-tabs";
 import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
-import {
-  CLIENT_INTAKE_START_ROUTE,
-  APPLY_INTAKE_ROUTE,
-} from "@/lib/app-routes";
+import { APPLY_INTAKE_ROUTE } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import { getDraftCompleteness } from "@/lib/d2c/client-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { client, userProfile } from "@/server/db/schemas";
-import { and, eq, isNull } from "drizzle-orm";
+import { userProfile } from "@/server/db/schemas";
+import { eq } from "drizzle-orm";
 import { DraftResumeLink } from "./draft-resume-link";
 
 type JourneyCardProps = {
@@ -42,7 +37,6 @@ const iconMap = {
   clipboard: ClipboardList,
   chart: FileBarChart2,
   handoff: Handshake,
-  users: Users,
 } as const;
 
 function JourneyCard({
@@ -96,32 +90,8 @@ export default async function DashboardPage() {
   const accountType = normalizeAccountType(profile.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
 
-  const recentClient =
-    accountType === "advisor"
-      ? await db.query.client.findFirst({
-          where: and(eq(client.userId, userId), isNull(client.deletedAt)),
-          orderBy: (client, { desc }) => [desc(client.updatedAt)],
-          columns: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            updatedAt: true,
-            status: true,
-            dateOfBirth: true,
-            sex: true,
-            state: true,
-            smoker: true,
-            healthRating: true,
-            clientIncome: true,
-            existingLifeInsuranceCoverage: true,
-            replacementDurationYears: true,
-          },
-        })
-      : null;
-
   // Compute draft progress for client accounts
-  const draftResult =
-    accountType === "client" ? await findLatestDraft(userId) : null;
+  const draftResult = await findLatestDraft(userId);
   const draftClient =
     draftResult && draftResult.found ? draftResult.draft : null;
 
@@ -163,61 +133,7 @@ export default async function DashboardPage() {
           })}
         </section>
 
-        {accountType === "advisor" && (
-          <section>
-            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
-              <CardHeader className="space-y-2">
-                <p className="text-primary text-xs font-semibold tracking-wide uppercase">
-                  Quick Actions
-                </p>
-                <CardTitle className="text-xl">Jump into active work</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentClient ? (
-                  <>
-                    <p className="text-muted-foreground text-sm">
-                      Continue with {recentClient.firstName}{" "}
-                      {recentClient.lastName}.
-                    </p>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <Button asChild>
-                        <Link
-                          href={buildClientTabHref(
-                            recentClient.id,
-                            "insurance",
-                          )}
-                        >
-                          Open Estimate
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline">
-                        <Link
-                          href={buildClientTabHref(recentClient.id, "report")}
-                        >
-                          Open Report
-                        </Link>
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-muted-foreground text-sm">
-                      No clients yet. Create your first client to unlock
-                      estimate and report workflows.
-                    </p>
-                    <Button asChild>
-                      <Link href={CLIENT_INTAKE_START_ROUTE}>
-                        Create First Client
-                      </Link>
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-        )}
-
-        {accountType === "client" && draftClient && (
+        {draftClient && (
           <section>
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardHeader className="space-y-2">

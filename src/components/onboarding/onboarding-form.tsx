@@ -49,7 +49,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
     event.preventDefault();
 
     if (!accountType) {
-      toast.error("Select your account type to continue.");
+      toast.error("Select your applicant type to continue.");
       return;
     }
 
@@ -179,7 +179,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="account-type">
-                Account type
+                Applicant type
               </label>
               <select
                 id="account-type"
@@ -194,7 +194,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
                 className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 required
               >
-                <option value="">Select account type</option>
+                <option value="">Select applicant type</option>
                 {ACCOUNT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -204,10 +204,7 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
               {accountTypeConfirmation ? (
                 <div
                   className={cn(
-                    "rounded-md border px-3 py-2 text-xs",
-                    accountTypeConfirmation.tone === "advisor"
-                      ? "border-sky-200 bg-sky-50 text-sky-900"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-900",
+                    "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900",
                   )}
                 >
                   <p className="font-semibold">
