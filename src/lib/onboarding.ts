@@ -58,7 +58,7 @@ export const onboardingProfileSchema = z.object({
     "estate_planning",
   ]),
   communicationPreference: z.enum(["email", "phone", "sms"]),
-  accountType: z.enum(["client"]),
+  accountType: z.enum(["client"]).optional().default("client"),
 });
 
 export type OnboardingProfileInput = z.infer<typeof onboardingProfileSchema>;
@@ -121,7 +121,6 @@ export function isOnboardingProfileComplete(
     profile.state?.trim() &&
     profile.householdStatus &&
     profile.primaryGoal &&
-    profile.communicationPreference &&
-    profile.accountType,
+    profile.communicationPreference,
   );
 }
