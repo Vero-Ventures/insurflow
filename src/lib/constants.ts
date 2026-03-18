@@ -243,6 +243,43 @@ export const CANADIAN_PROVINCE_TERRITORY_OPTIONS =
     label: STATE_LABELS[code] ?? code,
   }));
 
+// ---------------------------------------------------------------------------
+// Canadian Province Type and Display Labels
+// ---------------------------------------------------------------------------
+
+/** String union of all 13 Canadian province/territory codes. */
+export type CanadianProvince =
+  | "AB" // Alberta
+  | "BC" // British Columbia
+  | "MB" // Manitoba
+  | "NB" // New Brunswick
+  | "NL" // Newfoundland and Labrador
+  | "NS" // Nova Scotia
+  | "NT" // Northwest Territories
+  | "NU" // Nunavut
+  | "ON" // Ontario
+  | "PE" // Prince Edward Island
+  | "QC" // Quebec
+  | "SK" // Saskatchewan
+  | "YT"; // Yukon
+
+/** Display-label map for all Canadian provinces and territories. */
+export const PROVINCE_NAMES: Record<CanadianProvince, string> = {
+  AB: "Alberta",
+  BC: "British Columbia",
+  MB: "Manitoba",
+  NB: "New Brunswick",
+  NL: "Newfoundland and Labrador",
+  NS: "Nova Scotia",
+  NT: "Northwest Territories",
+  NU: "Nunavut",
+  ON: "Ontario",
+  PE: "Prince Edward Island",
+  QC: "Quebec",
+  SK: "Saskatchewan",
+  YT: "Yukon",
+};
+
 /**
  * Get display label for state code
  */
