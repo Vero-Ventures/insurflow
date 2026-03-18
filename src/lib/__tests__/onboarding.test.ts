@@ -57,7 +57,9 @@ describe("onboarding helpers", () => {
     expect(isOnboardingProfileComplete(profile)).toBe(false);
   });
 
-  it("requires account type to consider onboarding complete", () => {
+  it("considers onboarding complete without an explicit account type", () => {
+    // accountType is no longer collected from the user; it defaults to "client"
+    // so a profile with all user-supplied fields should be considered complete
     expect(
       isOnboardingProfileComplete({
         firstName: "Ada",
@@ -67,7 +69,7 @@ describe("onboarding helpers", () => {
         primaryGoal: "family_protection",
         communicationPreference: "email",
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("only accepts applicant account type in onboarding schema", () => {

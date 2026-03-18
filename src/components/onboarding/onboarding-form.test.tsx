@@ -41,7 +41,7 @@ describe("OnboardingForm location selector", () => {
     expect(screen.queryByRole("option", { name: /california/i })).toBeNull();
   });
 
-  it("only offers a consumer account option", () => {
+  it("does not render an applicant type field", () => {
     render(
       <OnboardingForm
         initialProfile={{
@@ -52,8 +52,8 @@ describe("OnboardingForm location selector", () => {
       />,
     );
 
-    expect(screen.getByLabelText(/applicant type/i)).toBeTruthy();
-    expect(screen.getByRole("option", { name: /^applicant$/i })).toBeTruthy();
+    // accountType defaults to "client" server-side; the field is not shown to users
+    expect(screen.queryByLabelText(/applicant type/i)).toBeNull();
     expect(screen.queryByRole("option", { name: /advisor/i })).toBeNull();
     expect(screen.queryByText(/advisor workflow/i)).toBeNull();
   });

@@ -6,7 +6,6 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  ACCOUNT_TYPE_OPTIONS,
   COMMUNICATION_PREFERENCE_OPTIONS,
   HOUSEHOLD_STATUS_OPTIONS,
   PRIMARY_GOAL_OPTIONS,
@@ -14,8 +13,6 @@ import {
 } from "@/lib/onboarding";
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
 import { CANADIAN_PROVINCE_TERRITORY_OPTIONS } from "@/lib/constants";
-import { getAccountTypeConfirmation } from "@/lib/role-experience";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,19 +36,10 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
   const [communicationPreference, setCommunicationPreference] = useState<
     OnboardingProfileInput["communicationPreference"] | ""
   >(initialProfile.communicationPreference ?? "");
-  const [accountType, setAccountType] = useState<
-    OnboardingProfileInput["accountType"] | ""
-  >(initialProfile.accountType ?? "");
-  const accountTypeConfirmation = getAccountTypeConfirmation(accountType);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!accountType) {
-      toast.error("Select your applicant type to continue.");
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -66,7 +54,6 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
           householdStatus,
           primaryGoal,
           communicationPreference,
-          accountType,
         }),
       });
 
@@ -175,46 +162,6 @@ export function OnboardingForm({ initialProfile }: OnboardingFormProps) {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="account-type">
-                Applicant type
-              </label>
-              <select
-                id="account-type"
-                value={accountType}
-                onChange={(event) =>
-                  setAccountType(
-                    event.target.value as
-                      | OnboardingProfileInput["accountType"]
-                      | "",
-                  )
-                }
-                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                required
-              >
-                <option value="">Select applicant type</option>
-                {ACCOUNT_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {accountTypeConfirmation ? (
-                <div
-                  className={cn(
-                    "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900",
-                  )}
-                >
-                  <p className="font-semibold">
-                    {accountTypeConfirmation.title}
-                  </p>
-                  <p className="mt-1 leading-relaxed">
-                    {accountTypeConfirmation.description}
-                  </p>
-                </div>
-              ) : null}
             </div>
 
             <div className="space-y-2">
