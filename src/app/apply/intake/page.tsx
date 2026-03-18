@@ -15,10 +15,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, Clock3, Loader2, MapPin, Calendar } from "lucide-react";
 import { useDraftPersistence } from "@/lib/d2c/use-draft-persistence";
-import {
-  PROVINCE_NAMES,
-  type CanadianProvince,
-} from "@/lib/financial/settling-requirements";
+import { PROVINCE_NAMES, type CanadianProvince } from "@/lib/constants";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 1;
