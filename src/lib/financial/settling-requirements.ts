@@ -156,7 +156,7 @@ export const DEFAULT_FUNERAL_EXPENSES = 10000;
 /**
  * Province display names for reporting
  */
-export { PROVINCE_NAMES } from "@/lib/constants";
+export { PROVINCE_NAMES };
 
 /**
  * 2024 Federal tax brackets (Canada)
