@@ -39,7 +39,6 @@ export const GET = withApiHandler(
     endpoint: "/api/d2c/resume-links/[token]",
     method: "GET",
     // Not requiring advisor - this is for D2C consumers
-    requireAdvisor: false,
   },
   async (_request, { logger, session, params }) => {
     const token = params.token;

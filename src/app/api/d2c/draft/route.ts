@@ -73,7 +73,6 @@ export const POST = withApiHandler(
   {
     endpoint: "/api/d2c/draft",
     method: "POST",
-    requireAdvisor: false,
   },
   async (request, { logger, session }) => {
     const clientGuard = await requireClientAccount(logger, session);
@@ -155,7 +154,6 @@ export const GET = withApiHandler(
   {
     endpoint: "/api/d2c/draft",
     method: "GET",
-    requireAdvisor: false,
   },
   async (_request, { logger, session }) => {
     const clientGuard = await requireClientAccount(logger, session);
