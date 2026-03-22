@@ -81,17 +81,6 @@ const config = {
         "prismjs",
         "@react-email/code-block",
       ];
-
-      // Resolve aliases to reduce bundle size
-      config.resolve = {
-        ...config.resolve,
-        alias: {
-          ...config.resolve?.alias,
-          // Don't bundle React dev tools in production
-          "react-dom$": "react-dom/profiling",
-          "scheduler/tracing": "scheduler/tracing-profiling",
-        },
-      };
     }
 
     return config;
