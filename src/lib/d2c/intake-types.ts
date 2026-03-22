@@ -3,7 +3,7 @@
  * Captures user information during the self-service application funnel.
  */
 
-import type { CanadianProvince } from "@/lib/financial/settling-requirements";
+import type { CanadianProvince } from "@/lib/constants";
 
 export type HealthClass =
   | "preferred_plus"

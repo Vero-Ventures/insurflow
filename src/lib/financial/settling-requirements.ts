@@ -12,6 +12,9 @@
  * This module is standalone and does not depend on other calculation engines.
  */
 
+import type { CanadianProvince } from "@/lib/constants";
+import { PROVINCE_NAMES } from "@/lib/constants";
+
 // =============================================================================
 // Types & Interfaces
 // =============================================================================
@@ -19,20 +22,7 @@
 /**
  * Canadian provinces and territories
  */
-export type CanadianProvince =
-  | "AB" // Alberta
-  | "BC" // British Columbia
-  | "MB" // Manitoba
-  | "NB" // New Brunswick
-  | "NL" // Newfoundland and Labrador
-  | "NS" // Nova Scotia
-  | "NT" // Northwest Territories
-  | "NU" // Nunavut
-  | "ON" // Ontario
-  | "PE" // Prince Edward Island
-  | "QC" // Quebec
-  | "SK" // Saskatchewan
-  | "YT"; // Yukon
+export type { CanadianProvince };
 
 /**
  * Asset with cost basis for capital gains calculation
@@ -166,21 +156,7 @@ export const DEFAULT_FUNERAL_EXPENSES = 10000;
 /**
  * Province display names for reporting
  */
-export const PROVINCE_NAMES: Record<CanadianProvince, string> = {
-  AB: "Alberta",
-  BC: "British Columbia",
-  MB: "Manitoba",
-  NB: "New Brunswick",
-  NL: "Newfoundland and Labrador",
-  NS: "Nova Scotia",
-  NT: "Northwest Territories",
-  NU: "Nunavut",
-  ON: "Ontario",
-  PE: "Prince Edward Island",
-  QC: "Quebec",
-  SK: "Saskatchewan",
-  YT: "Yukon",
-};
+export { PROVINCE_NAMES };
 
 /**
  * 2024 Federal tax brackets (Canada)

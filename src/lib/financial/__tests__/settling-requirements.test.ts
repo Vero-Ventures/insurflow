@@ -12,12 +12,11 @@ import {
   roundCurrency,
   DEFAULT_PROFESSIONAL_FEES,
   DEFAULT_FUNERAL_EXPENSES,
-  PROVINCE_NAMES,
-  type CanadianProvince,
   type AssetForSettling,
   type ProfessionalFeesConfig,
   type SettlingRequirementsInput,
 } from "../settling-requirements";
+import { PROVINCE_NAMES, type CanadianProvince } from "@/lib/constants";
 
 // =============================================================================
 // Probate Fee Tests - All Provinces
