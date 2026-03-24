@@ -34,7 +34,6 @@ export const POST = withApiHandler(
     endpoint: "/api/d2c/resume-links",
     method: "POST",
     // Note: Not requiring advisor - this is for D2C consumers
-    requireAdvisor: false,
   },
   async (request, { logger, session }) => {
     // Parse and validate request body

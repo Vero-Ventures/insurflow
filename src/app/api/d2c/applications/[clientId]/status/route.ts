@@ -42,7 +42,6 @@ export const GET = withApiHandler(
   {
     endpoint: "/api/d2c/applications/[clientId]/status",
     method: "GET",
-    requireAdvisor: false,
   },
   async (_request, { logger, session, params }) => {
     const clientGuard = await requireClientAccount(logger, session);

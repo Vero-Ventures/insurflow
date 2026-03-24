@@ -84,7 +84,6 @@ export const GET = withApiHandler(
   {
     endpoint: "/api/d2c/draft/[clientId]",
     method: "GET",
-    requireAdvisor: false,
   },
   async (_request, { logger, session, params }) => {
     const clientGuard = await requireClientAccount(logger, session);
@@ -137,7 +136,6 @@ export const PATCH = withApiHandler(
   {
     endpoint: "/api/d2c/draft/[clientId]",
     method: "PATCH",
-    requireAdvisor: false,
   },
   async (request, { logger, session, params }) => {
     const clientGuard = await requireClientAccount(logger, session);
