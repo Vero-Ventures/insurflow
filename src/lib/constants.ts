@@ -14,7 +14,7 @@ export const DEFAULT_LOCALE = "en-US";
 export const DEFAULT_CURRENCY = "USD";
 
 // Pre-configured Intl formatters for performance (created once, reused everywhere)
-const currencyFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
+export const currencyFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
   style: "currency",
   currency: DEFAULT_CURRENCY,
   minimumFractionDigits: 2,
@@ -28,13 +28,13 @@ const compactCurrencyFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
   maximumFractionDigits: 0,
 });
 
-const dateFormatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+export const dateFormatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
   year: "numeric",
   month: "short",
   day: "numeric",
 });
 
-const dateTimeFormatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+export const dateTimeFormatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
   year: "numeric",
   month: "short",
   day: "numeric",
