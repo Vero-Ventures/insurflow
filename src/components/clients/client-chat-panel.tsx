@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Loader2, SendHorizonal, User2 } from "lucide-react";
+import { Bot, Loader2, SendHorizontal, User2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -155,7 +155,7 @@ export function ClientChatPanel({ clientId }: ClientChatPanelProps) {
                   </>
                 ) : (
                   <>
-                    <SendHorizonal className="mr-1.5 h-4 w-4" />
+                    <SendHorizontal className="mr-1.5 h-4 w-4" />
                     Send
                   </>
                 )}

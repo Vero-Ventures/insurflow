@@ -67,14 +67,16 @@ export const clientChatMessage = pgTable(
     ...timestampsCreatedOnly(),
 
     /** Message timestamp optimized for timeline rendering */
-    sentAt: timestamp("sent_at", { withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
   },
   (t) => [
     index("client_chat_message_client_id_sent_at_idx").on(t.clientId, t.sentAt),
     index("client_chat_message_user_id_sent_at_idx").on(t.userId, t.sentAt),
-    index("client_chat_message_role_idx").on(t.role),
+    index("client_chat_message_client_id_user_id_role_idx").on(
+      t.clientId,
+      t.userId,
+      t.role,
+    ),
   ],
 );
 

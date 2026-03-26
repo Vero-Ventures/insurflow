@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/server/db";
 import { asset, client, clientChatMessage, debt } from "@/server/db/schemas";
@@ -11,7 +11,7 @@ import {
 import {
   GEMINI_MODEL,
   buildClientChatPrompt,
-  generateText,
+  streamText,
   getSuggestedChatQuestions,
   isGeminiConfigured,
   GeminiApiError,
@@ -28,8 +28,6 @@ const postBodySchema = z.object({
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 
-const rateLimiter = new Map<string, number[]>();
-
 function decimalToNumber(value: string | null | undefined): number {
   if (!value) return 0;
   const parsed = Number(value);
@@ -41,25 +39,47 @@ function estimateTokenCount(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
 }
 
-function checkRateLimit(key: string): {
+async function checkRateLimit(
+  clientId: string,
+  userId: string,
+): Promise<{
   limited: boolean;
   retryAfter?: number;
-} {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  const existing = rateLimiter.get(key) ?? [];
-  const withinWindow = existing.filter((t) => t >= windowStart);
+}> {
+  const db = getDb();
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
 
-  if (withinWindow.length >= RATE_LIMIT_MAX_REQUESTS) {
-    const retryAfterMs = withinWindow[0]! + RATE_LIMIT_WINDOW_MS - now;
+  const [windowUsage] = await db
+    .select({
+      totalRequests: sql<number>`COUNT(*)::int`,
+      oldestRequestInWindow: sql<
+        string | null
+      >`MIN(${clientChatMessage.sentAt})::text`,
+    })
+    .from(clientChatMessage)
+    .where(
+      and(
+        eq(clientChatMessage.clientId, clientId),
+        eq(clientChatMessage.userId, userId),
+        eq(clientChatMessage.role, "user"),
+        gte(clientChatMessage.sentAt, windowStart),
+      ),
+    );
+
+  const totalRequests = windowUsage?.totalRequests ?? 0;
+
+  if (totalRequests >= RATE_LIMIT_MAX_REQUESTS) {
+    const oldestRequest = windowUsage?.oldestRequestInWindow
+      ? new Date(windowUsage.oldestRequestInWindow)
+      : new Date();
+    const retryAfterMs =
+      oldestRequest.getTime() + RATE_LIMIT_WINDOW_MS - Date.now();
     return {
       limited: true,
       retryAfter: Math.max(1, Math.ceil(retryAfterMs / 1000)),
     };
   }
 
-  withinWindow.push(now);
-  rateLimiter.set(key, withinWindow);
   return { limited: false };
 }
 
@@ -198,8 +218,7 @@ export const POST = withApiHandler(
     }
 
     const userMessage = validationResult.data.message;
-    const rateLimitKey = `${session.user.id}:${clientId}`;
-    const rateLimit = checkRateLimit(rateLimitKey);
+    const rateLimit = await checkRateLimit(clientId!, session.user.id);
     if (rateLimit.limited) {
       await logger.warn("Chat rate limit exceeded", { statusCode: 429 });
       return NextResponse.json(
@@ -271,71 +290,54 @@ export const POST = withApiHandler(
       sentAt: now,
     });
 
-    let assistantText: string;
-    try {
-      assistantText = await generateText({
-        prompt,
-        temperature: 0.5,
-        maxOutputTokens: 2048,
-      });
-    } catch (error) {
-      if (error instanceof GeminiApiError) {
-        await logger.error("Gemini API error in client chat", error, {
-          statusCode: error.statusCode,
-        });
-        return NextResponse.json(
-          {
-            error: "AI service error",
-            message:
-              "Could not generate a response right now. Please try again.",
-          },
-          { status: 503 },
-        );
-      }
-      throw error;
-    }
+    const aiStream = streamText({
+      prompt,
+      temperature: 0.5,
+      maxOutputTokens: 2048,
+    });
 
     const promptTokens = estimateTokenCount(prompt);
-    const completionTokens = estimateTokenCount(assistantText);
-    const totalTokens = promptTokens + completionTokens;
-
-    const insertedAssistantMessages = await db
-      .insert(clientChatMessage)
-      .values({
-        clientId: clientId!,
-        userId: session.user.id,
-        role: "assistant",
-        content: assistantText,
-        model: GEMINI_MODEL,
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        sentAt: new Date(),
-      })
-      .returning();
-
-    const assistantMessage = insertedAssistantMessages[0];
-    if (!assistantMessage) {
-      throw new Error("Failed to persist assistant chat message");
-    }
-
     const encoder = new TextEncoder();
-    const chunks = assistantText.match(/.{1,120}(\s|$)/g) ?? [assistantText];
 
     const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        let index = 0;
+      async start(controller) {
+        let assistantText = "";
 
-        const pushChunk = () => {
-          if (index < chunks.length) {
+        try {
+          for await (const delta of aiStream) {
+            assistantText += delta;
             const line = JSON.stringify({
               type: "chunk",
-              delta: chunks[index],
+              delta,
             });
             controller.enqueue(encoder.encode(`${line}\n`));
-            index += 1;
-            setTimeout(pushChunk, 15);
-            return;
+          }
+
+          if (!assistantText.trim()) {
+            throw new GeminiApiError("No text generated in response");
+          }
+
+          const completionTokens = estimateTokenCount(assistantText);
+          const totalTokens = promptTokens + completionTokens;
+
+          const insertedAssistantMessages = await db
+            .insert(clientChatMessage)
+            .values({
+              clientId: clientId!,
+              userId: session.user.id,
+              role: "assistant",
+              content: assistantText,
+              model: GEMINI_MODEL,
+              promptTokens,
+              completionTokens,
+              totalTokens,
+              sentAt: new Date(),
+            })
+            .returning();
+
+          const assistantMessage = insertedAssistantMessages[0];
+          if (!assistantMessage) {
+            throw new Error("Failed to persist assistant chat message");
           }
 
           const doneLine = JSON.stringify({
@@ -352,16 +354,46 @@ export const POST = withApiHandler(
             },
             usage: {
               promptTokens,
-              completionTokens,
-              totalTokens,
+              completionTokens: assistantMessage.completionTokens,
+              totalTokens: assistantMessage.totalTokens,
             },
           });
 
           controller.enqueue(encoder.encode(`${doneLine}\n`));
           controller.close();
-        };
+        } catch (error) {
+          let userMessage =
+            "Could not generate a response right now. Please try again.";
 
-        pushChunk();
+          if (error instanceof GeminiApiError) {
+            await logger.error("Gemini API error in client chat", error, {
+              statusCode: error.statusCode,
+            });
+
+            if (error.statusCode === 429) {
+              userMessage =
+                "The AI service is currently rate-limited. Please wait a moment and try again.";
+            } else if (error.statusCode === 401 || error.statusCode === 403) {
+              userMessage =
+                "The AI service credentials are invalid or restricted. Please contact support.";
+            } else if (error.statusCode === 400) {
+              userMessage =
+                "The request could not be processed by the AI service. Please shorten your question and try again.";
+            }
+          } else {
+            await logger.error(
+              "Unexpected streaming error in client chat",
+              error instanceof Error ? error : new Error(String(error)),
+            );
+          }
+
+          const errorLine = JSON.stringify({
+            type: "error",
+            message: userMessage,
+          });
+          controller.enqueue(encoder.encode(`${errorLine}\n`));
+          controller.close();
+        }
       },
     });
 
