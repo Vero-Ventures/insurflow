@@ -40,6 +40,11 @@ interface StreamDone {
   };
 }
 
+interface StreamError {
+  type: "error";
+  message: string;
+}
+
 export interface UseClientChatResult {
   messages: ClientChatMessage[];
   isLoadingHistory: boolean;
@@ -195,7 +200,10 @@ export function useClientChat(clientId: string): UseClientChatResult {
           for (const line of lines) {
             if (!line.trim()) continue;
 
-            const parsed = JSON.parse(line) as StreamChunk | StreamDone;
+            const parsed = JSON.parse(line) as
+              | StreamChunk
+              | StreamDone
+              | StreamError;
 
             if (parsed.type === "chunk") {
               setMessages((current) =>
@@ -218,6 +226,10 @@ export function useClientChat(clientId: string): UseClientChatResult {
                 totalEstimatedTokens:
                   current.totalEstimatedTokens + parsed.usage.totalTokens,
               }));
+            }
+
+            if (parsed.type === "error") {
+              throw new Error(parsed.message || "Failed to send message");
             }
           }
         }
