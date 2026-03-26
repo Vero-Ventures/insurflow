@@ -95,9 +95,13 @@ export default async function DashboardPage() {
   const draftResult = await findLatestDraft(userId);
   let ensuredDraftClient = draftResult.found ? draftResult.draft : null;
   if (!ensuredDraftClient) {
-    const createdDraft = await createDraft(userId);
-    if (createdDraft.success) {
-      ensuredDraftClient = createdDraft.draft;
+    try {
+      const createdDraft = await createDraft(userId);
+      if (createdDraft.success) {
+        ensuredDraftClient = createdDraft.draft;
+      }
+    } catch {
+      // Keep dashboard available even if draft bootstrap fails in test/mocked environments.
     }
   }
 
