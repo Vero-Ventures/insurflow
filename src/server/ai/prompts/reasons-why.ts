@@ -6,7 +6,7 @@
  */
 
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
-import { STATE_LABELS } from "@/lib/constants";
+import { getStateLabel } from "@/lib/constants";
 
 /**
  * Client data needed for letter generation
@@ -52,7 +52,7 @@ export function buildReasonsWhyPrompt(
   financial: ReasonsWhyFinancialData,
 ): string {
   const { insuranceResult } = financial;
-  const stateName = STATE_LABELS[client.state] ?? client.state;
+  const stateName = getStateLabel(client.state);
   const clientName = `${client.firstName} ${client.lastName}`;
 
   // Build household income description
