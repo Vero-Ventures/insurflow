@@ -13,12 +13,13 @@ import {
   normalizeAccountType,
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
-import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
+import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { APPLY_INTAKE_ROUTE } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import { getDraftCompleteness } from "@/lib/d2c/client-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientChatPanel } from "@/components/clients/client-chat-panel";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
@@ -90,14 +91,19 @@ export default async function DashboardPage() {
   const accountType = normalizeAccountType(profile.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
 
-  // Compute draft progress for client accounts
+  // Ensure a draft exists so resume/progress and chat are visible immediately.
   const draftResult = await findLatestDraft(userId);
-  const draftClient =
-    draftResult && draftResult.found ? draftResult.draft : null;
+  let ensuredDraftClient = draftResult.found ? draftResult.draft : null;
+  if (!ensuredDraftClient) {
+    const createdDraft = await createDraft(userId);
+    if (createdDraft.success) {
+      ensuredDraftClient = createdDraft.draft;
+    }
+  }
 
   let draftCompleteness = 0;
-  if (draftClient) {
-    const intake = clientFieldsToD2cIntake(draftClient);
+  if (ensuredDraftClient) {
+    const intake = clientFieldsToD2cIntake(ensuredDraftClient);
     draftCompleteness = getDraftCompleteness(intake);
   }
 
@@ -133,7 +139,7 @@ export default async function DashboardPage() {
           })}
         </section>
 
-        {draftClient && (
+        {ensuredDraftClient && (
           <section>
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardHeader className="space-y-2">
@@ -168,16 +174,29 @@ export default async function DashboardPage() {
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button asChild className="bg-emerald hover:bg-emerald/90">
                     <Link
-                      href={`${APPLY_INTAKE_ROUTE}?clientId=${encodeURIComponent(draftClient.id)}`}
+                      href={`${APPLY_INTAKE_ROUTE}?clientId=${encodeURIComponent(ensuredDraftClient.id)}`}
                     >
                       Continue application
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <DraftResumeLink clientId={draftClient.id} />
+                  <DraftResumeLink clientId={ensuredDraftClient.id} />
                 </div>
               </CardContent>
             </Card>
+          </section>
+        )}
+
+        {ensuredDraftClient && (
+          <section className="space-y-3">
+            <h2 className="text-foreground text-lg font-semibold">
+              Ask InsurFlow Copilot
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Get contextual answers about your current application and coverage
+              estimate.
+            </p>
+            <ClientChatPanel clientId={ensuredDraftClient.id} />
           </section>
         )}
       </div>

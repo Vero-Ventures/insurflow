@@ -73,6 +73,7 @@ import {
   type ClientDetailTab,
 } from "@/lib/client-detail-tabs";
 import { deriveClientJourneyStatus } from "@/lib/client-journey-status";
+import { ClientChatPanel } from "@/components/clients/client-chat-panel";
 
 function ClientDetailContent() {
   const params = useParams();
@@ -398,7 +399,7 @@ function ClientDetailContent() {
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center gap-1.5">
             {completionStatus.profile ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
@@ -423,6 +424,7 @@ function ClientDetailContent() {
             )}
             Insurance
           </TabsTrigger>
+          <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="report">Report</TabsTrigger>
         </TabsList>
 
@@ -595,6 +597,11 @@ function ClientDetailContent() {
               isDeleting={isDeletingLifeEvent}
             />
           </div>
+        </TabsContent>
+
+        {/* Chat Tab */}
+        <TabsContent value="chat" className="space-y-4">
+          <ClientChatPanel clientId={clientId} />
         </TabsContent>
 
         {/* Report Tab */}
