@@ -6,6 +6,7 @@
  */
 
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
+import { STATE_LABELS } from "@/lib/constants";
 
 /**
  * Client data needed for letter generation
@@ -44,66 +45,6 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * Get full state name from abbreviation
- */
-function getStateName(code: string): string {
-  const states: Record<string, string> = {
-    AL: "Alabama",
-    AK: "Alaska",
-    AZ: "Arizona",
-    AR: "Arkansas",
-    CA: "California",
-    CO: "Colorado",
-    CT: "Connecticut",
-    DE: "Delaware",
-    FL: "Florida",
-    GA: "Georgia",
-    HI: "Hawaii",
-    ID: "Idaho",
-    IL: "Illinois",
-    IN: "Indiana",
-    IA: "Iowa",
-    KS: "Kansas",
-    KY: "Kentucky",
-    LA: "Louisiana",
-    ME: "Maine",
-    MD: "Maryland",
-    MA: "Massachusetts",
-    MI: "Michigan",
-    MN: "Minnesota",
-    MS: "Mississippi",
-    MO: "Missouri",
-    MT: "Montana",
-    NE: "Nebraska",
-    NV: "Nevada",
-    NH: "New Hampshire",
-    NJ: "New Jersey",
-    NM: "New Mexico",
-    NY: "New York",
-    NC: "North Carolina",
-    ND: "North Dakota",
-    OH: "Ohio",
-    OK: "Oklahoma",
-    OR: "Oregon",
-    PA: "Pennsylvania",
-    RI: "Rhode Island",
-    SC: "South Carolina",
-    SD: "South Dakota",
-    TN: "Tennessee",
-    TX: "Texas",
-    UT: "Utah",
-    VT: "Vermont",
-    VA: "Virginia",
-    WA: "Washington",
-    WV: "West Virginia",
-    WI: "Wisconsin",
-    WY: "Wyoming",
-    DC: "District of Columbia",
-  };
-  return states[code] ?? code;
-}
-
-/**
  * Build the prompt for generating a Reasons Why letter
  */
 export function buildReasonsWhyPrompt(
@@ -111,7 +52,7 @@ export function buildReasonsWhyPrompt(
   financial: ReasonsWhyFinancialData,
 ): string {
   const { insuranceResult } = financial;
-  const stateName = getStateName(client.state);
+  const stateName = STATE_LABELS[client.state] ?? client.state;
   const clientName = `${client.firstName} ${client.lastName}`;
 
   // Build household income description
