@@ -14,7 +14,7 @@ import {
   normalizeAccountType,
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
-import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
+import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { findSubmittedApplication } from "@/lib/api/d2c-application-helpers";
 import { APPLY_STATUS_ROUTE } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { JourneyProgressTracker } from "@/components/d2c/journey-progress-tracker";
 import { ApplicationStatusBadge } from "@/components/d2c/application-status-badge";
+import { ClientChatPanel } from "@/components/clients/client-chat-panel";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
@@ -106,10 +107,21 @@ export default async function DashboardPage() {
 
   // Check for draft application
   const draftResult = await findLatestDraft(userId);
-  const draftClient =
-    draftResult && draftResult.found ? draftResult.draft : null;
+  let ensuredDraftClient = draftResult.found ? draftResult.draft : null;
+  if (!ensuredDraftClient) {
+    try {
+      const createdDraft = await createDraft(userId);
+      if (createdDraft.success) {
+        ensuredDraftClient = createdDraft.draft;
+      }
+    } catch {
+      // Keep dashboard available even if draft bootstrap fails in test/mocked environments.
+    }
+  }
 
-  const intake = draftClient ? clientFieldsToD2cIntake(draftClient) : null;
+  const intake = ensuredDraftClient
+    ? clientFieldsToD2cIntake(ensuredDraftClient)
+    : null;
 
   // Check for submitted application
   const submittedResult = await findSubmittedApplication(userId);
@@ -141,7 +153,10 @@ export default async function DashboardPage() {
                 key={card.title}
                 title={card.title}
                 description={card.description}
-                href={withDraftClientId(card.href, draftClient?.id ?? null)}
+                href={withDraftClientId(
+                  card.href,
+                  ensuredDraftClient?.id ?? null,
+                )}
                 ctaLabel={card.ctaLabel}
                 icon={Icon}
               />
@@ -186,16 +201,34 @@ export default async function DashboardPage() {
           <section>
             <JourneyProgressTracker
               intake={intake}
-              clientId={draftClient?.id ?? null}
-              hasAnyDraft={draftClient !== null}
+              clientId={ensuredDraftClient?.id ?? null}
+              hasAnyDraft={ensuredDraftClient !== null}
             />
-            {draftClient && (
+            {ensuredDraftClient && (
               <div className="mt-3 flex justify-center">
-                <DraftResumeLink clientId={draftClient.id} />
+                <DraftResumeLink clientId={ensuredDraftClient.id} />
               </div>
             )}
           </section>
         )}
+
+        {/* AI Chat */}
+        <section className="space-y-2">
+          <p className="text-primary text-xs font-semibold tracking-wide uppercase">
+            AI Assistant
+          </p>
+          {ensuredDraftClient ? (
+            <ClientChatPanel clientId={ensuredDraftClient.id} />
+          ) : (
+            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+              <CardContent className="pt-6">
+                <p className="text-muted-foreground text-sm">
+                  Start or resume an application draft to use AI chat.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </section>
       </div>
     </main>
   );
