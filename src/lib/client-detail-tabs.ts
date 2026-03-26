@@ -2,6 +2,7 @@ export const CLIENT_DETAIL_TABS = [
   "profile",
   "financial",
   "insurance",
+  "chat",
   "report",
 ] as const;
 
