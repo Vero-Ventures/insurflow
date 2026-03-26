@@ -6,6 +6,7 @@
 
 export {
   generateText,
+  streamText,
   isGeminiConfigured,
   GeminiNotConfiguredError,
   GeminiApiError,

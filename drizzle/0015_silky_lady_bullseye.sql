@@ -33,4 +33,4 @@ END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "client_chat_message_client_id_sent_at_idx" ON "client_chat_message" USING btree ("client_id","sent_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "client_chat_message_user_id_sent_at_idx" ON "client_chat_message" USING btree ("user_id","sent_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "client_chat_message_role_idx" ON "client_chat_message" USING btree ("role");
+CREATE INDEX IF NOT EXISTS "client_chat_message_client_id_user_id_role_idx" ON "client_chat_message" USING btree ("client_id","user_id","role");
