@@ -12,14 +12,64 @@ import {
 } from "@/components/transparency";
 import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
+
+function getAgeFromDateOfBirth(dateOfBirth: string): number {
+  if (!dateOfBirth) return 0;
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime())) return 0;
+
+  const now = new Date();
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const monthDiff = now.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && now.getDate() < birthDate.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return Math.max(0, age);
+}
+
+function normalizeHealthClass(
+  healthRating: string | undefined,
+):
+  | "preferred_plus"
+  | "preferred"
+  | "standard_plus"
+  | "standard"
+  | "substandard" {
+  if (
+    healthRating === "preferred_plus" ||
+    healthRating === "preferred" ||
+    healthRating === "standard_plus" ||
+    healthRating === "standard" ||
+    healthRating === "substandard"
+  ) {
+    return healthRating;
+  }
+
+  return "standard";
+}
+
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
+  const lifeExpectancyYears = getLifeExpectancy({
+    age: getAgeFromDateOfBirth(demoClient.dateOfBirth),
+    sex: demoClient.sex === "F" ? "F" : "M",
+    smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
+    healthClass: normalizeHealthClass(demoClient.healthRating),
+  });
 
   const { result, coverageGap } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
@@ -159,6 +209,20 @@ export default function DemoEstimatePage() {
             </p>
           </Card>
         </div>
+
+        <Card className="mt-4 border-sky-300/40 bg-sky-50/40 p-6">
+          <h2 className="text-foreground text-sm font-semibold tracking-wide uppercase">
+            Life expectancy
+          </h2>
+          <p className="text-foreground mt-2 text-base font-medium">
+            Based on your profile, your life expectancy is approximately{" "}
+            {lifeExpectancyYears} years.
+          </p>
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            Educational estimate derived from 2017 CSO mortality tables,
+            adjusted for smoking status and health class.
+          </p>
+        </Card>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 p-6">

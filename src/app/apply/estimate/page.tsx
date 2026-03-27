@@ -15,6 +15,10 @@ import {
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 
 function getAgeFromDateOfBirth(dateOfBirth: string): number {
@@ -117,6 +121,14 @@ export default function ApplyEstimatePage() {
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
+  const sex = intake.gender === "female" ? "F" : "M";
+  const healthClass = intake.healthClass || "standard";
+  const lifeExpectancyYears = getLifeExpectancy({
+    age,
+    sex,
+    smokingStatus: toSmokingStatus(intake.tobaccoUse),
+    healthClass,
+  });
 
   const needs = useMemo(
     () =>
@@ -268,6 +280,20 @@ export default function ApplyEstimatePage() {
             </p>
           </Card>
         </section>
+
+        <Card className="border-sky-300/40 bg-sky-50/40 p-6">
+          <p className="text-foreground text-sm font-semibold tracking-wide uppercase">
+            Life expectancy
+          </p>
+          <p className="text-foreground mt-2 text-base font-medium">
+            Based on your profile, your life expectancy is approximately{" "}
+            {lifeExpectancyYears} years.
+          </p>
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            Educational estimate derived from 2017 CSO mortality tables,
+            adjusted for smoking status and health class.
+          </p>
+        </Card>
 
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
           This is a conservative, non-binding estimate only. Final premium,
