@@ -142,7 +142,7 @@ export default function ApplyEstimatePage() {
 
   useEffect(() => {
     if (!isReady) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
+
     setIsHydrated(true);
   }, [isReady]);
 
@@ -190,37 +190,40 @@ export default function ApplyEstimatePage() {
   const handleContinueToReview = async () => {
     if (isContinuing) return;
     setIsContinuing(true);
+    try {
+      let nextClientId = resolvedClientId;
 
-    let nextClientId = resolvedClientId;
+      // Ensure review always has a persisted draft context for authenticated users.
+      if (!nextClientId && session?.user) {
+        try {
+          const response = await fetch("/api/d2c/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ intake }),
+          });
 
-    // Ensure review always has a persisted draft context for authenticated users.
-    if (!nextClientId && session?.user) {
-      try {
-        const response = await fetch("/api/d2c/draft", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ intake }),
-        });
-
-        if (response.ok) {
-          const payload = (await response.json()) as {
-            draft?: { id?: string };
-          };
-          const createdId = payload.draft?.id;
-          if (typeof createdId === "string" && createdId.length > 0) {
-            nextClientId = createdId;
+          if (response.ok) {
+            const payload = (await response.json()) as {
+              draft?: { id?: string };
+            };
+            const createdId = payload.draft?.id;
+            if (typeof createdId === "string" && createdId.length > 0) {
+              nextClientId = createdId;
+            }
           }
+        } catch (error) {
+          // Best-effort: fall back to review route without clientId.
+          console.error("Failed to create draft before review:", error);
         }
-      } catch {
-        // Best-effort: fall back to review route without clientId.
       }
-    }
 
-    const reviewUrl = nextClientId
-      ? `/apply/review?clientId=${encodeURIComponent(nextClientId)}`
-      : "/apply/review";
-    router.push(reviewUrl);
-    setIsContinuing(false);
+      const reviewUrl = nextClientId
+        ? `/apply/review?clientId=${encodeURIComponent(nextClientId)}`
+        : "/apply/review";
+      router.push(reviewUrl);
+    } finally {
+      setIsContinuing(false);
+    }
   };
 
   return (
