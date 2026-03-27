@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
+import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
+import { calculateAge } from "@/lib/client-utils";
+import type { Sex } from "@/lib/financial/mortality-tables";
+import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
 import {
   MethodologySection,
   RateTableDisplay,
@@ -47,6 +51,27 @@ export default function DemoEstimatePage() {
       state.analysisAssumptions.replacementDurationYears,
     liquidAssets: state.analysisAssumptions.liquidAssets,
   });
+
+  const recommendationInput = {
+    age: calculateAge(demoClient.dateOfBirth),
+    sex: demoClient.sex as Sex,
+    isSmoker: demoClient.smoker ?? false,
+    healthClass: demoClient.healthRating as
+      | "preferred_plus"
+      | "preferred"
+      | "standard_plus"
+      | "standard",
+    annualIncome: Number(state.intakeData.annualHouseholdIncome),
+    totalDebts: Number(state.intakeData.totalDebts),
+    liquidAssets: state.analysisAssumptions.liquidAssets,
+    existingCoverage: Number(state.intakeData.currentCoverage),
+    coverageNeeded: result.totalInsuranceNeeds,
+    primaryGoal: (state.intakeData.primaryGoal ||
+      "income_replacement") as InsuranceGoal,
+    hasDependents:
+      demoClient.hasSpouse || demoClient.youngestChildAge !== undefined,
+    youngestDependentAge: demoClient.youngestChildAge,
+  };
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
@@ -176,19 +201,9 @@ export default function DemoEstimatePage() {
           </Card>
         </div>
 
-        <Card className="mt-4 border-sky-300/40 bg-sky-50/40 p-6">
-          <h2 className="text-foreground text-sm font-semibold tracking-wide uppercase">
-            Life expectancy
-          </h2>
-          <p className="text-foreground mt-2 text-base font-medium">
-            Based on your profile, your life expectancy is approximately{" "}
-            {lifeExpectancyYears} years.
-          </p>
-          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-            Educational estimate derived from 2017 CSO mortality tables,
-            adjusted for smoking status and health class.
-          </p>
-        </Card>
+        <div className="mt-6">
+          <ProductRecommendationsCard input={recommendationInput} />
+        </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 p-6">

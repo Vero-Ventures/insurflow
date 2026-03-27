@@ -25,6 +25,26 @@ import {
   toSmokingStatus,
 } from "@/lib/financial/mortality-tables";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
+import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
+import type { Sex } from "@/lib/financial/mortality-tables";
+import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+
+function getAgeFromDateOfBirth(dateOfBirth: string): number {
+  if (!dateOfBirth) return 0;
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime())) return 0;
+
+  const now = new Date();
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const monthDiff = now.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && now.getDate() < birthDate.getDate())
+  ) {
+    age -= 1;
+  }
+  return Math.max(0, age);
+}
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -139,6 +159,22 @@ export default function ApplyEstimatePage() {
     intake.coverageAmount > 0
       ? intake.coverageAmount
       : needs.totalInsuranceNeeds;
+
+  const recommendationInput = useMemo(() => {
+    return {
+      age,
+      sex: "M" as Sex, // Fallback as D2C intake doesn't currently collect sex
+      isSmoker: intake.tobaccoUse,
+      healthClass: "standard" as const, // Fallback
+      annualIncome: intake.annualIncome,
+      totalDebts: 0,
+      liquidAssets: 0,
+      existingCoverage: 0,
+      coverageNeeded: recommendedCoverage,
+      primaryGoal: "income_replacement" as InsuranceGoal,
+      hasDependents: false,
+    };
+  }, [age, intake.tobaccoUse, intake.annualIncome, recommendedCoverage]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -269,19 +305,9 @@ export default function ApplyEstimatePage() {
           </Card>
         </section>
 
-        <Card className="border-sky-300/40 bg-sky-50/40 p-6">
-          <p className="text-foreground text-sm font-semibold tracking-wide uppercase">
-            Life expectancy
-          </p>
-          <p className="text-foreground mt-2 text-base font-medium">
-            Based on your profile, your life expectancy is approximately{" "}
-            {lifeExpectancyYears} years.
-          </p>
-          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-            Educational estimate derived from 2017 CSO mortality tables,
-            adjusted for smoking status and health class.
-          </p>
-        </Card>
+        <section>
+          <ProductRecommendationsCard input={recommendationInput} />
+        </section>
 
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
           This is a conservative, non-binding estimate only. Final premium,
