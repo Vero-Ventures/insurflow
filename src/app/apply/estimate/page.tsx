@@ -171,6 +171,28 @@ export default function ApplyEstimatePage() {
       setPremiumLow(range.lowMonthlyPremiumCad);
       setPremiumHigh(range.highMonthlyPremiumCad);
       saveD2cIntake({ coverageAmount: recommendedCoverage });
+
+      // Persist estimate run for authenticated users who have a client draft
+      if (session?.user && resolvedClientId && intake.province) {
+        try {
+          await fetch(
+            `/api/d2c/estimate/${encodeURIComponent(resolvedClientId)}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                recommendedCoverage,
+                premiumLow: range.lowMonthlyPremiumCad,
+                premiumHigh: range.highMonthlyPremiumCad,
+                termYears: intake.termYears,
+                province: intake.province,
+              }),
+            },
+          );
+        } catch {
+          // Best-effort: failure to save history should not block the user
+        }
+      }
     };
 
     void runEstimate();
@@ -181,6 +203,8 @@ export default function ApplyEstimatePage() {
     intake.tobaccoUse,
     isHydrated,
     recommendedCoverage,
+    resolvedClientId,
+    session?.user,
   ]);
 
   if (!isHydrated) {

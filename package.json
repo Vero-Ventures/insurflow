@@ -80,7 +80,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.18",
     "dotenv": "^17.2.3",
-    "drizzle-kit": "^0.31.8",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
     "eslint-plugin-drizzle": "^0.2.3",

@@ -69,6 +69,7 @@ export { auditLog } from "./audit-logs-schema";
 
 // D2C tables
 export { d2cResumeLink } from "./d2c-resume-link-schema";
+export { estimateRun } from "./d2c-estimate-run-schema";
 export { application, applicationEvent } from "./applications-schema";
 
 // Webhook event tables
@@ -102,6 +103,7 @@ export { auditLogRelations } from "./audit-logs-schema";
 
 // D2C relations
 export { d2cResumeLinkRelations } from "./d2c-resume-link-schema";
+export { estimateRunRelations } from "./d2c-estimate-run-schema";
 
 // Application relations
 export {
@@ -120,6 +122,12 @@ export type {
   D2cResumeLink,
   D2cResumeLinkInsert,
 } from "./d2c-resume-link-schema";
+
+// Estimate run types
+export type {
+  EstimateRun,
+  EstimateRunInsert,
+} from "./d2c-estimate-run-schema";
 
 // Application types
 export type {
@@ -164,6 +172,7 @@ import { assetAllocation } from "./beneficiaries-schema";
 import { userProfile } from "./user-profile-schema";
 import { policy } from "./policies-schema";
 import { d2cResumeLink } from "./d2c-resume-link-schema";
+import { estimateRun } from "./d2c-estimate-run-schema";
 import { application } from "./applications-schema";
 import { webhookEvent } from "./webhook-events-schema";
 import { lifeEventRecalculation } from "./life-events-schema";
@@ -198,6 +207,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   policies: many(policy),
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
+  estimateRuns: many(estimateRun),
   webhookEvents: many(webhookEvent),
   lifeEventRecalculations: many(lifeEventRecalculation),
 }));

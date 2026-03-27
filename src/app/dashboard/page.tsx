@@ -4,9 +4,11 @@ import {
   ClipboardList,
   FileBarChart2,
   Handshake,
+  History,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { redirect } from "next/navigation";
+import { desc, eq, and } from "drizzle-orm";
 
 import {
   getDashboardExperience,
@@ -21,8 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { userProfile } from "@/server/db/schemas";
-import { eq } from "drizzle-orm";
+import { userProfile, estimateRun } from "@/server/db/schemas";
 import { DraftResumeLink } from "./draft-resume-link";
 
 type JourneyCardProps = {
@@ -112,6 +113,22 @@ export default async function DashboardPage() {
     draftCompleteness = getDraftCompleteness(intake);
   }
 
+  // Fetch recent estimate history for client accounts (up to 3 most recent)
+  const recentEstimates =
+    accountType === "client" && draftClient
+      ? await db
+          .select()
+          .from(estimateRun)
+          .where(
+            and(
+              eq(estimateRun.userId, userId),
+              eq(estimateRun.clientId, draftClient.id),
+            ),
+          )
+          .orderBy(desc(estimateRun.runNumber))
+          .limit(3)
+      : [];
+
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
       <div className="mx-auto w-full max-w-6xl space-y-8">
@@ -186,6 +203,84 @@ export default async function DashboardPage() {
                     </Link>
                   </Button>
                   <DraftResumeLink clientId={draftClient.id} />
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {recentEstimates.length > 0 && (
+          <section>
+            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+              <CardHeader className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <History className="text-muted-foreground h-4 w-4" />
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    Estimate history
+                  </p>
+                </div>
+                <CardTitle className="text-lg">Your past estimates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ul className="divide-border divide-y">
+                  {recentEstimates.map((estimate) => (
+                    <li
+                      key={estimate.id}
+                      className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-0.5">
+                        <p className="text-foreground text-sm font-medium">
+                          Estimate #{estimate.runNumber}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {new Intl.DateTimeFormat("en-CA", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }).format(new Date(estimate.createdAt))}
+                          {" · "}
+                          {estimate.province}
+                          {" · "}
+                          {estimate.termYears}-yr term
+                        </p>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <p className="text-foreground text-sm font-semibold">
+                          {new Intl.NumberFormat("en-CA", {
+                            style: "currency",
+                            currency: "CAD",
+                            maximumFractionDigits: 0,
+                          }).format(Number(estimate.recommendedCoverage))}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {new Intl.NumberFormat("en-CA", {
+                            style: "currency",
+                            currency: "CAD",
+                          }).format(Number(estimate.premiumLow))}
+                          {" – "}
+                          {new Intl.NumberFormat("en-CA", {
+                            style: "currency",
+                            currency: "CAD",
+                          }).format(Number(estimate.premiumHigh))}
+                          /mo
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="pt-1">
+                  <Button asChild variant="outline" size="sm">
+                    <Link
+                      href={
+                        draftClient
+                          ? `/apply/estimate?clientId=${encodeURIComponent(draftClient.id)}`
+                          : "/apply/estimate"
+                      }
+                    >
+                      Run a new estimate
+                      <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
