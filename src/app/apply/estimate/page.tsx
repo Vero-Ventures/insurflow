@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authClient } from "@/server/better-auth/client";
 import { formatCurrency } from "@/lib/client-utils";
 import {
   DEFAULT_D2C_INTAKE,
@@ -111,6 +112,8 @@ export default function ApplyEstimatePage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
+  const [isContinuing, setIsContinuing] = useState(false);
+  const { data: session } = authClient.useSession();
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -139,7 +142,7 @@ export default function ApplyEstimatePage() {
 
   useEffect(() => {
     if (!isReady) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
+
     setIsHydrated(true);
   }, [isReady]);
 
@@ -183,6 +186,45 @@ export default function ApplyEstimatePage() {
   if (!isHydrated) {
     return <main className="min-h-[calc(100vh-3.5rem)]" />;
   }
+
+  const handleContinueToReview = async () => {
+    if (isContinuing) return;
+    setIsContinuing(true);
+    try {
+      let nextClientId = resolvedClientId;
+
+      // Ensure review always has a persisted draft context for authenticated users.
+      if (!nextClientId && session?.user) {
+        try {
+          const response = await fetch("/api/d2c/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ intake }),
+          });
+
+          if (response.ok) {
+            const payload = (await response.json()) as {
+              draft?: { id?: string };
+            };
+            const createdId = payload.draft?.id;
+            if (typeof createdId === "string" && createdId.length > 0) {
+              nextClientId = createdId;
+            }
+          }
+        } catch (error) {
+          // Best-effort: fall back to review route without clientId.
+          console.error("Failed to create draft before review:", error);
+        }
+      }
+
+      const reviewUrl = nextClientId
+        ? `/apply/review?clientId=${encodeURIComponent(nextClientId)}`
+        : "/apply/review";
+      router.push(reviewUrl);
+    } finally {
+      setIsContinuing(false);
+    }
+  };
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
@@ -236,12 +278,8 @@ export default function ApplyEstimatePage() {
         <div className="flex justify-end">
           <Button
             className="bg-emerald hover:bg-emerald/90"
-            onClick={() => {
-              const reviewUrl = resolvedClientId
-                ? `/apply/review?clientId=${encodeURIComponent(resolvedClientId)}`
-                : "/apply/review";
-              router.push(reviewUrl);
-            }}
+            onClick={() => void handleContinueToReview()}
+            disabled={isContinuing}
           >
             Continue to review
           </Button>

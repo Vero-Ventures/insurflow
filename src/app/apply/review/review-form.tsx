@@ -169,7 +169,11 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/apply/estimate")}
+              onClick={() =>
+                router.push(
+                  `/apply/estimate?clientId=${encodeURIComponent(clientId)}`,
+                )
+              }
             >
               Back to estimate
             </Button>
