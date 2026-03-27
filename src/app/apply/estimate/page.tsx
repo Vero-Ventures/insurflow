@@ -15,36 +15,11 @@ import {
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
-import {
-  getAgeFromDateOfBirth,
-  normalizeHealthClass,
-  normalizeLifeExpectancySex,
-} from "@/lib/financial/life-expectancy-profile";
-import {
-  getLifeExpectancy,
-  toSmokingStatus,
-} from "@/lib/financial/mortality-tables";
+import { getAgeFromDateOfBirth } from "@/lib/financial/life-expectancy-profile";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import type { Sex } from "@/lib/financial/mortality-tables";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
-
-function getAgeFromDateOfBirth(dateOfBirth: string): number {
-  if (!dateOfBirth) return 0;
-  const birthDate = new Date(dateOfBirth);
-  if (Number.isNaN(birthDate.getTime())) return 0;
-
-  const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const monthDiff = now.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && now.getDate() < birthDate.getDate())
-  ) {
-    age -= 1;
-  }
-  return Math.max(0, age);
-}
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -129,14 +104,6 @@ export default function ApplyEstimatePage() {
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
-  const sex = normalizeLifeExpectancySex(intake.gender);
-  const healthClass = normalizeHealthClass(intake.healthClass || undefined);
-  const lifeExpectancyYears = getLifeExpectancy({
-    age,
-    sex,
-    smokingStatus: toSmokingStatus(intake.tobaccoUse),
-    healthClass,
-  });
 
   const needs = useMemo(
     () =>

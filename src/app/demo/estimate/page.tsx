@@ -16,15 +16,6 @@ import {
 } from "@/components/transparency";
 import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
-import {
-  getAgeFromDateOfBirth,
-  normalizeHealthClass,
-  normalizeLifeExpectancySex,
-} from "@/lib/financial/life-expectancy-profile";
-import {
-  getLifeExpectancy,
-  toSmokingStatus,
-} from "@/lib/financial/mortality-tables";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
@@ -34,12 +25,6 @@ const CURRENT_STEP = 2;
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
-  const lifeExpectancyYears = getLifeExpectancy({
-    age: getAgeFromDateOfBirth(demoClient.dateOfBirth),
-    sex: normalizeLifeExpectancySex(demoClient.sex),
-    smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
-    healthClass: normalizeHealthClass(demoClient.healthRating),
-  });
 
   const { result, coverageGap } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
