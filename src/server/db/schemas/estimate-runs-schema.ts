@@ -255,14 +255,15 @@ export const estimateRun = pgTable(
     ...timestampsCreatedOnly(),
   },
   (t) => [
-    unique("estimate_run_client_id_run_number_unique").on(
-      t.clientId,
-      t.runNumber,
-    ),
     index("estimate_run_client_id_idx").on(t.clientId),
     index("estimate_run_user_id_idx").on(t.userId),
     index("estimate_run_assumption_version_id_idx").on(t.assumptionVersionId),
     index("estimate_run_created_at_idx").on(t.createdAt),
+
+    unique("estimate_run_client_id_run_number_unique").on(
+      t.clientId,
+      t.runNumber,
+    ),
   ],
 );
 
