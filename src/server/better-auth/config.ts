@@ -4,11 +4,25 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "@/env";
 import { getDb } from "@/server/db";
 import { buildSocialProviders } from "@/server/better-auth/social-providers";
+import { sendPasswordResetEmail } from "@/server/better-auth/password-reset-email";
 
 export function getUserOptions(): BetterAuthOptions["user"] {
   return {
     deleteUser: {
       enabled: true,
+    },
+  };
+}
+
+export function getEmailAndPasswordOptions(): NonNullable<
+  BetterAuthOptions["emailAndPassword"]
+> {
+  return {
+    enabled: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async (data) => {
+      await sendPasswordResetEmail(data);
     },
   };
 }
@@ -26,9 +40,7 @@ function getAuthOptions(): BetterAuthOptions {
     database: drizzleAdapter(getDb(), {
       provider: "pg",
     }),
-    emailAndPassword: {
-      enabled: true,
-    },
+    emailAndPassword: getEmailAndPasswordOptions(),
     user: getUserOptions(),
     socialProviders: buildSocialProviders(env),
   };

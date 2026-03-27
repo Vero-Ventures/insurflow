@@ -38,6 +38,9 @@ export function Providers({ children, socialProviderIds }: ProvidersProps) {
         replace={router.replace}
         onSessionChange={handleSessionChange}
         Link={Link}
+        credentials={{
+          forgotPassword: true,
+        }}
         social={
           socialProviderIds.length > 0
             ? { providers: socialProviderIds }

@@ -2,14 +2,19 @@ import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import AuthPage from "./page";
+import AuthPage, { generateStaticParams } from "./page";
 
 vi.mock("@daveyplate/better-auth-ui", () => ({
   AuthView: ({ path }: { path: string }) => <div>auth-view-{path}</div>,
 }));
 
 vi.mock("@daveyplate/better-auth-ui/server", () => ({
-  authViewPaths: { signIn: "sign-in", signUp: "sign-up" },
+  authViewPaths: {
+    signIn: "sign-in",
+    signUp: "sign-up",
+    forgotPassword: "forgot-password",
+    resetPassword: "reset-password",
+  },
 }));
 
 vi.mock("next/image", () => ({
@@ -23,6 +28,16 @@ vi.mock("next/image", () => ({
 }));
 
 describe("AuthPage", () => {
+  it("generates static params for forgot/reset auth views", () => {
+    const params = generateStaticParams();
+    expect(params).toEqual(
+      expect.arrayContaining([
+        { path: "forgot-password" },
+        { path: "reset-password" },
+      ]),
+    );
+  });
+
   it("uses consumer broker messaging on sign up", async () => {
     const page = await AuthPage({
       params: Promise.resolve({ path: "sign-up" }),

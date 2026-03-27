@@ -5,9 +5,21 @@ import {
   getDefaultSocialProviderIds,
   type OAuthEnv,
 } from "@/server/better-auth/social-providers";
-import { getUserOptions } from "@/server/better-auth/config";
+import {
+  getEmailAndPasswordOptions,
+  getUserOptions,
+} from "@/server/better-auth/config";
 
 describe("better-auth social provider configuration", () => {
+  it("configures password reset options for email/password auth", () => {
+    const options = getEmailAndPasswordOptions();
+
+    expect(options.enabled).toBe(true);
+    expect(options.resetPasswordTokenExpiresIn).toBe(60 * 60);
+    expect(options.revokeSessionsOnPasswordReset).toBe(true);
+    expect(options.sendResetPassword).toBeTypeOf("function");
+  });
+
   it("enables delete-user endpoint in auth config", () => {
     const options = getUserOptions();
 
