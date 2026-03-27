@@ -69,6 +69,17 @@ function JourneyCard({
   );
 }
 
+export function withDraftClientId(
+  href: string,
+  clientId: string | null,
+): string {
+  if (!clientId) return href;
+  if (href === "/apply/estimate" || href === "/apply/review") {
+    return `${href}?clientId=${encodeURIComponent(clientId)}`;
+  }
+  return href;
+}
+
 export default async function DashboardPage() {
   const session = await getSession();
   const userId = getSessionUserId(session);
@@ -125,7 +136,7 @@ export default async function DashboardPage() {
                 key={card.title}
                 title={card.title}
                 description={card.description}
-                href={card.href}
+                href={withDraftClientId(card.href, draftClient?.id ?? null)}
                 ctaLabel={card.ctaLabel}
                 icon={Icon}
               />

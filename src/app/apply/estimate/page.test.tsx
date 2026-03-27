@@ -6,10 +6,17 @@ import ApplyEstimatePage from "@/app/apply/estimate/page";
 const pushMock = vi.fn();
 const replaceMock = vi.fn();
 const getMock = vi.fn().mockReturnValue(null);
+const useSessionMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => ({ get: getMock }),
+}));
+
+vi.mock("@/server/better-auth/client", () => ({
+  authClient: {
+    useSession: () => useSessionMock(),
+  },
 }));
 
 describe("ApplyEstimatePage", () => {
@@ -18,6 +25,8 @@ describe("ApplyEstimatePage", () => {
     replaceMock.mockReset();
     getMock.mockReset();
     getMock.mockReturnValue(null);
+    useSessionMock.mockReset();
+    useSessionMock.mockReturnValue({ data: null });
     vi.restoreAllMocks();
     sessionStorage.clear();
     sessionStorage.setItem(
@@ -61,6 +70,31 @@ describe("ApplyEstimatePage", () => {
 
     fireEvent.click(continueButton);
     expect(pushMock).toHaveBeenCalledWith("/apply/review");
+  });
+
+  it("creates a draft and forwards clientId for authenticated users", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { id: "user-1" } } });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft: { id: "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+      }),
+    } as Response);
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      );
+    });
   });
 
   it("forwards clientId search param to review URL when present", async () => {
