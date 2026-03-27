@@ -63,40 +63,20 @@ function logDevResetUrl(payload: ResetPasswordEmailPayload): void {
   );
 }
 
-type ResetEmailLogLevel = "info" | "warn" | "error";
-
-function logStructured(
-  level: ResetEmailLogLevel,
-  message: string,
-  context: Record<string, unknown>,
-): void {
-  const event = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...context,
-  };
-
-  const serialized = JSON.stringify(event);
-  if (level === "error") {
-    console.error(serialized);
-    return;
-  }
-
-  if (level === "warn") {
-    console.warn(serialized);
-    return;
-  }
-
-  console.log(serialized);
+async function getResetEmailLogger() {
+  const { createLogger } = await import("@/server/axiom");
+  return createLogger({
+    endpoint: "auth/password-reset",
+  });
 }
 
 export async function sendPasswordResetEmail(
   payload: ResetPasswordEmailPayload,
 ): Promise<void> {
+  const logger = await getResetEmailLogger();
+
   if (!isResetEmailConfigured()) {
-    logStructured("warn", "Password reset email provider is not configured", {
-      endpoint: "auth/password-reset",
+    await logger.warn("Password reset email provider is not configured", {
       email: payload.user.email,
       configured: false,
     });
@@ -128,24 +108,19 @@ export async function sendPasswordResetEmail(
       html: buildResetEmailHtml(payload),
     });
 
-    logStructured("info", "Password reset email sent", {
-      endpoint: "auth/password-reset",
+    await logger.info("Password reset email sent", {
       email: payload.user.email,
       provider: "gmail_smtp",
     });
   } catch (error) {
-    logStructured("error", "Password reset email send threw an error", {
-      endpoint: "auth/password-reset",
-      email: payload.user.email,
-      provider: "gmail_smtp",
-      error:
-        error instanceof Error
-          ? {
-              name: error.name,
-              message: error.message,
-            }
-          : { name: "Error", message: "Unknown email send error" },
-    });
+    await logger.error(
+      "Password reset email send threw an error",
+      error instanceof Error ? error : new Error("Unknown email send error"),
+      {
+        email: payload.user.email,
+        provider: "gmail_smtp",
+      },
+    );
 
     if (env.NODE_ENV !== "production") {
       logDevResetUrl(payload);
