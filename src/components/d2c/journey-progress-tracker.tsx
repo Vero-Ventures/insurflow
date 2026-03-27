@@ -117,9 +117,8 @@ export function JourneyProgressTracker({
     (step) => statuses[step.id] === "in-progress",
   );
   const firstStep = JOURNEY_STEPS[0];
-  const currentStep =
-    (currentStepIndex >= 0 ? JOURNEY_STEPS[currentStepIndex] : firstStep) ??
-    firstStep;
+const currentStep =
+  currentStepIndex >= 0 ? JOURNEY_STEPS[currentStepIndex]! : firstStep!;
 
   // Safe fallback - firstStep is always defined since JOURNEY_STEPS is a non-empty const array
   const ctaHref = currentStep
