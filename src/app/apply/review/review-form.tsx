@@ -15,8 +15,12 @@ import { complianceConfig } from "@/lib/d2c/compliance-config";
 import { submitApplicationAction } from "@/app/apply/submit/actions";
 
 interface ReviewFormProps {
-  /** The server-validated client ID for this D2C submission. */
-  clientId: string;
+  /**
+   * The server-validated client ID for this D2C submission.
+   * Signed-out users can still review consent copy before sign-up, so this
+   * may be null until an authenticated draft is available.
+   */
+  clientId: string | null;
 }
 
 export default function ReviewForm({ clientId }: ReviewFormProps) {
@@ -29,6 +33,9 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
   const intake = useMemo(() => loadD2cIntake(), []);
 
   const allConsentsAccepted = consentTransmit && healthInfoAuth && esignIntent;
+  const estimateUrl = clientId
+    ? `/apply/estimate?clientId=${encodeURIComponent(clientId)}`
+    : "/apply/estimate";
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
@@ -143,7 +150,7 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
 
         {/* Submit form — consent values sent directly to server action, no client-side storage */}
         <form action={submitApplicationAction}>
-          <input type="hidden" name="clientId" value={clientId} />
+          <input type="hidden" name="clientId" value={clientId ?? ""} />
           <input
             type="hidden"
             name="consentTransmit"
@@ -169,11 +176,7 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                router.push(
-                  `/apply/estimate?clientId=${encodeURIComponent(clientId)}`,
-                )
-              }
+              onClick={() => router.push(estimateUrl)}
             >
               Back to estimate
             </Button>
