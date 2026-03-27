@@ -68,6 +68,11 @@ describe("ApplyEstimatePage", () => {
   });
 
   it("navigates to review step", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 401,
+    } as Response);
+
     render(<ApplyEstimatePage />);
 
     const continueButton = await screen.findByRole("button", {
@@ -75,7 +80,10 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
-    expect(pushMock).toHaveBeenCalledWith("/apply/review");
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    });
   });
 
   it("creates a draft and forwards clientId for authenticated users", async () => {
@@ -101,6 +109,56 @@ describe("ApplyEstimatePage", () => {
         "/apply/review?clientId=aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       );
     });
+  });
+
+  it("creates a draft and forwards clientId even when session hook is not hydrated", async () => {
+    useSessionMock.mockReturnValue({ data: null });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+      }),
+    } as Response);
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      );
+    });
+  });
+
+  it("stays on estimate and shows error when draft creation fails", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { id: "user-1" } } });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 500,
+    } as Response);
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).not.toHaveBeenCalled();
+    });
+
+    expect(
+      screen.getByText(/we could not save your draft right now/i),
+    ).toBeTruthy();
   });
 
   it("forwards clientId search param to review URL when present", async () => {

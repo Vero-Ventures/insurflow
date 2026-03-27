@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { authClient } from "@/server/better-auth/client";
 import { formatCurrency } from "@/lib/client-utils";
 import {
   DEFAULT_D2C_INTAKE,
@@ -105,7 +104,7 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
   const [isContinuing, setIsContinuing] = useState(false);
-  const { data: session } = authClient.useSession();
+  const [continueError, setContinueError] = useState<string | null>(null);
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -190,11 +189,15 @@ export default function ApplyEstimatePage() {
   const handleContinueToReview = async () => {
     if (isContinuing) return;
     setIsContinuing(true);
+    setContinueError(null);
     try {
       let nextClientId = resolvedClientId;
+      let allowReviewWithoutClientId = false;
 
-      // Ensure review always has a persisted draft context for authenticated users.
-      if (!nextClientId && session?.user) {
+      // Always try to persist a draft when clientId is missing.
+      // This avoids a race where auth session is valid on the server but not yet
+      // hydrated in this client component, which can cause review to redirect.
+      if (!nextClientId) {
         try {
           const response = await fetch("/api/d2c/draft", {
             method: "POST",
@@ -210,11 +213,21 @@ export default function ApplyEstimatePage() {
             if (typeof createdId === "string" && createdId.length > 0) {
               nextClientId = createdId;
             }
+          } else if (response.status === 401 || response.status === 403) {
+            // Signed-out users can still access review and then sign up.
+            allowReviewWithoutClientId = true;
           }
         } catch (error) {
           // Best-effort: fall back to review route without clientId.
           console.error("Failed to create draft before review:", error);
         }
+      }
+
+      if (!nextClientId && !allowReviewWithoutClientId) {
+        setContinueError(
+          "We could not save your draft right now. Please try again in a moment.",
+        );
+        return;
       }
 
       const reviewUrl = nextClientId
@@ -290,13 +303,20 @@ export default function ApplyEstimatePage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button
-            className="bg-emerald hover:bg-emerald/90"
-            onClick={() => void handleContinueToReview()}
-            disabled={isContinuing}
-          >
-            Continue to review
-          </Button>
+          <div className="space-y-2 text-right">
+            {continueError && (
+              <p className="text-destructive text-sm" role="alert">
+                {continueError}
+              </p>
+            )}
+            <Button
+              className="bg-emerald hover:bg-emerald/90"
+              onClick={() => void handleContinueToReview()}
+              disabled={isContinuing}
+            >
+              Continue to review
+            </Button>
+          </div>
         </div>
       </div>
     </main>
