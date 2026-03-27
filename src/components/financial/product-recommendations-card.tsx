@@ -16,7 +16,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/client-utils";
 import {
   generateRecommendations,
@@ -52,17 +51,9 @@ function ProductCard({ rec }: { rec: ProductRecommendation }) {
         <div>
           <div className="flex items-center gap-2">
             <h4 className="text-lg font-semibold">{rec.productName}</h4>
-            {rec.rank === 1 && (
-              <Badge
-                variant="default"
-                className="bg-emerald hover:bg-emerald/90"
-              >
-                Top Match
-              </Badge>
-            )}
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
-            Overall Score: {Math.round(rec.score)}/100
+            Overall Match Score: {Math.round(rec.score)}/100
           </p>
         </div>
         <div className="text-right">
@@ -262,11 +253,13 @@ export function ProductRecommendationsCard({
 
             {/* Recommendations List */}
             <div className="space-y-4">
-              <h3 className="text-base font-semibold">Ranked Options</h3>
+              <h3 className="text-base font-semibold">Recommended Option</h3>
               <div className="grid gap-4">
-                {result.recommendations.map((rec) => (
-                  <ProductCard key={rec.productType} rec={rec} />
-                ))}
+                {result.recommendations
+                  .filter((rec) => rec.productType === "term_life")
+                  .map((rec) => (
+                    <ProductCard key={rec.productType} rec={rec} />
+                  ))}
               </div>
             </div>
           </CardContent>

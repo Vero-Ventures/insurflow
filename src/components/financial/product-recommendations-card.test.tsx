@@ -69,7 +69,7 @@ describe("ProductRecommendationsCard", () => {
     render(<ProductRecommendationsCard input={input} />);
 
     // Expected section headers
-    expect(screen.getAllByText("Ranked Options")[0]).toBeDefined();
+    expect(screen.getAllByText("Recommended Option")[0]).toBeDefined();
 
     // Term Life is almost always the top recommendation for a 35yo with high needs
     expect(screen.getAllByText(/Term Life/i)[0]).toBeDefined();
