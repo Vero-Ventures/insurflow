@@ -24,9 +24,8 @@ export default async function ApplyReviewPage({
   searchParams: Promise<{ clientId?: string }>;
 }) {
   const session = await getSession();
-
   if (!session?.user) {
-    redirect("/auth/sign-up?role=client");
+    return <ReviewForm clientId={null} />;
   }
 
   const { clientId } = await searchParams;
