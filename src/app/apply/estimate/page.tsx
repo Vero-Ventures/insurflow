@@ -15,10 +15,17 @@ import {
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
-import { getAgeFromDateOfBirth } from "@/lib/financial/life-expectancy-profile";
+import {
+  getAgeFromDateOfBirth,
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
-import type { Sex } from "@/lib/financial/mortality-tables";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
 
 /**
@@ -104,6 +111,14 @@ export default function ApplyEstimatePage() {
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
+  const sex = normalizeLifeExpectancySex(intake.gender);
+  const healthClass = normalizeHealthClass(intake.healthClass || undefined);
+  const lifeExpectancyYears = getLifeExpectancy({
+    age,
+    sex,
+    smokingStatus: toSmokingStatus(intake.tobaccoUse),
+    healthClass,
+  });
 
   const needs = useMemo(
     () =>
@@ -130,9 +145,9 @@ export default function ApplyEstimatePage() {
   const recommendationInput = useMemo(() => {
     return {
       age,
-      sex: "M" as Sex, // Fallback as D2C intake doesn't currently collect sex
+      sex,
       isSmoker: intake.tobaccoUse,
-      healthClass: "standard" as const, // Fallback
+      healthClass,
       annualIncome: intake.annualIncome,
       totalDebts: 0,
       liquidAssets: 0,
@@ -141,7 +156,14 @@ export default function ApplyEstimatePage() {
       primaryGoal: "income_replacement" as InsuranceGoal,
       hasDependents: false,
     };
-  }, [age, intake.tobaccoUse, intake.annualIncome, recommendedCoverage]);
+  }, [
+    age,
+    sex,
+    healthClass,
+    intake.tobaccoUse,
+    intake.annualIncome,
+    recommendedCoverage,
+  ]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -271,6 +293,12 @@ export default function ApplyEstimatePage() {
             </p>
           </Card>
         </section>
+
+        <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
+          Based on your profile, your life expectancy is approximately{" "}
+          <span className="font-semibold">{lifeExpectancyYears} years</span>
+          using 2017 CSO mortality tables.
+        </Card>
 
         <section>
           <ProductRecommendationsCard input={recommendationInput} />

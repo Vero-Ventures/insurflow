@@ -8,8 +8,15 @@ import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import { calculateAge } from "@/lib/client-utils";
-import type { Sex } from "@/lib/financial/mortality-tables";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+import {
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import {
   MethodologySection,
   RateTableDisplay,
@@ -25,6 +32,15 @@ const CURRENT_STEP = 2;
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
+  const age = calculateAge(demoClient.dateOfBirth);
+  const sex = normalizeLifeExpectancySex(demoClient.sex);
+  const healthClass = normalizeHealthClass(demoClient.healthRating);
+  const lifeExpectancyYears = getLifeExpectancy({
+    age,
+    sex,
+    smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
+    healthClass,
+  });
 
   const { result, coverageGap } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
@@ -38,14 +54,10 @@ export default function DemoEstimatePage() {
   });
 
   const recommendationInput = {
-    age: calculateAge(demoClient.dateOfBirth),
-    sex: demoClient.sex as Sex,
+    age,
+    sex,
     isSmoker: demoClient.smoker ?? false,
-    healthClass: demoClient.healthRating as
-      | "preferred_plus"
-      | "preferred"
-      | "standard_plus"
-      | "standard",
+    healthClass,
     annualIncome: Number(state.intakeData.annualHouseholdIncome),
     totalDebts: Number(state.intakeData.totalDebts),
     liquidAssets: state.analysisAssumptions.liquidAssets,
@@ -189,6 +201,12 @@ export default function DemoEstimatePage() {
         <div className="mt-6">
           <ProductRecommendationsCard input={recommendationInput} />
         </div>
+
+        <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
+          Based on your profile, your life expectancy is approximately{" "}
+          <span className="font-semibold">{lifeExpectancyYears} years</span>
+          using 2017 CSO mortality tables.
+        </Card>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 p-6">
