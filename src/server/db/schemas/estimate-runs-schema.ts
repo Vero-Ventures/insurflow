@@ -166,6 +166,10 @@ export const assumptionVersion = pgTable(
     ...timestampsCreatedOnly(),
   },
   (t) => [
+    unique("assumption_version_product_line_label_unique").on(
+      t.productLine,
+      t.versionLabel,
+    ),
     index("assumption_version_product_line_idx").on(t.productLine),
     index("assumption_version_effective_from_idx").on(t.effectiveFrom),
   ],
