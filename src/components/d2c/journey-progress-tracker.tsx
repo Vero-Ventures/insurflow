@@ -75,7 +75,11 @@ function StepIndicator({
         "flex h-8 w-8 items-center justify-center rounded-full border-2",
         status === "in-progress"
           ? "border-primary bg-primary/10"
-          : "border-muted-foreground/20 bg-background",
+          : status === "pending"
+            ? "border-accent bg-accent/10"
+            : status === "not-started"
+              ? "border-muted-foreground/20 bg-background"
+              : "border-muted-foreground/20 bg-background",
       )}
     >
       <span
@@ -83,7 +87,11 @@ function StepIndicator({
           "text-sm font-medium",
           status === "in-progress"
             ? "text-primary"
-            : "text-muted-foreground/50",
+            : status === "pending"
+              ? "text-accent-foreground"
+              : status === "not-started"
+                ? "text-muted-foreground/30"
+                : "text-muted-foreground/50",
         )}
       >
         {stepNumber}
@@ -167,7 +175,11 @@ export function JourneyProgressTracker({
                       "text-sm font-medium",
                       status === "complete" || status === "in-progress"
                         ? "text-foreground"
-                        : "text-muted-foreground/60",
+                        : status === "pending"
+                          ? "text-muted-foreground/70"
+                          : status === "not-started"
+                            ? "text-muted-foreground/50"
+                            : "text-muted-foreground/60",
                     )}
                   >
                     <span className="sm:hidden">{step.label}</span>
@@ -178,6 +190,12 @@ export function JourneyProgressTracker({
                   )}
                   {status === "complete" && (
                     <span className="text-emerald text-xs">Complete</span>
+                  )}
+                  {status === "pending" && (
+                    <span className="text-accent-foreground text-xs">Up next</span>
+                  )}
+                  {status === "not-started" && (
+                    <span className="text-muted-foreground/40 text-xs">Not started</span>
                   )}
                 </div>
               </div>
