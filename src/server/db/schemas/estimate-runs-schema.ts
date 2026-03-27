@@ -30,12 +30,14 @@
  */
 
 import {
+  date,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
+  unique,
   uuid,
-  integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -146,14 +148,14 @@ export const assumptionVersion = pgTable(
     /** Product line this assumption set applies to */
     productLine: text("product_line").notNull(),
 
-    /** ISO date string when this version became effective (inclusive) */
-    effectiveFrom: text("effective_from").notNull(),
+    /** Date when this version became effective (inclusive) */
+    effectiveFrom: date("effective_from").notNull(),
 
     /**
-     * ISO date string when this version was superseded (exclusive).
+     * Date when this version was superseded (exclusive).
      * Null means currently active.
      */
-    effectiveTo: text("effective_to"),
+    effectiveTo: date("effective_to"),
 
     /** The assumption parameters as a JSONB snapshot */
     parameters: jsonb("parameters").$type<AssumptionParameters>().notNull(),
@@ -249,6 +251,10 @@ export const estimateRun = pgTable(
     ...timestampsCreatedOnly(),
   },
   (t) => [
+    unique("estimate_run_client_id_run_number_unique").on(
+      t.clientId,
+      t.runNumber,
+    ),
     index("estimate_run_client_id_idx").on(t.clientId),
     index("estimate_run_user_id_idx").on(t.userId),
     index("estimate_run_assumption_version_id_idx").on(t.assumptionVersionId),

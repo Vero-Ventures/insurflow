@@ -32,6 +32,7 @@ import {
 } from "@/server/db/schemas/estimate-runs-schema";
 import type {
   AssumptionParameters,
+  EstimateRun,
   EstimateRunInputs,
   EstimateRunOutputs,
   EstimateSource,
@@ -282,7 +283,7 @@ export async function runEstimate(
         eq(estimateRun.clientId, input.clientId),
         eq(estimateRun.userId, input.userId),
       ),
-      orderBy: [desc(estimateRun.runNumber), desc(estimateRun.createdAt)],
+      orderBy: [desc(estimateRun.createdAt)],
     });
 
     if (lastRun) {
@@ -365,22 +366,6 @@ export async function runEstimate(
 // Query Helpers
 // ============================================================================
 
-/** Shape returned by estimate run queries */
-export interface EstimateRunRecord {
-  id: string;
-  clientId: string | null;
-  userId: string;
-  source: EstimateSource;
-  assumptionVersionId: string;
-  engineId: string;
-  engineVersion: string;
-  providerKey: string;
-  inputs: EstimateRunInputs;
-  outputs: EstimateRunOutputs;
-  runNumber: number;
-  createdAt: Date;
-}
-
 /**
  * Retrieves the latest estimate run for a given client.
  *
@@ -392,7 +377,7 @@ export interface EstimateRunRecord {
 export async function findLatestEstimateRun(
   clientId: string,
   userId: string,
-): Promise<EstimateRunRecord | null> {
+): Promise<EstimateRun | null> {
   const db = getDb();
 
   const run = await db.query.estimateRun.findFirst({
@@ -405,7 +390,7 @@ export async function findLatestEstimateRun(
 
   if (!run) return null;
 
-  return run as unknown as EstimateRunRecord;
+  return run;
 }
 
 /**
@@ -419,7 +404,7 @@ export async function findLatestEstimateRun(
 export async function findEstimateRunsByClient(
   clientId: string,
   userId: string,
-): Promise<EstimateRunRecord[]> {
+): Promise<EstimateRun[]> {
   const db = getDb();
 
   const runs = await db.query.estimateRun.findMany({
@@ -430,5 +415,5 @@ export async function findEstimateRunsByClient(
     orderBy: [desc(estimateRun.createdAt)],
   });
 
-  return runs as unknown as EstimateRunRecord[];
+  return runs;
 }

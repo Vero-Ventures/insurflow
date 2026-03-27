@@ -105,16 +105,22 @@ export const POST = withApiHandler(
       );
     }
 
-    await logger.info("Estimate run created", {
-      statusCode: 201,
-      estimateRunId: result.estimateRun.id,
-      runNumber: result.estimateRun.runNumber,
-      clientId,
-    });
+    const statusCode = result.reusedExisting ? 200 : 201;
+
+    await logger.info(
+      result.reusedExisting ? "Estimate run reused" : "Estimate run created",
+      {
+        statusCode,
+        estimateRunId: result.estimateRun.id,
+        runNumber: result.estimateRun.runNumber,
+        clientId,
+        reusedExisting: result.reusedExisting,
+      },
+    );
 
     return {
       data: { estimateRun: result.estimateRun },
-      status: 201,
+      status: statusCode,
     };
   },
 );
