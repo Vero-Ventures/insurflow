@@ -12,6 +12,7 @@ jobs:
   create-neon-branch:
     name: Create Neon Database Branch
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Create Neon Branch
