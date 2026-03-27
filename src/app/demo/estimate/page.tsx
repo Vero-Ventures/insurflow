@@ -12,14 +12,30 @@ import {
 } from "@/components/transparency";
 import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
+import {
+  getAgeFromDateOfBirth,
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
+
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
+  const lifeExpectancyYears = getLifeExpectancy({
+    age: getAgeFromDateOfBirth(demoClient.dateOfBirth),
+    sex: normalizeLifeExpectancySex(demoClient.sex),
+    smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
+    healthClass: normalizeHealthClass(demoClient.healthRating),
+  });
 
   const { result, coverageGap } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
@@ -159,6 +175,20 @@ export default function DemoEstimatePage() {
             </p>
           </Card>
         </div>
+
+        <Card className="mt-4 border-sky-300/40 bg-sky-50/40 p-6">
+          <h2 className="text-foreground text-sm font-semibold tracking-wide uppercase">
+            Life expectancy
+          </h2>
+          <p className="text-foreground mt-2 text-base font-medium">
+            Based on your profile, your life expectancy is approximately{" "}
+            {lifeExpectancyYears} years.
+          </p>
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            Educational estimate derived from 2017 CSO mortality tables,
+            adjusted for smoking status and health class.
+          </p>
+        </Card>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 p-6">
