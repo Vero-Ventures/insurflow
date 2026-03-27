@@ -59,6 +59,12 @@ describe("ApplyEstimatePage", () => {
     expect(screen.getByText(/selected provider review/i)).toBeTruthy();
     expect(screen.queryByText(/carrier review/i)).toBeNull();
     expect(screen.getByText(/step 3 of 4/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /based on your profile, your life expectancy is approximately/i,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText(/2017 cso mortality tables/i)).toBeTruthy();
   });
 
   it("navigates to review step", async () => {
