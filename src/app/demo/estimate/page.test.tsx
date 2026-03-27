@@ -31,5 +31,11 @@ describe("DemoEstimatePage", () => {
     render(<DemoEstimatePage />);
 
     expect(screen.getByText(/how we calculated this/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /based on your profile, your life expectancy is approximately/i,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText(/2017 cso mortality tables/i)).toBeTruthy();
   });
 });

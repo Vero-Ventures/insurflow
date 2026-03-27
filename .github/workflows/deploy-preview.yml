@@ -12,6 +12,8 @@ jobs:
   create-neon-branch:
     name: Create Neon Database Branch
     runs-on: ubuntu-latest
+    env:
+      PREVIEW_DB_BRANCH: preview-pr-${{ github.event.pull_request.number }}
 
     steps:
       - name: Create Neon Branch
@@ -19,7 +21,7 @@ jobs:
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch_name: preview/pr-${{ github.event.pull_request.number }}
+          branch_name: ${{ env.PREVIEW_DB_BRANCH }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Set DATABASE_URL in Vercel
@@ -89,7 +91,7 @@ jobs:
 
             | Resource | Link |
             |----------|------|
-            | Neon Branch | [preview/pr-${{ github.event.pull_request.number }}](${neonBranchUrl}) |
+            | Neon Branch | [${{ env.PREVIEW_DB_BRANCH }}](${neonBranchUrl}) |
 
             This PR has its own isolated database branch. Changes here won't affect production data.
 
