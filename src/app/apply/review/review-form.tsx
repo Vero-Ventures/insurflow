@@ -17,9 +17,21 @@ import { submitApplicationAction } from "@/app/apply/submit/actions";
 interface ReviewFormProps {
   /** The server-validated client ID for this D2C submission. */
   clientId: string;
+  /** Optional estimate run ID linking this submission to a persisted estimate. */
+  estimateRunId?: string;
 }
 
-export default function ReviewForm({ clientId }: ReviewFormProps) {
+/**
+ * Interactive consent form for the D2C review step.
+ *
+ * Renders application summary, three required disclosure checkboxes,
+ * and a submit form that forwards clientId, consent flags, and an
+ * optional estimateRunId to the server action.
+ */
+export default function ReviewForm({
+  clientId,
+  estimateRunId,
+}: ReviewFormProps) {
   const router = useRouter();
   const [consentTransmit, setConsentTransmit] = useState(false);
   const [healthInfoAuth, setHealthInfoAuth] = useState(false);
@@ -164,6 +176,9 @@ export default function ReviewForm({ clientId }: ReviewFormProps) {
             name="consentConfirmed"
             value={allConsentsAccepted ? "true" : "false"}
           />
+          {estimateRunId && (
+            <input type="hidden" name="estimateRunId" value={estimateRunId} />
+          )}
 
           <div className="flex justify-between gap-3">
             <Button

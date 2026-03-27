@@ -40,6 +40,7 @@ export {
   policyStatusEnum,
   applicationStatusEnum,
   lifeEventTypeEnum,
+  estimateSourceEnum,
 } from "./enums-schema";
 
 // Audit log enums
@@ -76,6 +77,9 @@ export { webhookEvent } from "./webhook-events-schema";
 
 // Life event tables
 export { lifeEventRecalculation } from "./life-events-schema";
+
+// Estimate tables
+export { assumptionVersion, estimateRun } from "./estimate-runs-schema";
 
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
@@ -115,6 +119,12 @@ export { webhookEventRelations } from "./webhook-events-schema";
 // Life event relations
 export { lifeEventRecalculationRelations } from "./life-events-schema";
 
+// Estimate relations
+export {
+  assumptionVersionRelations,
+  estimateRunRelations,
+} from "./estimate-runs-schema";
+
 // D2C types
 export type {
   D2cResumeLink,
@@ -149,6 +159,18 @@ export type {
   InsuranceNeedsSnapshot,
 } from "./life-events-schema";
 
+// Estimate types
+export type {
+  AssumptionVersion,
+  AssumptionVersionInsert,
+  EstimateRun,
+  EstimateRunInsert,
+  EstimateSource,
+  AssumptionParameters,
+  EstimateRunInputs,
+  EstimateRunOutputs,
+} from "./estimate-runs-schema";
+
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
 // ============================================================================
@@ -167,6 +189,7 @@ import { d2cResumeLink } from "./d2c-resume-link-schema";
 import { application } from "./applications-schema";
 import { webhookEvent } from "./webhook-events-schema";
 import { lifeEventRecalculation } from "./life-events-schema";
+import { estimateRun } from "./estimate-runs-schema";
 
 /**
  * Complete user relations including clients.
@@ -183,6 +206,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
   lifeEventRecalculations: many(lifeEventRecalculation),
+  estimateRuns: many(estimateRun),
 }));
 
 /**
@@ -200,6 +224,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   applications: many(application),
   webhookEvents: many(webhookEvent),
   lifeEventRecalculations: many(lifeEventRecalculation),
+  estimateRuns: many(estimateRun),
 }));
 
 /**

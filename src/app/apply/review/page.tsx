@@ -21,7 +21,7 @@ import ReviewForm from "./review-form";
 export default async function ApplyReviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ clientId?: string }>;
+  searchParams: Promise<{ clientId?: string; estimateRunId?: string }>;
 }) {
   const session = await getSession();
 
@@ -29,7 +29,7 @@ export default async function ApplyReviewPage({
     redirect("/auth/sign-up?role=client");
   }
 
-  const { clientId } = await searchParams;
+  const { clientId, estimateRunId } = await searchParams;
 
   const db = getDb();
   const row = clientId
@@ -62,5 +62,5 @@ export default async function ApplyReviewPage({
     redirect("/apply/intake");
   }
 
-  return <ReviewForm clientId={row.id} />;
+  return <ReviewForm clientId={row.id} estimateRunId={estimateRunId} />;
 }
