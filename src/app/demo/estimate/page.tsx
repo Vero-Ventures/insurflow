@@ -13,6 +13,11 @@ import {
 import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
 import {
+  getAgeFromDateOfBirth,
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
   getLifeExpectancy,
   toSmokingStatus,
 } from "@/lib/financial/mortality-tables";
@@ -22,51 +27,12 @@ import { getStateRateTable } from "@/lib/transparency/rate-tables";
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
 
-function getAgeFromDateOfBirth(dateOfBirth: string): number {
-  if (!dateOfBirth) return 0;
-  const birthDate = new Date(dateOfBirth);
-  if (Number.isNaN(birthDate.getTime())) return 0;
-
-  const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const monthDiff = now.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && now.getDate() < birthDate.getDate())
-  ) {
-    age -= 1;
-  }
-
-  return Math.max(0, age);
-}
-
-function normalizeHealthClass(
-  healthRating: string | undefined,
-):
-  | "preferred_plus"
-  | "preferred"
-  | "standard_plus"
-  | "standard"
-  | "substandard" {
-  if (
-    healthRating === "preferred_plus" ||
-    healthRating === "preferred" ||
-    healthRating === "standard_plus" ||
-    healthRating === "standard" ||
-    healthRating === "substandard"
-  ) {
-    return healthRating;
-  }
-
-  return "standard";
-}
-
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
   const lifeExpectancyYears = getLifeExpectancy({
     age: getAgeFromDateOfBirth(demoClient.dateOfBirth),
-    sex: demoClient.sex === "F" ? "F" : "M",
+    sex: normalizeLifeExpectancySex(demoClient.sex),
     smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
     healthClass: normalizeHealthClass(demoClient.healthRating),
   });
