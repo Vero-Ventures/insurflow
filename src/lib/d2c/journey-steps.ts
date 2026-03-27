@@ -80,16 +80,17 @@ function isIntakeComplete(intake: D2cIntake): boolean {
  * - Set hasSpouse with age if true
  * - Set youngestChildAge
  * - Provided additionalGoals
- * - Or explicitly left all as defaults (marking step as viewed)
+ * - Advanced past this step (coverageAmount > 0 implies estimate was viewed)
  */
 function isFactFindingComplete(intake: D2cIntake): boolean {
-  // Fact-finding is considered complete if user has provided any info
-  // or navigated to estimate (which implies they viewed/completed fact-finding)
   const hasSpouseInfo = intake.hasSpouse && intake.spouseAge !== null;
   const hasChildInfo = intake.youngestChildAge !== null;
   const hasGoals = intake.additionalGoals.trim() !== "";
+  // If the user has set a coverage amount, they've navigated past the estimate step,
+  // which implies fact-finding was completed (even if no household info was added).
+  const passedEstimate = intake.coverageAmount > 0;
 
-  return hasSpouseInfo || hasChildInfo || hasGoals;
+  return hasSpouseInfo || hasChildInfo || hasGoals || passedEstimate;
 }
 
 /**

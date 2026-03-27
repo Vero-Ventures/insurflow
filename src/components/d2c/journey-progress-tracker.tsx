@@ -116,14 +116,10 @@ export function JourneyProgressTracker({
   const currentStepIndex = JOURNEY_STEPS.findIndex(
     (step) => statuses[step.id] === "in-progress",
   );
-  const firstStep = JOURNEY_STEPS[0];
-const currentStep =
-  currentStepIndex >= 0 ? JOURNEY_STEPS[currentStepIndex]! : firstStep!;
-
-  // Safe fallback - firstStep is always defined since JOURNEY_STEPS is a non-empty const array
-  const ctaHref = currentStep
-    ? getStepRouteWithClient(currentStep, clientId)
-    : JOURNEY_STEPS[0]!.route;
+  const firstStep = JOURNEY_STEPS[0]!;
+  const currentStep =
+    currentStepIndex >= 0 ? JOURNEY_STEPS[currentStepIndex]! : firstStep;
+  const ctaHref = getStepRouteWithClient(currentStep, clientId);
   const ctaLabel = hasAnyDraft ? "Continue application" : "Start application";
 
   return (
@@ -207,20 +203,14 @@ const currentStep =
                 )}
 
                 {/* Connector line - hidden on mobile, visible on desktop */}
-                {!isLastStep &&
-                  (() => {
-                    const nextStep = JOURNEY_STEPS[index + 1];
-                    const nextStepComplete = nextStep
-                      ? statuses[nextStep.id] === "complete"
-                      : false;
-                    return (
-                      <StepConnector
-                        isComplete={
-                          nextStepComplete || statuses[step.id] === "complete"
-                        }
-                      />
-                    );
-                  })()}
+                {!isLastStep && (
+                  <StepConnector
+                    isComplete={
+                      statuses[step.id] === "complete" ||
+                      statuses[JOURNEY_STEPS[index + 1]!.id] === "complete"
+                    }
+                  />
+                )}
               </div>
             );
           })}
