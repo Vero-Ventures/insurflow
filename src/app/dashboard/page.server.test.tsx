@@ -6,6 +6,7 @@ const redirectMock = vi.fn((path: string) => {
 const getSessionMock = vi.fn();
 const findProfileMock = vi.fn();
 const findClientMock = vi.fn();
+const findApplicationMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -24,6 +25,9 @@ vi.mock("@/server/db", () => ({
       client: {
         findFirst: findClientMock,
       },
+      application: {
+        findFirst: findApplicationMock,
+      },
     },
   }),
 }));
@@ -33,6 +37,7 @@ describe("DashboardPage session fallback", () => {
     vi.clearAllMocks();
     findProfileMock.mockResolvedValue({ accountType: "client" });
     findClientMock.mockResolvedValue(null);
+    findApplicationMock.mockResolvedValue(null);
   });
 
   it("uses session.session.userId when session.user.id is missing", async () => {
@@ -55,6 +60,7 @@ describe("DashboardPage missing profile guard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     findClientMock.mockResolvedValue(null);
+    findApplicationMock.mockResolvedValue(null);
   });
 
   it("redirects to /onboarding when user has no profile", async () => {
