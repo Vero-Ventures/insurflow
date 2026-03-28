@@ -8,6 +8,18 @@ const replaceMock = vi.fn();
 const getMock = vi.fn().mockReturnValue(null);
 const useSessionMock = vi.fn();
 
+function resolveRequestUrl(input: RequestInfo | URL): string {
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  if (typeof input === "string") {
+    return input;
+  }
+
+  return input.url;
+}
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => ({ get: getMock }),
@@ -220,12 +232,7 @@ describe("ApplyEstimatePage", () => {
       .spyOn(globalThis, "fetch")
       .mockImplementation(
         async (input: RequestInfo | URL, init?: RequestInit) => {
-          const url =
-            input instanceof URL
-              ? input.toString()
-              : typeof input === "string"
-                ? input
-                : input.url;
+          const url = resolveRequestUrl(input);
           const method = init?.method ?? "GET";
 
           if (
