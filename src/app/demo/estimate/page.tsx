@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,22 +54,35 @@ export default function DemoEstimatePage() {
     liquidAssets: state.analysisAssumptions.liquidAssets,
   });
 
-  const recommendationInput = {
-    age,
-    sex,
-    isSmoker: demoClient.smoker ?? false,
-    healthClass,
-    annualIncome: Number(state.intakeData.annualHouseholdIncome),
-    totalDebts: Number(state.intakeData.totalDebts),
-    liquidAssets: state.analysisAssumptions.liquidAssets,
-    existingCoverage: Number(state.intakeData.currentCoverage),
-    coverageNeeded: result.totalInsuranceNeeds,
-    primaryGoal: (state.intakeData.primaryGoal ||
-      "income_replacement") as InsuranceGoal,
-    hasDependents:
-      demoClient.hasSpouse || demoClient.youngestChildAge !== undefined,
-    youngestDependentAge: demoClient.youngestChildAge,
-  };
+  const recommendationInput = useMemo(
+    () => ({
+      age,
+      sex,
+      isSmoker: demoClient.smoker ?? false,
+      healthClass,
+      annualIncome: Number(state.intakeData.annualHouseholdIncome),
+      totalDebts: Number(state.intakeData.totalDebts),
+      liquidAssets: state.analysisAssumptions.liquidAssets,
+      existingCoverage: Number(state.intakeData.currentCoverage),
+      coverageNeeded: result.totalInsuranceNeeds,
+      primaryGoal: (state.intakeData.primaryGoal ||
+        "income_replacement") as InsuranceGoal,
+      hasDependents:
+        demoClient.hasSpouse || demoClient.youngestChildAge !== undefined,
+      youngestDependentAge: demoClient.youngestChildAge,
+    }),
+    [
+      age,
+      sex,
+      healthClass,
+      state.intakeData.annualHouseholdIncome,
+      state.intakeData.totalDebts,
+      state.analysisAssumptions.liquidAssets,
+      state.intakeData.currentCoverage,
+      result.totalInsuranceNeeds,
+      state.intakeData.primaryGoal,
+    ],
+  );
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
