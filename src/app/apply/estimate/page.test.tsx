@@ -75,7 +75,9 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
-    expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    });
   });
 
   it("creates a draft and forwards clientId for authenticated users", async () => {
@@ -218,7 +220,12 @@ describe("ApplyEstimatePage", () => {
       .spyOn(globalThis, "fetch")
       .mockImplementation(
         async (input: RequestInfo | URL, init?: RequestInit) => {
-          const url = String(input);
+          const url =
+            input instanceof URL
+              ? input.toString()
+              : typeof input === "string"
+                ? input
+                : input.url;
           const method = init?.method ?? "GET";
 
           if (

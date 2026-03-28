@@ -12,6 +12,7 @@ import {
   loadD2cIntake,
   saveD2cIntake,
 } from "@/lib/d2c/intake-storage";
+import type { D2cIntake } from "@/lib/d2c/intake-types";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
@@ -97,6 +98,96 @@ function useIntakeData(clientId: string | null) {
   }, [clientId]);
 
   return { intake, isReady, resolvedClientId };
+}
+
+interface DraftPersistenceInput {
+  nextClientId: string | null;
+  shouldTryPersistDraft: boolean;
+  intakeForDraft: D2cIntake;
+}
+
+interface DraftPersistenceResult {
+  nextClientId: string | null;
+  createdDraftNow: boolean;
+}
+
+async function createDraftForReviewIfNeeded({
+  nextClientId: initialClientId,
+  shouldTryPersistDraft,
+  intakeForDraft,
+}: Readonly<DraftPersistenceInput>): Promise<DraftPersistenceResult> {
+  if (initialClientId || !shouldTryPersistDraft) {
+    return { nextClientId: initialClientId, createdDraftNow: false };
+  }
+
+  let nextClientId = initialClientId;
+  let createdDraftNow = false;
+
+  try {
+    const response = await fetch("/api/d2c/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ intake: intakeForDraft }),
+    });
+
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        draft?: { id?: string };
+        existed?: boolean;
+      };
+      const createdId = payload.draft?.id;
+      if (typeof createdId === "string" && createdId.length > 0) {
+        nextClientId = createdId;
+        createdDraftNow =
+          payload.existed === false ||
+          (payload.existed === undefined && response.status === 201);
+      }
+    } else if (response.status !== 401 && response.status !== 403) {
+      console.error("Failed to create draft before review:", response);
+    }
+  } catch (error) {
+    // Best-effort: fall back to review route without clientId.
+    console.error("Failed to create draft before review:", error);
+  }
+
+  return { nextClientId, createdDraftNow };
+}
+
+async function syncDraftForReviewIfNeeded({
+  nextClientId,
+  shouldTryPersistDraft,
+  intakeForDraft,
+  createdDraftNow,
+}: Readonly<
+  DraftPersistenceInput & { createdDraftNow: boolean }
+>): Promise<void> {
+  if (!nextClientId || !shouldTryPersistDraft || createdDraftNow) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intake: intakeForDraft }),
+      },
+    );
+
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      console.error("Failed to sync draft before review:", response);
+    }
+  } catch (error) {
+    // Best-effort: review can still load the existing draft when patch fails.
+    console.error("Failed to sync draft before review:", error);
+  }
+}
+
+function getReviewUrl(clientId: string | null): string {
+  return clientId
+    ? `/apply/review?clientId=${encodeURIComponent(clientId)}`
+    : "/apply/review";
 }
 
 export default function ApplyEstimatePage() {
@@ -225,70 +316,24 @@ export default function ApplyEstimatePage() {
     if (isContinuing) return;
     setIsContinuing(true);
     try {
-      let nextClientId = resolvedClientId;
-      let createdDraftNow = false;
       const shouldTryPersistDraft =
-        nextClientId !== null || Boolean(session?.user) || isSessionPending;
+        resolvedClientId !== null || Boolean(session?.user) || isSessionPending;
 
-      // Ensure review always has a persisted draft context when the user is
-      // authenticated or the auth state is still resolving.
-      if (!nextClientId && shouldTryPersistDraft) {
-        try {
-          const response = await fetch("/api/d2c/draft", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ intake: intakeForDraft }),
-          });
+      const { nextClientId, createdDraftNow } =
+        await createDraftForReviewIfNeeded({
+          nextClientId: resolvedClientId,
+          shouldTryPersistDraft,
+          intakeForDraft,
+        });
 
-          if (response.ok) {
-            const payload = (await response.json()) as {
-              draft?: { id?: string };
-              existed?: boolean;
-            };
-            const createdId = payload.draft?.id;
-            if (typeof createdId === "string" && createdId.length > 0) {
-              nextClientId = createdId;
-              createdDraftNow =
-                payload.existed === false ||
-                (payload.existed === undefined && response.status === 201);
-            }
-          } else if (response.status !== 401 && response.status !== 403) {
-            console.error("Failed to create draft before review:", response);
-          }
-        } catch (error) {
-          // Best-effort: fall back to review route without clientId.
-          console.error("Failed to create draft before review:", error);
-        }
-      }
+      await syncDraftForReviewIfNeeded({
+        nextClientId,
+        shouldTryPersistDraft,
+        createdDraftNow,
+        intakeForDraft,
+      });
 
-      if (nextClientId && shouldTryPersistDraft && !createdDraftNow) {
-        try {
-          const response = await fetch(
-            `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ intake: intakeForDraft }),
-            },
-          );
-
-          if (
-            !response.ok &&
-            response.status !== 401 &&
-            response.status !== 403
-          ) {
-            console.error("Failed to sync draft before review:", response);
-          }
-        } catch (error) {
-          // Best-effort: review can still load the existing draft when patch fails.
-          console.error("Failed to sync draft before review:", error);
-        }
-      }
-
-      const reviewUrl = nextClientId
-        ? `/apply/review?clientId=${encodeURIComponent(nextClientId)}`
-        : "/apply/review";
-      router.push(reviewUrl);
+      router.push(getReviewUrl(nextClientId));
     } finally {
       setIsContinuing(false);
     }
@@ -339,7 +384,7 @@ export default function ApplyEstimatePage() {
 
         <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
           Based on your profile, your life expectancy is approximately{" "}
-          <span className="font-semibold">{lifeExpectancyYears} years</span>
+          <span className="font-semibold">{lifeExpectancyYears} years</span>{" "}
           using 2017 CSO mortality tables.
         </Card>
 

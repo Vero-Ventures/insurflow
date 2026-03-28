@@ -24,27 +24,44 @@ import {
 } from "@/lib/financial/product-recommendation";
 
 interface ProductRecommendationsCardProps {
-  input: RecommendationInput;
+  readonly input: RecommendationInput;
 }
 
-function ScoreBar({ score }: { score: number }) {
+function getListItemKeys(
+  items: ReadonlyArray<string>,
+): Array<{ key: string; value: string }> {
+  const counts = new Map<string, number>();
+
+  return items.map((value) => {
+    const count = (counts.get(value) ?? 0) + 1;
+    counts.set(value, count);
+    return { key: `${value}-${count}`, value };
+  });
+}
+
+function ScoreBar({ score }: Readonly<{ score: number }>) {
+  let scoreColorClass = "bg-rose-500";
+  if (score >= 80) {
+    scoreColorClass = "bg-emerald";
+  } else if (score >= 60) {
+    scoreColorClass = "bg-amber-500";
+  }
+
   return (
     <div className="bg-border h-2 w-full overflow-hidden rounded-full">
       <div
-        className={`h-full transition-all duration-500 ${
-          score >= 80
-            ? "bg-emerald"
-            : score >= 60
-              ? "bg-amber-500"
-              : "bg-rose-500"
-        }`}
+        className={`h-full transition-all duration-500 ${scoreColorClass}`}
         style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
       />
     </div>
   );
 }
 
-function ProductCard({ rec }: { rec: ProductRecommendation }) {
+function ProductCard({ rec }: Readonly<{ rec: ProductRecommendation }>) {
+  const reasons = getListItemKeys(rec.reasons);
+  const features = getListItemKeys(rec.features);
+  const considerations = getListItemKeys(rec.considerations);
+
   return (
     <Card className="border-border/60 flex flex-col">
       <div className="flex items-start justify-between p-4 pb-0 sm:p-6">
@@ -78,12 +95,12 @@ function ProductCard({ rec }: { rec: ProductRecommendation }) {
               Why it fits
             </span>
             <ul className="mt-1.5 space-y-1">
-              {rec.reasons.map((reason, i) => (
+              {reasons.map((reason) => (
                 <li
-                  key={i}
+                  key={reason.key}
                   className="text-muted-foreground text-sm leading-snug"
                 >
-                  • {reason}
+                  • {reason.value}
                 </li>
               ))}
             </ul>
@@ -94,12 +111,12 @@ function ProductCard({ rec }: { rec: ProductRecommendation }) {
               Key Features
             </span>
             <ul className="mt-1.5 space-y-1">
-              {rec.features.map((feature, i) => (
+              {features.map((feature) => (
                 <li
-                  key={i}
+                  key={feature.key}
                   className="text-muted-foreground text-sm leading-snug"
                 >
-                  • {feature}
+                  • {feature.value}
                 </li>
               ))}
             </ul>
@@ -112,12 +129,12 @@ function ProductCard({ rec }: { rec: ProductRecommendation }) {
             Considerations
           </span>
           <ul className="mt-1.5 space-y-1">
-            {rec.considerations.map((consideration, i) => (
+            {considerations.map((consideration) => (
               <li
-                key={i}
+                key={consideration.key}
                 className="text-muted-foreground text-sm leading-snug"
               >
-                • {consideration}
+                • {consideration.value}
               </li>
             ))}
           </ul>
@@ -145,7 +162,7 @@ function ProductCard({ rec }: { rec: ProductRecommendation }) {
 
 export function ProductRecommendationsCard({
   input,
-}: ProductRecommendationsCardProps) {
+}: Readonly<ProductRecommendationsCardProps>) {
   const [isOpen, setIsOpen] = useState(true);
 
   const result = useMemo(() => {

@@ -237,7 +237,7 @@ export default function DemoEstimatePage() {
 
         <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
           Based on your profile, your life expectancy is approximately{" "}
-          <span className="font-semibold">{lifeExpectancyYears} years</span>
+          <span className="font-semibold">{lifeExpectancyYears} years</span>{" "}
           using 2017 CSO mortality tables.
         </Card>
 
