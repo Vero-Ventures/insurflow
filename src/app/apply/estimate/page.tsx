@@ -107,7 +107,8 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
   const [isContinuing, setIsContinuing] = useState(false);
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -141,6 +142,11 @@ export default function ApplyEstimatePage() {
     intake.coverageAmount > 0
       ? intake.coverageAmount
       : needs.totalInsuranceNeeds;
+
+  const intakeForDraft = useMemo(
+    () => ({ ...intake, coverageAmount: recommendedCoverage }),
+    [intake, recommendedCoverage],
+  );
 
   const recommendationInput = useMemo(() => {
     return {
@@ -217,14 +223,17 @@ export default function ApplyEstimatePage() {
     setIsContinuing(true);
     try {
       let nextClientId = resolvedClientId;
+      const shouldTryPersistDraft =
+        nextClientId !== null || Boolean(session?.user) || isSessionPending;
 
-      // Ensure review always has a persisted draft context for authenticated users.
-      if (!nextClientId && session?.user) {
+      // Ensure review always has a persisted draft context when the user is
+      // authenticated or the auth state is still resolving.
+      if (!nextClientId && shouldTryPersistDraft) {
         try {
           const response = await fetch("/api/d2c/draft", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ intake }),
+            body: JSON.stringify({ intake: intakeForDraft }),
           });
 
           if (response.ok) {
@@ -235,10 +244,36 @@ export default function ApplyEstimatePage() {
             if (typeof createdId === "string" && createdId.length > 0) {
               nextClientId = createdId;
             }
+          } else if (response.status !== 401 && response.status !== 403) {
+            console.error("Failed to create draft before review:", response);
           }
         } catch (error) {
           // Best-effort: fall back to review route without clientId.
           console.error("Failed to create draft before review:", error);
+        }
+      }
+
+      if (nextClientId && shouldTryPersistDraft) {
+        try {
+          const response = await fetch(
+            `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ intake: intakeForDraft }),
+            },
+          );
+
+          if (
+            !response.ok &&
+            response.status !== 401 &&
+            response.status !== 403
+          ) {
+            console.error("Failed to sync draft before review:", response);
+          }
+        } catch (error) {
+          // Best-effort: review can still load the existing draft when patch fails.
+          console.error("Failed to sync draft before review:", error);
         }
       }
 

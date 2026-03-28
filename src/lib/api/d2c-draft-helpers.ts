@@ -99,8 +99,8 @@ export interface FindDraftNotFound {
 /**
  * Finds the most recent active draft for a user.
  *
- * Returns the newest non-deleted client with status "draft" owned by
- * the given userId, or `{ found: false }` if none exists.
+ * Returns the most recently updated non-deleted client with status "draft"
+ * owned by the given userId, or `{ found: false }` if none exists.
  */
 export async function findLatestDraft(
   userId: string,
@@ -114,7 +114,7 @@ export async function findLatestDraft(
       isNull(client.deletedAt),
     ),
     columns: DRAFT_SELECT_COLUMNS,
-    orderBy: [desc(client.createdAt)],
+    orderBy: [desc(client.updatedAt), desc(client.createdAt)],
   });
 
   if (!draft) {
@@ -233,7 +233,7 @@ export async function createDraft(
         isNull(client.deletedAt),
       ),
       columns: DRAFT_SELECT_COLUMNS,
-      orderBy: [desc(client.createdAt)],
+      orderBy: [desc(client.updatedAt), desc(client.createdAt)],
     });
 
     if (existing) {
