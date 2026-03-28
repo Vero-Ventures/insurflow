@@ -8,6 +8,18 @@ const replaceMock = vi.fn();
 const getMock = vi.fn().mockReturnValue(null);
 const useSessionMock = vi.fn();
 
+function resolveRequestUrl(input: RequestInfo | URL): string {
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  if (typeof input === "string") {
+    return input;
+  }
+
+  return input.url;
+}
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => ({ get: getMock }),
@@ -26,7 +38,7 @@ describe("ApplyEstimatePage", () => {
     getMock.mockReset();
     getMock.mockReturnValue(null);
     useSessionMock.mockReset();
-    useSessionMock.mockReturnValue({ data: null });
+    useSessionMock.mockReturnValue({ data: null, isPending: false });
     vi.restoreAllMocks();
     sessionStorage.clear();
     sessionStorage.setItem(
@@ -75,16 +87,23 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
-    expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    });
   });
 
   it("creates a draft and forwards clientId for authenticated users", async () => {
-    useSessionMock.mockReturnValue({ data: { user: { id: "user-1" } } });
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
+      status: 201,
       json: async () => ({
         draft: { id: "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+        existed: false,
       }),
     } as Response);
 
@@ -101,6 +120,12 @@ describe("ApplyEstimatePage", () => {
         "/apply/review?clientId=aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       );
     });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/d2c/draft",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("forwards clientId search param to review URL when present", async () => {
@@ -134,6 +159,155 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        `/apply/review?clientId=${testClientId}`,
+      );
+    });
+  });
+
+  it("passes family context into recommendation input", async () => {
+    sessionStorage.setItem(
+      "d2c_intake",
+      JSON.stringify({
+        province: "ON",
+        dateOfBirth: "1990-05-15",
+        tobaccoUse: false,
+        annualIncome: 90000,
+        coverageAmount: 0,
+        termYears: 20,
+        gender: "male",
+        healthClass: "standard",
+        hasSpouse: true,
+        spouseAge: 35,
+        youngestChildAge: 6,
+        additionalGoals: "",
+      }),
+    );
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /your estimate preview/i }),
+      ).toBeTruthy();
+    });
+
+    expect(
+      screen.getByText(/perfect for protecting young families/i),
+    ).toBeTruthy();
+  });
+
+  it("waits for auth resolution before dropping clientId on review navigation", async () => {
+    useSessionMock.mockReturnValue({ data: null, isPending: true });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+      }),
+    } as Response);
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      );
+    });
+  });
+
+  it("syncs the estimate coverage before navigating to review when a draft exists", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = resolveRequestUrl(input);
+          const method = init?.method ?? "GET";
+
+          if (
+            method === "GET" &&
+            url.endsWith(`/api/d2c/draft/${testClientId}`)
+          ) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                draft: {
+                  id: testClientId,
+                  firstName: "",
+                  lastName: "",
+                  dateOfBirth: "1990-05-15",
+                  sex: "M",
+                  province: "ON",
+                  smoker: false,
+                  healthRating: "standard",
+                  clientIncome: "90000",
+                  existingLifeInsuranceCoverage: "0",
+                  replacementDurationYears: 20,
+                  hasSpouse: false,
+                  spouseAge: null,
+                  youngestChildAge: null,
+                  additionalGoals: null,
+                  status: "draft",
+                },
+              }),
+            } as Response;
+          }
+
+          if (
+            method === "PATCH" &&
+            url.endsWith(`/api/d2c/draft/${testClientId}`)
+          ) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({ draft: { id: testClientId } }),
+            } as Response;
+          }
+
+          return { ok: false, status: 404 } as Response;
+        },
+      );
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/d2c/draft/${testClientId}`,
+        expect.objectContaining({
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
+        init?.method === "PATCH",
+    );
+
+    expect(patchCall).toBeDefined();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
+      intake: { coverageAmount: 970000 },
+    });
     expect(pushMock).toHaveBeenCalledWith(
       `/apply/review?clientId=${testClientId}`,
     );

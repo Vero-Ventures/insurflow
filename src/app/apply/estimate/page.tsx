@@ -12,6 +12,7 @@ import {
   loadD2cIntake,
   saveD2cIntake,
 } from "@/lib/d2c/intake-storage";
+import type { D2cIntake } from "@/lib/d2c/intake-types";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
@@ -25,6 +26,8 @@ import {
   toSmokingStatus,
 } from "@/lib/financial/mortality-tables";
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
+import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
+import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -97,6 +100,96 @@ function useIntakeData(clientId: string | null) {
   return { intake, isReady, resolvedClientId };
 }
 
+interface DraftPersistenceInput {
+  nextClientId: string | null;
+  shouldTryPersistDraft: boolean;
+  intakeForDraft: D2cIntake;
+}
+
+interface DraftPersistenceResult {
+  nextClientId: string | null;
+  createdDraftNow: boolean;
+}
+
+async function createDraftForReviewIfNeeded({
+  nextClientId: initialClientId,
+  shouldTryPersistDraft,
+  intakeForDraft,
+}: Readonly<DraftPersistenceInput>): Promise<DraftPersistenceResult> {
+  if (initialClientId || !shouldTryPersistDraft) {
+    return { nextClientId: initialClientId, createdDraftNow: false };
+  }
+
+  let nextClientId = initialClientId;
+  let createdDraftNow = false;
+
+  try {
+    const response = await fetch("/api/d2c/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ intake: intakeForDraft }),
+    });
+
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        draft?: { id?: string };
+        existed?: boolean;
+      };
+      const createdId = payload.draft?.id;
+      if (typeof createdId === "string" && createdId.length > 0) {
+        nextClientId = createdId;
+        createdDraftNow =
+          payload.existed === false ||
+          (payload.existed === undefined && response.status === 201);
+      }
+    } else if (response.status !== 401 && response.status !== 403) {
+      console.error("Failed to create draft before review:", response);
+    }
+  } catch (error) {
+    // Best-effort: fall back to review route without clientId.
+    console.error("Failed to create draft before review:", error);
+  }
+
+  return { nextClientId, createdDraftNow };
+}
+
+async function syncDraftForReviewIfNeeded({
+  nextClientId,
+  shouldTryPersistDraft,
+  intakeForDraft,
+  createdDraftNow,
+}: Readonly<
+  DraftPersistenceInput & { createdDraftNow: boolean }
+>): Promise<void> {
+  if (!nextClientId || !shouldTryPersistDraft || createdDraftNow) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intake: intakeForDraft }),
+      },
+    );
+
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      console.error("Failed to sync draft before review:", response);
+    }
+  } catch (error) {
+    // Best-effort: review can still load the existing draft when patch fails.
+    console.error("Failed to sync draft before review:", error);
+  }
+}
+
+function getReviewUrl(clientId: string | null): string {
+  return clientId
+    ? `/apply/review?clientId=${encodeURIComponent(clientId)}`
+    : "/apply/review";
+}
+
 export default function ApplyEstimatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,7 +198,8 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
   const [isContinuing, setIsContinuing] = useState(false);
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -139,6 +233,37 @@ export default function ApplyEstimatePage() {
     intake.coverageAmount > 0
       ? intake.coverageAmount
       : needs.totalInsuranceNeeds;
+
+  const intakeForDraft = useMemo(
+    () => ({ ...intake, coverageAmount: recommendedCoverage }),
+    [intake, recommendedCoverage],
+  );
+
+  const recommendationInput = useMemo(() => {
+    return {
+      age,
+      sex,
+      isSmoker: intake.tobaccoUse,
+      healthClass,
+      annualIncome: intake.annualIncome,
+      totalDebts: 0,
+      liquidAssets: 0,
+      existingCoverage: 0,
+      coverageNeeded: recommendedCoverage,
+      primaryGoal: "income_replacement" as InsuranceGoal,
+      hasDependents: intake.hasSpouse || intake.youngestChildAge !== null,
+      youngestDependentAge: intake.youngestChildAge ?? undefined,
+    };
+  }, [
+    age,
+    sex,
+    healthClass,
+    intake.tobaccoUse,
+    intake.annualIncome,
+    intake.hasSpouse,
+    intake.youngestChildAge,
+    recommendedCoverage,
+  ]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -191,36 +316,24 @@ export default function ApplyEstimatePage() {
     if (isContinuing) return;
     setIsContinuing(true);
     try {
-      let nextClientId = resolvedClientId;
+      const shouldTryPersistDraft =
+        resolvedClientId !== null || Boolean(session?.user) || isSessionPending;
 
-      // Ensure review always has a persisted draft context for authenticated users.
-      if (!nextClientId && session?.user) {
-        try {
-          const response = await fetch("/api/d2c/draft", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ intake }),
-          });
+      const { nextClientId, createdDraftNow } =
+        await createDraftForReviewIfNeeded({
+          nextClientId: resolvedClientId,
+          shouldTryPersistDraft,
+          intakeForDraft,
+        });
 
-          if (response.ok) {
-            const payload = (await response.json()) as {
-              draft?: { id?: string };
-            };
-            const createdId = payload.draft?.id;
-            if (typeof createdId === "string" && createdId.length > 0) {
-              nextClientId = createdId;
-            }
-          }
-        } catch (error) {
-          // Best-effort: fall back to review route without clientId.
-          console.error("Failed to create draft before review:", error);
-        }
-      }
+      await syncDraftForReviewIfNeeded({
+        nextClientId,
+        shouldTryPersistDraft,
+        createdDraftNow,
+        intakeForDraft,
+      });
 
-      const reviewUrl = nextClientId
-        ? `/apply/review?clientId=${encodeURIComponent(nextClientId)}`
-        : "/apply/review";
-      router.push(reviewUrl);
+      router.push(getReviewUrl(nextClientId));
     } finally {
       setIsContinuing(false);
     }
@@ -269,19 +382,15 @@ export default function ApplyEstimatePage() {
           </Card>
         </section>
 
-        <Card className="border-sky-300/40 bg-sky-50/40 p-6">
-          <p className="text-foreground text-sm font-semibold tracking-wide uppercase">
-            Life expectancy
-          </p>
-          <p className="text-foreground mt-2 text-base font-medium">
-            Based on your profile, your life expectancy is approximately{" "}
-            {lifeExpectancyYears} years.
-          </p>
-          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-            Educational estimate derived from 2017 CSO mortality tables,
-            adjusted for smoking status and health class.
-          </p>
+        <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
+          Based on your profile, your life expectancy is approximately{" "}
+          <span className="font-semibold">{lifeExpectancyYears} years</span>{" "}
+          using 2017 CSO mortality tables.
         </Card>
+
+        <section>
+          <ProductRecommendationsCard input={recommendationInput} />
+        </section>
 
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
           This is a conservative, non-binding estimate only. Final premium,
