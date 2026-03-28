@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
-import { calculateAge } from "@/lib/client-utils";
+import { calculateAge, formatCurrency } from "@/lib/client-utils";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
 import {
   normalizeHealthClass,
@@ -22,13 +22,29 @@ import {
   MethodologySection,
   RateTableDisplay,
 } from "@/components/transparency";
-import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
+
+const INSURANCE_GOALS: ReadonlySet<InsuranceGoal> = new Set([
+  "income_replacement",
+  "debt_coverage",
+  "estate_planning",
+  "business_succession",
+  "final_expenses",
+  "wealth_accumulation",
+]);
+
+function normalizeInsuranceGoal(value: string | undefined): InsuranceGoal {
+  if (value && INSURANCE_GOALS.has(value as InsuranceGoal)) {
+    return value as InsuranceGoal;
+  }
+
+  return "income_replacement";
+}
 
 export default function DemoEstimatePage() {
   const router = useRouter();
@@ -54,6 +70,10 @@ export default function DemoEstimatePage() {
     liquidAssets: state.analysisAssumptions.liquidAssets,
   });
 
+  const normalizedPrimaryGoal = normalizeInsuranceGoal(
+    state.intakeData.primaryGoal,
+  );
+
   const recommendationInput = useMemo(
     () => ({
       age,
@@ -65,8 +85,7 @@ export default function DemoEstimatePage() {
       liquidAssets: state.analysisAssumptions.liquidAssets,
       existingCoverage: Number(state.intakeData.currentCoverage),
       coverageNeeded: result.totalInsuranceNeeds,
-      primaryGoal: (state.intakeData.primaryGoal ||
-        "income_replacement") as InsuranceGoal,
+      primaryGoal: normalizedPrimaryGoal,
       hasDependents:
         demoClient.hasSpouse || demoClient.youngestChildAge !== undefined,
       youngestDependentAge: demoClient.youngestChildAge,
@@ -80,7 +99,7 @@ export default function DemoEstimatePage() {
       state.analysisAssumptions.liquidAssets,
       state.intakeData.currentCoverage,
       result.totalInsuranceNeeds,
-      state.intakeData.primaryGoal,
+      normalizedPrimaryGoal,
     ],
   );
 
