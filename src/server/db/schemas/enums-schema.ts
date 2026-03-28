@@ -259,6 +259,13 @@ export const lifeEventTypeEnum = pgEnum("life_event_type", [
 ]);
 
 // ============================================================================
+// ESTIMATE ENUMS
+// ============================================================================
+
+/** Source context of an estimate run (D2C consumer vs advisor) */
+export const estimateSourceEnum = pgEnum("estimate_source", ["d2c", "advisor"]);
+
+// ============================================================================
 // POLICY ENUMS
 // ============================================================================
 

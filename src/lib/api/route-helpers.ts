@@ -224,6 +224,30 @@ export async function validateSession(
   return { session: normalizedSession };
 }
 
+/**
+ * Best-effort session resolver for endpoints that allow guest access.
+ *
+ * Returns a normalized session when authenticated, otherwise null.
+ * Unlike `validateSession`, this does not emit unauthorized warnings because
+ * anonymous access is expected for these routes.
+ */
+export async function resolveOptionalSession(): Promise<Session | null> {
+  const session = await getSession();
+  const userId = getSessionUserId(session);
+
+  if (!session?.user || !userId) {
+    return null;
+  }
+
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      id: userId,
+    },
+  } as Session;
+}
+
 export async function validateAdvisorSession(
   logger: Logger,
 ): Promise<{ session: Session } | { error: NextResponse }> {

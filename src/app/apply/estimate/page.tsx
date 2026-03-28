@@ -28,6 +28,7 @@ import {
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+import type { EstimateRunOutputs } from "@/server/db/schemas/estimate-runs-schema";
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -190,13 +191,30 @@ function getReviewUrl(clientId: string | null): string {
     : "/apply/review";
 }
 
+/** Response shape from POST /api/d2c/estimate */
+interface EstimateApiResponse {
+  estimateRun: {
+    id: string;
+    runNumber: number;
+    outputs: EstimateRunOutputs;
+    assumptionVersionLabel: string;
+    engineVersion: string;
+    createdAt: string;
+  };
+}
+
 export default function ApplyEstimatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("clientId");
   const [isHydrated, setIsHydrated] = useState(false);
-  const [premiumLow, setPremiumLow] = useState<number>(0);
-  const [premiumHigh, setPremiumHigh] = useState<number>(0);
+  const [outputs, setOutputs] = useState<EstimateRunOutputs | null>(null);
+  const [fallbackPremiumRange, setFallbackPremiumRange] = useState<{
+    low: number;
+    high: number;
+  } | null>(null);
+  const [isEstimating, setIsEstimating] = useState(false);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
   const [isContinuing, setIsContinuing] = useState(false);
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
@@ -212,7 +230,10 @@ export default function ApplyEstimatePage() {
     healthClass,
   });
 
-  const needs = useMemo(
+  const coverageAmountOverride =
+    intake.coverageAmount > 0 ? intake.coverageAmount : 0;
+
+  const fallbackNeeds = useMemo(
     () =>
       calculateInsuranceNeedsRounded({
         clientIncome: intake.annualIncome,
@@ -229,10 +250,20 @@ export default function ApplyEstimatePage() {
     [intake.annualIncome],
   );
 
-  const recommendedCoverage =
+  const fallbackRecommendedCoverage =
     intake.coverageAmount > 0
       ? intake.coverageAmount
-      : needs.totalInsuranceNeeds;
+      : fallbackNeeds.totalInsuranceNeeds;
+  const recommendedCoverage =
+    outputs?.recommendedCoverage ?? fallbackRecommendedCoverage;
+  const premiumLow =
+    outputs?.premiumRange.lowMonthlyPremiumCad ??
+    fallbackPremiumRange?.low ??
+    0;
+  const premiumHigh =
+    outputs?.premiumRange.highMonthlyPremiumCad ??
+    fallbackPremiumRange?.high ??
+    0;
 
   const intakeForDraft = useMemo(
     () => ({ ...intake, coverageAmount: recommendedCoverage }),
@@ -284,28 +315,85 @@ export default function ApplyEstimatePage() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    const runEstimate = async () => {
-      const range = await mockTermLifeProvider.estimatePremiumRange({
-        age,
-        tobaccoUse: intake.tobaccoUse,
-        province: intake.province,
-        termYears: intake.termYears,
-        coverageAmount: recommendedCoverage,
-      });
+    if (!intake.province || !intake.dateOfBirth || intake.annualIncome <= 0) {
+      return;
+    }
 
-      setPremiumLow(range.lowMonthlyPremiumCad);
-      setPremiumHigh(range.highMonthlyPremiumCad);
-      saveD2cIntake({ coverageAmount: recommendedCoverage });
+    const runEstimate = async () => {
+      setIsEstimating(true);
+      setEstimateError(null);
+
+      try {
+        const shouldPersistServerRun =
+          Boolean(session?.user) || isSessionPending;
+
+        if (shouldPersistServerRun) {
+          const response = await fetch("/api/d2c/estimate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              clientId: resolvedClientId,
+              annualIncome: intake.annualIncome,
+              age,
+              province: intake.province,
+              tobaccoUse: intake.tobaccoUse,
+              termYears: intake.termYears,
+              coverageAmountOverride,
+            }),
+          });
+
+          if (response.ok) {
+            const json = (await response.json()) as EstimateApiResponse;
+            const run = json.estimateRun;
+            setOutputs(run.outputs);
+            setFallbackPremiumRange(null);
+            saveD2cIntake({ coverageAmount: run.outputs.recommendedCoverage });
+            return;
+          }
+
+          if (response.status !== 401 && response.status !== 403) {
+            const errorBody = (await response.json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            const message = errorBody?.error ?? "Estimate failed";
+            setEstimateError(message);
+          }
+        }
+
+        const range = await mockTermLifeProvider.estimatePremiumRange({
+          age,
+          tobaccoUse: intake.tobaccoUse,
+          province: intake.province,
+          termYears: intake.termYears,
+          coverageAmount: fallbackRecommendedCoverage,
+        });
+        setOutputs(null);
+        setFallbackPremiumRange({
+          low: range.lowMonthlyPremiumCad,
+          high: range.highMonthlyPremiumCad,
+        });
+        saveD2cIntake({ coverageAmount: fallbackRecommendedCoverage });
+      } catch {
+        setEstimateError("Network error - please try again");
+      } finally {
+        setIsEstimating(false);
+      }
     };
 
     void runEstimate();
   }, [
     age,
+    coverageAmountOverride,
+    fallbackRecommendedCoverage,
+    isSessionPending,
+    session?.user,
+    resolvedClientId,
+    intake.dateOfBirth,
+    intake.annualIncome,
     intake.province,
     intake.termYears,
     intake.tobaccoUse,
     isHydrated,
-    recommendedCoverage,
   ]);
 
   if (!isHydrated) {
@@ -355,6 +443,13 @@ export default function ApplyEstimatePage() {
           </p>
         </section>
 
+        {estimateError ? (
+          <Card className="border-red-300/40 bg-red-50/40 p-4 text-sm leading-relaxed text-red-900">
+            Something went wrong generating your estimate: {estimateError}.
+            Please go back and try again.
+          </Card>
+        ) : null}
+
         <section className="grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 bg-card/80 p-6">
             <p className="text-muted-foreground text-sm">
@@ -402,7 +497,7 @@ export default function ApplyEstimatePage() {
           <Button
             className="bg-emerald hover:bg-emerald/90"
             onClick={() => void handleContinueToReview()}
-            disabled={isContinuing}
+            disabled={isContinuing || isEstimating}
           >
             Continue to review
           </Button>

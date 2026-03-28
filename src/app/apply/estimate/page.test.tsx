@@ -121,7 +121,6 @@ describe("ApplyEstimatePage", () => {
       );
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/d2c/draft",
       expect.objectContaining({ method: "POST" }),
@@ -326,5 +325,65 @@ describe("ApplyEstimatePage", () => {
     await waitFor(() => {
       expect(replaceMock).toHaveBeenCalledWith("/apply/intake");
     });
+  });
+
+  it("keeps guest users on estimate with local fallback and review navigation", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = resolveRequestUrl(input);
+          const method = init?.method ?? "GET";
+
+          if (method === "POST" && url.endsWith("/api/d2c/estimate")) {
+            return {
+              ok: false,
+              status: 401,
+              json: async () => ({ error: "Unauthorized" }),
+            } as Response;
+          }
+
+          if (method === "POST" && url.endsWith("/api/d2c/draft")) {
+            return {
+              ok: false,
+              status: 401,
+              json: async () => ({ error: "Unauthorized" }),
+            } as Response;
+          }
+
+          if (method === "PATCH" && url.includes("/api/d2c/draft/")) {
+            return {
+              ok: false,
+              status: 401,
+              json: async () => ({ error: "Unauthorized" }),
+            } as Response;
+          }
+
+          return { ok: false, status: 404 } as Response;
+        },
+      );
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/something went wrong generating your estimate/i),
+      ).toBeNull();
+    });
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    });
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/d2c/estimate",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });
