@@ -1,49 +1,125 @@
-name: Preview Database Brancname: Cleanup Preview
+name: Preview Database Branch
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-db-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  cleanup:
-    name: Cleanup Preview Resources
+  create-neon-branch:
+    name: Create Neon Database Branch
     runs-on: ubuntu-latest
     env:
       PREVIEW_DB_BRANCH: preview-pr-${{ github.event.pull_request.number }}
 
     steps:
-      - name: Delete Neon Branch
-        uses: neondatabase/delete-branch-action@v3
+      - name: Create Neon Branch
+        id: neon-branch
+        uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: ${{ env.PREVIEW_DB_BRANCH }}
+          branch_name: ${{ env.PREVIEW_DB_BRANCH }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
-      - name: Delete Vercel Preview Env Var
-        continue-on-error: true
+      - name: Set DATABASE_URL in Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          DB_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
           GIT_BRANCH: ${{ github.head_ref }}
         run: |
           # Get the project ID
           PROJECT_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v9/projects/insurflow" | jq -r '.id')
 
-          # Find and delete the branch-specific preview DATABASE_URL env var
-          ENV_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+          # Check if DATABASE_URL already exists for this branch (preview target)
+          EXISTING=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v10/projects/$PROJECT_ID/env" | \
             jq -r --arg branch "$GIT_BRANCH" \
             '.envs[] | select(.key == "DATABASE_URL" and .gitBranch == $branch and (.target | index("preview"))) | .id')
 
-          if [ -n "$ENV_ID" ] && [ "$ENV_ID" != "null" ]; then
-            curl -s -X DELETE \
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            JSON_PAYLOAD=$(jq -n --arg value "$DB_URL" '{value: $value}')
+            curl -s -X PATCH \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
-              "https://api.vercel.com/v10/projects/$PROJECT_ID/env/$ENV_ID"
-            echo "Deleted DATABASE_URL env var for branch $GIT_BRANCH"
+              -H "Content-Type: application/json" \
+              -d "$JSON_PAYLOAD" \
+              "https://api.vercel.com/v10/projects/$PROJECT_ID/env/$EXISTING"
+            echo "Updated existing DATABASE_URL for branch $GIT_BRANCH"
+          else
+            JSON_PAYLOAD=$(jq -n \
+              --arg key "DATABASE_URL" \
+              --arg value "$DB_URL" \
+              --arg type "encrypted" \
+              --arg gitBranch "$GIT_BRANCH" \
+              '{key: $key, value: $value, type: $type, target: ["preview"], gitBranch: $gitBranch}')
+            curl -s -X POST \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$JSON_PAYLOAD" \
+              "https://api.vercel.com/v10/projects/$PROJECT_ID/env"
+            echo "Created new DATABASE_URL for branch $GIT_BRANCH"
           fi
 
-      - name: Cleanup Summary
-        run: |
-          echo "## Preview Cleanup Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Deleted Neon Branch: \`${{ env.PREVIEW_DB_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+      - name: Checkout for migrations
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run migrations on Neon branch
+        run: bun run db:migrate
+        env:
+          DATABASE_URL: ${{ steps.neon-branch.outputs.db_url_pooled }}
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const neonBranchUrl = `https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches`;
+
+            const body = `## Database Branch Ready
+
+            | Resource | Link |
+            |----------|------|
+            | Neon Branch | [${{ env.PREVIEW_DB_BRANCH }}](${neonBranchUrl}) |
+
+            This PR has its own isolated database branch. Changes here won't affect production data.
+
+            Vercel will automatically deploy the preview - check the Vercel bot comment for the URL.
+
+            ---
+            <sub>Database branch created by GitHub Actions</sub>`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(
+              (c) => c.user.type === "Bot" && c.body.includes("Database Branch Ready"),
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

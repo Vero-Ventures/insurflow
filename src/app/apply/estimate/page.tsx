@@ -160,7 +160,8 @@ export default function ApplyEstimatePage() {
       existingCoverage: 0,
       coverageNeeded: recommendedCoverage,
       primaryGoal: "income_replacement" as InsuranceGoal,
-      hasDependents: false,
+      hasDependents: intake.hasSpouse || intake.youngestChildAge !== null,
+      youngestDependentAge: intake.youngestChildAge ?? undefined,
     };
   }, [
     age,
@@ -168,6 +169,8 @@ export default function ApplyEstimatePage() {
     healthClass,
     intake.tobaccoUse,
     intake.annualIncome,
+    intake.hasSpouse,
+    intake.youngestChildAge,
     recommendedCoverage,
   ]);
 
@@ -223,6 +226,7 @@ export default function ApplyEstimatePage() {
     setIsContinuing(true);
     try {
       let nextClientId = resolvedClientId;
+      let createdDraftNow = false;
       const shouldTryPersistDraft =
         nextClientId !== null || Boolean(session?.user) || isSessionPending;
 
@@ -239,10 +243,14 @@ export default function ApplyEstimatePage() {
           if (response.ok) {
             const payload = (await response.json()) as {
               draft?: { id?: string };
+              existed?: boolean;
             };
             const createdId = payload.draft?.id;
             if (typeof createdId === "string" && createdId.length > 0) {
               nextClientId = createdId;
+              createdDraftNow =
+                payload.existed === false ||
+                (payload.existed === undefined && response.status === 201);
             }
           } else if (response.status !== 401 && response.status !== 403) {
             console.error("Failed to create draft before review:", response);
@@ -253,7 +261,7 @@ export default function ApplyEstimatePage() {
         }
       }
 
-      if (nextClientId && shouldTryPersistDraft) {
+      if (nextClientId && shouldTryPersistDraft && !createdDraftNow) {
         try {
           const response = await fetch(
             `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,

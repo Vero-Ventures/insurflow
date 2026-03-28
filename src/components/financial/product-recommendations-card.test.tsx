@@ -38,12 +38,16 @@ describe("ProductRecommendationsCard", () => {
       name: /Toggle Recommendations/i,
     });
     expect(toggleBtn).toBeDefined();
+    expect(toggleBtn.getAttribute("aria-expanded")).toBe("true");
 
     // The content inside the collapsible should be visible
     expect(screen.getByText("Coverage Gap Analysis")).toBeDefined();
 
     // Toggle the collapsible
     fireEvent.click(toggleBtn);
+
+    // Trigger should report collapsed state after clicking
+    expect(toggleBtn.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("displays coverage gap analysis correctly", () => {
@@ -80,11 +84,37 @@ describe("ProductRecommendationsCard", () => {
     expect(screen.getAllByText("Considerations").length).toBeGreaterThan(0);
   });
 
-  it("handles null or undefined input gracefully (if logic throws)", () => {
-    const badInput = createTestInput({ age: -100 });
+  it("handles null input gracefully", () => {
+    expect(() =>
+      render(
+        <ProductRecommendationsCard
+          input={null as unknown as RecommendationInput}
+        />,
+      ),
+    ).not.toThrow();
+
     const { container } = render(
-      <ProductRecommendationsCard input={badInput} />,
+      <ProductRecommendationsCard
+        input={null as unknown as RecommendationInput}
+      />,
     );
-    expect(container).toBeDefined();
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("handles undefined input gracefully", () => {
+    expect(() =>
+      render(
+        <ProductRecommendationsCard
+          input={undefined as unknown as RecommendationInput}
+        />,
+      ),
+    ).not.toThrow();
+
+    const { container } = render(
+      <ProductRecommendationsCard
+        input={undefined as unknown as RecommendationInput}
+      />,
+    );
+    expect(container.firstChild).toBeNull();
   });
 });

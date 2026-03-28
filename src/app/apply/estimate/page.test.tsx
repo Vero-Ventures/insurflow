@@ -84,10 +84,12 @@ describe("ApplyEstimatePage", () => {
       isPending: false,
     });
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
+      status: 201,
       json: async () => ({
         draft: { id: "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+        existed: false,
       }),
     } as Response);
 
@@ -104,6 +106,12 @@ describe("ApplyEstimatePage", () => {
         "/apply/review?clientId=aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       );
     });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/d2c/draft",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("forwards clientId search param to review URL when present", async () => {
@@ -142,6 +150,38 @@ describe("ApplyEstimatePage", () => {
         `/apply/review?clientId=${testClientId}`,
       );
     });
+  });
+
+  it("passes family context into recommendation input", async () => {
+    sessionStorage.setItem(
+      "d2c_intake",
+      JSON.stringify({
+        province: "ON",
+        dateOfBirth: "1990-05-15",
+        tobaccoUse: false,
+        annualIncome: 90000,
+        coverageAmount: 0,
+        termYears: 20,
+        gender: "male",
+        healthClass: "standard",
+        hasSpouse: true,
+        spouseAge: 35,
+        youngestChildAge: 6,
+        additionalGoals: "",
+      }),
+    );
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /your estimate preview/i }),
+      ).toBeTruthy();
+    });
+
+    expect(
+      screen.getByText(/perfect for protecting young families/i),
+    ).toBeTruthy();
   });
 
   it("waits for auth resolution before dropping clientId on review navigation", async () => {
