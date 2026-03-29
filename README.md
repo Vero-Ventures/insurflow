@@ -96,6 +96,7 @@ Useful commands:
 
 - API routes should use `withApiHandler(...)` and `parseJsonBody(...)` from `src/lib/api/route-helpers.ts` for consistent auth, validation, and error shape.
 - Ownership checks are a security boundary. Reuse helpers in `src/lib/api/client-helpers.ts` and `src/lib/api/resource-helpers.ts`.
+- Drizzle migration history may be intentionally re-baselined only during a coordinated empty-database window; when that happens, production and all preview Neon branches should be wiped and recreated together so `bun run db:migrate` starts from the same clean baseline everywhere.
 - Pre-push may auto-sync your branch with `main`; to intentionally bypass in automation use `SKIP_SYNC_CHECK=1 git push`.
 - `scripts/clean-clients.ts` is a destructive local utility that hard-deletes all clients. Do not run against shared or production databases.
 
