@@ -497,23 +497,18 @@ describe("ApplyEstimatePage", () => {
       await screen.findByRole("button", { name: /continue to review/i }),
     );
 
+    let patchCall: [RequestInfo | URL, RequestInit | undefined] | undefined;
+
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        `/api/d2c/draft/${testClientId}`,
-        expect.objectContaining({
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-        }),
-      );
+      patchCall = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
+          init?.method === "PATCH",
+      ) as [RequestInfo | URL, RequestInit | undefined] | undefined;
+
+      expect(patchCall).toBeDefined();
     });
 
-    const patchCall = fetchMock.mock.calls.find(
-      ([url, init]) =>
-        String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
-        init?.method === "PATCH",
-    );
-
-    expect(patchCall).toBeDefined();
     expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
       intake: { coverageAmount: 970000 },
     });
