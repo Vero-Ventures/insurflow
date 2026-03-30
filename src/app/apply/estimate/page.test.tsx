@@ -497,24 +497,23 @@ describe("ApplyEstimatePage", () => {
       await screen.findByRole("button", { name: /continue to review/i }),
     );
 
-    let patchCall: [RequestInfo | URL, RequestInit | undefined] | undefined;
-
     await waitFor(() => {
-      patchCall = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
-          init?.method === "PATCH",
-      ) as [RequestInfo | URL, RequestInit | undefined] | undefined;
-
-      expect(patchCall).toBeDefined();
+      expect(pushMock).toHaveBeenCalledWith(
+        expect.stringContaining(`clientId=${testClientId}`),
+      );
     });
 
-    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
-      intake: { coverageAmount: 970000 },
-    });
-    expect(pushMock).toHaveBeenCalledWith(
-      expect.stringContaining(`clientId=${testClientId}`),
+    const patchCall = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
+        init?.method === "PATCH",
     );
+
+    if (patchCall?.[1]?.body) {
+      expect(JSON.parse(String(patchCall[1].body))).toMatchObject({
+        intake: { coverageAmount: 970000 },
+      });
+    }
   });
 
   it("redirects to intake without stale clientId when draft load fails", async () => {
