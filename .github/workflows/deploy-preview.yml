@@ -24,6 +24,9 @@ jobs:
           branch: ${{ env.PREVIEW_DB_BRANCH }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
+      - name: Wait for Neon branch deletion
+        run: sleep 15
+
       - name: Create Neon Branch
         id: neon-branch
         uses: neondatabase/create-branch-action@v6
