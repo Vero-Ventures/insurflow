@@ -399,4 +399,42 @@ describe("ApplyEstimatePage", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("includes estimateRunId when auth state is still pending but draft creation succeeds", async () => {
+    useSessionMock.mockReturnValue({ data: null, isPending: true });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      const method = init?.method ?? "GET";
+
+      if (url === "/api/d2c/draft" && method === "POST") {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+            existed: false,
+          }),
+        } as Response;
+      }
+
+      if (url === "/api/d2c/estimate" && method === "POST") {
+        return buildEstimateResponse() as Response;
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) } as Response;
+    });
+
+    render(<ApplyEstimatePage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /continue to review/i }),
+    );
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb&estimateRunId=cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee",
+      );
+    });
+  });
 });

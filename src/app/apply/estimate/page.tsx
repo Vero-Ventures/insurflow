@@ -397,7 +397,7 @@ export default function ApplyEstimatePage() {
 
       let nextEstimateRunId = estimateRunId;
 
-      if (nextClientId && session?.user) {
+      if (nextClientId) {
         try {
           const estimateRun = await executePersistedEstimate(nextClientId);
           nextEstimateRunId = estimateRun.id;
