@@ -53,8 +53,8 @@ import {
 export interface RunEstimateInput {
   /** The user ID who is requesting the estimate */
   userId: string;
-  /** The client ID this estimate belongs to (nullable for session-only) */
-  clientId: string | null;
+  /** The client ID this estimate belongs to. */
+  clientId: string;
   /** Source context (d2c or advisor) */
   source: EstimateSource;
   /** Client's annual income in CAD */
@@ -95,6 +95,19 @@ export interface RunEstimateError {
   success: false;
   errorCode: "ASSUMPTION_SEED_FAILED" | "INSERT_FAILED";
   message: string;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  if (error instanceof Error) {
+    if ("code" in error && (error as { code: string }).code === "23505") {
+      return true;
+    }
+    if (error.message.includes("unique") || error.message.includes("23505")) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -273,11 +286,8 @@ export async function runEstimate(
     },
   };
 
-  // 7. Reuse the latest identical run for this draft when possible
   const db = getDb();
-  let runNumber = 1;
-
-  if (input.clientId) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     const lastRun = await db.query.estimateRun.findFirst({
       where: and(
         eq(estimateRun.clientId, input.clientId),
@@ -314,51 +324,68 @@ export async function runEstimate(
           },
         };
       }
+    }
 
-      runNumber = lastRun.runNumber + 1;
+    const runNumber = lastRun ? lastRun.runNumber + 1 : 1;
+
+    try {
+      const [inserted] = await db
+        .insert(estimateRun)
+        .values({
+          clientId: input.clientId,
+          userId: input.userId,
+          source: input.source,
+          assumptionVersionId: versionInfo.id,
+          engineId: ESTIMATE_ENGINE_ID,
+          engineVersion: ESTIMATE_ENGINE_VERSION,
+          providerKey: "mock",
+          inputs,
+          outputs,
+          runNumber,
+        })
+        .returning();
+
+      if (!inserted) {
+        return {
+          success: false,
+          errorCode: "INSERT_FAILED",
+          message: "Failed to persist estimate run",
+        };
+      }
+
+      return {
+        success: true,
+        reusedExisting: false,
+        estimateRun: {
+          id: inserted.id,
+          runNumber: inserted.runNumber,
+          inputs,
+          outputs,
+          assumptionVersionId: versionInfo.id,
+          assumptionVersionLabel: versionInfo.versionLabel,
+          engineId: ESTIMATE_ENGINE_ID,
+          engineVersion: ESTIMATE_ENGINE_VERSION,
+          providerKey: "mock",
+          createdAt: inserted.createdAt,
+        },
+      };
+    } catch (error) {
+      if (attempt === 0 && isUniqueViolation(error)) {
+        continue;
+      }
+
+      return {
+        success: false,
+        errorCode: "INSERT_FAILED",
+        message: "Failed to persist estimate run",
+      };
     }
   }
 
-  // 8. Persist the estimate run
-  const [inserted] = await db
-    .insert(estimateRun)
-    .values({
-      clientId: input.clientId,
-      userId: input.userId,
-      source: input.source,
-      assumptionVersionId: versionInfo.id,
-      engineId: ESTIMATE_ENGINE_ID,
-      engineVersion: ESTIMATE_ENGINE_VERSION,
-      providerKey: "mock",
-      inputs,
-      outputs,
-      runNumber,
-    })
-    .returning();
-
-  if (!inserted) {
-    return {
-      success: false,
-      errorCode: "INSERT_FAILED",
-      message: "Failed to persist estimate run",
-    };
-  }
-
   return {
-    success: true,
-    reusedExisting: false,
-    estimateRun: {
-      id: inserted.id,
-      runNumber: inserted.runNumber,
-      inputs,
-      outputs,
-      assumptionVersionId: versionInfo.id,
-      assumptionVersionLabel: versionInfo.versionLabel,
-      engineId: ESTIMATE_ENGINE_ID,
-      engineVersion: ESTIMATE_ENGINE_VERSION,
-      providerKey: "mock",
-      createdAt: inserted.createdAt,
-    },
+    success: false,
+    errorCode: "INSERT_FAILED",
+    message: "Failed to persist estimate run",
   };
 }
 

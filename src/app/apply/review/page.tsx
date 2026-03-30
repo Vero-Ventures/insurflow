@@ -26,7 +26,7 @@ export default async function ApplyReviewPage({
   const session = await getSession();
 
   if (!session?.user) {
-    redirect("/auth/sign-up?role=client");
+    return <ReviewForm clientId={null} />;
   }
 
   const { clientId, estimateRunId } = await searchParams;

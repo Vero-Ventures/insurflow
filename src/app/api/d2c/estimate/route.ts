@@ -22,8 +22,8 @@ import { findDraftById } from "@/lib/api/d2c-draft-helpers";
 import { z } from "zod";
 
 const estimateRequestSchema = z.object({
-  /** Client draft ID to attach this estimate to (optional for session-only) */
-  clientId: z.string().uuid().nullable().optional(),
+  /** Client draft ID to attach this estimate to */
+  clientId: z.string().uuid(),
   /** Client's annual income in CAD */
   annualIncome: z.number().positive(),
   /** Age at time of estimate */
@@ -89,7 +89,7 @@ export const POST = withApiHandler(
 
     const result = await runEstimate({
       userId: session.user.id,
-      clientId: clientId ?? null,
+      clientId,
       source: "d2c",
       ...estimateInputs,
     });

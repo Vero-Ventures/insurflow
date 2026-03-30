@@ -16,7 +16,7 @@ import { submitApplicationAction } from "@/app/apply/submit/actions";
 
 interface ReviewFormProps {
   /** The server-validated client ID for this D2C submission. */
-  clientId: string;
+  clientId: string | null;
   /** Optional estimate run ID linking this submission to a persisted estimate. */
   estimateRunId?: string;
 }
@@ -155,7 +155,7 @@ export default function ReviewForm({
 
         {/* Submit form — consent values sent directly to server action, no client-side storage */}
         <form action={submitApplicationAction}>
-          <input type="hidden" name="clientId" value={clientId} />
+          {clientId && <input type="hidden" name="clientId" value={clientId} />}
           <input
             type="hidden"
             name="consentTransmit"

@@ -253,4 +253,35 @@ describe("runEstimate", () => {
       }),
     );
   });
+
+  it("retries with the next run number after a unique constraint collision", async () => {
+    const existingInput = createEstimateInput({ termYears: 15 });
+    const currentInput = createEstimateInput({ termYears: 20 });
+    const latestRun = createPersistedRun(existingInput, { runNumber: 1 });
+    const insertedRun = {
+      id: "550e8400-e29b-41d4-a716-446655440121",
+      runNumber: 2,
+      createdAt: new Date("2026-03-27T11:30:00.000Z"),
+    };
+
+    mockEstimateRunFindFirst
+      .mockResolvedValueOnce(latestRun)
+      .mockResolvedValueOnce({ ...latestRun, runNumber: 1 });
+    mockReturning
+      .mockRejectedValueOnce(
+        Object.assign(new Error("unique_violation"), { code: "23505" }),
+      )
+      .mockResolvedValueOnce([insertedRun]);
+
+    const result = await runEstimate(currentInput);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.reusedExisting).toBe(false);
+      expect(result.estimateRun.runNumber).toBe(2);
+      expect(result.estimateRun.id).toBe(insertedRun.id);
+    }
+    expect(mockEstimateRunFindFirst).toHaveBeenCalledTimes(2);
+    expect(mockInsert).toHaveBeenCalledTimes(2);
+  });
 });

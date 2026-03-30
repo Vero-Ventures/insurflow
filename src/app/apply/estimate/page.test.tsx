@@ -6,10 +6,17 @@ import ApplyEstimatePage from "@/app/apply/estimate/page";
 const pushMock = vi.fn();
 const replaceMock = vi.fn();
 const getMock = vi.fn().mockReturnValue(null);
+const useSessionMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => ({ get: getMock }),
+}));
+
+vi.mock("@/server/better-auth/client", () => ({
+  authClient: {
+    useSession: () => useSessionMock(),
+  },
 }));
 
 /** Realistic mock outputs matching EstimateRunOutputs shape */
@@ -55,6 +62,28 @@ function buildEstimateResponse(): Partial<Response> {
   };
 }
 
+function buildDraftResponse(clientId: string): Partial<Response> {
+  return {
+    ok: true,
+    json: async () => ({
+      draft: {
+        id: clientId,
+        firstName: "",
+        lastName: "",
+        dateOfBirth: "1990-05-15",
+        sex: "M",
+        province: "ON",
+        smoker: false,
+        healthRating: "standard",
+        clientIncome: "90000",
+        existingLifeInsuranceCoverage: "500000",
+        replacementDurationYears: 20,
+        status: "draft",
+      },
+    }),
+  };
+}
+
 /**
  * Builds a failed POST /api/d2c/estimate response.
  *
@@ -76,6 +105,8 @@ describe("ApplyEstimatePage", () => {
     replaceMock.mockReset();
     getMock.mockReset();
     getMock.mockReturnValue(null);
+    useSessionMock.mockReset();
+    useSessionMock.mockReturnValue({ data: null, isPending: false });
     vi.restoreAllMocks();
     sessionStorage.clear();
     sessionStorage.setItem(
@@ -114,10 +145,43 @@ describe("ApplyEstimatePage", () => {
     expect(screen.getByText(/step 3 of 4/i)).toBeTruthy();
   });
 
-  it("displays server-calculated coverage and premium range", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      buildEstimateResponse() as Response,
+  it("keeps guest estimate preview working without a persisted draft", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("should not call persisted estimate API"));
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/\$500,000/)).toBeTruthy();
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /continue to review/i }),
     );
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/apply/review");
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("displays server-calculated coverage and premium range", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      return buildEstimateResponse() as Response;
+    });
 
     render(<ApplyEstimatePage />);
 
@@ -131,9 +195,21 @@ describe("ApplyEstimatePage", () => {
   });
 
   it("navigates to review with estimateRunId", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      buildEstimateResponse() as Response,
-    );
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      return buildEstimateResponse() as Response;
+    });
 
     render(<ApplyEstimatePage />);
 
@@ -146,39 +222,27 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
-    expect(pushMock).toHaveBeenCalledWith(
-      expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
-    );
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
+      );
+    });
   });
 
   it("forwards clientId and estimateRunId to review URL when clientId present", async () => {
     const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
 
       // Mock draft endpoint
       if (url.includes("/api/d2c/draft/")) {
-        return {
-          ok: true,
-          json: async () => ({
-            draft: {
-              id: testClientId,
-              firstName: "",
-              lastName: "",
-              dateOfBirth: "1990-05-15",
-              sex: "M",
-              province: "ON",
-              smoker: false,
-              healthRating: "standard",
-              clientIncome: "90000",
-              existingLifeInsuranceCoverage: "500000",
-              replacementDurationYears: 20,
-              status: "draft",
-            },
-          }),
-        } as Response;
+        return buildDraftResponse(testClientId) as Response;
       }
 
       // Mock estimate endpoint
@@ -196,18 +260,32 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
-    expect(pushMock).toHaveBeenCalledWith(
-      expect.stringContaining(`clientId=${testClientId}`),
-    );
-    expect(pushMock).toHaveBeenCalledWith(
-      expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
-    );
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        expect.stringContaining(`clientId=${testClientId}`),
+      );
+      expect(pushMock).toHaveBeenCalledWith(
+        expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
+      );
+    });
   });
 
   it("shows error state when estimate API fails", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      buildEstimateErrorResponse("Rate lookup unavailable") as Response,
-    );
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      return buildEstimateErrorResponse("Rate lookup unavailable") as Response;
+    });
 
     render(<ApplyEstimatePage />);
 
@@ -223,9 +301,21 @@ describe("ApplyEstimatePage", () => {
   });
 
   it("shows error state on network failure", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(
-      new Error("Failed to fetch"),
-    );
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      throw new Error("Failed to fetch");
+    });
 
     render(<ApplyEstimatePage />);
 
@@ -251,15 +341,27 @@ describe("ApplyEstimatePage", () => {
   });
 
   it("disables continue button while estimate is loading", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
     // Use a promise that doesn't resolve immediately to test loading state
     let resolveEstimate: (value: Partial<Response>) => void;
     const estimatePromise = new Promise<Partial<Response>>((resolve) => {
       resolveEstimate = resolve;
     });
 
-    vi.spyOn(globalThis, "fetch").mockReturnValue(
-      estimatePromise as Promise<Response>,
-    );
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      return estimatePromise as Promise<Response>;
+    });
 
     render(<ApplyEstimatePage />);
 
@@ -279,5 +381,22 @@ describe("ApplyEstimatePage", () => {
       });
       expect((continueButton as HTMLButtonElement).disabled).toBe(false);
     });
+  });
+
+  it("keeps continue enabled for guests while no persisted draft exists", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("should not call persisted estimate API"));
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      const continueButton = screen.getByRole("button", {
+        name: /continue to review/i,
+      });
+      expect((continueButton as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
