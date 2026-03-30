@@ -8,13 +8,15 @@ jobs:
   cleanup:
     name: Cleanup Preview Resources
     runs-on: ubuntu-latest
+    env:
+      PREVIEW_DB_BRANCH: preview-pr-${{ github.event.pull_request.number }}
 
     steps:
       - name: Delete Neon Branch
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: preview/pr-${{ github.event.pull_request.number }}
+          branch: ${{ env.PREVIEW_DB_BRANCH }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Delete Vercel Preview Env Var
@@ -44,4 +46,4 @@ jobs:
         run: |
           echo "## Preview Cleanup Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Deleted Neon Branch: \`preview/pr-${{ github.event.pull_request.number }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted Neon Branch: \`${{ env.PREVIEW_DB_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY

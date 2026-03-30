@@ -24,7 +24,6 @@ export default async function ApplyReviewPage({
   searchParams: Promise<{ clientId?: string; estimateRunId?: string }>;
 }) {
   const session = await getSession();
-
   if (!session?.user) {
     return <ReviewForm clientId={null} />;
   }

@@ -13,5 +13,6 @@ export const APPLY_FACT_FINDING_ROUTE = "/apply/fact-finding";
 export const APPLY_ESTIMATE_ROUTE = "/apply/estimate";
 export const APPLY_REVIEW_ROUTE = "/apply/review";
 export const APPLY_SUBMIT_ROUTE = "/apply/submit";
+export const APPLY_STATUS_ROUTE = "/apply/status";
 
 export const D2C_RESUME_ROUTE = "/d2c/resume";

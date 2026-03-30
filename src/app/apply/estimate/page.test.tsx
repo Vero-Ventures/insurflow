@@ -8,6 +8,18 @@ const replaceMock = vi.fn();
 const getMock = vi.fn().mockReturnValue(null);
 const useSessionMock = vi.fn();
 
+function resolveRequestUrl(input: RequestInfo | URL): string {
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  if (typeof input === "string") {
+    return input;
+  }
+
+  return input.url;
+}
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => ({ get: getMock }),
@@ -19,7 +31,6 @@ vi.mock("@/server/better-auth/client", () => ({
   },
 }));
 
-/** Realistic mock outputs matching EstimateRunOutputs shape */
 const MOCK_ESTIMATE_OUTPUTS = {
   insuranceNeeds: {
     incomeReplacementNeeds: 945_000,
@@ -41,11 +52,6 @@ const MOCK_ESTIMATE_OUTPUTS = {
 
 const MOCK_ESTIMATE_RUN_ID = "cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee";
 
-/**
- * Builds a successful POST /api/d2c/estimate response.
- *
- * @returns A Response-shaped object with estimate run data.
- */
 function buildEstimateResponse(): Partial<Response> {
   return {
     ok: true,
@@ -78,18 +84,16 @@ function buildDraftResponse(clientId: string): Partial<Response> {
         clientIncome: "90000",
         existingLifeInsuranceCoverage: "500000",
         replacementDurationYears: 20,
+        hasSpouse: false,
+        spouseAge: null,
+        youngestChildAge: null,
+        additionalGoals: null,
         status: "draft",
       },
     }),
   };
 }
 
-/**
- * Builds a failed POST /api/d2c/estimate response.
- *
- * @param message - Error message to include in the body.
- * @returns A Response-shaped object with error data.
- */
 function buildEstimateErrorResponse(
   message = "Internal server error",
 ): Partial<Response> {
@@ -125,10 +129,6 @@ describe("ApplyEstimatePage", () => {
   });
 
   it("shows non-binding estimate language after server estimate completes", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      buildEstimateResponse() as Response,
-    );
-
     render(<ApplyEstimatePage />);
 
     await waitFor(() => {
@@ -143,6 +143,12 @@ describe("ApplyEstimatePage", () => {
     expect(screen.getByText(/selected provider review/i)).toBeTruthy();
     expect(screen.queryByText(/carrier review/i)).toBeNull();
     expect(screen.getByText(/step 3 of 4/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /based on your profile, your life expectancy is approximately/i,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText(/2017 cso mortality tables/i)).toBeTruthy();
   });
 
   it("keeps guest estimate preview working without a persisted draft", async () => {
@@ -153,7 +159,7 @@ describe("ApplyEstimatePage", () => {
     render(<ApplyEstimatePage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/\$500,000/)).toBeTruthy();
+      expect(screen.getAllByText(/\$500,000/).length).toBeGreaterThan(0);
     });
 
     fireEvent.click(
@@ -163,7 +169,56 @@ describe("ApplyEstimatePage", () => {
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/apply/review");
     });
+
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("creates a draft and forwards clientId for authenticated users", async () => {
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input, init) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        const method = init?.method ?? "GET";
+
+        if (url === "/api/d2c/draft" && method === "POST") {
+          return {
+            ok: true,
+            status: 201,
+            json: async () => ({
+              draft: { id: "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+              existed: false,
+            }),
+          } as Response;
+        }
+
+        if (url === "/api/d2c/estimate" && method === "POST") {
+          return buildEstimateResponse() as Response;
+        }
+
+        return { ok: false, status: 404, json: async () => ({}) } as Response;
+      });
+
+    render(<ApplyEstimatePage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /continue to review/i }),
+    );
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa&estimateRunId=cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee",
+      );
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/d2c/draft",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("displays server-calculated coverage and premium range", async () => {
@@ -176,6 +231,7 @@ describe("ApplyEstimatePage", () => {
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
+
       if (url.includes(`/api/d2c/draft/${testClientId}`)) {
         return buildDraftResponse(testClientId) as Response;
       }
@@ -186,10 +242,9 @@ describe("ApplyEstimatePage", () => {
     render(<ApplyEstimatePage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/\$970,000/)).toBeTruthy();
+      expect(screen.getAllByText(/\$970,000/).length).toBeGreaterThan(0);
     });
 
-    // Premium range from mock
     expect(screen.getByText(/\$42/)).toBeTruthy();
     expect(screen.getByText(/\$67/)).toBeTruthy();
   });
@@ -204,6 +259,7 @@ describe("ApplyEstimatePage", () => {
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
+
       if (url.includes(`/api/d2c/draft/${testClientId}`)) {
         return buildDraftResponse(testClientId) as Response;
       }
@@ -222,6 +278,7 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
+
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith(
         expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
@@ -240,12 +297,10 @@ describe("ApplyEstimatePage", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
 
-      // Mock draft endpoint
       if (url.includes("/api/d2c/draft/")) {
         return buildDraftResponse(testClientId) as Response;
       }
 
-      // Mock estimate endpoint
       return buildEstimateResponse() as Response;
     });
 
@@ -260,6 +315,7 @@ describe("ApplyEstimatePage", () => {
     });
 
     fireEvent.click(continueButton);
+
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith(
         expect.stringContaining(`clientId=${testClientId}`),
@@ -268,6 +324,38 @@ describe("ApplyEstimatePage", () => {
         expect.stringContaining(`estimateRunId=${MOCK_ESTIMATE_RUN_ID}`),
       );
     });
+  });
+
+  it("passes family context into recommendation input", async () => {
+    sessionStorage.setItem(
+      "d2c_intake",
+      JSON.stringify({
+        province: "ON",
+        dateOfBirth: "1990-05-15",
+        tobaccoUse: false,
+        annualIncome: 90_000,
+        coverageAmount: 0,
+        termYears: 20,
+        gender: "male",
+        healthClass: "standard",
+        hasSpouse: true,
+        spouseAge: 35,
+        youngestChildAge: 6,
+        additionalGoals: "",
+      }),
+    );
+
+    render(<ApplyEstimatePage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /your estimate preview/i }),
+      ).toBeTruthy();
+    });
+
+    expect(
+      screen.getByText(/perfect for protecting young families/i),
+    ).toBeTruthy();
   });
 
   it("shows error state when estimate API fails", async () => {
@@ -280,6 +368,7 @@ describe("ApplyEstimatePage", () => {
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
+
       if (url.includes(`/api/d2c/draft/${testClientId}`)) {
         return buildDraftResponse(testClientId) as Response;
       }
@@ -293,7 +382,6 @@ describe("ApplyEstimatePage", () => {
       expect(screen.getByText(/rate lookup unavailable/i)).toBeTruthy();
     });
 
-    // Continue button should be disabled during error state
     const continueButton = screen.getByRole("button", {
       name: /continue to review/i,
     });
@@ -310,6 +398,7 @@ describe("ApplyEstimatePage", () => {
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
+
       if (url.includes(`/api/d2c/draft/${testClientId}`)) {
         return buildDraftResponse(testClientId) as Response;
       }
@@ -322,6 +411,115 @@ describe("ApplyEstimatePage", () => {
     await waitFor(() => {
       expect(screen.getByText(/network error/i)).toBeTruthy();
     });
+  });
+
+  it("waits for auth resolution before dropping clientId on review navigation", async () => {
+    useSessionMock.mockReturnValue({ data: null, isPending: true });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      const method = init?.method ?? "GET";
+
+      if (url === "/api/d2c/draft" && method === "POST") {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+          }),
+        } as Response;
+      }
+
+      if (url === "/api/d2c/estimate" && method === "POST") {
+        return buildEstimateResponse() as Response;
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) } as Response;
+    });
+
+    render(<ApplyEstimatePage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /continue to review/i }),
+    );
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb&estimateRunId=cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee",
+      );
+    });
+  });
+
+  it("syncs the estimate coverage before navigating to review when a draft exists", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = resolveRequestUrl(input);
+          const method = init?.method ?? "GET";
+
+          if (
+            method === "GET" &&
+            url.endsWith(`/api/d2c/draft/${testClientId}`)
+          ) {
+            return buildDraftResponse(testClientId) as Response;
+          }
+
+          if (
+            method === "PATCH" &&
+            url.endsWith(`/api/d2c/draft/${testClientId}`)
+          ) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({ draft: { id: testClientId } }),
+            } as Response;
+          }
+
+          if (method === "POST" && url === "/api/d2c/estimate") {
+            return buildEstimateResponse() as Response;
+          }
+
+          return { ok: false, status: 404, json: async () => ({}) } as Response;
+        },
+      );
+
+    render(<ApplyEstimatePage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /continue to review/i }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/d2c/draft/${testClientId}`,
+        expect.objectContaining({
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith(`/api/d2c/draft/${testClientId}`) &&
+        init?.method === "PATCH",
+    );
+
+    expect(patchCall).toBeDefined();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
+      intake: { coverageAmount: 970000 },
+    });
+    expect(pushMock).toHaveBeenCalledWith(
+      expect.stringContaining(`clientId=${testClientId}`),
+    );
   });
 
   it("redirects to intake without stale clientId when draft load fails", async () => {
@@ -348,7 +546,6 @@ describe("ApplyEstimatePage", () => {
       isPending: false,
     });
 
-    // Use a promise that doesn't resolve immediately to test loading state
     let resolveEstimate: (value: Partial<Response>) => void;
     const estimatePromise = new Promise<Partial<Response>>((resolve) => {
       resolveEstimate = resolve;
@@ -356,6 +553,7 @@ describe("ApplyEstimatePage", () => {
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
+
       if (url.includes(`/api/d2c/draft/${testClientId}`)) {
         return buildDraftResponse(testClientId) as Response;
       }
@@ -372,7 +570,6 @@ describe("ApplyEstimatePage", () => {
       expect((continueButton as HTMLButtonElement).disabled).toBe(true);
     });
 
-    // Resolve the estimate
     resolveEstimate!(buildEstimateResponse());
 
     await waitFor(() => {
@@ -398,43 +595,5 @@ describe("ApplyEstimatePage", () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("includes estimateRunId when auth state is still pending but draft creation succeeds", async () => {
-    useSessionMock.mockReturnValue({ data: null, isPending: true });
-
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-      const url = typeof input === "string" ? input : (input as Request).url;
-      const method = init?.method ?? "GET";
-
-      if (url === "/api/d2c/draft" && method === "POST") {
-        return {
-          ok: true,
-          status: 201,
-          json: async () => ({
-            draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
-            existed: false,
-          }),
-        } as Response;
-      }
-
-      if (url === "/api/d2c/estimate" && method === "POST") {
-        return buildEstimateResponse() as Response;
-      }
-
-      return { ok: false, status: 404, json: async () => ({}) } as Response;
-    });
-
-    render(<ApplyEstimatePage />);
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: /continue to review/i }),
-    );
-
-    await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith(
-        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb&estimateRunId=cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee",
-      );
-    });
   });
 });

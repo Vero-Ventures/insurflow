@@ -161,13 +161,14 @@ export function useDraftPersistence(
         }
       }
 
-      // Case 3: Unauthenticated, no existing draft, or API failed
+      // Case 3: No existing draft (yet), unauthenticated user, or API failed.
+      // Preserve sessionStorage progress so users can continue across steps
+      // even when authenticated draft creation has not completed yet.
       if (!cancelled) {
+        const fallbackIntake = loadD2cIntake();
+        setIntake(fallbackIntake);
         if (isAuthenticated) {
-          setIntake(DEFAULT_D2C_INTAKE);
-          saveD2cIntake(DEFAULT_D2C_INTAKE);
-        } else {
-          setIntake(loadD2cIntake());
+          saveD2cIntake(fallbackIntake);
         }
         setIsHydrated(true);
       }

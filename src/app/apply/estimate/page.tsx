@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import { authClient } from "@/server/better-auth/client";
 import { formatCurrency } from "@/lib/client-utils";
 import {
@@ -16,26 +17,18 @@ import type { D2cIntake } from "@/lib/d2c/intake-types";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import type { DraftClientRecord } from "@/lib/api/d2c-draft-helpers";
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
+import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+import {
+  getAgeFromDateOfBirth,
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import { getMockPremiumRangeMonthly } from "@/lib/providers/mock-term-life-provider";
 import type { EstimateRunOutputs } from "@/server/db/schemas/estimate-runs-schema";
-
-function getAgeFromDateOfBirth(dateOfBirth: string): number {
-  if (!dateOfBirth) return 0;
-  const birthDate = new Date(dateOfBirth);
-  if (Number.isNaN(birthDate.getTime())) return 0;
-
-  const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const monthDiff = now.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && now.getDate() < birthDate.getDate())
-  ) {
-    age -= 1;
-  }
-
-  return Math.max(0, age);
-}
 
 function useIntakeData(clientId: string | null) {
   const [intake, setIntake] = useState(DEFAULT_D2C_INTAKE);
@@ -155,9 +148,11 @@ async function createDraftForReviewIfNeeded({
           payload.existed === false ||
           (payload.existed === undefined && response.status === 201);
       }
+    } else if (response.status !== 401 && response.status !== 403) {
+      console.error("Failed to create draft before review:", response);
     }
-  } catch {
-    // Best effort.
+  } catch (error) {
+    console.error("Failed to create draft before review:", error);
   }
 
   return { nextClientId, createdDraftNow };
@@ -176,13 +171,20 @@ async function syncDraftForReviewIfNeeded({
   }
 
   try {
-    await fetch(`/api/d2c/draft/${encodeURIComponent(nextClientId)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intake: intakeForDraft }),
-    });
-  } catch {
-    // Best effort.
+    const response = await fetch(
+      `/api/d2c/draft/${encodeURIComponent(nextClientId)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intake: intakeForDraft }),
+      },
+    );
+
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      console.error("Failed to sync draft before review:", response);
+    }
+  } catch (error) {
+    console.error("Failed to sync draft before review:", error);
   }
 }
 
@@ -210,6 +212,14 @@ export default function ApplyEstimatePage() {
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
+  const sex = normalizeLifeExpectancySex(intake.gender);
+  const healthClass = normalizeHealthClass(intake.healthClass || undefined);
+  const lifeExpectancyYears = getLifeExpectancy({
+    age,
+    sex,
+    smokingStatus: toSmokingStatus(intake.tobaccoUse),
+    healthClass,
+  });
   const shouldPersistEstimate = resolvedClientId !== null;
 
   const localOutputs = useMemo<EstimateRunOutputs>(() => {
@@ -270,6 +280,32 @@ export default function ApplyEstimatePage() {
     () => ({ ...intake, coverageAmount: displayOutputs.recommendedCoverage }),
     [displayOutputs.recommendedCoverage, intake],
   );
+
+  const recommendationInput = useMemo(() => {
+    return {
+      age,
+      sex,
+      isSmoker: intake.tobaccoUse,
+      healthClass,
+      annualIncome: intake.annualIncome,
+      totalDebts: 0,
+      liquidAssets: 0,
+      existingCoverage: 0,
+      coverageNeeded: displayOutputs.recommendedCoverage,
+      primaryGoal: "income_replacement" as InsuranceGoal,
+      hasDependents: intake.hasSpouse || intake.youngestChildAge !== null,
+      youngestDependentAge: intake.youngestChildAge ?? undefined,
+    };
+  }, [
+    age,
+    displayOutputs.recommendedCoverage,
+    healthClass,
+    intake.annualIncome,
+    intake.hasSpouse,
+    intake.tobaccoUse,
+    intake.youngestChildAge,
+    sex,
+  ]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -391,8 +427,8 @@ export default function ApplyEstimatePage() {
       await syncDraftForReviewIfNeeded({
         nextClientId,
         shouldTryPersistDraft,
-        intakeForDraft,
         createdDraftNow,
+        intakeForDraft,
       });
 
       let nextEstimateRunId = estimateRunId;
@@ -484,6 +520,16 @@ export default function ApplyEstimatePage() {
             </Card>
           </section>
         )}
+
+        <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
+          Based on your profile, your life expectancy is approximately{" "}
+          <span className="font-semibold">{lifeExpectancyYears} years</span>{" "}
+          using 2017 CSO mortality tables.
+        </Card>
+
+        <section>
+          <ProductRecommendationsCard input={recommendationInput} />
+        </section>
 
         <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed">
           This is a conservative, non-binding estimate only. Final premium,

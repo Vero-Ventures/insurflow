@@ -15,19 +15,16 @@ import { complianceConfig } from "@/lib/d2c/compliance-config";
 import { submitApplicationAction } from "@/app/apply/submit/actions";
 
 interface ReviewFormProps {
-  /** The server-validated client ID for this D2C submission. */
+  /**
+   * The server-validated client ID for this D2C submission.
+   * Signed-out users can still review consent copy before sign-up, so this
+   * may be null until an authenticated draft is available.
+   */
   clientId: string | null;
   /** Optional estimate run ID linking this submission to a persisted estimate. */
   estimateRunId?: string;
 }
 
-/**
- * Interactive consent form for the D2C review step.
- *
- * Renders application summary, three required disclosure checkboxes,
- * and a submit form that forwards clientId, consent flags, and an
- * optional estimateRunId to the server action.
- */
 export default function ReviewForm({
   clientId,
   estimateRunId,
@@ -41,6 +38,9 @@ export default function ReviewForm({
   const intake = useMemo(() => loadD2cIntake(), []);
 
   const allConsentsAccepted = consentTransmit && healthInfoAuth && esignIntent;
+  const estimateUrl = clientId
+    ? `/apply/estimate?clientId=${encodeURIComponent(clientId)}`
+    : "/apply/estimate";
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag intentionally flips once after mount
@@ -67,7 +67,6 @@ export default function ReviewForm({
           </p>
         </section>
 
-        {/* Application summary */}
         <Card className="border-border/60 bg-card/80 p-6">
           <h2 className="mb-4 text-sm font-semibold tracking-wide uppercase">
             Your details
@@ -96,13 +95,11 @@ export default function ReviewForm({
           </div>
         </Card>
 
-        {/* Consent & authorization checkboxes */}
         <Card className="border-border/60 bg-card/80 p-6">
           <h2 className="mb-4 text-sm font-semibold tracking-wide uppercase">
             Required disclosures
           </h2>
           <div className="space-y-5">
-            {/* Consent 1: Transmit application data to carrier */}
             <div className="flex items-start gap-3">
               <Checkbox
                 id="consent-transmit"
@@ -119,7 +116,6 @@ export default function ReviewForm({
               </Label>
             </div>
 
-            {/* Consent 2: Health information authorization */}
             <div className="flex items-start gap-3">
               <Checkbox
                 id="consent-health"
@@ -136,7 +132,6 @@ export default function ReviewForm({
               </Label>
             </div>
 
-            {/* Consent 3: E-sign intent acknowledgment */}
             <div className="flex items-start gap-3">
               <Checkbox
                 id="consent-esign"
@@ -153,9 +148,8 @@ export default function ReviewForm({
           </div>
         </Card>
 
-        {/* Submit form — consent values sent directly to server action, no client-side storage */}
         <form action={submitApplicationAction}>
-          {clientId && <input type="hidden" name="clientId" value={clientId} />}
+          <input type="hidden" name="clientId" value={clientId ?? ""} />
           <input
             type="hidden"
             name="consentTransmit"
@@ -184,7 +178,7 @@ export default function ReviewForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/apply/estimate")}
+              onClick={() => router.push(estimateUrl)}
             >
               Back to estimate
             </Button>
