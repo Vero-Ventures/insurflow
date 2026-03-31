@@ -7,8 +7,11 @@
 
 import { env } from "@/env";
 
-/** Gemini model to use - Gemini 3 Flash Preview (best on free tier) */
-export const GEMINI_MODEL = "gemini-3-flash-preview";
+/**
+ * Gemini model to use.
+ * Can be overridden with GEMINI_MODEL in env.
+ */
+export const GEMINI_MODEL = env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
 /** Base URL for Gemini API */
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";

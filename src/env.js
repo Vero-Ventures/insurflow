@@ -57,6 +57,7 @@ export const env = createEnv({
 
     // Gemini AI (GenAI Co-Pilot)
     GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().optional(),
     CARRIER_PROVIDER: z.enum(["mock"]).default("mock"),
   },
 
@@ -96,6 +97,7 @@ export const env = createEnv({
 
     // Gemini AI
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
     CARRIER_PROVIDER: process.env.CARRIER_PROVIDER,
   },
   /**

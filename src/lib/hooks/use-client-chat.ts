@@ -189,6 +189,37 @@ export function useClientChat(clientId: string): UseClientChatResult {
         const decoder = new TextDecoder();
         let buffer = "";
 
+        const applyStreamEvent = (
+          parsed: StreamChunk | StreamDone | StreamError,
+        ) => {
+          if (parsed.type === "chunk") {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === pendingAssistantId
+                  ? { ...message, content: message.content + parsed.delta }
+                  : message,
+              ),
+            );
+            return;
+          }
+
+          if (parsed.type === "done") {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === pendingAssistantId ? parsed.message : message,
+              ),
+            );
+            setUsage((current) => ({
+              totalAssistantMessages: current.totalAssistantMessages + 1,
+              totalEstimatedTokens:
+                current.totalEstimatedTokens + parsed.usage.totalTokens,
+            }));
+            return;
+          }
+
+          throw new Error(parsed.message || "Failed to send message");
+        };
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -204,34 +235,17 @@ export function useClientChat(clientId: string): UseClientChatResult {
               | StreamChunk
               | StreamDone
               | StreamError;
-
-            if (parsed.type === "chunk") {
-              setMessages((current) =>
-                current.map((message) =>
-                  message.id === pendingAssistantId
-                    ? { ...message, content: message.content + parsed.delta }
-                    : message,
-                ),
-              );
-            }
-
-            if (parsed.type === "done") {
-              setMessages((current) =>
-                current.map((message) =>
-                  message.id === pendingAssistantId ? parsed.message : message,
-                ),
-              );
-              setUsage((current) => ({
-                totalAssistantMessages: current.totalAssistantMessages + 1,
-                totalEstimatedTokens:
-                  current.totalEstimatedTokens + parsed.usage.totalTokens,
-              }));
-            }
-
-            if (parsed.type === "error") {
-              throw new Error(parsed.message || "Failed to send message");
-            }
+            applyStreamEvent(parsed);
           }
+        }
+
+        // Ensure the final event is applied when stream closes without trailing newline.
+        if (buffer.trim()) {
+          const parsed = JSON.parse(buffer) as
+            | StreamChunk
+            | StreamDone
+            | StreamError;
+          applyStreamEvent(parsed);
         }
       } catch (err) {
         const message =
