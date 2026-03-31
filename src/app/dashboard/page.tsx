@@ -14,7 +14,7 @@ import {
   normalizeAccountType,
 } from "@/lib/role-experience";
 import { getSessionUserId } from "@/lib/auth/session-utils";
-import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
+import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { findSubmittedApplication } from "@/lib/api/d2c-application-helpers";
 import { APPLY_STATUS_ROUTE } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
@@ -107,17 +107,7 @@ export default async function DashboardPage() {
 
   // Check for draft application
   const draftResult = await findLatestDraft(userId);
-  let ensuredDraftClient = draftResult.found ? draftResult.draft : null;
-  if (!ensuredDraftClient) {
-    try {
-      const createdDraft = await createDraft(userId);
-      if (createdDraft.success) {
-        ensuredDraftClient = createdDraft.draft;
-      }
-    } catch {
-      // Keep dashboard available even if draft bootstrap fails in test/mocked environments.
-    }
-  }
+  const ensuredDraftClient = draftResult.found ? draftResult.draft : null;
 
   const intake = ensuredDraftClient
     ? clientFieldsToD2cIntake(ensuredDraftClient)
@@ -218,7 +208,10 @@ export default async function DashboardPage() {
             AI Assistant
           </p>
           {ensuredDraftClient ? (
-            <ClientChatPanel clientId={ensuredDraftClient.id} />
+            <ClientChatPanel
+              clientId={ensuredDraftClient.id}
+              surface="client"
+            />
           ) : (
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardContent className="pt-6">
