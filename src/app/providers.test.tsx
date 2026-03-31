@@ -9,6 +9,7 @@ const replaceMock = vi.fn();
 
 let mockPathname = "/dashboard";
 let capturedOnSessionChange: (() => void) | undefined;
+let capturedCredentials: { forgotPassword?: boolean } | undefined;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -31,11 +32,14 @@ vi.mock("@daveyplate/better-auth-ui", () => ({
   AuthUIProvider: ({
     children,
     onSessionChange,
+    credentials,
   }: {
     children: React.ReactNode;
     onSessionChange?: () => void;
+    credentials?: { forgotPassword?: boolean };
   }) => {
     capturedOnSessionChange = onSessionChange;
+    capturedCredentials = credentials;
     return children;
   },
 }));
@@ -49,6 +53,7 @@ describe("Providers", () => {
     vi.clearAllMocks();
     mockPathname = "/dashboard";
     capturedOnSessionChange = undefined;
+    capturedCredentials = undefined;
   });
 
   it("refreshes on each session change outside onboarding", () => {
@@ -76,5 +81,15 @@ describe("Providers", () => {
 
     capturedOnSessionChange?.();
     expect(refreshMock).not.toHaveBeenCalled();
+  });
+
+  it("explicitly enables forgot password for credentials auth", () => {
+    render(
+      <Providers socialProviderIds={[]}>
+        <div>child</div>
+      </Providers>,
+    );
+
+    expect(capturedCredentials).toEqual({ forgotPassword: true });
   });
 });
