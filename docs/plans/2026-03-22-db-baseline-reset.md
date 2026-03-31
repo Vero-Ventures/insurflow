@@ -105,7 +105,29 @@ Expected: PASS.
 
 **Step 3: Record the manual production step**
 
-Outside the repo, wipe the production Neon branch/database and any open preview Neon branches, then rerun `bun run db:migrate` or trigger preview branch recreation so all environments start from the clean baseline.
+Before any destructive wipe, complete all mandatory gates below:
+
+1. Approval gate (required):
+   - Explicit written approval from engineering owner and product owner.
+   - Planned execution window and operator-on-call are documented.
+2. Backup gate (required):
+   - Capture a production backup/snapshot and verify retention location.
+   - Export schema + critical data audit artifacts needed for forensic recovery.
+3. Restore gate (required):
+   - Validate backup restoration in a non-production Neon branch.
+   - Record restore duration and confirm it fits outage/rollback expectations.
+4. Rollback gate (required):
+   - Define go/no-go checkpoint after migrate.
+   - Define clear rollback criteria and who can trigger rollback.
+5. Coupling gate (required):
+   - Confirm preview workflow coupling (`deploy-preview.yml` and `cleanup-preview.yml`) and branch naming assumptions remain unchanged.
+
+Only after all gates pass, execute the manual reset outside the repo:
+
+1. Wipe the production Neon branch/database and any open preview Neon branches.
+2. Re-run `bun run db:migrate` against production baseline target.
+3. Trigger preview branch recreation (or let next PR sync recreate) so all environments start from the clean baseline.
+4. Verify post-reset health: app boot, auth, and migration status checks.
 
 **Step 4: Commit**
 

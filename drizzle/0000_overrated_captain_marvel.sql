@@ -127,7 +127,9 @@ CREATE TABLE "asset_allocation" (
 	"actual_percent" numeric(5, 2) DEFAULT '0' NOT NULL,
 	"notes" text,
 	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "asset_allocation_desired_pct_range" CHECK ("asset_allocation"."desired_percent" >= 0 AND "asset_allocation"."desired_percent" <= 100),
+	CONSTRAINT "asset_allocation_actual_pct_range" CHECK ("asset_allocation"."actual_percent" >= 0 AND "asset_allocation"."actual_percent" <= 100)
 );
 --> statement-breakpoint
 CREATE TABLE "beneficiary" (
@@ -208,7 +210,8 @@ CREATE TABLE "key_person" (
 	"ownership_percentage" numeric(5, 2) DEFAULT '0' NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL,
-	"deleted_at" timestamp with time zone
+	"deleted_at" timestamp with time zone,
+	CONSTRAINT "key_person_ownership_pct_range" CHECK ("key_person"."ownership_percentage" >= 0 AND "key_person"."ownership_percentage" <= 100)
 );
 --> statement-breakpoint
 CREATE TABLE "shareholder" (

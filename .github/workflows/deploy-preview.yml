@@ -16,6 +16,30 @@ jobs:
       PREVIEW_DB_BRANCH: preview-pr-${{ github.event.pull_request.number }}
 
     steps:
+      - name: Neon preflight diagnostics
+        env:
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${NEON_PROJECT_ID:-}" ] || [ -z "${NEON_API_KEY:-}" ]; then
+            echo "Missing Neon secrets (NEON_PROJECT_ID or NEON_API_KEY)."
+            exit 1
+          fi
+
+          BRANCHES_JSON=$(curl -sS -H "Authorization: Bearer $NEON_API_KEY" \
+            "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches")
+
+          EXISTING=$(echo "$BRANCHES_JSON" | jq -r --arg name "$PREVIEW_DB_BRANCH" \
+            '.branches[] | select(.name == $name) | .id' | head -n 1)
+
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            echo "Preview branch already exists: $PREVIEW_DB_BRANCH ($EXISTING)"
+          else
+            echo "Preview branch does not exist yet: $PREVIEW_DB_BRANCH"
+          fi
+
       - name: Create Neon Branch
         id: neon-branch
         uses: neondatabase/create-branch-action@v6

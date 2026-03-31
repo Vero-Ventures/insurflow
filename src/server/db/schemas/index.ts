@@ -77,6 +77,9 @@ export { webhookEvent } from "./webhook-events-schema";
 // Life event tables
 export { lifeEventRecalculation } from "./life-events-schema";
 
+// Chat message tables
+export { chatRoleEnum, clientChatMessage } from "./chat-messages-schema";
+
 // ============================================================================
 // RE-EXPORT RELATIONS FROM INDIVIDUAL SCHEMA FILES
 // ============================================================================
@@ -115,6 +118,9 @@ export { webhookEventRelations } from "./webhook-events-schema";
 // Life event relations
 export { lifeEventRecalculationRelations } from "./life-events-schema";
 
+// Chat relations
+export { clientChatMessageRelations } from "./chat-messages-schema";
+
 // D2C types
 export type {
   D2cResumeLink,
@@ -149,6 +155,13 @@ export type {
   InsuranceNeedsSnapshot,
 } from "./life-events-schema";
 
+// Chat types
+export type {
+  ClientChatMessage,
+  ClientChatMessageInsert,
+  ChatRole,
+} from "./chat-messages-schema";
+
 // ============================================================================
 // COMPLETE RELATIONS (Resolving cross-file dependencies)
 // ============================================================================
@@ -167,6 +180,7 @@ import { d2cResumeLink } from "./d2c-resume-link-schema";
 import { application } from "./applications-schema";
 import { webhookEvent } from "./webhook-events-schema";
 import { lifeEventRecalculation } from "./life-events-schema";
+import { clientChatMessage } from "./chat-messages-schema";
 
 /**
  * Complete user relations including clients.
@@ -183,6 +197,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
   lifeEventRecalculations: many(lifeEventRecalculation),
+  chatMessages: many(clientChatMessage),
 }));
 
 /**
@@ -200,6 +215,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   applications: many(application),
   webhookEvents: many(webhookEvent),
   lifeEventRecalculations: many(lifeEventRecalculation),
+  chatMessages: many(clientChatMessage),
 }));
 
 /**

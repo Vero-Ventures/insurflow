@@ -6,6 +6,7 @@
 
 export {
   generateText,
+  streamText,
   isGeminiConfigured,
   GeminiNotConfiguredError,
   GeminiApiError,
@@ -18,3 +19,9 @@ export {
   type ReasonsWhyClientData,
   type ReasonsWhyFinancialData,
 } from "./prompts/reasons-why";
+
+export {
+  buildClientChatPrompt,
+  getSuggestedChatQuestions,
+  type ClientChatPromptInput,
+} from "./prompts/client-chat";
