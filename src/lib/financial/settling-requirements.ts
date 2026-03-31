@@ -14,6 +14,7 @@
 
 import type { CanadianProvince } from "@/lib/constants";
 import { PROVINCE_NAMES } from "@/lib/constants";
+import { roundCurrency } from "@/lib/financial/utils";
 
 // =============================================================================
 // Types & Interfaces
@@ -717,13 +718,6 @@ export function calculateSettlingRequirements(
 // =============================================================================
 // Utility Functions
 // =============================================================================
-
-/**
- * Rounds a number to 2 decimal places (for currency display)
- */
-export function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 /**
  * Calculate settling requirements with all values rounded to 2 decimal places

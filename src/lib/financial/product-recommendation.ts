@@ -30,6 +30,7 @@ import {
   MIN_INSURABLE_AGE,
   MAX_INSURABLE_AGE,
 } from "@/lib/constants";
+import { roundCurrency } from "@/lib/financial/utils";
 
 // Re-export for convenience of consumers (with original names for backward compatibility)
 export const SUGGESTED_BUDGET_PERCENT = SUGGESTED_INSURANCE_BUDGET_PERCENT;
@@ -286,13 +287,6 @@ const LIFE_STAGE_PRODUCT_SCORES: Record<
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Round to 2 decimal places.
- */
-function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 /**
  * Clamp a value to a range.

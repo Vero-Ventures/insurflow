@@ -39,6 +39,7 @@ import {
   DEFAULT_INFLATION_RATE,
   DEFAULT_EXPENSE_REDUCTION_PERCENT,
 } from "@/lib/constants";
+import { roundCurrency } from "@/lib/financial/utils";
 
 // ============================================================================
 // Constants
@@ -483,10 +484,10 @@ export function calculateAdvancedIncomeReplacement(
 
     annualSchedule.push({
       year: n,
-      incomeNeed: roundToTwoDecimals(incomeNeed),
-      survivorOffset: roundToTwoDecimals(survivorOffset),
-      netNeed: roundToTwoDecimals(netNeed),
-      netNeedPV: roundToTwoDecimals(netNeedPV),
+      incomeNeed: roundCurrency(incomeNeed),
+      survivorOffset: roundCurrency(survivorOffset),
+      netNeed: roundCurrency(netNeed),
+      netNeedPV: roundCurrency(netNeedPV),
     });
   }
 
@@ -498,9 +499,9 @@ export function calculateAdvancedIncomeReplacement(
   return {
     durationYears,
     annualSchedule,
-    presentValueTotal: roundToTwoDecimals(presentValueTotal),
-    survivorResourcesPV: roundToTwoDecimals(survivorResourcesPV),
-    netCoverageNeededPV: roundToTwoDecimals(netCoverageNeededPV),
+    presentValueTotal: roundCurrency(presentValueTotal),
+    survivorResourcesPV: roundCurrency(survivorResourcesPV),
+    netCoverageNeededPV: roundCurrency(netCoverageNeededPV),
     calculationMetadata: buildIncomeMultiplierMetadata(
       baseAnnualIncome,
       replacementRatio,
@@ -516,15 +517,6 @@ export function calculateAdvancedIncomeReplacement(
       survivorResources: sr,
     },
   };
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-/** Round to 2 decimal places (currency precision). */
-function roundToTwoDecimals(value: number): number {
-  return Math.round(value * 100) / 100;
 }
 
 // ============================================================================
@@ -637,10 +629,10 @@ export function calculateIncomeReplacementV2(
 
     annualSchedule.push({
       year: n,
-      incomeNeed: roundToTwoDecimals(incomeNeed),
-      survivorOffset: roundToTwoDecimals(survivorOffset),
-      netNeed: roundToTwoDecimals(netNeed),
-      netNeedPV: roundToTwoDecimals(netNeedPV),
+      incomeNeed: roundCurrency(incomeNeed),
+      survivorOffset: roundCurrency(survivorOffset),
+      netNeed: roundCurrency(netNeed),
+      netNeedPV: roundCurrency(netNeedPV),
     });
   }
 
@@ -652,9 +644,9 @@ export function calculateIncomeReplacementV2(
   return {
     durationYears,
     annualSchedule,
-    presentValueTotal: roundToTwoDecimals(presentValueTotal),
-    survivorResourcesPV: roundToTwoDecimals(survivorResourcesPV),
-    netCoverageNeededPV: roundToTwoDecimals(netCoverageNeededPV),
+    presentValueTotal: roundCurrency(presentValueTotal),
+    survivorResourcesPV: roundCurrency(survivorResourcesPV),
+    netCoverageNeededPV: roundCurrency(netCoverageNeededPV),
     calculationMetadata: resolvedMode.metadata,
     resolvedInputs: {
       ...resolvedMode.resolvedInputs,
@@ -838,8 +830,8 @@ export function compareCalculationModes(
     incomeMultiplierResult,
     expenseBasedResult,
     comparison: {
-      netCoverageDifference: roundToTwoDecimals(netCoverageDifference),
-      percentDifference: roundToTwoDecimals(percentDifference),
+      netCoverageDifference: roundCurrency(netCoverageDifference),
+      percentDifference: roundCurrency(percentDifference),
       recommendation,
     },
   };

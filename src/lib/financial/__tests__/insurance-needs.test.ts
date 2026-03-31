@@ -7,12 +7,12 @@ import {
   calculateInsuranceNeedsRoundedWithTrace,
   calculateInsuranceNeedsWithTrace,
   deriveRecommendationBand,
-  roundCurrency,
   DEFAULT_ESTATE_BUFFER,
   INSURANCE_NEEDS_TRACE_SECTION_KEYS,
   type InsuranceNeedsInput,
   type EstateBufferConfig,
 } from "../insurance-needs";
+import { roundCurrency } from "../utils";
 
 describe("calculateIncomeReplacementNeeds", () => {
   it("calculates basic income replacement correctly", () => {
