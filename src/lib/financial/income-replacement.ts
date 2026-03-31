@@ -326,6 +326,118 @@ const EMPTY_SURVIVOR_RESOURCES: SurvivorResources = {
   otherIncome: 0,
 };
 
+interface IncomeReplacementProjectionInput {
+  annualBaselineNeed: number;
+  inflationRate: number;
+  discountRate: number;
+  durationYears: number;
+  survivorResources: SurvivorResources;
+}
+
+interface IncomeReplacementProjectionResult {
+  annualSchedule: AnnualScheduleEntry[];
+  presentValueTotal: number;
+  survivorResourcesPV: number;
+  netCoverageNeededPV: number;
+}
+
+function normalizeSurvivorResources(
+  survivorResources?: SurvivorResources,
+): SurvivorResources {
+  return {
+    govSurvivorBenefit: Math.max(
+      0,
+      survivorResources?.govSurvivorBenefit ??
+        EMPTY_SURVIVOR_RESOURCES.govSurvivorBenefit,
+    ),
+    existingInsurance: Math.max(
+      0,
+      survivorResources?.existingInsurance ??
+        EMPTY_SURVIVOR_RESOURCES.existingInsurance,
+    ),
+    investmentIncome: Math.max(
+      0,
+      survivorResources?.investmentIncome ??
+        EMPTY_SURVIVOR_RESOURCES.investmentIncome,
+    ),
+    otherIncome: Math.max(
+      0,
+      survivorResources?.otherIncome ?? EMPTY_SURVIVOR_RESOURCES.otherIncome,
+    ),
+  };
+}
+
+function calculateIncomeReplacementProjection({
+  annualBaselineNeed,
+  inflationRate,
+  discountRate,
+  durationYears,
+  survivorResources,
+}: IncomeReplacementProjectionInput): IncomeReplacementProjectionResult {
+  if (durationYears <= 0) {
+    return {
+      annualSchedule: [],
+      presentValueTotal: 0,
+      survivorResourcesPV: 0,
+      netCoverageNeededPV: 0,
+    };
+  }
+
+  const annualSchedule: AnnualScheduleEntry[] = [];
+  let presentValueTotal = 0;
+  let survivorResourcesPV = 0;
+
+  const annualSurvivorBase =
+    survivorResources.govSurvivorBenefit +
+    survivorResources.investmentIncome +
+    survivorResources.otherIncome;
+
+  survivorResourcesPV += survivorResources.existingInsurance;
+
+  for (let n = 1; n <= durationYears; n++) {
+    const inflationFactor = Math.pow(1 + inflationRate, n);
+    const incomeNeed = annualBaselineNeed * inflationFactor;
+
+    const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
+    const lumpSumOffset = n === 1 ? survivorResources.existingInsurance : 0;
+    const survivorOffset = annualSurvivorInflated + lumpSumOffset;
+
+    const netNeed = Math.max(0, incomeNeed - survivorOffset);
+
+    const discountFactor = Math.pow(1 + discountRate, n);
+    const incomeNeedPV = incomeNeed / discountFactor;
+    const annualSurvivorPV = annualSurvivorInflated / discountFactor;
+    let netNeedPV = incomeNeedPV - annualSurvivorPV;
+    if (n === 1) {
+      netNeedPV -= survivorResources.existingInsurance;
+    }
+    netNeedPV = Math.max(0, netNeedPV);
+
+    presentValueTotal += incomeNeedPV;
+    survivorResourcesPV += annualSurvivorPV;
+
+    annualSchedule.push({
+      year: n,
+      incomeNeed: roundCurrency(incomeNeed),
+      survivorOffset: roundCurrency(survivorOffset),
+      netNeed: roundCurrency(netNeed),
+      netNeedPV: roundCurrency(netNeedPV),
+    });
+  }
+
+  const netCoverageNeededPV = Math.max(
+    0,
+    presentValueTotal - survivorResourcesPV,
+  );
+
+  return {
+    annualSchedule,
+    presentValueTotal: roundCurrency(presentValueTotal),
+    survivorResourcesPV: roundCurrency(survivorResourcesPV),
+    netCoverageNeededPV: roundCurrency(netCoverageNeededPV),
+  };
+}
+
 /**
  * Build calculation metadata for income-multiplier mode.
  */
@@ -385,7 +497,6 @@ function buildExpenseBasedMetadata(
 export function calculateAdvancedIncomeReplacement(
   input: IncomeReplacementInput,
 ): IncomeReplacementResult {
-  // --- Resolve & clamp inputs -----------------------------------------------
   const baseAnnualIncome = Math.max(0, input.baseAnnualIncome);
   const replacementRatio = clamp(input.replacementRatio, 0, 1);
   const inflationRate = clamp(
@@ -399,109 +510,23 @@ export function calculateAdvancedIncomeReplacement(
     0.5,
   );
   const durationYears = resolveDuration(input.duration);
+  const survivorResources = normalizeSurvivorResources(input.survivorResources);
+  const annualBaselineNeed = baseAnnualIncome * replacementRatio;
 
-  const sr: SurvivorResources = {
-    ...EMPTY_SURVIVOR_RESOURCES,
-    ...input.survivorResources,
-  };
-  // Clamp survivor resources to non-negative
-  sr.govSurvivorBenefit = Math.max(0, sr.govSurvivorBenefit);
-  sr.existingInsurance = Math.max(0, sr.existingInsurance);
-  sr.investmentIncome = Math.max(0, sr.investmentIncome);
-  sr.otherIncome = Math.max(0, sr.otherIncome);
-
-  // --- Edge case: zero duration ---------------------------------------------
-  if (durationYears <= 0) {
-    return {
-      durationYears: 0,
-      annualSchedule: [],
-      presentValueTotal: 0,
-      survivorResourcesPV: 0,
-      netCoverageNeededPV: 0,
-      calculationMetadata: buildIncomeMultiplierMetadata(
-        baseAnnualIncome,
-        replacementRatio,
-        inflationRate,
-        discountRate,
-      ),
-      resolvedInputs: {
-        baseAnnualIncome,
-        replacementRatio,
-        inflationRate,
-        discountRate,
-        durationYears: 0,
-        survivorResources: sr,
-      },
-    };
-  }
-
-  // --- Build year-by-year schedule ------------------------------------------
-  const annualSchedule: AnnualScheduleEntry[] = [];
-  let presentValueTotal = 0;
-  let survivorResourcesPV = 0;
-
-  // Annual recurring survivor resources (everything except lump-sum insurance)
-  const annualSurvivorBase =
-    sr.govSurvivorBenefit + sr.investmentIncome + sr.otherIncome;
-
-  // Existing insurance is a lump-sum asset available immediately at t=0.
-  // It should NOT be discounted - add it directly to survivorResourcesPV.
-  // We still include it in year 1's survivorOffset for display purposes.
-  survivorResourcesPV += sr.existingInsurance;
-
-  for (let n = 1; n <= durationYears; n++) {
-    // Inflation-adjusted income need for year N
-    const inflationFactor = Math.pow(1 + inflationRate, n);
-    const incomeNeed = baseAnnualIncome * replacementRatio * inflationFactor;
-
-    // Survivor offset for year N:
-    //   - existing insurance: shown in year 1 for display purposes only
-    //   - annual resources: inflation-adjusted the same way
-    const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
-    const lumpSumOffset = n === 1 ? sr.existingInsurance : 0;
-    const survivorOffset = annualSurvivorInflated + lumpSumOffset;
-
-    // Net need for this year (floored at 0)
-    const netNeed = Math.max(0, incomeNeed - survivorOffset);
-
-    // Discount factor for year N
-    const discountFactor = Math.pow(1 + discountRate, n);
-
-    // Present values
-    // Note: Only discount annual recurring resources, not the lump-sum insurance.
-    // For year 1, existingInsurance is a t=0 asset and must be subtracted
-    // undiscounted from the year's PV net need.
-    const incomeNeedPV = incomeNeed / discountFactor;
-    const annualSurvivorPV = annualSurvivorInflated / discountFactor;
-    let netNeedPV = incomeNeedPV - annualSurvivorPV;
-    if (n === 1) {
-      netNeedPV -= sr.existingInsurance;
-    }
-    netNeedPV = Math.max(0, netNeedPV);
-
-    presentValueTotal += incomeNeedPV;
-    survivorResourcesPV += annualSurvivorPV;
-
-    annualSchedule.push({
-      year: n,
-      incomeNeed: roundCurrency(incomeNeed),
-      survivorOffset: roundCurrency(survivorOffset),
-      netNeed: roundCurrency(netNeed),
-      netNeedPV: roundCurrency(netNeedPV),
-    });
-  }
-
-  const netCoverageNeededPV = Math.max(
-    0,
-    presentValueTotal - survivorResourcesPV,
-  );
+  const projection = calculateIncomeReplacementProjection({
+    annualBaselineNeed,
+    inflationRate,
+    discountRate,
+    durationYears,
+    survivorResources,
+  });
 
   return {
     durationYears,
-    annualSchedule,
-    presentValueTotal: roundCurrency(presentValueTotal),
-    survivorResourcesPV: roundCurrency(survivorResourcesPV),
-    netCoverageNeededPV: roundCurrency(netCoverageNeededPV),
+    annualSchedule: projection.annualSchedule,
+    presentValueTotal: projection.presentValueTotal,
+    survivorResourcesPV: projection.survivorResourcesPV,
+    netCoverageNeededPV: projection.netCoverageNeededPV,
     calculationMetadata: buildIncomeMultiplierMetadata(
       baseAnnualIncome,
       replacementRatio,
@@ -514,7 +539,7 @@ export function calculateAdvancedIncomeReplacement(
       inflationRate,
       discountRate,
       durationYears,
-      survivorResources: sr,
+      survivorResources,
     },
   };
 }
@@ -546,114 +571,30 @@ export function calculateIncomeReplacementV2(
     0,
     0.5,
   );
-  // --- Resolve mode configuration -------------------------------------------
   const resolvedMode = resolveModeConfig(input, inflationRate, discountRate);
-
   const durationYears = resolveDuration(input.duration);
-
-  const sr: SurvivorResources = {
-    ...EMPTY_SURVIVOR_RESOURCES,
-    ...input.survivorResources,
-  };
-  // Clamp survivor resources to non-negative
-  sr.govSurvivorBenefit = Math.max(0, sr.govSurvivorBenefit);
-  sr.existingInsurance = Math.max(0, sr.existingInsurance);
-  sr.investmentIncome = Math.max(0, sr.investmentIncome);
-  sr.otherIncome = Math.max(0, sr.otherIncome);
-
-  // --- Edge case: zero duration ---------------------------------------------
-  if (durationYears <= 0) {
-    return {
-      durationYears: 0,
-      annualSchedule: [],
-      presentValueTotal: 0,
-      survivorResourcesPV: 0,
-      netCoverageNeededPV: 0,
-      calculationMetadata: resolvedMode.metadata,
-      resolvedInputs: {
-        ...resolvedMode.resolvedInputs,
-        inflationRate,
-        discountRate,
-        durationYears: 0,
-        survivorResources: sr,
-      },
-    };
-  }
-
-  // --- Build year-by-year schedule ------------------------------------------
-  const annualSchedule: AnnualScheduleEntry[] = [];
-  let presentValueTotal = 0;
-  let survivorResourcesPV = 0;
-
-  // Annual recurring survivor resources (everything except lump-sum insurance)
-  const annualSurvivorBase =
-    sr.govSurvivorBenefit + sr.investmentIncome + sr.otherIncome;
-
-  // Existing insurance is a lump-sum asset available immediately at t=0.
-  // It should NOT be discounted - add it directly to survivorResourcesPV.
-  // We still include it in year 1's survivorOffset for display purposes.
-  survivorResourcesPV += sr.existingInsurance;
-
-  for (let n = 1; n <= durationYears; n++) {
-    // Inflation-adjusted need for year N
-    const inflationFactor = Math.pow(1 + inflationRate, n);
-    const incomeNeed = resolvedMode.annualBaselineNeed * inflationFactor;
-
-    // Survivor offset for year N:
-    //   - existing insurance: shown in year 1 for display purposes only
-    //   - annual resources: inflation-adjusted the same way
-    const annualSurvivorInflated = annualSurvivorBase * inflationFactor;
-    const lumpSumOffset = n === 1 ? sr.existingInsurance : 0;
-    const survivorOffset = annualSurvivorInflated + lumpSumOffset;
-
-    // Net need for this year (floored at 0)
-    const netNeed = Math.max(0, incomeNeed - survivorOffset);
-
-    // Discount factor for year N
-    const discountFactor = Math.pow(1 + discountRate, n);
-
-    // Present values
-    // Note: Only discount annual recurring resources, not the lump-sum insurance.
-    // For year 1, existingInsurance is a t=0 asset and must be subtracted
-    // undiscounted from the year's PV net need.
-    const incomeNeedPV = incomeNeed / discountFactor;
-    const annualSurvivorPV = annualSurvivorInflated / discountFactor;
-    let netNeedPV = incomeNeedPV - annualSurvivorPV;
-    if (n === 1) {
-      netNeedPV -= sr.existingInsurance;
-    }
-    netNeedPV = Math.max(0, netNeedPV);
-
-    presentValueTotal += incomeNeedPV;
-    survivorResourcesPV += annualSurvivorPV;
-
-    annualSchedule.push({
-      year: n,
-      incomeNeed: roundCurrency(incomeNeed),
-      survivorOffset: roundCurrency(survivorOffset),
-      netNeed: roundCurrency(netNeed),
-      netNeedPV: roundCurrency(netNeedPV),
-    });
-  }
-
-  const netCoverageNeededPV = Math.max(
-    0,
-    presentValueTotal - survivorResourcesPV,
-  );
+  const survivorResources = normalizeSurvivorResources(input.survivorResources);
+  const projection = calculateIncomeReplacementProjection({
+    annualBaselineNeed: resolvedMode.annualBaselineNeed,
+    inflationRate,
+    discountRate,
+    durationYears,
+    survivorResources,
+  });
 
   return {
     durationYears,
-    annualSchedule,
-    presentValueTotal: roundCurrency(presentValueTotal),
-    survivorResourcesPV: roundCurrency(survivorResourcesPV),
-    netCoverageNeededPV: roundCurrency(netCoverageNeededPV),
+    annualSchedule: projection.annualSchedule,
+    presentValueTotal: projection.presentValueTotal,
+    survivorResourcesPV: projection.survivorResourcesPV,
+    netCoverageNeededPV: projection.netCoverageNeededPV,
     calculationMetadata: resolvedMode.metadata,
     resolvedInputs: {
       ...resolvedMode.resolvedInputs,
       inflationRate,
       discountRate,
       durationYears,
-      survivorResources: sr,
+      survivorResources,
     },
   };
 }
