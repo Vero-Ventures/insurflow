@@ -131,7 +131,7 @@ describe("useDraftPersistence", () => {
     expect(patchBodies[1]?.intake?.annualIncome).toBe(200000);
   });
 
-  it("does not hydrate authenticated users from sessionStorage when no draft exists", async () => {
+  it("hydrates authenticated users from sessionStorage when no draft exists yet", async () => {
     const postBodies: Array<{ intake?: { annualIncome?: number } }> = [];
 
     sessionStorage.setItem(
@@ -191,7 +191,7 @@ describe("useDraftPersistence", () => {
       expect(result.current.isHydrated).toBe(true);
     });
 
-    expect(result.current.intake.annualIncome).toBe(0);
+    expect(result.current.intake.annualIncome).toBe(777777);
 
     vi.useFakeTimers();
 

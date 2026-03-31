@@ -25,7 +25,7 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("./review-form", () => ({
-  default: ({ clientId }: { clientId: string }) => ({
+  default: ({ clientId }: { clientId: string | null }) => ({
     type: "review-form",
     props: { clientId },
   }),
@@ -49,6 +49,19 @@ describe("ApplyReviewPage", () => {
     expect(findClientMock).toHaveBeenCalledTimes(1);
     expect(page).toMatchObject({
       props: { clientId: "11111111-1111-4111-8111-111111111111" },
+    });
+  });
+
+  it("renders review form for signed-out users without forcing auth redirect", async () => {
+    getSessionMock.mockResolvedValue(null);
+    const { default: ApplyReviewPage } = await import("./page");
+
+    const page = await ApplyReviewPage({ searchParams: Promise.resolve({}) });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(findClientMock).not.toHaveBeenCalled();
+    expect(page).toMatchObject({
+      props: { clientId: null },
     });
   });
 });

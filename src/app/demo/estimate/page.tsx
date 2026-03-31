@@ -1,25 +1,63 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useDemoContext } from "@/components/demo/demo-context";
 import { useDemoInsuranceNeeds } from "@/components/demo/use-demo-insurance-needs";
+import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
+import { calculateAge, formatCurrency } from "@/lib/client-utils";
+import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+import {
+  normalizeHealthClass,
+  normalizeLifeExpectancySex,
+} from "@/lib/financial/life-expectancy-profile";
+import {
+  getLifeExpectancy,
+  toSmokingStatus,
+} from "@/lib/financial/mortality-tables";
 import {
   MethodologySection,
   RateTableDisplay,
 } from "@/components/transparency";
-import { formatCurrency } from "@/lib/client-utils";
 import { demoClient } from "@/lib/demo-data";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
+
+const INSURANCE_GOALS: ReadonlySet<InsuranceGoal> = new Set([
+  "income_replacement",
+  "debt_coverage",
+  "estate_planning",
+  "business_succession",
+  "final_expenses",
+  "wealth_accumulation",
+]);
+
+function normalizeInsuranceGoal(value: string | undefined): InsuranceGoal {
+  if (value && INSURANCE_GOALS.has(value as InsuranceGoal)) {
+    return value as InsuranceGoal;
+  }
+
+  return "income_replacement";
+}
+
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
+  const age = calculateAge(demoClient.dateOfBirth);
+  const sex = normalizeLifeExpectancySex(demoClient.sex);
+  const healthClass = normalizeHealthClass(demoClient.healthRating);
+  const lifeExpectancyYears = getLifeExpectancy({
+    age,
+    sex,
+    smokingStatus: toSmokingStatus(Boolean(demoClient.smoker)),
+    healthClass,
+  });
 
   const { result, coverageGap } = useDemoInsuranceNeeds({
     annualHouseholdIncome: state.intakeData.annualHouseholdIncome,
@@ -31,6 +69,39 @@ export default function DemoEstimatePage() {
       state.analysisAssumptions.replacementDurationYears,
     liquidAssets: state.analysisAssumptions.liquidAssets,
   });
+
+  const normalizedPrimaryGoal = normalizeInsuranceGoal(
+    state.intakeData.primaryGoal,
+  );
+
+  const recommendationInput = useMemo(
+    () => ({
+      age,
+      sex,
+      isSmoker: demoClient.smoker ?? false,
+      healthClass,
+      annualIncome: Number(state.intakeData.annualHouseholdIncome),
+      totalDebts: Number(state.intakeData.totalDebts),
+      liquidAssets: state.analysisAssumptions.liquidAssets,
+      existingCoverage: Number(state.intakeData.currentCoverage),
+      coverageNeeded: result.totalInsuranceNeeds,
+      primaryGoal: normalizedPrimaryGoal,
+      hasDependents:
+        demoClient.hasSpouse || demoClient.youngestChildAge !== undefined,
+      youngestDependentAge: demoClient.youngestChildAge,
+    }),
+    [
+      age,
+      sex,
+      healthClass,
+      state.intakeData.annualHouseholdIncome,
+      state.intakeData.totalDebts,
+      state.analysisAssumptions.liquidAssets,
+      state.intakeData.currentCoverage,
+      result.totalInsuranceNeeds,
+      normalizedPrimaryGoal,
+    ],
+  );
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
@@ -159,6 +230,16 @@ export default function DemoEstimatePage() {
             </p>
           </Card>
         </div>
+
+        <div className="mt-6">
+          <ProductRecommendationsCard input={recommendationInput} />
+        </div>
+
+        <Card className="border-border/60 bg-muted/30 p-4 text-sm leading-relaxed">
+          Based on your profile, your life expectancy is approximately{" "}
+          <span className="font-semibold">{lifeExpectancyYears} years</span>{" "}
+          using 2017 CSO mortality tables.
+        </Card>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card className="border-border/60 p-6">

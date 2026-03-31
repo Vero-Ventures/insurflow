@@ -17,7 +17,7 @@
  * @see Issue #269
  */
 
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { getDb } from "@/server/db";
 import { application, applicationEvent, client } from "@/server/db/schemas";
@@ -143,5 +143,52 @@ export async function findApplicationStatus(
     found: true,
     application: appRecord as ApplicationSummary,
     timeline: events as TimelineEvent[],
+  };
+}
+
+// ============================================================================
+// Dashboard Helpers
+// ============================================================================
+
+/**
+ * Finds the most recent submitted (non-draft) application for a user.
+ *
+ * Used by the dashboard to show "Track your application" card for users
+ * who have submitted an application. Returns only applications with status
+ * other than "draft".
+ *
+ * @param userId - Authenticated user's ID
+ * @returns Application summary if found, or not-found
+ */
+export async function findSubmittedApplication(
+  userId: string,
+): Promise<
+  | { found: true; application: ApplicationSummary; clientId: string }
+  | { found: false }
+> {
+  const db = getDb();
+
+  // Find the most recent non-draft application for this user
+  const appRecord = await db.query.application.findFirst({
+    where: and(
+      eq(application.userId, userId),
+      isNull(application.deletedAt),
+      ne(application.status, "draft"),
+    ),
+    columns: {
+      ...APPLICATION_SELECT_COLUMNS,
+      clientId: true,
+    },
+    orderBy: [desc(application.createdAt)],
+  });
+
+  if (!appRecord) {
+    return { found: false };
+  }
+
+  return {
+    found: true,
+    application: appRecord as ApplicationSummary,
+    clientId: appRecord.clientId,
   };
 }
