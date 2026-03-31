@@ -164,7 +164,6 @@ export function useClientChat(
       ]);
 
       let streamParseFailed = false;
-
       try {
         const response = await fetch(`/api/clients/${clientId}/chat`, {
           method: "POST",
@@ -205,7 +204,6 @@ export function useClientChat(
             throw new Error("Received malformed stream data from server");
           }
         };
-
         const applyStreamEvent = (
           parsed: StreamChunk | StreamDone | StreamError,
         ) => {
