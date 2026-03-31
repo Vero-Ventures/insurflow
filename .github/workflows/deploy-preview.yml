@@ -16,6 +16,14 @@ jobs:
       PREVIEW_DB_BRANCH: preview-pr-${{ github.event.pull_request.number }}
 
     steps:
+      - name: Delete existing Neon Branch (if present)
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: ${{ env.PREVIEW_DB_BRANCH }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
       - name: Create Neon Branch
         id: neon-branch
         uses: neondatabase/create-branch-action@v6
