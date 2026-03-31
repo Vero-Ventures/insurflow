@@ -14,17 +14,24 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useClientChat } from "@/lib/hooks/use-client-chat";
+import {
+  useClientChat,
+  type ClientChatSurface,
+} from "@/lib/hooks/use-client-chat";
 
 interface ClientChatPanelProps {
   clientId: string;
+  surface?: ClientChatSurface;
 }
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString();
 }
 
-export function ClientChatPanel({ clientId }: ClientChatPanelProps) {
+export function ClientChatPanel({
+  clientId,
+  surface = "advisor",
+}: ClientChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -36,7 +43,12 @@ export function ClientChatPanel({ clientId }: ClientChatPanelProps) {
     suggestedQuestions,
     usage,
     sendMessage,
-  } = useClientChat(clientId);
+  } = useClientChat(clientId, surface);
+
+  const promptPlaceholder =
+    surface === "advisor"
+      ? "Ask about coverage gaps, assumptions, next advisor actions..."
+      : "Ask about your coverage estimate, assumptions, or next application steps...";
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -139,7 +151,7 @@ export function ClientChatPanel({ clientId }: ClientChatPanelProps) {
                   void handleSend();
                 }
               }}
-              placeholder="Ask about coverage gaps, assumptions, next advisor actions..."
+              placeholder={promptPlaceholder}
               className="min-h-[96px]"
               disabled={isSending}
             />

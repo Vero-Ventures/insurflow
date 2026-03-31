@@ -56,7 +56,12 @@ export interface UseClientChatResult {
   refetchHistory: () => Promise<void>;
 }
 
-export function useClientChat(clientId: string): UseClientChatResult {
+export type ClientChatSurface = "advisor" | "client";
+
+export function useClientChat(
+  clientId: string,
+  surface: ClientChatSurface = "advisor",
+): UseClientChatResult {
   const [messages, setMessages] = useState<ClientChatMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -119,8 +124,9 @@ export function useClientChat(clientId: string): UseClientChatResult {
       setError(message);
       toast.error(message);
     } finally {
-      if (!isMountedRef.current) return;
-      setIsLoadingHistory(false);
+      if (isMountedRef.current) {
+        setIsLoadingHistory(false);
+      }
     }
   }, [clientId]);
 
@@ -164,7 +170,7 @@ export function useClientChat(clientId: string): UseClientChatResult {
             "Content-Type": "application/json",
           },
           credentials: "include",
-          body: JSON.stringify({ message: trimmed }),
+          body: JSON.stringify({ message: trimmed, surface }),
         });
 
         if (!response.ok) {
@@ -261,7 +267,7 @@ export function useClientChat(clientId: string): UseClientChatResult {
         }
       }
     },
-    [clientId, isSending],
+    [clientId, isSending, surface],
   );
 
   return {

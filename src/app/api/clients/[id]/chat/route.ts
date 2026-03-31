@@ -23,6 +23,7 @@ const postBodySchema = z.object({
     .trim()
     .min(1, "Message is required")
     .max(3000, "Message is too long"),
+  surface: z.enum(["advisor", "client"]).optional().default("advisor"),
 });
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -217,7 +218,7 @@ export const POST = withApiHandler(
       return handleValidationError(logger, validationResult.error);
     }
 
-    const userMessage = validationResult.data.message;
+    const { message: userMessage, surface } = validationResult.data;
     const rateLimit = await checkRateLimit(clientId!, session.user.id);
     if (rateLimit.limited) {
       await logger.warn("Chat rate limit exceeded", { statusCode: 429 });
@@ -278,17 +279,23 @@ export const POST = withApiHandler(
       },
       normalizedHistory,
       userMessage,
+      surface,
     );
 
     const now = new Date();
 
-    await db.insert(clientChatMessage).values({
-      clientId: clientId!,
-      userId: session.user.id,
-      role: "user",
-      content: userMessage,
-      sentAt: now,
-    });
+    const insertedUserMessages = await db
+      .insert(clientChatMessage)
+      .values({
+        clientId: clientId!,
+        userId: session.user.id,
+        role: "user",
+        content: userMessage,
+        sentAt: now,
+      })
+      .returning();
+
+    const insertedUserMessageId = insertedUserMessages[0]?.id;
 
     const aiStream = streamText({
       prompt,
@@ -364,6 +371,24 @@ export const POST = withApiHandler(
         } catch (error) {
           let userMessage =
             "Could not generate a response right now. Please try again.";
+
+          if (insertedUserMessageId && !assistantText.trim()) {
+            try {
+              await db
+                .delete(clientChatMessage)
+                .where(eq(clientChatMessage.id, insertedUserMessageId));
+            } catch (cleanupError) {
+              await logger.warn(
+                "Failed to clean up orphaned user chat message",
+                {
+                  cleanupError:
+                    cleanupError instanceof Error
+                      ? cleanupError.message
+                      : String(cleanupError),
+                },
+              );
+            }
+          }
 
           if (error instanceof GeminiApiError) {
             await logger.error("Gemini API error in client chat", error, {
