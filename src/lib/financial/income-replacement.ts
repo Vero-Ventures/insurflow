@@ -39,7 +39,7 @@ import {
   DEFAULT_INFLATION_RATE,
   DEFAULT_EXPENSE_REDUCTION_PERCENT,
 } from "@/lib/constants";
-import { roundCurrency } from "@/lib/financial/utils";
+import { roundCurrency, roundToTwoDecimals } from "@/lib/financial/utils";
 
 // ============================================================================
 // Constants
@@ -772,7 +772,7 @@ export function compareCalculationModes(
     expenseBasedResult,
     comparison: {
       netCoverageDifference: roundCurrency(netCoverageDifference),
-      percentDifference: roundCurrency(percentDifference),
+      percentDifference: roundToTwoDecimals(percentDifference),
       recommendation,
     },
   };

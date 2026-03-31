@@ -30,7 +30,7 @@ import {
   MIN_INSURABLE_AGE,
   MAX_INSURABLE_AGE,
 } from "@/lib/constants";
-import { roundCurrency } from "@/lib/financial/utils";
+import { roundCurrency, roundToTwoDecimals } from "@/lib/financial/utils";
 
 // Re-export for convenience of consumers (with original names for backward compatibility)
 export const SUGGESTED_BUDGET_PERCENT = SUGGESTED_INSURANCE_BUDGET_PERCENT;
@@ -604,7 +604,9 @@ export function generateRecommendations(
     hasGap: coverageGap > 0,
     gapPercentage:
       normalizedInput.coverageNeeded > 0
-        ? roundCurrency((coverageGap / normalizedInput.coverageNeeded) * 100)
+        ? roundToTwoDecimals(
+            (coverageGap / normalizedInput.coverageNeeded) * 100,
+          )
         : 0,
     suggestedMinimum,
     suggestedTarget,
@@ -679,7 +681,7 @@ export function generateRecommendations(
     const coverageGapAddressed = Math.min(recommendedFaceAmount, coverageGap);
     const percentNeedMet =
       coverageGap > 0
-        ? roundCurrency((coverageGapAddressed / coverageGap) * 100)
+        ? roundToTwoDecimals((coverageGapAddressed / coverageGap) * 100)
         : 100;
 
     // Calculate component scores
@@ -897,7 +899,7 @@ export function compareProducts(
   const premiumDifference = quoteB.annualPremium - quoteA.annualPremium;
   const premiumDifferencePercent =
     quoteA.annualPremium > 0
-      ? roundCurrency((premiumDifference / quoteA.annualPremium) * 100)
+      ? roundToTwoDecimals((premiumDifference / quoteA.annualPremium) * 100)
       : 0;
 
   // Simple comparison logic
