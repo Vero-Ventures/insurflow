@@ -32,19 +32,10 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string().optional(),
     BETTER_AUTH_GOOGLE_CLIENT_ID: z.string().optional(),
     BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string().optional(),
-    GMAIL_SMTP_USER:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
-    GMAIL_APP_PASSWORD:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
+    GMAIL_SMTP_USER: z.string().optional(),
+    GMAIL_APP_PASSWORD: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
-    AUTH_EMAIL_FROM:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
+    AUTH_EMAIL_FROM: z.string().optional(),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
