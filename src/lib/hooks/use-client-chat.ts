@@ -163,6 +163,8 @@ export function useClientChat(
         pendingAssistantMessage,
       ]);
 
+      let streamParseFailed = false;
+
       try {
         const response = await fetch(`/api/clients/${clientId}/chat`, {
           method: "POST",
@@ -194,6 +196,15 @@ export function useClientChat(
 
         const decoder = new TextDecoder();
         let buffer = "";
+
+        const parseStreamEvent = (line: string) => {
+          try {
+            return JSON.parse(line) as StreamChunk | StreamDone | StreamError;
+          } catch {
+            streamParseFailed = true;
+            throw new Error("Received malformed stream data from server");
+          }
+        };
 
         const applyStreamEvent = (
           parsed: StreamChunk | StreamDone | StreamError,
@@ -237,20 +248,14 @@ export function useClientChat(
           for (const line of lines) {
             if (!line.trim()) continue;
 
-            const parsed = JSON.parse(line) as
-              | StreamChunk
-              | StreamDone
-              | StreamError;
+            const parsed = parseStreamEvent(line);
             applyStreamEvent(parsed);
           }
         }
 
         // Ensure the final event is applied when stream closes without trailing newline.
         if (buffer.trim()) {
-          const parsed = JSON.parse(buffer) as
-            | StreamChunk
-            | StreamDone
-            | StreamError;
+          const parsed = parseStreamEvent(buffer);
           applyStreamEvent(parsed);
         }
       } catch (err) {
@@ -258,16 +263,26 @@ export function useClientChat(
           err instanceof Error ? err.message : "Failed to send message";
         setError(message);
         toast.error(message);
-        setMessages((current) =>
-          current.filter((item) => item.id !== pendingAssistantId),
-        );
+
+        setMessages((current) => {
+          const optimisticIdsToRemove = new Set([pendingAssistantId]);
+          if (streamParseFailed) {
+            optimisticIdsToRemove.add(userMessage.id);
+          }
+
+          return current.filter((item) => !optimisticIdsToRemove.has(item.id));
+        });
+
+        if (streamParseFailed) {
+          void refetchHistory();
+        }
       } finally {
         if (isMountedRef.current) {
           setIsSending(false);
         }
       }
     },
-    [clientId, isSending, surface],
+    [clientId, isSending, surface, refetchHistory],
   );
 
   return {
