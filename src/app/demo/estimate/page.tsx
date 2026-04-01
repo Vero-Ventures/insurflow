@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,11 @@ import {
 import { demoClient } from "@/lib/demo-data";
 import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
 import { getStateRateTable } from "@/lib/transparency/rate-tables";
+import {
+  CANADIAN_PROVINCE_TERRITORY_CODES,
+  CANADIAN_PROVINCE_TERRITORY_OPTIONS,
+  type CanadianProvince,
+} from "@/lib/constants";
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 2;
@@ -46,9 +51,35 @@ function normalizeInsuranceGoal(value: string | undefined): InsuranceGoal {
   return "income_replacement";
 }
 
+function isCanadianProvince(
+  value: string | undefined,
+): value is CanadianProvince {
+  if (!value) return false;
+  return CANADIAN_PROVINCE_TERRITORY_CODES.includes(value as CanadianProvince);
+}
+
+function getDefaultProvince(intakeData: {
+  province?: string;
+}): CanadianProvince {
+  const intakeProvince = intakeData.province;
+
+  if (isCanadianProvince(intakeProvince)) {
+    return intakeProvince;
+  }
+
+  if (isCanadianProvince(demoClient.state)) {
+    return demoClient.state;
+  }
+
+  return "ON";
+}
+
 export default function DemoEstimatePage() {
   const router = useRouter();
   const { state, updateAnalysisAssumptions } = useDemoContext();
+  const [selectedProvince, setSelectedProvince] = useState<CanadianProvince>(
+    () => getDefaultProvince(state.intakeData),
+  );
   const age = calculateAge(demoClient.dateOfBirth);
   const sex = normalizeLifeExpectancySex(demoClient.sex);
   const healthClass = normalizeHealthClass(demoClient.healthRating);
@@ -142,9 +173,10 @@ export default function DemoEstimatePage() {
             Try different assumptions
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            Move the sliders to see how your estimate changes.
+            Move the sliders and province/territory selection to see how your
+            estimate changes.
           </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="mt-4 grid gap-4 md:grid-cols-4">
             <label className="space-y-2 text-sm">
               <span className="text-muted-foreground">
                 Income replacement %
@@ -206,6 +238,28 @@ export default function DemoEstimatePage() {
               />
               <p className="text-foreground font-medium">
                 {formatCurrency(state.analysisAssumptions.liquidAssets)}
+              </p>
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-muted-foreground">
+                Province / territory
+              </span>
+              <select
+                aria-label="Province or territory"
+                value={selectedProvince}
+                onChange={(event) =>
+                  setSelectedProvince(event.target.value as CanadianProvince)
+                }
+                className="border-border bg-background h-10 w-full rounded-md border px-3"
+              >
+                {CANADIAN_PROVINCE_TERRITORY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.value} - {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-foreground font-medium">
+                Showing {selectedProvince} rates
               </p>
             </label>
           </div>
@@ -293,7 +347,7 @@ export default function DemoEstimatePage() {
             }}
           />
 
-          <RateTableDisplay rateTable={getStateRateTable(demoClient.state)} />
+          <RateTableDisplay rateTable={getStateRateTable(selectedProvince)} />
         </div>
 
         <div className="mt-6 flex justify-end" data-tour="showcase-next">

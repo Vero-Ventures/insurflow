@@ -33,6 +33,7 @@ export interface DemoIntakeData {
   totalDebts: string;
   currentCoverage: string;
   primaryGoal: string;
+  province?: string;
 }
 
 interface DemoState {
