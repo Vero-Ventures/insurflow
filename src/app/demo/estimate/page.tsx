@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,10 +76,9 @@ function getDefaultProvince(intakeData: {
 
 export default function DemoEstimatePage() {
   const router = useRouter();
-  const { state, updateAnalysisAssumptions } = useDemoContext();
-  const [selectedProvince, setSelectedProvince] = useState<CanadianProvince>(
-    () => getDefaultProvince(state.intakeData),
-  );
+  const { state, updateAnalysisAssumptions, updateIntakeData } =
+    useDemoContext();
+  const selectedProvince = getDefaultProvince(state.intakeData);
   const age = calculateAge(demoClient.dateOfBirth);
   const sex = normalizeLifeExpectancySex(demoClient.sex);
   const healthClass = normalizeHealthClass(demoClient.healthRating);
@@ -247,9 +246,12 @@ export default function DemoEstimatePage() {
               <select
                 aria-label="Province or territory"
                 value={selectedProvince}
-                onChange={(event) =>
-                  setSelectedProvince(event.target.value as CanadianProvince)
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (isCanadianProvince(value)) {
+                    updateIntakeData({ province: value });
+                  }
+                }}
                 className="border-border bg-background h-10 w-full rounded-md border px-3"
               >
                 {CANADIAN_PROVINCE_TERRITORY_OPTIONS.map((option) => (

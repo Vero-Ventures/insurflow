@@ -2,18 +2,20 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import DemoEstimatePage from "@/app/demo/estimate/page";
 import type { RecommendationInput } from "@/lib/financial/product-recommendation";
+import type { CanadianProvince } from "@/lib/constants";
 
 const pushMock = vi.fn();
 const recommendationsCardInputSpy =
   vi.fn<(input: RecommendationInput) => void>();
 const updateAnalysisAssumptionsMock = vi.fn();
+const updateIntakeDataMock = vi.fn();
 
 interface DemoEstimateMockState {
   intakeData: {
     annualHouseholdIncome: string;
     totalDebts: string;
     currentCoverage: string;
-    province?: string;
+    province?: CanadianProvince | string;
   };
   analysisAssumptions: {
     incomeReplacementPercent: number;
@@ -52,6 +54,7 @@ vi.mock("@/components/demo/demo-context", () => ({
   useDemoContext: () => ({
     state: mockState,
     updateAnalysisAssumptions: updateAnalysisAssumptionsMock,
+    updateIntakeData: updateIntakeDataMock,
   }),
 }));
 
@@ -61,6 +64,20 @@ describe("DemoEstimatePage", () => {
     pushMock.mockReset();
     recommendationsCardInputSpy.mockClear();
     updateAnalysisAssumptionsMock.mockClear();
+    updateIntakeDataMock.mockReset();
+    updateIntakeDataMock.mockImplementation(
+      (updates: { province?: CanadianProvince }) => {
+        if (updates.province !== undefined) {
+          mockState = {
+            ...mockState,
+            intakeData: {
+              ...mockState.intakeData,
+              province: updates.province,
+            },
+          };
+        }
+      },
+    );
   });
 
   it("falls back to income_replacement when primaryGoal is not a valid InsuranceGoal", () => {
@@ -104,13 +121,15 @@ describe("DemoEstimatePage", () => {
       "YT",
     ].forEach((province) => {
       expect(
-        screen.getByRole("option", { name: new RegExp(`^${province}\\s-\\s`) }),
+        screen.getByRole("option", {
+          name: new RegExp(String.raw`^${province}\s-\s`),
+        }),
       ).toBeTruthy();
     });
   });
 
   it("switches the displayed rate table when province changes", () => {
-    render(<DemoEstimatePage />);
+    const { rerender } = render(<DemoEstimatePage />);
 
     expect(screen.getByText(/ontario rate table/i)).toBeTruthy();
 
@@ -118,7 +137,19 @@ describe("DemoEstimatePage", () => {
       target: { value: "BC" },
     });
 
+    expect(updateIntakeDataMock).toHaveBeenCalledWith({ province: "BC" });
+    rerender(<DemoEstimatePage />);
     expect(screen.getByText(/british columbia rate table/i)).toBeTruthy();
+  });
+
+  it("persists province changes through demo intake context", () => {
+    render(<DemoEstimatePage />);
+
+    fireEvent.change(screen.getByLabelText(/province or territory/i), {
+      target: { value: "QC" },
+    });
+
+    expect(updateIntakeDataMock).toHaveBeenCalledWith({ province: "QC" });
   });
 
   it("defaults to the client province when present and valid", () => {

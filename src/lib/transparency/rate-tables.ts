@@ -3,7 +3,10 @@
  * Exposes federal and state tax information in a UI-friendly format.
  */
 
-import { STATE_LABELS } from "@/lib/constants";
+import {
+  CANADIAN_PROVINCE_TERRITORY_CODES,
+  STATE_LABELS,
+} from "@/lib/constants";
 
 // ============================================================================
 // Types
@@ -225,27 +228,31 @@ function formatPercent(rate: number): string {
 export function getStateRateTable(stateCode: string): StateRateTable {
   const stateName = STATE_LABELS[stateCode] ?? stateCode;
   const sections: RateTableSection[] = [];
+  const isCanadianProvince = CANADIAN_PROVINCE_TERRITORY_CODES.includes(
+    stateCode as (typeof CANADIAN_PROVINCE_TERRITORY_CODES)[number],
+  );
 
-  // Federal estate tax (always shown)
-  sections.push({
-    title: "Federal Estate Tax (2024)",
-    effectiveDate: "2024-01-01",
-    rows: [
-      {
-        label: "Lifetime Exemption",
-        value: formatCurrency(FEDERAL_ESTATE_TAX_EXEMPTION_2024),
-      },
-      {
-        label: "Tax Rate (above exemption)",
-        value: formatPercent(FEDERAL_ESTATE_TAX_RATE * 100),
-      },
-      {
-        label: "Portability",
-        value: "Yes",
-        note: "Unused exemption can transfer to surviving spouse",
-      },
-    ],
-  });
+  if (!isCanadianProvince) {
+    sections.push({
+      title: "Federal Estate Tax (2024)",
+      effectiveDate: "2024-01-01",
+      rows: [
+        {
+          label: "Lifetime Exemption",
+          value: formatCurrency(FEDERAL_ESTATE_TAX_EXEMPTION_2024),
+        },
+        {
+          label: "Tax Rate (above exemption)",
+          value: formatPercent(FEDERAL_ESTATE_TAX_RATE * 100),
+        },
+        {
+          label: "Portability",
+          value: "Yes",
+          note: "Unused exemption can transfer to surviving spouse",
+        },
+      ],
+    });
+  }
 
   // State estate/inheritance tax
   const stateTax = STATE_ESTATE_TAX_INFO[stateCode];
