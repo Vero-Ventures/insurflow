@@ -180,6 +180,34 @@ describe("DemoEstimatePage", () => {
     expect(screen.getByText(/ontario rate table/i)).toBeTruthy();
   });
 
+  it("persists fallback province when intake province is invalid or missing", () => {
+    mockState = {
+      ...structuredClone(baseDemoState),
+      intakeData: {
+        ...structuredClone(baseDemoState.intakeData),
+        province: "CA",
+      },
+    };
+
+    render(<DemoEstimatePage />);
+
+    expect(updateIntakeDataMock).toHaveBeenCalledWith({ province: "ON" });
+  });
+
+  it("does not persist fallback province when intake province is already valid", () => {
+    mockState = {
+      ...structuredClone(baseDemoState),
+      intakeData: {
+        ...structuredClone(baseDemoState.intakeData),
+        province: "QC",
+      },
+    };
+
+    render(<DemoEstimatePage />);
+
+    expect(updateIntakeDataMock).not.toHaveBeenCalledWith({ province: "ON" });
+  });
+
   it("does not show California-specific rate table content by default", () => {
     render(<DemoEstimatePage />);
 

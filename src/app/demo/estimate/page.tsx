@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,13 @@ export default function DemoEstimatePage() {
   const { state, updateAnalysisAssumptions, updateIntakeData } =
     useDemoContext();
   const selectedProvince = getDefaultProvince(state.intakeData);
+
+  useEffect(() => {
+    if (!isCanadianProvince(state.intakeData.province)) {
+      updateIntakeData({ province: selectedProvince });
+    }
+  }, [selectedProvince, state.intakeData.province, updateIntakeData]);
+
   const age = calculateAge(demoClient.dateOfBirth);
   const sex = normalizeLifeExpectancySex(demoClient.sex);
   const healthClass = normalizeHealthClass(demoClient.healthRating);
