@@ -211,7 +211,7 @@ export function SettlingRequirementsChartClient({
               <Tooltip
                 formatter={(value) => {
                   if (typeof value !== "number") return value;
-                  return;
+                  return formatCurrency(value);
                 }}
                 contentStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.95)",
