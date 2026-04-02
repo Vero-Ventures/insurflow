@@ -22,6 +22,14 @@ describe("getStateRateTable", () => {
     expect(federalSection?.rows.length).toBeGreaterThan(0);
   });
 
+  it("does not include US federal estate tax section for Canadian provinces", () => {
+    const table = getStateRateTable("ON");
+    const federalSection = table.sections.find((s) =>
+      s.title.includes("Federal Estate Tax"),
+    );
+    expect(federalSection).toBeUndefined();
+  });
+
   it("includes professional fees section", () => {
     const table = getStateRateTable("NY");
     const feesSection = table.sections.find((s) =>

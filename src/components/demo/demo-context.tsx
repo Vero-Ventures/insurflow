@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
+import type { CanadianProvince } from "@/lib/constants";
 
 export type DemoSegment =
   | "landing"
@@ -33,6 +34,7 @@ export interface DemoIntakeData {
   totalDebts: string;
   currentCoverage: string;
   primaryGoal: string;
+  province?: CanadianProvince;
 }
 
 interface DemoState {
