@@ -146,7 +146,6 @@ export const GET = withApiHandler(
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
         "Cache-Control": "private, no-store",
-        Pragma: "no-cache",
       },
     });
   },

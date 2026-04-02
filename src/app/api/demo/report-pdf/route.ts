@@ -111,7 +111,6 @@ export async function GET() {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
         "Cache-Control": "private, no-store",
-        Pragma: "no-cache",
       },
     });
   } catch (error) {
