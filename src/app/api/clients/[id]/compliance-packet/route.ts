@@ -39,16 +39,10 @@ import {
   extractPolicyCoverageAggregate,
   hasClientValue,
 } from "./route-helpers";
+import { safeFilename } from "@/server/pdf/utils";
 
 /** Keep this route on Node runtime for PDF generation */
 export const runtime = "nodejs";
-
-function safeFilename(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 export const GET = withApiHandler(
   {

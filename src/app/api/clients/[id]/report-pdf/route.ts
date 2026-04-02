@@ -12,15 +12,9 @@ import {
 import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import { formatCurrency } from "@/lib/client-utils";
 import { createClientReportPdfDocument } from "@/server/pdf/client-report-pdf";
+import { safeFilename } from "@/server/pdf/utils";
 
 export const runtime = "nodejs";
-
-function safeFilename(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export const GET = withApiHandler(
   {

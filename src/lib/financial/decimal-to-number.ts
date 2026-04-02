@@ -1,6 +1,7 @@
 /**
- * Safely convert a decimal string (from DB or form input) to a number.
- * Returns 0 for null, undefined, or unparseable values.
+ * Converts a decimal string input into a number with a safe zero fallback.
+ * @param value - The decimal string from storage or form input.
+ * @returns The parsed numeric value, or 0 when the input is missing or not numeric.
  */
 export function decimalToNumber(value: string | null | undefined): number {
   if (value === null || value === undefined) return 0;
