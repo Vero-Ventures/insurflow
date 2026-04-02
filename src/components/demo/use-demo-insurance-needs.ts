@@ -3,6 +3,7 @@ import {
   DEFAULT_ESTATE_BUFFER,
   type InsuranceNeedsResult,
 } from "@/lib/financial/insurance-needs";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 
 const DEMO_TOTAL_ASSETS = 1277000;
 
@@ -15,23 +16,21 @@ export interface DemoInsuranceInputs {
   liquidAssets: number;
 }
 
-function toNumber(value: string): number {
-  const normalized = value.replace(/[^\d.]/g, "");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
+function parseCurrencyInput(value: string): number {
+  return decimalToNumber(value.replaceAll(/[^\d.-]/g, ""));
 }
 
 export function calculateDemoInsuranceNeeds(
   inputs: DemoInsuranceInputs,
 ): InsuranceNeedsResult {
   return calculateInsuranceNeedsRounded({
-    clientIncome: toNumber(inputs.annualHouseholdIncome),
+    clientIncome: parseCurrencyInput(inputs.annualHouseholdIncome),
     spouseIncome: 0,
     includeSpouseIncome: false,
     incomeReplacementPercent: inputs.incomeReplacementPercent,
     replacementDurationYears: inputs.replacementDurationYears,
-    existingLifeInsuranceCoverage: toNumber(inputs.currentCoverage),
-    totalDebts: toNumber(inputs.totalDebts),
+    existingLifeInsuranceCoverage: parseCurrencyInput(inputs.currentCoverage),
+    totalDebts: parseCurrencyInput(inputs.totalDebts),
     liquidAssets: inputs.liquidAssets,
     totalAssets: DEMO_TOTAL_ASSETS,
     estateBuffer: DEFAULT_ESTATE_BUFFER,

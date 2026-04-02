@@ -8,22 +8,6 @@
 import type { DurationScenario } from "./income-replacement";
 
 // ============================================================================
-// Decimal conversion
-// ============================================================================
-
-/**
- * Safely convert a decimal string (as returned by Drizzle for `numeric`
- * columns) to a JavaScript number.
- *
- * Returns `0` for null, undefined, empty-string, or non-numeric values.
- */
-export function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
-
-// ============================================================================
 // Duration-scenario builder
 // ============================================================================
 

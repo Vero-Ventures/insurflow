@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  decimalToNumber,
-  buildDurationScenario,
-} from "../income-replacement-helpers";
+import { decimalToNumber } from "../decimal-to-number";
+import { buildDurationScenario } from "../income-replacement-helpers";
 
 // ============================================================================
 // decimalToNumber

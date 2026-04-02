@@ -16,6 +16,7 @@ import {
   isGeminiConfigured,
   GeminiApiError,
 } from "@/server/ai";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 
 const postBodySchema = z.object({
   message: z
@@ -28,12 +29,6 @@ const postBodySchema = z.object({
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
-
-function decimalToNumber(value: string | null | undefined): number {
-  if (!value) return 0;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 function estimateTokenCount(text: string): number {
   // Rough approximation for tracking/guardrail UX in absence of provider token counts.

@@ -7,17 +7,8 @@ import {
   type InsuranceNeedsInput,
 } from "@/lib/financial/insurance-needs";
 import { resolveExistingCoverage } from "@/lib/policy-utils";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import type { InsuranceNeedsSnapshot } from "@/server/db/schemas/life-events-schema";
-
-/**
- * Safely convert a decimal string (from DB) to a number.
- * Returns 0 for null, undefined, or unparseable values.
- */
-export function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
 
 /**
  * Compute a fresh insurance needs snapshot from current client DB state.
