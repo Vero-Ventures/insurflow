@@ -113,6 +113,7 @@
     ]
   },
   "overrides": {
+    "kysely": "0.28.14",
     "prismjs": "file:./stubs/empty",
     "@react-email/code-block": "file:./stubs/empty",
     "@react-email/tailwind": "file:./stubs/empty",
