@@ -9,13 +9,13 @@ import {
   getProbateFeeDescription,
   getSupportedProvinces,
   isValidProvince,
-  roundCurrency,
   DEFAULT_PROFESSIONAL_FEES,
   DEFAULT_FUNERAL_EXPENSES,
   type AssetForSettling,
   type ProfessionalFeesConfig,
   type SettlingRequirementsInput,
 } from "../settling-requirements";
+import { roundCurrency } from "../utils";
 import { PROVINCE_NAMES, type CanadianProvince } from "@/lib/constants";
 
 // =============================================================================

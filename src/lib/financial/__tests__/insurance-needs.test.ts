@@ -7,12 +7,12 @@ import {
   calculateInsuranceNeedsRoundedWithTrace,
   calculateInsuranceNeedsWithTrace,
   deriveRecommendationBand,
-  roundCurrency,
   DEFAULT_ESTATE_BUFFER,
   INSURANCE_NEEDS_TRACE_SECTION_KEYS,
   type InsuranceNeedsInput,
   type EstateBufferConfig,
 } from "../insurance-needs";
+import { roundCurrency, roundToTwoDecimals } from "../utils";
 
 describe("calculateIncomeReplacementNeeds", () => {
   it("calculates basic income replacement correctly", () => {
@@ -311,6 +311,13 @@ describe("roundCurrency", () => {
   it("handles edge cases", () => {
     expect(roundCurrency(0)).toBe(0);
     expect(roundCurrency(-100.456)).toBe(-100.46);
+  });
+});
+
+describe("roundToTwoDecimals", () => {
+  it("handles floating-point midpoint values consistently", () => {
+    expect(roundToTwoDecimals(35.855)).toBe(35.86);
+    expect(roundToTwoDecimals(100.005)).toBe(100.01);
   });
 });
 

@@ -1,4 +1,5 @@
 import { createCalculationTrace } from "@/lib/calculation-trace";
+import { roundCurrency } from "@/lib/financial/utils";
 import type { CalculationTrace } from "@/types/calculation-trace";
 
 /**
@@ -656,13 +657,6 @@ export function calculateInsuranceNeedsWithTrace(
     result,
     trace: buildInsuranceNeedsTrace(input, result, intermediates),
   };
-}
-
-/**
- * Rounds a number to 2 decimal places (for currency display)
- */
-export function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
 }
 
 function calculateInsuranceNeedsRoundedCore(

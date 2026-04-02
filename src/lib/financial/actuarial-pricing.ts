@@ -27,6 +27,7 @@ import {
   MIN_INSURABLE_AGE,
   MAX_INSURABLE_AGE,
 } from "@/lib/constants";
+import { roundCurrency } from "@/lib/financial/utils";
 
 // Re-export for convenience of consumers (with original names for backward compatibility)
 export const DEFAULT_TERM_YEARS = DEFAULT_TERM_LIFE_YEARS;
@@ -202,13 +203,6 @@ export const PRODUCT_FEATURES: Record<ProductType, string[]> = {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Round to 2 decimal places (currency precision).
- */
-function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 /**
  * Clamp a value to a range.
