@@ -209,9 +209,10 @@ export function SettlingRequirementsChartClient({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number | undefined) =>
-                  typeof value === "number" ? formatCurrency(value) : ""
-                }
+                formatter={(value) => {
+                  if (typeof value !== "number") return value;
+                  return;
+                }}
                 contentStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.95)",
                   borderRadius: "8px",

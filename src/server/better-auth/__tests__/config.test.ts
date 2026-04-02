@@ -67,7 +67,11 @@ describe("better-auth social provider configuration", () => {
     };
 
     const providers = buildSocialProviders(env);
-    const mapped = await providers?.google?.mapProfileToUser?.({
+    const googleProvider = providers?.google as
+      | { mapProfileToUser?: (profile: unknown) => Promise<unknown> | unknown }
+      | undefined;
+
+    const mapped = await googleProvider?.mapProfileToUser?.({
       name: "",
       given_name: "Taylor",
       family_name: "Morgan",
