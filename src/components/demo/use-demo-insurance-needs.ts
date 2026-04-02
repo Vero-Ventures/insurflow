@@ -17,7 +17,7 @@ export interface DemoInsuranceInputs {
 }
 
 function parseCurrencyInput(value: string): number {
-  return decimalToNumber(value.replace(/[^\d.-]/g, ""));
+  return decimalToNumber(value.replaceAll(/[^\d.-]/g, ""));
 }
 
 export function calculateDemoInsuranceNeeds(
