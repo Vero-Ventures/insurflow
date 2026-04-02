@@ -8,6 +8,7 @@ import {
   DEFAULT_ESTATE_BUFFER,
   type InsuranceNeedsInput,
 } from "@/lib/financial/insurance-needs";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import {
   generateText,
   buildReasonsWhyPrompt,
@@ -15,15 +16,6 @@ import {
   GeminiApiError,
   GEMINI_MODEL,
 } from "@/server/ai";
-
-/**
- * Helper to safely convert decimal string to number
- */
-function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
 
 /**
  * POST /api/clients/[id]/generate-letter - Generate a "Reasons Why" letter using AI

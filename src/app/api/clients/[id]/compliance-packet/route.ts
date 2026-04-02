@@ -15,6 +15,7 @@ import {
   type EstimateCompleteness,
   type EstimateAssumptionsUsed,
 } from "@/lib/financial/confidence-scoring";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import {
   calculateUSSettlingRequirementsRounded,
   isValidUSState,
@@ -41,12 +42,6 @@ import {
 
 /** Keep this route on Node runtime for PDF generation */
 export const runtime = "nodejs";
-
-function decimalToNumber(value: string | null | undefined): number {
-  if (!value) return 0;
-  const parsed = parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 function safeFilename(name: string): string {
   return name

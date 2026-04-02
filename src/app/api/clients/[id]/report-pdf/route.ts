@@ -9,16 +9,11 @@ import {
   calculateInsuranceNeedsRounded,
   DEFAULT_ESTATE_BUFFER,
 } from "@/lib/financial/insurance-needs";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import { formatCurrency } from "@/lib/client-utils";
 import { createClientReportPdfDocument } from "@/server/pdf/client-report-pdf";
 
 export const runtime = "nodejs";
-
-function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = Number.parseFloat(value);
-  return Number.isFinite(num) ? num : 0;
-}
 
 function safeFilename(value: string): string {
   return value
@@ -151,7 +146,7 @@ export const GET = withApiHandler(
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
         "Cache-Control": "private, no-store",
-        "Pragma": "no-cache",
+        Pragma: "no-cache",
       },
     });
   },

@@ -17,10 +17,8 @@ import {
   type SurvivorResources,
   type ModeConfig,
 } from "@/lib/financial/income-replacement";
-import {
-  decimalToNumber,
-  buildDurationScenario,
-} from "@/lib/financial/income-replacement-helpers";
+import { buildDurationScenario } from "@/lib/financial/income-replacement-helpers";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 
 // ============================================================================
 // Validation

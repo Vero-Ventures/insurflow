@@ -8,18 +8,10 @@ import {
   demoInsuranceResult,
 } from "@/lib/demo-data";
 import { formatCurrency } from "@/lib/client-utils";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import { createClientReportPdfDocument } from "@/server/pdf/client-report-pdf";
 
 export const runtime = "nodejs";
-
-function toNumber(value: string | number | undefined | null): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
 
 function safeFilename(value: string): string {
   return value
@@ -73,11 +65,11 @@ export async function GET() {
       financialInputs: [
         {
           label: "Client Income",
-          value: formatCurrency(toNumber(client.clientIncome)),
+          value: formatCurrency(decimalToNumber(client.clientIncome)),
         },
         {
           label: "Spouse Income",
-          value: formatCurrency(toNumber(client.spouseIncome)),
+          value: formatCurrency(decimalToNumber(client.spouseIncome)),
         },
         {
           label: "Income Replacement",
@@ -85,7 +77,9 @@ export async function GET() {
         },
         {
           label: "Existing Coverage",
-          value: formatCurrency(toNumber(client.existingLifeInsuranceCoverage)),
+          value: formatCurrency(
+            decimalToNumber(client.existingLifeInsuranceCoverage),
+          ),
         },
       ],
       summary: [
@@ -117,7 +111,7 @@ export async function GET() {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=\"${filename}\"`,
         "Cache-Control": "private, no-store",
-        "Pragma": "no-cache",
+        Pragma: "no-cache",
       },
     });
   } catch (error) {

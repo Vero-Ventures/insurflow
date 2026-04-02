@@ -18,6 +18,7 @@ import {
   type USAssetForSettling,
   type USState,
 } from "@/lib/financial/settling-requirements-us";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 
 /**
  * Reusable Zod schemas for fee configuration types
@@ -89,15 +90,6 @@ const calculateSettlingRequestSchema = z
   })
   .strict()
   .optional();
-
-/**
- * Helper to safely convert decimal string to number
- */
-function decimalToNumber(value: string | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
 
 /**
  * POST /api/clients/[id]/calculate-settling - Calculate settling requirements for a client

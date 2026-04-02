@@ -20,7 +20,7 @@ import {
   type EstimateAssumptionsUsed,
 } from "@/lib/financial/confidence-scoring";
 import { resolveExistingCoverage } from "@/lib/policy-utils";
-import { decimalToNumber } from "@/lib/financial/compute-snapshot";
+import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 
 /**
  * Zod schema for estate buffer configuration
