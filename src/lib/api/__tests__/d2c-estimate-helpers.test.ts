@@ -284,4 +284,34 @@ describe("runEstimate", () => {
     expect(mockEstimateRunFindFirst).toHaveBeenCalledTimes(2);
     expect(mockInsert).toHaveBeenCalledTimes(2);
   });
+
+  it("re-reads the seeded assumption version after a duplicate insert race", async () => {
+    const input = createEstimateInput();
+    const existingRun = createPersistedRun(input, { runNumber: 3 });
+
+    mockAssumptionVersionFindFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: TEST_ASSUMPTION_VERSION_ID,
+        versionLabel: CURRENT_ASSUMPTION_VERSION.versionLabel,
+      });
+    mockEstimateRunFindFirst.mockResolvedValue(existingRun);
+    mockReturning.mockRejectedValueOnce(
+      Object.assign(new Error("unique_violation"), { code: "23505" }),
+    );
+
+    const result = await runEstimate(input);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.reusedExisting).toBe(true);
+      expect(result.estimateRun.id).toBe(existingRun.id);
+      expect(result.estimateRun.assumptionVersionId).toBe(
+        TEST_ASSUMPTION_VERSION_ID,
+      );
+    }
+    expect(mockAssumptionVersionFindFirst).toHaveBeenCalledTimes(2);
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(mockEstimateRunFindFirst).toHaveBeenCalledTimes(1);
+  });
 });

@@ -440,9 +440,7 @@ export default function ApplyEstimatePage() {
           setEstimateRunId(estimateRun.id);
           setPersistedOutputs(estimateRun.outputs);
           setEstimateError(null);
-        } catch {
-          nextEstimateRunId = null;
-        }
+        } catch {}
       }
 
       router.push(getReviewUrl(nextClientId, nextEstimateRunId));

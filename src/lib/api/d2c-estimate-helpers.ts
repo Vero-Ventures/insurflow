@@ -147,13 +147,16 @@ async function resolveAssumptionVersion(): Promise<{
   const db = getDb();
 
   // Check if this version already exists
-  const existing = await db.query.assumptionVersion.findFirst({
-    where: and(
-      eq(assumptionVersion.versionLabel, currentDef.versionLabel),
-      eq(assumptionVersion.productLine, currentDef.productLine),
-    ),
-    columns: { id: true, versionLabel: true },
-  });
+  const findExisting = async () =>
+    db.query.assumptionVersion.findFirst({
+      where: and(
+        eq(assumptionVersion.versionLabel, currentDef.versionLabel),
+        eq(assumptionVersion.productLine, currentDef.productLine),
+      ),
+      columns: { id: true, versionLabel: true },
+    });
+
+  const existing = await findExisting();
 
   if (existing) {
     cachedAssumptionVersionId = existing.id;
@@ -162,17 +165,35 @@ async function resolveAssumptionVersion(): Promise<{
   }
 
   // Seed the assumption version into the DB
-  const [inserted] = await db
-    .insert(assumptionVersion)
-    .values({
-      versionLabel: currentDef.versionLabel,
-      productLine: currentDef.productLine,
-      effectiveFrom: currentDef.effectiveFrom,
-      effectiveTo: currentDef.effectiveTo,
-      parameters: currentDef.parameters,
-      changeNotes: currentDef.changeNotes,
-    })
-    .returning();
+  let inserted;
+
+  try {
+    [inserted] = await db
+      .insert(assumptionVersion)
+      .values({
+        versionLabel: currentDef.versionLabel,
+        productLine: currentDef.productLine,
+        effectiveFrom: currentDef.effectiveFrom,
+        effectiveTo: currentDef.effectiveTo,
+        parameters: currentDef.parameters,
+        changeNotes: currentDef.changeNotes,
+      })
+      .returning();
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const racedExisting = await findExisting();
+      if (racedExisting) {
+        cachedAssumptionVersionId = racedExisting.id;
+        cachedAssumptionVersionLabel = racedExisting.versionLabel;
+        return {
+          id: racedExisting.id,
+          versionLabel: racedExisting.versionLabel,
+        };
+      }
+    }
+
+    throw error;
+  }
 
   if (!inserted) {
     throw new Error("Failed to seed assumption version");

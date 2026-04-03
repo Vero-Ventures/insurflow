@@ -326,6 +326,56 @@ describe("ApplyEstimatePage", () => {
     });
   });
 
+  it("preserves the existing estimateRunId when the continue refresh fails", async () => {
+    const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    getMock.mockReturnValue(testClientId);
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    let estimateCalls = 0;
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = resolveRequestUrl(input);
+
+      if (url.includes(`/api/d2c/draft/${testClientId}`)) {
+        return buildDraftResponse(testClientId) as Response;
+      }
+
+      if (url === "/api/d2c/estimate") {
+        estimateCalls += 1;
+        if (estimateCalls === 1) {
+          return buildEstimateResponse() as Response;
+        }
+
+        return buildEstimateErrorResponse(
+          "Rate lookup unavailable",
+        ) as Response;
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) } as Response;
+    });
+
+    render(<ApplyEstimatePage />);
+
+    const continueButton = await screen.findByRole("button", {
+      name: /continue to review/i,
+    });
+
+    await waitFor(() => {
+      expect((continueButton as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        `/apply/review?clientId=${testClientId}&estimateRunId=${MOCK_ESTIMATE_RUN_ID}`,
+      );
+    });
+  });
+
   it("passes family context into recommendation input", async () => {
     sessionStorage.setItem(
       "d2c_intake",
