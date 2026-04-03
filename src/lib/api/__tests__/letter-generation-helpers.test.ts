@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LetterGenerationJob } from "@/server/db/schemas";
+import {
+  enqueueLetterGenerationJob,
+  findLetterGenerationJob,
+} from "../letter-generation-helpers";
 
 const TEST_JOB_ID = "550e8400-e29b-41d4-a716-446655440111";
 const TEST_CLIENT_ID = "550e8400-e29b-41d4-a716-446655440112";
@@ -60,9 +64,6 @@ describe("letter generation helpers", () => {
     const queuedJob = createJob();
     mockReturning.mockResolvedValue([queuedJob]);
 
-    const { enqueueLetterGenerationJob } =
-      await import("../letter-generation-helpers");
-
     const result = await enqueueLetterGenerationJob(db as never, {
       clientId: TEST_CLIENT_ID,
       userId: TEST_USER_ID,
@@ -91,9 +92,6 @@ describe("letter generation helpers", () => {
       resultGeneratedAt: new Date("2026-04-02T18:05:00Z"),
     });
     mockFindFirst.mockResolvedValue(completedJob);
-
-    const { findLetterGenerationJob } =
-      await import("../letter-generation-helpers");
 
     const result = await findLetterGenerationJob(db as never, {
       jobId: TEST_JOB_ID,
