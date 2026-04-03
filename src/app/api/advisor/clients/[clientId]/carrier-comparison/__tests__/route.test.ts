@@ -1,16 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { GET } from "../route";
+
 import {
   createMockSession,
   TEST_UUIDS,
 } from "@/lib/api/__tests__/helpers/d2c-resume-link-test-helpers";
 
-const mockGetSession = vi.fn();
-const mockProfileFindFirst = vi.fn();
-const mockFindAdvisorCarrierComparison = vi.fn();
+const {
+  mockGetSession,
+  mockProfileFindFirst,
+  mockFindAdvisorCarrierComparison,
+} = vi.hoisted(() => ({
+  mockGetSession: vi.fn(),
+  mockProfileFindFirst: vi.fn(),
+  mockFindAdvisorCarrierComparison: vi.fn(),
+}));
 
 vi.mock("@/server/better-auth/server", () => ({
-  getSession: () => mockGetSession(),
+  getSession: mockGetSession,
 }));
 
 vi.mock("@/server/db", () => ({
@@ -38,7 +46,6 @@ vi.mock("@/lib/api/advisor-comparison-helpers", () => ({
 }));
 
 async function getComparison(clientId: string) {
-  const { GET } = await import("../route");
   return GET(
     new Request(
       `http://localhost/api/advisor/clients/${clientId}/carrier-comparison`,

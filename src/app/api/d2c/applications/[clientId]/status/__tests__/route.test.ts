@@ -8,6 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GET } from "../route";
 
 import {
   createMockSession,
@@ -18,9 +19,12 @@ import {
 // Mock Setup
 // ============================================================================
 
-const mockGetSession = vi.fn();
-const mockProfileFindFirst = vi.fn();
-const mockFindApplicationStatus = vi.fn();
+const { mockGetSession, mockProfileFindFirst, mockFindApplicationStatus } =
+  vi.hoisted(() => ({
+    mockGetSession: vi.fn(),
+    mockProfileFindFirst: vi.fn(),
+    mockFindApplicationStatus: vi.fn(),
+  }));
 
 vi.mock("@/server/better-auth/server", () => ({
   getSession: () => mockGetSession(),
@@ -90,7 +94,6 @@ function createMockTimelineEvent(overrides: Record<string, unknown> = {}) {
 // ============================================================================
 
 async function getStatus(clientId: string) {
-  const { GET } = await import("../route");
   return GET(
     new Request(`http://localhost/api/d2c/applications/${clientId}/status`, {
       method: "GET",
