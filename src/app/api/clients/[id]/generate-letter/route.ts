@@ -3,6 +3,7 @@ import { asset, client, debt } from "@/server/db/schemas";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { withApiHandler } from "@/lib/api/route-helpers";
+import { enqueueLetterGenerationJob } from "@/lib/api/letter-generation-helpers";
 import {
   calculateInsuranceNeedsRounded,
   DEFAULT_ESTATE_BUFFER,
@@ -17,6 +18,9 @@ import {
   GEMINI_MODEL,
 } from "@/server/ai";
 
+const LETTER_GENERATION_TEMPERATURE = "0.7";
+const LETTER_GENERATION_MAX_OUTPUT_TOKENS = 2048;
+
 /**
  * POST /api/clients/[id]/generate-letter - Generate a "Reasons Why" letter using AI
  *
@@ -24,9 +28,9 @@ import {
  * then uses Gemini AI to generate a professional compliance letter.
  *
  * Response:
- * - letter: string (the generated letter text)
- * - generatedAt: string (ISO timestamp)
- * - model: string (AI model used)
+ * - jobId: string (background job UUID)
+ * - status: string (initial queue status)
+ * - pollUrl: string (status endpoint)
  *
  * Errors:
  * - 401: Unauthorized
@@ -41,19 +45,6 @@ export const POST = withApiHandler(
     requireClient: true,
   },
   async (_request, { logger, clientId, session }) => {
-    // Check if Gemini is configured
-    if (!isGeminiConfigured()) {
-      await logger.warn("Gemini API not configured", { statusCode: 503 });
-      return NextResponse.json(
-        {
-          error: "AI service not configured",
-          message:
-            "The AI letter generation service is not available. Please contact support.",
-        },
-        { status: 503 },
-      );
-    }
-
     const db = getDb();
 
     // Fetch client data
@@ -155,45 +146,83 @@ export const POST = withApiHandler(
       },
     );
 
-    try {
-      // Generate letter using Gemini
-      const letter = await generateText({
-        prompt,
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      });
+    const workerEnabled = process.env.LETTER_WORKER_ENABLED === "true";
 
-      await logger.info("Letter generated successfully", {
-        statusCode: 200,
-        letterLength: letter.length,
-      });
-
-      return {
-        data: {
-          letter,
-          generatedAt: new Date().toISOString(),
-          model: GEMINI_MODEL,
-          clientId,
-          clientName: `${clientData.firstName} ${clientData.lastName}`,
-        },
-      };
-    } catch (error) {
-      if (error instanceof GeminiApiError) {
-        await logger.error("Gemini API error", error, {
-          statusCode: error.statusCode,
-          details: error.details,
-        });
+    if (!workerEnabled) {
+      if (!isGeminiConfigured()) {
+        await logger.warn("Gemini API not configured", { statusCode: 503 });
         return NextResponse.json(
           {
-            error: "AI service error",
-            message: "Failed to generate letter. Please try again in a moment.",
+            error: "AI service not configured",
+            message:
+              "The AI letter generation service is not available. Please contact support.",
           },
           { status: 503 },
         );
       }
 
-      // Re-throw unexpected errors to be caught by withApiHandler
-      throw error;
+      try {
+        const letter = await generateText({
+          prompt,
+          temperature: Number(LETTER_GENERATION_TEMPERATURE),
+          maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
+        });
+
+        await logger.info("Letter generated synchronously", {
+          statusCode: 200,
+          mode: "sync",
+          letterLength: letter.length,
+        });
+
+        return {
+          data: {
+            letter,
+            generatedAt: new Date().toISOString(),
+            model: GEMINI_MODEL,
+          },
+        };
+      } catch (error) {
+        if (error instanceof GeminiApiError) {
+          await logger.error("Gemini API error", error, {
+            statusCode: error.statusCode,
+            details: error.details,
+          });
+          return NextResponse.json(
+            {
+              error: "AI service error",
+              message:
+                "Failed to generate letter. Please try again in a moment.",
+            },
+            { status: 503 },
+          );
+        }
+
+        throw error;
+      }
     }
+
+    const job = await enqueueLetterGenerationJob(db, {
+      clientId: clientId!,
+      userId: session.user.id,
+      prompt,
+      model: GEMINI_MODEL,
+      temperature: LETTER_GENERATION_TEMPERATURE,
+      maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
+    });
+
+    await logger.info("Letter generation queued", {
+      statusCode: 202,
+      jobId: job.id,
+      model: GEMINI_MODEL,
+    });
+
+    return {
+      status: 202,
+      data: {
+        jobId: job.id,
+        status: job.status,
+        pollUrl: `/api/clients/${clientId}/letter-jobs/${job.id}`,
+      },
+    };
   },
 );

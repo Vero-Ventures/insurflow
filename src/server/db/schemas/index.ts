@@ -39,6 +39,7 @@ export {
   policyTypeEnum,
   policyStatusEnum,
   applicationStatusEnum,
+  letterGenerationJobStatusEnum,
   lifeEventTypeEnum,
 } from "./enums-schema";
 
@@ -70,6 +71,7 @@ export { auditLog } from "./audit-logs-schema";
 // D2C tables
 export { d2cResumeLink } from "./d2c-resume-link-schema";
 export { application, applicationEvent } from "./applications-schema";
+export { letterGenerationJob } from "./letter-generation-jobs-schema";
 
 // Webhook event tables
 export { webhookEvent } from "./webhook-events-schema";
@@ -111,6 +113,7 @@ export {
   applicationRelations,
   applicationEventRelations,
 } from "./applications-schema";
+export { letterGenerationJobRelations } from "./letter-generation-jobs-schema";
 
 // Webhook event relations
 export { webhookEventRelations } from "./webhook-events-schema";
@@ -135,6 +138,11 @@ export type {
   ApplicationEventInsert,
   ApplicationStatus,
 } from "./applications-schema";
+export type {
+  LetterGenerationJob,
+  LetterGenerationJobInsert,
+  LetterGenerationJobStatus,
+} from "./letter-generation-jobs-schema";
 
 // Audit log types
 export type {
@@ -178,6 +186,7 @@ import { userProfile } from "./user-profile-schema";
 import { policy } from "./policies-schema";
 import { d2cResumeLink } from "./d2c-resume-link-schema";
 import { application } from "./applications-schema";
+import { letterGenerationJob } from "./letter-generation-jobs-schema";
 import { webhookEvent } from "./webhook-events-schema";
 import { lifeEventRecalculation } from "./life-events-schema";
 import { clientChatMessage } from "./chat-messages-schema";
@@ -196,6 +205,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   }),
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
+  letterGenerationJobs: many(letterGenerationJob),
   lifeEventRecalculations: many(lifeEventRecalculation),
   chatMessages: many(clientChatMessage),
 }));
@@ -213,6 +223,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   policies: many(policy),
   d2cResumeLinks: many(d2cResumeLink),
   applications: many(application),
+  letterGenerationJobs: many(letterGenerationJob),
   webhookEvents: many(webhookEvent),
   lifeEventRecalculations: many(lifeEventRecalculation),
   chatMessages: many(clientChatMessage),

@@ -245,6 +245,14 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "declined",
 ]);
 
+/** Background letter generation job lifecycle status */
+export const letterGenerationJobStatusEnum = pgEnum("letter_job_status", [
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+]);
+
 // ============================================================================
 // LIFE EVENT ENUMS
 // ============================================================================

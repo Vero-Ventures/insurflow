@@ -1,6 +1,6 @@
 {
-  "id": "4507ab50-8a2b-483c-b9b8-a84116e102a0",
-  "prevId": "110d5d3d-0c23-44f8-aae6-6bb80af27ba6",
+  "id": "342586e2-78fa-45e1-8788-fc5ede7400bd",
+  "prevId": "35c2e153-947f-49cd-9ec0-d6d8e310eea6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -157,8 +157,12 @@
           "name": "application_client_id_client_id_fk",
           "tableFrom": "application",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -166,8 +170,12 @@
           "name": "application_user_id_user_id_fk",
           "tableFrom": "application",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -177,7 +185,9 @@
         "application_idempotency_key_unique": {
           "name": "application_idempotency_key_unique",
           "nullsNotDistinct": false,
-          "columns": ["idempotency_key"]
+          "columns": [
+            "idempotency_key"
+          ]
         }
       },
       "policies": {},
@@ -287,8 +297,12 @@
           "name": "application_event_application_id_application_id_fk",
           "tableFrom": "application_event",
           "tableTo": "application",
-          "columnsFrom": ["application_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "application_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -420,8 +434,12 @@
           "name": "asset_client_id_client_id_fk",
           "tableFrom": "asset",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -619,8 +637,12 @@
           "name": "audit_log_user_id_user_id_fk",
           "tableFrom": "audit_log",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -757,8 +779,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -844,8 +870,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -855,7 +885,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -916,7 +948,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -1086,8 +1120,12 @@
           "name": "asset_allocation_beneficiary_id_beneficiary_id_fk",
           "tableFrom": "asset_allocation",
           "tableTo": "beneficiary",
-          "columnsFrom": ["beneficiary_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "beneficiary_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1095,8 +1133,12 @@
           "name": "asset_allocation_asset_id_asset_id_fk",
           "tableFrom": "asset_allocation",
           "tableTo": "asset",
-          "columnsFrom": ["asset_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1239,8 +1281,12 @@
           "name": "beneficiary_client_id_client_id_fk",
           "tableFrom": "beneficiary",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1407,8 +1453,12 @@
           "name": "client_chat_message_client_id_client_id_fk",
           "tableFrom": "client_chat_message",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1416,8 +1466,12 @@
           "name": "client_chat_message_user_id_user_id_fk",
           "tableFrom": "client_chat_message",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1696,8 +1750,12 @@
           "name": "client_user_id_user_id_fk",
           "tableFrom": "client",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1828,8 +1886,12 @@
           "name": "business_client_id_client_id_fk",
           "tableFrom": "business",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1954,8 +2016,12 @@
           "name": "corporate_insurance_need_business_id_business_id_fk",
           "tableFrom": "corporate_insurance_need",
           "tableTo": "business",
-          "columnsFrom": ["business_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2071,8 +2137,12 @@
           "name": "key_person_business_id_business_id_fk",
           "tableFrom": "key_person",
           "tableTo": "business",
-          "columnsFrom": ["business_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2175,8 +2245,12 @@
           "name": "shareholder_business_id_business_id_fk",
           "tableFrom": "shareholder",
           "tableTo": "business",
-          "columnsFrom": ["business_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2292,8 +2366,12 @@
           "name": "d2c_resume_link_client_id_client_id_fk",
           "tableFrom": "d2c_resume_link",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2301,8 +2379,12 @@
           "name": "d2c_resume_link_user_id_user_id_fk",
           "tableFrom": "d2c_resume_link",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2312,7 +2394,9 @@
         "d2c_resume_link_token_unique": {
           "name": "d2c_resume_link_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -2433,8 +2517,251 @@
           "name": "debt_client_id_client_id_fk",
           "tableFrom": "debt",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.letter_generation_job": {
+      "name": "letter_generation_job",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "letter_job_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "max_attempts": {
+          "name": "max_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "temperature": {
+          "name": "temperature",
+          "type": "numeric(3, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_output_tokens": {
+          "name": "max_output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result_letter": {
+          "name": "result_letter",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_generated_at": {
+          "name": "result_generated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_at": {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_at": {
+          "name": "failed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "letter_generation_job_status_idx": {
+          "name": "letter_generation_job_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "letter_generation_job_client_id_idx": {
+          "name": "letter_generation_job_client_id_idx",
+          "columns": [
+            {
+              "expression": "client_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "letter_generation_job_user_id_idx": {
+          "name": "letter_generation_job_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "letter_generation_job_status_requested_at_idx": {
+          "name": "letter_generation_job_status_requested_at_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "requested_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "letter_generation_job_client_id_client_id_fk": {
+          "name": "letter_generation_job_client_id_client_id_fk",
+          "tableFrom": "letter_generation_job",
+          "tableTo": "client",
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "letter_generation_job_user_id_user_id_fk": {
+          "name": "letter_generation_job_user_id_user_id_fk",
+          "tableFrom": "letter_generation_job",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2543,8 +2870,12 @@
           "name": "life_event_recalculation_client_id_client_id_fk",
           "tableFrom": "life_event_recalculation",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2552,8 +2883,12 @@
           "name": "life_event_recalculation_user_id_user_id_fk",
           "tableFrom": "life_event_recalculation",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2744,8 +3079,12 @@
           "name": "policy_client_id_client_id_fk",
           "tableFrom": "policy",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2870,8 +3209,12 @@
           "name": "user_profile_user_id_user_id_fk",
           "tableFrom": "user_profile",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3017,8 +3360,12 @@
           "name": "webhook_event_client_id_client_id_fk",
           "tableFrom": "webhook_event",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3034,7 +3381,12 @@
     "public.audit_action": {
       "name": "audit_action",
       "schema": "public",
-      "values": ["create", "update", "delete", "restore"]
+      "values": [
+        "create",
+        "update",
+        "delete",
+        "restore"
+      ]
     },
     "public.audit_entity_type": {
       "name": "audit_entity_type",
@@ -3058,12 +3410,18 @@
     "public.chat_role": {
       "name": "chat_role",
       "schema": "public",
-      "values": ["user", "assistant"]
+      "values": [
+        "user",
+        "assistant"
+      ]
     },
     "public.account_type": {
       "name": "account_type",
       "schema": "public",
-      "values": ["client", "advisor"]
+      "values": [
+        "client",
+        "advisor"
+      ]
     },
     "public.application_status": {
       "name": "application_status",
@@ -3133,12 +3491,20 @@
     "public.client_status": {
       "name": "client_status",
       "schema": "public",
-      "values": ["draft", "active", "archived"]
+      "values": [
+        "draft",
+        "active",
+        "archived"
+      ]
     },
     "public.communication_preference": {
       "name": "communication_preference",
       "schema": "public",
-      "values": ["email", "phone", "sms"]
+      "values": [
+        "email",
+        "phone",
+        "sms"
+      ]
     },
     "public.debt_type": {
       "name": "debt_type",
@@ -3169,7 +3535,11 @@
     "public.household_status": {
       "name": "household_status",
       "schema": "public",
-      "values": ["single", "partnered", "family"]
+      "values": [
+        "single",
+        "partnered",
+        "family"
+      ]
     },
     "public.insurance_need_type": {
       "name": "insurance_need_type",
@@ -3180,6 +3550,16 @@
         "debt_coverage",
         "succession",
         "other"
+      ]
+    },
+    "public.letter_job_status": {
+      "name": "letter_job_status",
+      "schema": "public",
+      "values": [
+        "queued",
+        "processing",
+        "completed",
+        "failed"
       ]
     },
     "public.life_event_type": {
@@ -3196,7 +3576,13 @@
     "public.policy_status": {
       "name": "policy_status",
       "schema": "public",
-      "values": ["active", "lapsed", "surrendered", "paid_up", "pending"]
+      "values": [
+        "active",
+        "lapsed",
+        "surrendered",
+        "paid_up",
+        "pending"
+      ]
     },
     "public.policy_type": {
       "name": "policy_type",
@@ -3223,7 +3609,10 @@
     "public.sex": {
       "name": "sex",
       "schema": "public",
-      "values": ["M", "F"]
+      "values": [
+        "M",
+        "F"
+      ]
     },
     "public.state": {
       "name": "state",

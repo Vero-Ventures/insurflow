@@ -1,0 +1,15 @@
+app = "insurflow-letter-worker"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  GEMINI_MODEL = "gemini-2.5-flash"
+  POLL_INTERVAL = "2s"
+
+[processes]
+  app = "/letter-worker"
+
+[experimental]
+  auto_rollback = true

@@ -32,11 +32,27 @@ interface AISummaryCardProps {
 }
 
 interface GenerateLetterResponse {
+  jobId: string;
+  status: string;
+  pollUrl: string;
+}
+
+interface CompletedLetterResponse {
   letter: string;
   generatedAt: string;
   model: string;
-  clientName: string;
 }
+
+interface LetterJobStatusResponse {
+  jobId: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  letter: string | null;
+  generatedAt: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+
+const MAX_POLL_ATTEMPTS = 120;
 
 interface GenerateLetterError {
   error: string;
@@ -62,6 +78,7 @@ export function AISummaryCard({
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
 
   // Cleanup on unmount
@@ -71,7 +88,63 @@ export function AISummaryCard({
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+      }
     };
+  }, []);
+
+  const pollLetterJob = useCallback(async (pollUrl: string, attempt = 0) => {
+    pollTimeoutRef.current = null;
+
+    if (attempt >= MAX_POLL_ATTEMPTS) {
+      throw new Error("Letter generation timed out. Please try again.");
+    }
+
+    const response = await fetch(pollUrl, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    const data = (await response.json()) as
+      | LetterJobStatusResponse
+      | GenerateLetterError;
+
+    if (!response.ok) {
+      const errorData = data as GenerateLetterError;
+      throw new Error(
+        errorData.message || errorData.error || "Failed to fetch letter status",
+      );
+    }
+
+    const job = data as LetterJobStatusResponse;
+
+    if (job.status === "completed") {
+      if (!isMountedRef.current) return;
+      setLetter(job.letter);
+      setEditedLetter(job.letter ?? "");
+      setGeneratedAt(job.generatedAt);
+      setIsEditing(false);
+      setIsGenerating(false);
+      toast.success("Letter generated successfully");
+      return;
+    }
+
+    if (job.status === "failed") {
+      throw new Error(job.errorMessage || "Failed to generate letter");
+    }
+
+    pollTimeoutRef.current = setTimeout(() => {
+      void pollLetterJob(pollUrl, attempt + 1).catch((error: unknown) => {
+        pollTimeoutRef.current = null;
+        if (!isMountedRef.current) return;
+        const message =
+          error instanceof Error ? error.message : "Failed to generate letter";
+        setError(message);
+        setIsGenerating(false);
+        toast.error(message);
+      });
+    }, 1000);
   }, []);
 
   const generateLetter = useCallback(async () => {
@@ -99,6 +172,7 @@ export function AISummaryCard({
 
       const data = (await response.json()) as
         | GenerateLetterResponse
+        | CompletedLetterResponse
         | GenerateLetterError;
 
       if (!response.ok) {
@@ -108,7 +182,12 @@ export function AISummaryCard({
         );
       }
 
-      const successData = data as GenerateLetterResponse;
+      if ("pollUrl" in data) {
+        await pollLetterJob(data.pollUrl);
+        return;
+      }
+
+      const successData = data as CompletedLetterResponse;
       setLetter(successData.letter);
       setEditedLetter(successData.letter);
       setGeneratedAt(successData.generatedAt);
@@ -121,9 +200,11 @@ export function AISummaryCard({
       setError(message);
       toast.error(message);
     } finally {
-      setIsGenerating(false);
+      if (!pollTimeoutRef.current) {
+        setIsGenerating(false);
+      }
     }
-  }, [clientId, demoLetter]);
+  }, [clientId, demoLetter, pollLetterJob]);
 
   const handleRegenerate = useCallback(async () => {
     if (letter && editedLetter !== letter) {
