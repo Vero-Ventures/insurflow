@@ -18,6 +18,9 @@ import {
   GEMINI_MODEL,
 } from "@/server/ai";
 
+const LETTER_GENERATION_TEMPERATURE = "0.7";
+const LETTER_GENERATION_MAX_OUTPUT_TOKENS = 2048;
+
 /**
  * POST /api/clients/[id]/generate-letter - Generate a "Reasons Why" letter using AI
  *
@@ -42,19 +45,6 @@ export const POST = withApiHandler(
     requireClient: true,
   },
   async (_request, { logger, clientId, session }) => {
-    // Check if Gemini is configured
-    if (!isGeminiConfigured()) {
-      await logger.warn("Gemini API not configured", { statusCode: 503 });
-      return NextResponse.json(
-        {
-          error: "AI service not configured",
-          message:
-            "The AI letter generation service is not available. Please contact support.",
-        },
-        { status: 503 },
-      );
-    }
-
     const db = getDb();
 
     // Fetch client data
@@ -159,11 +149,23 @@ export const POST = withApiHandler(
     const workerEnabled = process.env.LETTER_WORKER_ENABLED === "true";
 
     if (!workerEnabled) {
+      if (!isGeminiConfigured()) {
+        await logger.warn("Gemini API not configured", { statusCode: 503 });
+        return NextResponse.json(
+          {
+            error: "AI service not configured",
+            message:
+              "The AI letter generation service is not available. Please contact support.",
+          },
+          { status: 503 },
+        );
+      }
+
       try {
         const letter = await generateText({
           prompt,
-          temperature: 0.7,
-          maxOutputTokens: 2048,
+          temperature: Number(LETTER_GENERATION_TEMPERATURE),
+          maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
         });
 
         await logger.info("Letter generated synchronously", {
@@ -204,6 +206,8 @@ export const POST = withApiHandler(
       userId: session.user.id,
       prompt,
       model: GEMINI_MODEL,
+      temperature: LETTER_GENERATION_TEMPERATURE,
+      maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
     });
 
     await logger.info("Letter generation queued", {

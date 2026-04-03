@@ -39,6 +39,8 @@ describe("letterGenerationJob table", () => {
       "max_attempts",
       "prompt",
       "model",
+      "temperature",
+      "max_output_tokens",
       "result_letter",
       "result_generated_at",
       "error_code",
@@ -71,9 +73,11 @@ describe("letterGenerationJob table", () => {
     expect(columns.maxAttempts.default).toBe(3);
   });
 
-  it("stores prompt and model as required fields", () => {
+  it("stores generation inputs as required fields", () => {
     expect(columns.prompt.notNull).toBe(true);
     expect(columns.model.notNull).toBe(true);
+    expect(columns.temperature.notNull).toBe(true);
+    expect(columns.maxOutputTokens.notNull).toBe(true);
   });
 
   it("keeps result and failure fields nullable until processing finishes", () => {

@@ -10,6 +10,7 @@ import (
 type fakeRepository struct {
 	claimJob      *Job
 	claimErr      error
+	completedErr  error
 	completedJob  string
 	completedText string
 	completedTry  int
@@ -36,7 +37,7 @@ func (f *fakeRepository) MarkCompleted(
 	f.completedJob = jobID
 	f.completedTry = attempt
 	f.completedText = letter
-	return nil
+	return f.completedErr
 }
 
 func (f *fakeRepository) MarkFailed(
@@ -68,11 +69,15 @@ func (f *fakeRepository) MarkRetryableFailure(
 }
 
 type fakeClient struct {
-	text string
-	err  error
+	text            string
+	err             error
+	temperature     float32
+	maxOutputTokens int
 }
 
-func (f *fakeClient) GenerateText(_ context.Context, _ string, _ string) (string, error) {
+func (f *fakeClient) GenerateText(_ context.Context, _ string, _ string, temperature float32, maxOutputTokens int) (string, error) {
+	f.temperature = temperature
+	f.maxOutputTokens = maxOutputTokens
 	return f.text, f.err
 }
 
@@ -91,9 +96,10 @@ func TestProcessNextJobReturnsFalseWhenQueueIsEmpty(t *testing.T) {
 
 func TestProcessNextJobMarksCompletedJobs(t *testing.T) {
 	repo := &fakeRepository{
-		claimJob: &Job{ID: "job-1", Prompt: "prompt", Model: "gemini-2.5-flash", Attempts: 1, MaxAttempts: 3},
+		claimJob: &Job{ID: "job-1", Prompt: "prompt", Model: "gemini-2.5-flash", Temperature: 0.7, MaxOutputTokens: 2048, Attempts: 1, MaxAttempts: 3},
 	}
-	processor := NewProcessor(repo, &fakeClient{text: "done"})
+	client := &fakeClient{text: "done"}
+	processor := NewProcessor(repo, client)
 
 	processed, err := processor.ProcessNextJob(context.Background())
 	if err != nil {
@@ -111,6 +117,12 @@ func TestProcessNextJobMarksCompletedJobs(t *testing.T) {
 	if repo.completedTry != 1 {
 		t.Fatalf("expected completion to be fenced to attempt 1, got %d", repo.completedTry)
 	}
+	if client.temperature != 0.7 {
+		t.Fatalf("expected worker to reuse queued temperature, got %v", client.temperature)
+	}
+	if client.maxOutputTokens != 2048 {
+		t.Fatalf("expected worker to reuse queued max output tokens, got %d", client.maxOutputTokens)
+	}
 	if repo.failedJob != "" {
 		t.Fatalf("did not expect failed job marker, got %q", repo.failedJob)
 	}
@@ -118,7 +130,7 @@ func TestProcessNextJobMarksCompletedJobs(t *testing.T) {
 
 func TestProcessNextJobMarksFailedJobs(t *testing.T) {
 	repo := &fakeRepository{
-		claimJob: &Job{ID: "job-2", Prompt: "prompt", Model: "gemini-2.5-flash", Attempts: 3, MaxAttempts: 3},
+		claimJob: &Job{ID: "job-2", Prompt: "prompt", Model: "gemini-2.5-flash", Temperature: 0.7, MaxOutputTokens: 2048, Attempts: 3, MaxAttempts: 3},
 	}
 	processor := NewProcessor(repo, &fakeClient{err: errors.New("boom")})
 
@@ -142,7 +154,7 @@ func TestProcessNextJobMarksFailedJobs(t *testing.T) {
 
 func TestProcessNextJobRequeuesRetryableFailures(t *testing.T) {
 	repo := &fakeRepository{
-		claimJob: &Job{ID: "job-3", Prompt: "prompt", Model: "gemini-2.5-flash", Attempts: 1, MaxAttempts: 3},
+		claimJob: &Job{ID: "job-3", Prompt: "prompt", Model: "gemini-2.5-flash", Temperature: 0.7, MaxOutputTokens: 2048, Attempts: 1, MaxAttempts: 3},
 	}
 	processor := NewProcessor(repo, &fakeClient{err: errors.New("temporary")})
 
@@ -161,5 +173,21 @@ func TestProcessNextJobRequeuesRetryableFailures(t *testing.T) {
 	}
 	if repo.failedJob != "" {
 		t.Fatalf("did not expect terminal failure marker, got %q", repo.failedJob)
+	}
+}
+
+func TestProcessNextJobReturnsErrorWhenCompletionLeaseIsLost(t *testing.T) {
+	repo := &fakeRepository{
+		claimJob:     &Job{ID: "job-4", Prompt: "prompt", Model: "gemini-2.5-flash", Temperature: 0.7, MaxOutputTokens: 2048, Attempts: 1, MaxAttempts: 3},
+		completedErr: errors.New("stale lease"),
+	}
+	processor := NewProcessor(repo, &fakeClient{text: "done"})
+
+	processed, err := processor.ProcessNextJob(context.Background())
+	if err == nil {
+		t.Fatalf("expected completion error")
+	}
+	if !processed {
+		t.Fatalf("expected a job to be processed")
 	}
 }

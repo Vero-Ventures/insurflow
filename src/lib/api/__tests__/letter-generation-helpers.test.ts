@@ -22,6 +22,8 @@ function createJob(
     maxAttempts: 3,
     prompt: "prompt",
     model: "gemini-2.5-flash",
+    temperature: "0.7",
+    maxOutputTokens: 2048,
     resultLetter: null,
     resultGeneratedAt: null,
     errorCode: null,
@@ -69,6 +71,8 @@ describe("letter generation helpers", () => {
       userId: TEST_USER_ID,
       prompt: "hello world",
       model: "gemini-2.5-flash",
+      temperature: "0.7",
+      maxOutputTokens: 2048,
     });
 
     expect(mockInsert).toHaveBeenCalledTimes(1);
@@ -79,6 +83,8 @@ describe("letter generation helpers", () => {
         status: "queued",
         prompt: "hello world",
         model: "gemini-2.5-flash",
+        temperature: "0.7",
+        maxOutputTokens: 2048,
       }),
     );
     expect(result).toEqual(queuedJob);

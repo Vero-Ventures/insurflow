@@ -9,6 +9,7 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -35,6 +36,8 @@ export const letterGenerationJob = pgTable(
     maxAttempts: integer("max_attempts").notNull().default(3),
     prompt: text("prompt").notNull(),
     model: text("model").notNull(),
+    temperature: numeric("temperature", { precision: 3, scale: 2 }).notNull(),
+    maxOutputTokens: integer("max_output_tokens").notNull(),
     resultLetter: text("result_letter"),
     resultGeneratedAt: timestamp("result_generated_at", { withTimezone: true }),
     errorCode: text("error_code"),

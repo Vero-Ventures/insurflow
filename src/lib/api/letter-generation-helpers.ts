@@ -8,6 +8,8 @@ interface EnqueueLetterGenerationJobInput {
   userId: string;
   prompt: string;
   model: string;
+  temperature: string;
+  maxOutputTokens: number;
 }
 
 interface FindLetterGenerationJobInput {
@@ -28,6 +30,8 @@ export async function enqueueLetterGenerationJob(
       status: "queued",
       prompt: input.prompt,
       model: input.model,
+      temperature: input.temperature,
+      maxOutputTokens: input.maxOutputTokens,
     })
     .returning();
 

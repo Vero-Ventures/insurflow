@@ -7,11 +7,13 @@ import (
 )
 
 type Job struct {
-	ID          string
-	Prompt      string
-	Model       string
-	Attempts    int
-	MaxAttempts int
+	ID              string
+	Prompt          string
+	Model           string
+	Temperature     float32
+	MaxOutputTokens int
+	Attempts        int
+	MaxAttempts     int
 }
 
 type Repository interface {
@@ -22,7 +24,7 @@ type Repository interface {
 }
 
 type Generator interface {
-	GenerateText(ctx context.Context, prompt string, model string) (string, error)
+	GenerateText(ctx context.Context, prompt string, model string, temperature float32, maxOutputTokens int) (string, error)
 }
 
 type Processor struct {
@@ -43,7 +45,13 @@ func (p *Processor) ProcessNextJob(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	letter, err := p.generator.GenerateText(ctx, job.Prompt, job.Model)
+	letter, err := p.generator.GenerateText(
+		ctx,
+		job.Prompt,
+		job.Model,
+		job.Temperature,
+		job.MaxOutputTokens,
+	)
 	if err != nil {
 		if job.Attempts < job.MaxAttempts {
 			markErr := p.repo.MarkRetryableFailure(

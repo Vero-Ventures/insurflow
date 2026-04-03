@@ -13,6 +13,8 @@ import (
 
 const processingLeaseTimeout = 15 * time.Minute
 
+var ErrStaleLease = errors.New("stale job lease")
+
 type Repository struct {
 	pool *pgxpool.Pool
 }
@@ -55,7 +57,7 @@ set status = 'processing',
 	updated_at = now()
 from next_job
 where job.id = next_job.id
-returning job.id, job.prompt, job.model, job.attempts, job.max_attempts
+returning job.id, job.prompt, job.model, job.temperature::float4, job.max_output_tokens, job.attempts, job.max_attempts
 `
 
 	var job jobs.Job
@@ -63,6 +65,8 @@ returning job.id, job.prompt, job.model, job.attempts, job.max_attempts
 		&job.ID,
 		&job.Prompt,
 		&job.Model,
+		&job.Temperature,
+		&job.MaxOutputTokens,
 		&job.Attempts,
 		&job.MaxAttempts,
 	)
@@ -77,7 +81,7 @@ returning job.id, job.prompt, job.model, job.attempts, job.max_attempts
 }
 
 func (r *Repository) MarkCompleted(ctx context.Context, jobID string, attempt int, letter string, generatedAt time.Time) error {
-	_, err := r.pool.Exec(ctx, `
+	tag, err := r.pool.Exec(ctx, `
 update letter_generation_job
 set status = 'completed',
 	result_letter = $2,
@@ -90,11 +94,17 @@ where id = $1
 	and status = 'processing'
 	and attempts = $4
 `, jobID, letter, generatedAt, attempt)
-	return err
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrStaleLease
+	}
+	return nil
 }
 
 func (r *Repository) MarkFailed(ctx context.Context, jobID string, attempt int, errorCode string, errorMessage string) error {
-	_, err := r.pool.Exec(ctx, `
+	tag, err := r.pool.Exec(ctx, `
 update letter_generation_job
 set status = 'failed',
 	error_code = $2,
@@ -105,11 +115,17 @@ where id = $1
 	and status = 'processing'
 	and attempts = $4
 `, jobID, errorCode, errorMessage, attempt)
-	return err
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrStaleLease
+	}
+	return nil
 }
 
 func (r *Repository) MarkRetryableFailure(ctx context.Context, jobID string, attempt int, errorCode string, errorMessage string) error {
-	_, err := r.pool.Exec(ctx, `
+	tag, err := r.pool.Exec(ctx, `
 update letter_generation_job
 set status = 'queued',
 	error_code = $2,
@@ -120,5 +136,11 @@ where id = $1
 	and status = 'processing'
 	and attempts = $4
 `, jobID, errorCode, errorMessage, attempt)
-	return err
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrStaleLease
+	}
+	return nil
 }

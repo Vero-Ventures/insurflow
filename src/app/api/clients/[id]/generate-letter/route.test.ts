@@ -81,9 +81,8 @@ vi.mock("@/lib/api/letter-generation-helpers", () => ({
 }));
 
 vi.mock("@/lib/financial/insurance-needs", async () => {
-  const actual = await vi.importActual("@/lib/financial/insurance-needs");
   return {
-    ...actual,
+    DEFAULT_ESTATE_BUFFER: 15000,
     calculateInsuranceNeedsRounded: calculateInsuranceNeedsRoundedMock,
   };
 });
@@ -99,7 +98,7 @@ vi.mock("@/server/ai", () => ({
 describe("POST /api/clients/[id]/generate-letter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("LETTER_WORKER_ENABLED", "true");
+    process.env.LETTER_WORKER_ENABLED = "true";
 
     let selectCall = 0;
     const selectResults = [
@@ -161,17 +160,18 @@ describe("POST /api/clients/[id]/generate-letter", () => {
       params: Promise.resolve({ id: "550e8400-e29b-41d4-a716-446655440001" }),
     });
     const body = await response.json();
+    const [, enqueueInput] = enqueueLetterGenerationJobMock.mock.calls[0] ?? [];
 
     expect(response.status).toBe(202);
-    expect(enqueueLetterGenerationJobMock).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        clientId: "550e8400-e29b-41d4-a716-446655440001",
-        userId: "user-123",
-        prompt: "PROMPT",
-        model: "gemini-2.5-flash",
-      }),
-    );
+    expect(enqueueLetterGenerationJobMock).toHaveBeenCalledTimes(1);
+    expect(enqueueInput).toMatchObject({
+      clientId: "550e8400-e29b-41d4-a716-446655440001",
+      userId: "user-123",
+      prompt: "PROMPT",
+      model: "gemini-2.5-flash",
+      temperature: "0.7",
+      maxOutputTokens: 2048,
+    });
     expect(body).toEqual({
       jobId: "550e8400-e29b-41d4-a716-446655440099",
       status: "queued",
@@ -180,7 +180,7 @@ describe("POST /api/clients/[id]/generate-letter", () => {
     });
   });
 
-  it("returns 503 when Gemini is not configured", async () => {
+  it("still queues when worker mode is enabled and Gemini is not configured in the app", async () => {
     isGeminiConfiguredMock.mockReturnValue(false);
 
     const { POST } = await import("./route");
@@ -189,12 +189,12 @@ describe("POST /api/clients/[id]/generate-letter", () => {
       params: Promise.resolve({ id: "550e8400-e29b-41d4-a716-446655440001" }),
     });
 
-    expect(response.status).toBe(503);
-    expect(enqueueLetterGenerationJobMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(202);
+    expect(enqueueLetterGenerationJobMock).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to synchronous generation when worker mode is disabled", async () => {
-    vi.stubEnv("LETTER_WORKER_ENABLED", "false");
+    process.env.LETTER_WORKER_ENABLED = "false";
 
     const { POST } = await import("./route");
 
@@ -209,5 +209,20 @@ describe("POST /api/clients/[id]/generate-letter", () => {
     );
     expect(enqueueLetterGenerationJobMock).not.toHaveBeenCalled();
     expect(body.letter).toBe("Sync letter");
+  });
+
+  it("returns 503 in sync mode when Gemini is not configured", async () => {
+    process.env.LETTER_WORKER_ENABLED = "false";
+    isGeminiConfiguredMock.mockReturnValue(false);
+
+    const { POST } = await import("./route");
+
+    const response = await POST(new Request("http://localhost/api/test"), {
+      params: Promise.resolve({ id: "550e8400-e29b-41d4-a716-446655440001" }),
+    });
+
+    expect(response.status).toBe(503);
+    expect(generateTextMock).not.toHaveBeenCalled();
+    expect(enqueueLetterGenerationJobMock).not.toHaveBeenCalled();
   });
 });

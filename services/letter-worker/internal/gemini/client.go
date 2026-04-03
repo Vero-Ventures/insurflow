@@ -23,11 +23,15 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
-func (c *Client) GenerateText(ctx context.Context, prompt string, model string) (string, error) {
+func (c *Client) GenerateText(ctx context.Context, prompt string, model string, temperature float32, maxOutputTokens int) (string, error) {
 	requestBody := map[string]any{
 		"contents": []map[string]any{{
 			"parts": []map[string]string{{"text": prompt}},
 		}},
+		"generationConfig": map[string]any{
+			"temperature":     temperature,
+			"maxOutputTokens": maxOutputTokens,
+		},
 	}
 
 	payload, err := json.Marshal(requestBody)
