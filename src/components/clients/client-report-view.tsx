@@ -1,56 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import {
-  User,
-  Calendar,
-  MapPin,
-  Heart,
-  Cigarette,
-  FileText,
-  Download,
-  DollarSign,
-  Clock,
-  Shield,
-  ClipboardCheck,
-} from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import type { Client } from "@/types/client";
 import type { Asset } from "@/types/asset";
 import type { Debt } from "@/types/debt";
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
-import {
-  calculateAge,
-  calculateAssetTotals,
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-} from "@/lib/client-utils";
+import { calculateAssetTotals } from "@/lib/client-utils";
 import { useInsuranceNeeds } from "@/lib/hooks/use-insurance-needs";
-import {
-  InsuranceNeedsCard,
-  InsuranceNeedsChart,
-} from "@/components/clients/insurance-needs";
-import { AssetsSummary } from "@/components/clients/assets-summary";
-import { DebtsSummary } from "@/components/clients/debts-summary";
 import { AISummaryCard } from "@/components/clients/ai-summary-card";
-import { NetWorthProjectionChart } from "@/components/clients/charts/net-worth-projection-chart";
-import { TaxBurdenChart } from "@/components/clients/charts/tax-burden-chart";
-import { LiquidityAnalysisChart } from "@/components/clients/charts/liquidity-analysis-chart";
-import { BeneficiaryDistributionChart } from "@/components/clients/charts/beneficiary-distribution-chart";
-import { AssetDiversificationChart } from "@/components/clients/charts/asset-diversification-chart";
-import { DebtAmortizationChart } from "@/components/clients/charts/debt-amortization-chart";
-import { GoalsProgressChart } from "@/components/clients/charts/goals-progress-chart";
+import {
+  ClientReportAnalysisSection,
+  ClientReportFinancialInputsSection,
+  ClientReportFooter,
+  ClientReportHeader,
+  ClientReportInsuranceSection,
+  ClientReportNetWorthSection,
+  ClientReportPdfTrigger,
+  ClientReportProfileSection,
+} from "@/components/clients/report";
 
 /** Default settling costs fallback when no insurance result is available */
 const DEFAULT_SETTLING_COSTS = 15000;
@@ -246,397 +217,77 @@ export function ClientReportView({
     }
   };
 
-  // Generate initials for avatar
-  const initials =
-    `${client.firstName.charAt(0)}${client.lastName.charAt(0)}`.toUpperCase();
-
   return (
     <div className="space-y-8 print:space-y-4">
-      {/* Report Header */}
-      <Card className="border-border/60 overflow-hidden py-0 shadow-sm print:border-gray-300 print:shadow-none">
-        {/* Use explicit deep navy color for consistent branding across themes */}
-        <div className="relative bg-[oklch(0.35_0.08_250)] px-6 py-6 print:bg-gray-100">
-          {/* Decorative elements */}
-          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-white/5 blur-xl" />
-          <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/5 blur-xl" />
+      <ClientReportHeader
+        client={client}
+        isDemo={isDemo}
+        generatedAt={new Date().toISOString()}
+        showPdfTrigger={!!pdfDownloadUrl}
+        pdfTrigger={
+          pdfDownloadUrl ? (
+            <ClientReportPdfTrigger
+              isDownloading={isDownloadingPdf}
+              onDownload={handleDownloadPdf}
+              label="Download PDF"
+              loadingLabel="Preparing PDF..."
+            />
+          ) : undefined
+        }
+        complianceTrigger={
+          !isDemo ? (
+            <ClientReportPdfTrigger
+              isDownloading={isDownloadingPacket}
+              onDownload={handleDownloadCompliancePacket}
+              label="Compliance Packet"
+              loadingLabel="Preparing Packet..."
+              icon={<ClipboardCheck className="mr-2 h-4 w-4" />}
+            />
+          ) : undefined
+        }
+      />
 
-          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-4">
-              {/* Client avatar */}
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-xl font-semibold text-white backdrop-blur-sm">
-                {initials}
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <h2 className="font-display text-2xl font-semibold tracking-tight text-white print:text-xl print:text-gray-900">
-                    {client.firstName} {client.lastName}
-                  </h2>
-                  {isDemo && (
-                    <Badge
-                      variant="secondary"
-                      className="border-white/20 bg-white/10 text-white"
-                    >
-                      Demo
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-white/70 print:text-gray-600">
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5" />
-                    Financial Needs Analysis
-                  </span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" />
-                    {formatDateTime(new Date().toISOString())}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2 print:hidden">
-              {pdfDownloadUrl && (
-                <Button
-                  onClick={handleDownloadPdf}
-                  disabled={isDownloadingPdf}
-                  variant="secondary"
-                  className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
-                </Button>
-              )}
-              {!isDemo && (
-                <Button
-                  onClick={handleDownloadCompliancePacket}
-                  disabled={isDownloadingPacket}
-                  variant="secondary"
-                  className="border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
-                >
-                  <ClipboardCheck className="mr-2 h-4 w-4" />
-                  {isDownloadingPacket
-                    ? "Preparing Packet..."
-                    : "Compliance Packet"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ClientReportProfileSection client={client} />
 
-      {/* Client Profile */}
-      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
-        <CardHeader className="pb-4 print:pb-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <User className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Client Profile</CardTitle>
-              <CardDescription>
-                Personal and demographic information
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3 print:grid-cols-3">
-            <div className="flex items-start gap-3">
-              <Calendar className="text-muted-foreground mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-muted-foreground text-sm">Age</p>
-                <p className="font-medium">
-                  {calculateAge(client.dateOfBirth)} years
-                  <span className="text-muted-foreground ml-1 text-sm font-normal">
-                    (DOB: {formatDate(client.dateOfBirth)})
-                  </span>
-                </p>
-              </div>
-            </div>
+      <ClientReportFinancialInputsSection client={client} />
 
-            <div className="flex items-start gap-3">
-              <MapPin className="text-muted-foreground mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-muted-foreground text-sm">State</p>
-                <p className="font-medium tracking-wide uppercase">
-                  {client.state}
-                </p>
-              </div>
-            </div>
+      <ClientReportNetWorthSection
+        assets={assets}
+        debts={debts}
+        totalAssets={totalAssets}
+        isLoadingData={isLoadingData}
+      />
 
-            <div className="flex items-start gap-3">
-              <User className="text-muted-foreground mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-muted-foreground text-sm">Sex</p>
-                <p className="font-medium">
-                  {client.sex === "M"
-                    ? "Male"
-                    : client.sex === "F"
-                      ? "Female"
-                      : "Not specified"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Cigarette className="text-muted-foreground mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-muted-foreground text-sm">Smoker Status</p>
-                <Badge
-                  variant={client.smoker ? "destructive" : "outline"}
-                  className={
-                    client.smoker
-                      ? ""
-                      : "border-emerald/30 bg-emerald/5 text-emerald"
-                  }
-                >
-                  {client.smoker ? "Smoker" : "Non-Smoker"}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Heart className="text-muted-foreground mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-muted-foreground text-sm">Health Rating</p>
-                <Badge variant="outline" className="capitalize">
-                  {client.healthRating || "Standard"}
-                </Badge>
-              </div>
-            </div>
-
-            {client.hasSpouse && (
-              <div className="flex items-start gap-3">
-                <User className="text-muted-foreground mt-0.5 h-4 w-4" />
-                <div>
-                  <p className="text-muted-foreground text-sm">Spouse Age</p>
-                  <p className="font-medium">
-                    {client.spouseAge
-                      ? `${client.spouseAge} years`
-                      : "Not specified"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Financial Inputs Summary */}
-      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
-        <CardHeader className="pb-4 print:pb-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <DollarSign className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Financial Inputs</CardTitle>
-              <CardDescription>
-                Income and insurance planning parameters
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
-              <p className="text-muted-foreground text-sm">
-                Client Annual Income
-              </p>
-              <p className="font-currency mt-1 text-xl font-semibold">
-                {formatCurrency(parseFloat(client.clientIncome || "0") || 0)}
-              </p>
-            </div>
-
-            {client.spouseIncome && parseFloat(client.spouseIncome) > 0 && (
-              <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
-                <p className="text-muted-foreground text-sm">
-                  Spouse Annual Income
-                </p>
-                <p className="font-currency mt-1 text-xl font-semibold">
-                  {formatCurrency(parseFloat(client.spouseIncome) || 0)}
-                </p>
-              </div>
-            )}
-
-            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
-              <p className="text-muted-foreground text-sm">
-                Income Replacement
-              </p>
-              <p className="font-currency mt-1 text-xl font-semibold">
-                {client.incomeReplacementPercent || "70"}%
-              </p>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                for {client.replacementDurationYears || 10} years
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4 print:p-2">
-              <p className="text-muted-foreground text-sm">
-                Existing Life Insurance
-              </p>
-              <p className="font-currency mt-1 text-xl font-semibold">
-                {formatCurrency(
-                  parseFloat(client.existingLifeInsuranceCoverage || "0") || 0,
-                )}
-              </p>
-            </div>
-          </div>
-
-          {client.additionalGoals && (
-            <div className="border-border/60 mt-6 border-t pt-4">
-              <p className="text-muted-foreground mb-2 text-sm font-medium">
-                Additional Goals & Notes
-              </p>
-              <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                {client.additionalGoals}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Assets & Debts Summary */}
-      <Card className="border-border/60 shadow-sm print:border-gray-300 print:shadow-none">
-        <CardHeader className="pb-4 print:pb-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 flex h-10 w-10 items-center justify-center rounded-lg">
-              <Shield className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Net Worth Summary</CardTitle>
-              <CardDescription>
-                Assets, liabilities, and net position
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoadingData ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Skeleton className="h-24" />
-              <Skeleton className="h-24" />
-            </div>
-          ) : (
-            <>
-              <AssetsSummary items={assets} />
-              <DebtsSummary items={debts} totalAssets={totalAssets} />
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Insurance Needs Analysis */}
-      <div className="print:break-before-page">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="bg-emerald h-1 w-1 rounded-full" />
-          <h3 className="font-display text-foreground text-xl font-semibold tracking-tight print:text-base">
-            Insurance Needs Analysis
-          </h3>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-2 print:block print:space-y-4">
-          <InsuranceNeedsCard
-            result={insuranceResult}
-            confidence={isDemo ? null : insuranceConfidence}
-            isLoading={!isDemo && isInsuranceLoading}
-            error={isDemo ? null : insuranceError}
-            onRecalculate={isDemo ? undefined : recalculateInsurance}
-            calculatedAt={
-              isDemo ? new Date().toISOString() : insuranceCalculatedAt
-            }
-            isReadOnly={isDemo}
-            clientStateCode={client.state}
-          />
-          <InsuranceNeedsChart
-            result={insuranceResult}
-            isLoading={!isDemo && isInsuranceLoading}
-          />
-        </div>
-      </div>
+      <ClientReportInsuranceSection
+        insuranceResult={insuranceResult ?? null}
+        insuranceConfidence={isDemo ? null : insuranceConfidence}
+        isDemo={isDemo}
+        isInsuranceLoading={isInsuranceLoading}
+        insuranceError={isDemo ? null : insuranceError}
+        recalculateInsurance={isDemo ? undefined : recalculateInsurance}
+        insuranceCalculatedAt={
+          isDemo ? new Date().toISOString() : insuranceCalculatedAt
+        }
+        clientStateCode={client.state}
+      />
 
       {/* AI Recommendation Letter */}
       <div className="print:break-before-page">
         <AISummaryCard clientId={clientId} demoLetter={demoLetter} />
       </div>
 
-      {/* Interactive Charts Section */}
-      <div className="space-y-6 print:hidden">
-        <h3 className="font-display text-foreground text-xl font-semibold tracking-tight">
-          Financial Analysis & Projections
-        </h3>
+      <ClientReportAnalysisSection
+        assets={assets}
+        debts={debts}
+        client={client}
+        totalAssets={totalAssets}
+        totalDebts={totalDebts}
+        settlingCosts={
+          insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
+        }
+      />
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <NetWorthProjectionChart
-            assets={assets}
-            debts={debts}
-            clientIncome={Number(client.clientIncome || 0)}
-          />
-
-          <TaxBurdenChart assets={assets} state={client.state} />
-        </div>
-
-        <LiquidityAnalysisChart
-          assets={assets}
-          debts={debts}
-          settlingCosts={
-            insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
-          }
-        />
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <AssetDiversificationChart assets={assets} />
-
-          <BeneficiaryDistributionChart
-            assets={assets}
-            debts={totalDebts}
-            settlingCosts={
-              insuranceResult?.estateBufferNeeds || DEFAULT_SETTLING_COSTS
-            }
-          />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <DebtAmortizationChart debts={debts} />
-
-          <GoalsProgressChart
-            goals={[
-              {
-                name: "Children's Education",
-                targetAmount: 100000,
-                currentFunding: client.clientIncome
-                  ? Number(client.clientIncome) * 0.1
-                  : 0,
-              },
-              {
-                name: "Retirement Savings",
-                targetAmount: 2000000,
-                currentFunding: totalAssets * 0.6,
-              },
-              {
-                name: "Emergency Fund",
-                targetAmount: 50000,
-                currentFunding: assets
-                  .filter((a) =>
-                    ["checking", "savings", "emergency_fund"].includes(a.type),
-                  )
-                  .reduce((sum, a) => sum + (Number(a.currentValue) || 0), 0),
-              },
-            ]}
-          />
-        </div>
-      </div>
-
-      {/* Report Footer */}
-      <div className="border-border/60 text-muted-foreground border-t pt-6 text-sm print:pt-2">
-        <p className="leading-relaxed">
-          This report is generated for informational purposes only and should
-          not be considered financial advice. Please consult with a licensed
-          insurance professional for personalized recommendations.
-        </p>
-        <p className="mt-3 font-mono text-xs">
-          Report ID: {clientId} | Last Updated:{" "}
-          {formatDateTime(client.updatedAt)}
-        </p>
-      </div>
+      <ClientReportFooter clientId={clientId} updatedAt={client.updatedAt} />
     </div>
   );
 }
