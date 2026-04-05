@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { z } from "zod";
+import { captureAnalyticsEvent } from "@/lib/analytics/capture";
 import { clientFormSchema, type FormState } from "./schema";
 
 interface UseClientFormOptions {
@@ -119,6 +120,10 @@ export function useClientForm(
     optimisticId: string | undefined,
     createdClient: unknown,
   ) => {
+    captureAnalyticsEvent("client_created", {
+      hasDependents: false,
+      source: "clients.create-dialog",
+    });
     toast.success("Client created successfully");
     resetForm();
     router.refresh();
@@ -136,6 +141,9 @@ export function useClientForm(
   const handleError = (error: unknown, optimisticId: string | undefined) => {
     const message =
       error instanceof Error ? error.message : "Failed to create client";
+    captureAnalyticsEvent("client_create_failed", {
+      source: "clients.create-dialog",
+    });
     toast.error(message);
 
     if (optimisticId && options?.onOptimisticError) {

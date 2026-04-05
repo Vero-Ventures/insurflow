@@ -76,6 +76,14 @@ It also still contains some legacy advisor-first surfaces that should now be tre
 - Tailwind CSS v4 + shadcn/ui + Recharts
 - Bun runtime and scripts
 
+## Observability
+
+- `Axiom` handles structured server logs for API, webhook, auth, and AI flows.
+- `PostHog` handles product analytics and funnel visibility.
+- `Grafana Cloud` receives managed metrics and traces for API reliability dashboards and alerting.
+
+Observability must stay privacy-safe: do not send insurance application answers, health disclosures, DOB, income, coverage amounts, or freeform prompts to analytics vendors.
+
 ## Local Development
 
 1. Install dependencies: `bun install`
@@ -103,6 +111,7 @@ Useful commands:
 ## Documentation Index
 
 - Active product direction and scope: `docs/product-direction-alignment.md`
+- Observability runbook: `docs/observability.md`
 - Marketing and audience context: `.agents/product-marketing-context.md`
 - Archived PRD (previous direction): `docs/PRD-InsurFlow-v2.md`
 - Archived design guide (previous direction): `docs/insurflow-v2-design-guide.md`

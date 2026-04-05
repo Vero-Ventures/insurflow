@@ -1,0 +1,200 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const calculateInsuranceNeedsRoundedWithTraceMock = vi.fn();
+const captureServerAnalyticsEventMock = vi.fn();
+const computeEstimateConfidenceMock = vi.fn();
+const getDbMock = vi.fn();
+const pdfToBufferMock = vi.fn();
+const resolveExistingCoverageMock = vi.fn();
+
+vi.mock("@/lib/api/route-helpers", () => ({
+  withApiHandler: (
+    _config: unknown,
+    handler: (
+      request: Request,
+      context: {
+        clientId: string;
+        logger: {
+          info: (...args: unknown[]) => Promise<void>;
+          warn: (...args: unknown[]) => Promise<void>;
+        };
+        session: { user: { id: string } };
+      },
+    ) => Promise<Response | { data: unknown; status?: number }>,
+  ) => {
+    return async (request: Request) => {
+      const result = await handler(request, {
+        clientId: "client-123",
+        logger: {
+          info: vi.fn().mockResolvedValue(undefined),
+          warn: vi.fn().mockResolvedValue(undefined),
+        },
+        session: { user: { id: "user-123" } },
+      });
+
+      if (result instanceof Response) {
+        return result;
+      }
+
+      return Response.json(result.data, { status: result.status ?? 200 });
+    };
+  },
+}));
+
+vi.mock("@/server/db", () => ({ getDb: getDbMock }));
+
+vi.mock("@/server/db/schemas", () => ({
+  asset: {
+    currentValue: "currentValue",
+    isLiquid: "isLiquid",
+    clientId: "clientId",
+    deletedAt: "deletedAt",
+  },
+  client: { id: "id", userId: "userId", deletedAt: "deletedAt" },
+  debt: {
+    currentBalance: "currentBalance",
+    clientId: "clientId",
+    deletedAt: "deletedAt",
+  },
+  policy: {
+    status: "status",
+    faceAmount: "faceAmount",
+    clientId: "clientId",
+    deletedAt: "deletedAt",
+  },
+}));
+
+vi.mock("drizzle-orm", () => ({
+  and: vi.fn(() => "and"),
+  eq: vi.fn(() => "eq"),
+  isNull: vi.fn(() => "isNull"),
+  sql: Object.assign(
+    (strings: TemplateStringsArray) => ({ as: () => strings.join("") }),
+    {
+      raw: vi.fn(),
+    },
+  ),
+}));
+
+vi.mock("@react-pdf/renderer", () => ({
+  pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
+}));
+
+vi.mock("@/lib/financial/insurance-needs", async () => ({
+  DEFAULT_ESTATE_BUFFER: { type: "fixed", amount: 15000 },
+  calculateInsuranceNeedsRoundedWithTrace:
+    calculateInsuranceNeedsRoundedWithTraceMock,
+}));
+
+vi.mock("@/lib/financial/confidence-scoring", () => ({
+  computeEstimateConfidence: computeEstimateConfidenceMock,
+}));
+
+vi.mock("@/lib/policy-utils", () => ({
+  resolveExistingCoverage: resolveExistingCoverageMock,
+}));
+
+vi.mock("@/lib/financial/settling-requirements-us", () => ({
+  calculateUSSettlingRequirementsRounded: vi.fn(() => null),
+  isValidUSState: vi.fn(() => true),
+  US_STATE_NAMES: { CA: "California" },
+}));
+
+vi.mock("@/lib/compliance/packet-builder", () => ({
+  buildCompliancePacket: vi.fn(() => ({
+    metadata: { packetVersion: "1.0.0" },
+  })),
+}));
+
+vi.mock("@/components/compliance/compliance-packet-document", () => ({
+  CompliancePacketDocument: vi.fn(() => null),
+}));
+
+vi.mock("./route-helpers", () => ({
+  extractPolicyCoverageAggregate: vi.fn(() => ({
+    totalPolicyCount: 1,
+    activePolicyCoverage: 100000,
+  })),
+  hasClientValue: vi.fn(() => true),
+}));
+
+vi.mock("@/server/pdf/utils", () => ({
+  safeFilename: vi.fn(() => "ava-nguyen"),
+}));
+
+vi.mock("@/server/observability/posthog", () => ({
+  captureServerAnalyticsEvent: (...args: unknown[]) =>
+    captureServerAnalyticsEventMock(...args),
+}));
+
+describe("GET /api/clients/[id]/compliance-packet", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    getDbMock.mockReturnValue({
+      query: {
+        client: {
+          findFirst: vi.fn().mockResolvedValue({
+            firstName: "Ava",
+            lastName: "Nguyen",
+            dateOfBirth: "1990-01-01",
+            state: "CA",
+            hasSpouse: false,
+            smoker: false,
+            healthRating: "standard",
+            clientIncome: "120000",
+            spouseIncome: "0",
+            incomeReplacementPercent: "70",
+            replacementDurationYears: 10,
+            existingLifeInsuranceCoverage: "100000",
+          }),
+        },
+      },
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi
+            .fn()
+            .mockResolvedValue([
+              { totalAssets: "100000", liquidAssets: "20000", assetCount: 1 },
+            ]),
+        })),
+      })),
+    });
+
+    resolveExistingCoverageMock.mockReturnValue({
+      existingCoverage: 100000,
+      coverageSource: "policies",
+    });
+    calculateInsuranceNeedsRoundedWithTraceMock.mockReturnValue({
+      result: { totalInsuranceNeeds: 500000 },
+      trace: { version: "1.0.0", sections: [] },
+    });
+    computeEstimateConfidenceMock.mockReturnValue({
+      score: 90,
+      label: "High",
+      reasons: [],
+    });
+    pdfToBufferMock.mockResolvedValue(Buffer.from("pdf"));
+  });
+
+  it("captures a compliance packet analytics event", async () => {
+    const { GET } = await import("./route");
+
+    const response = await GET(new Request("http://localhost/api/test"), {
+      params: Promise.resolve({ id: "client-123" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        distinctId: "user-123",
+        event: "report_pdf_generated",
+        properties: expect.objectContaining({
+          feature: "compliance-packet",
+          outcome: "completed",
+          route: "/api/clients/[id]/compliance-packet",
+        }),
+      }),
+    );
+  });
+});

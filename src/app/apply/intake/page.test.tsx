@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import D2cIntakePage from "@/app/apply/intake/page";
 
+const captureAnalyticsEventMock = vi.fn();
+
 const { pushMock, searchParamGetMock, useSessionMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
   searchParamGetMock: vi.fn().mockReturnValue(null),
@@ -23,6 +25,11 @@ vi.mock("@/server/better-auth/client", () => ({
   authClient: {
     useSession: useSessionMock,
   },
+}));
+
+vi.mock("@/lib/analytics/capture", () => ({
+  captureAnalyticsEvent: (...args: unknown[]) =>
+    captureAnalyticsEventMock(...args),
 }));
 
 // Mock sessionStorage
@@ -53,7 +60,23 @@ describe("D2cIntakePage", () => {
     sessionStorageMock.clear();
     sessionStorageMock.getItem.mockClear();
     sessionStorageMock.setItem.mockClear();
+    captureAnalyticsEventMock.mockReset();
     vi.restoreAllMocks();
+  });
+
+  it("tracks the application started milestone on load", async () => {
+    render(<D2cIntakePage />);
+
+    await waitFor(() => {
+      expect(captureAnalyticsEventMock).toHaveBeenCalledWith(
+        "d2c_application_started",
+        expect.objectContaining({
+          feature: "d2c-application",
+          outcome: "started",
+          route: "/apply/intake",
+        }),
+      );
+    });
   });
 
   it("renders province field", async () => {

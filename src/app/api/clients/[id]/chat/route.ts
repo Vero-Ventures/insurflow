@@ -17,6 +17,8 @@ import {
   GeminiApiError,
 } from "@/server/ai";
 import { decimalToNumber } from "@/lib/financial/decimal-to-number";
+import { recordAiChatEvent } from "@/server/observability/business-metrics";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 
 const postBodySchema = z.object({
   message: z
@@ -190,7 +192,28 @@ export const POST = withApiHandler(
     requireClient: true,
   },
   async (request, { clientId, session, logger }) => {
+    const trackChatEvent = (
+      outcome: "completed" | "failed" | "rejected" | "started",
+      source: "api" | "stream" = "api",
+    ) => {
+      const event =
+        outcome === "completed" ? "chat_message_sent" : "chat_message_sent";
+
+      captureServerAnalyticsEvent({
+        distinctId: session.user.id,
+        event,
+        properties: {
+          feature: "client-chat",
+          outcome,
+          route: "/api/clients/[id]/chat",
+          source,
+        },
+      });
+    };
+
     if (!isGeminiConfigured()) {
+      trackChatEvent("rejected");
+      recordAiChatEvent("rejected");
       await logger.warn("Gemini API not configured for chat", {
         statusCode: 503,
       });
@@ -216,6 +239,8 @@ export const POST = withApiHandler(
     const { message: userMessage, surface } = validationResult.data;
     const rateLimit = await checkRateLimit(clientId!, session.user.id);
     if (rateLimit.limited) {
+      trackChatEvent("rejected");
+      recordAiChatEvent("rejected");
       await logger.warn("Chat rate limit exceeded", { statusCode: 429 });
       return NextResponse.json(
         {
@@ -235,6 +260,8 @@ export const POST = withApiHandler(
 
     const context = await loadClientChatContext(clientId!, session.user.id);
     if (!context.client) {
+      trackChatEvent("rejected");
+      recordAiChatEvent("rejected");
       await logger.info("Client not found for chat", { statusCode: 404 });
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
@@ -297,6 +324,8 @@ export const POST = withApiHandler(
       temperature: 0.5,
       maxOutputTokens: 2048,
     });
+    trackChatEvent("started");
+    recordAiChatEvent("started");
 
     const promptTokens = estimateTokenCount(prompt);
     const encoder = new TextEncoder();
@@ -362,6 +391,8 @@ export const POST = withApiHandler(
           });
 
           controller.enqueue(encoder.encode(`${doneLine}\n`));
+          trackChatEvent("completed", "stream");
+          recordAiChatEvent("completed");
           controller.close();
         } catch (error) {
           let userMessage =
@@ -386,6 +417,8 @@ export const POST = withApiHandler(
           }
 
           if (error instanceof GeminiApiError) {
+            trackChatEvent("failed", "stream");
+            recordAiChatEvent("failed");
             await logger.error("Gemini API error in client chat", error, {
               statusCode: error.statusCode,
             });
@@ -401,6 +434,8 @@ export const POST = withApiHandler(
                 "The request could not be processed by the AI service. Please shorten your question and try again.";
             }
           } else {
+            trackChatEvent("failed", "stream");
+            recordAiChatEvent("failed");
             await logger.error(
               "Unexpected streaming error in client chat",
               error instanceof Error ? error : new Error(String(error)),

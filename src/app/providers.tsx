@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { type ReactNode, useCallback } from "react";
 import type { SocialProvider } from "better-auth/social-providers";
 
+import { PostHogProvider } from "@/components/posthog-provider";
 import { authClient } from "@/server/better-auth/client";
 
 type ProvidersProps = {
@@ -30,25 +31,27 @@ export function Providers({ children, socialProviderIds }: ProvidersProps) {
   }, [pathname, router]);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light">
-      <AuthUIProvider
-        authClient={authClient}
-        redirectTo="/onboarding"
-        navigate={router.push}
-        replace={router.replace}
-        onSessionChange={handleSessionChange}
-        Link={Link}
-        credentials={{
-          forgotPassword: true,
-        }}
-        social={
-          socialProviderIds.length > 0
-            ? { providers: socialProviderIds }
-            : undefined
-        }
-      >
-        {children}
-      </AuthUIProvider>
-    </ThemeProvider>
+    <PostHogProvider>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <AuthUIProvider
+          authClient={authClient}
+          redirectTo="/onboarding"
+          navigate={router.push}
+          replace={router.replace}
+          onSessionChange={handleSessionChange}
+          Link={Link}
+          credentials={{
+            forgotPassword: true,
+          }}
+          social={
+            socialProviderIds.length > 0
+              ? { providers: socialProviderIds }
+              : undefined
+          }
+        >
+          {children}
+        </AuthUIProvider>
+      </ThemeProvider>
+    </PostHogProvider>
   );
 }

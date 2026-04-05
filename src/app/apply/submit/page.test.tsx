@@ -19,6 +19,7 @@ const submitToProviderMock = vi.fn().mockResolvedValue({
   ok: true,
   alreadySubmitted: false,
 });
+const captureServerAnalyticsEventMock = vi.fn();
 
 // Drizzle update chain mock
 const returningMock = vi
@@ -61,6 +62,11 @@ vi.mock("@/server/providers/get-carrier-provider", () => ({
   getCarrierProvider: vi.fn().mockReturnValue({ providerName: "mock" }),
 }));
 
+vi.mock("@/server/observability/posthog", () => ({
+  captureServerAnalyticsEvent: (...args: unknown[]) =>
+    captureServerAnalyticsEventMock(...args),
+}));
+
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn(),
   isNull: vi.fn(),
@@ -86,6 +92,7 @@ describe("ApplySubmitPage", () => {
     returningMock.mockClear();
     findFirstMock.mockClear();
     submitToProviderMock.mockClear();
+    captureServerAnalyticsEventMock.mockReset();
     returningMock.mockResolvedValue([
       { id: "c1", firstName: "Test", lastName: "User" },
     ]);
@@ -225,6 +232,17 @@ describe("ApplySubmitPage", () => {
         }),
         expect.anything(),
         expect.anything(),
+      );
+      expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          distinctId: TEST_USER_ID,
+          event: "d2c_application_submitted",
+          properties: expect.objectContaining({
+            feature: "d2c-application",
+            outcome: "completed",
+            route: "/apply/submit",
+          }),
+        }),
       );
     });
 

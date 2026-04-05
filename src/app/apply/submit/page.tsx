@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { APPLY_STATUS_ROUTE } from "@/lib/app-routes";
 import { getSession } from "@/server/better-auth/server";
+import { ApplySubmitAnalytics } from "./apply-submit-analytics";
 
 export default async function ApplySubmitPage() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export default async function ApplySubmitPage() {
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
+      <ApplySubmitAnalytics />
       <div className="mx-auto w-full max-w-2xl space-y-6">
         <section className="space-y-2">
           <div className="flex items-center gap-3">

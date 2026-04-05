@@ -11,6 +11,7 @@ import {
 } from "@/lib/financial/insurance-needs";
 import { decimalToNumber } from "@/lib/financial/decimal-to-number";
 import { formatCurrency } from "@/lib/client-utils";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 import { createClientReportPdfDocument } from "@/server/pdf/client-report-pdf";
 import { safeFilename } from "@/server/pdf/utils";
 
@@ -134,6 +135,17 @@ export const GET = withApiHandler(
 
     const buffer = await pdf(doc).toBuffer();
     const filename = `${safeFilename(fullName)}-insurflow-report.pdf`;
+
+    captureServerAnalyticsEvent({
+      distinctId: session.user.id,
+      event: "report_pdf_generated",
+      properties: {
+        feature: "client-report-pdf",
+        outcome: "completed",
+        route: "/api/clients/[id]/report-pdf",
+        source: "api",
+      },
+    });
 
     return new NextResponse(buffer as unknown as BodyInit, {
       headers: {

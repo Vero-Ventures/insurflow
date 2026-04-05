@@ -6,6 +6,7 @@ const buildReasonsWhyPromptMock = vi.fn();
 const generateTextMock = vi.fn();
 const getDbMock = vi.fn();
 const isGeminiConfiguredMock = vi.fn();
+const captureServerAnalyticsEventMock = vi.fn();
 
 vi.mock("@/lib/api/route-helpers", () => ({
   withApiHandler: (
@@ -95,6 +96,11 @@ vi.mock("@/server/ai", () => ({
   GeminiApiError: class GeminiApiError extends Error {},
 }));
 
+vi.mock("@/server/observability/posthog", () => ({
+  captureServerAnalyticsEvent: (...args: unknown[]) =>
+    captureServerAnalyticsEventMock(...args),
+}));
+
 describe("POST /api/clients/[id]/generate-letter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -178,6 +184,17 @@ describe("POST /api/clients/[id]/generate-letter", () => {
       pollUrl:
         "/api/clients/550e8400-e29b-41d4-a716-446655440001/letter-jobs/550e8400-e29b-41d4-a716-446655440099",
     });
+    expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        distinctId: "user-123",
+        event: "letter_generation_started",
+        properties: expect.objectContaining({
+          feature: "reasons-why-letter",
+          outcome: "queued",
+          route: "/api/clients/[id]/generate-letter",
+        }),
+      }),
+    );
   });
 
   it("still queues when worker mode is enabled and Gemini is not configured in the app", async () => {

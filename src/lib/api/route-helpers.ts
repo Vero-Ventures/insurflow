@@ -1,6 +1,9 @@
 import { getSession, type Session } from "@/server/better-auth/server";
 import { createLogger, type Logger } from "@/server/axiom";
 import { getDb } from "@/server/db";
+import { recordHttpRequestMetric } from "@/server/observability/metrics";
+import { summarizeResponse } from "@/server/observability/route-summary";
+import { getRequestObservabilityContext } from "@/server/observability/request-context";
 import { userProfile } from "@/server/db/schemas";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -76,6 +79,7 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
   ): Promise<NextResponse> => {
     const resolvedParams = await Promise.resolve(context?.params ?? {});
     const clientId = resolvedParams.id;
+    const requestStartedAt = performance.now();
 
     // Build endpoint string with actual IDs for logging
     let endpoint = config.endpoint;
@@ -83,22 +87,54 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
       endpoint = endpoint.replace(`[${key}]`, value);
     }
 
+    const requestContext = getRequestObservabilityContext(
+      request,
+      config.endpoint,
+    );
+
     const logger = createLogger({
       endpoint,
       method: config.method,
+      ipAddress: requestContext.ipAddress,
+      requestId: requestContext.requestId,
+      requestPath: requestContext.requestPath,
+      routePattern: requestContext.routePattern,
+      userAgent: requestContext.userAgent,
     });
+
+    const logResponse = async (response: NextResponse) => {
+      const duration = performance.now() - requestStartedAt;
+      const responseSummary = summarizeResponse(response);
+
+      response.headers.set("x-request-id", requestContext.requestId);
+
+      await logger.info("API response returned", {
+        ...responseSummary,
+        duration,
+        statusCode: response.status,
+      });
+
+      recordHttpRequestMetric({
+        duration,
+        method: config.method,
+        route: config.endpoint,
+        statusCode: response.status,
+      });
+
+      return response;
+    };
 
     try {
       await logger.info("API request received", {
-        requestUrl: request.url,
-        requestMethod: request.method,
+        requestMethod: requestContext.requestMethod,
+        requestUrl: requestContext.requestUrl,
       });
 
       // Validate session
       const sessionResult = config.requireAdvisor
         ? await validateAdvisorSession(logger)
         : await validateSession(logger);
-      if ("error" in sessionResult) return sessionResult.error;
+      if ("error" in sessionResult) return logResponse(sessionResult.error);
       const { session } = sessionResult;
 
       logger.addContext({ userId: session.user.id });
@@ -108,7 +144,7 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
         const clientIdError = validateUUID(clientId, "client ID");
         if (clientIdError) {
           await logger.warn("Invalid client ID format");
-          return clientIdError;
+          return logResponse(clientIdError);
         }
         logger.addContext({ clientId });
       }
@@ -122,7 +158,7 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
             const error = validateUUID(paramValue, paramName);
             if (error) {
               await logger.warn(`Invalid ${paramName} format`);
-              return error;
+              return logResponse(error);
             }
             resourceIds[paramName] = paramValue;
             logger.addContext({ [paramName]: paramValue });
@@ -138,9 +174,8 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
         );
         if (!foundClient) {
           await logger.info("Client not found", { statusCode: 404 });
-          return NextResponse.json(
-            { error: "Client not found" },
-            { status: 404 },
+          return logResponse(
+            NextResponse.json({ error: "Client not found" }, { status: 404 }),
           );
         }
       }
@@ -156,44 +191,22 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
 
       // Return NextResponse directly or wrap data
       if (result instanceof NextResponse) {
-        await logger.info("API response returned", {
-          statusCode: result.status,
-          responseBody: await readResponseBodyForDebug(result),
-        });
-        return result;
+        return logResponse(result);
       }
 
-      await logger.info("API response returned", {
-        statusCode: result.status ?? 200,
-        responseBody: result.data,
-      });
-
-      return NextResponse.json(result.data, { status: result.status ?? 200 });
+      return logResponse(
+        NextResponse.json(result.data, { status: result.status ?? 200 }),
+      );
     } catch (error) {
       await logger.error(
         `Error in ${config.method} ${config.endpoint}`,
         error instanceof Error ? error : new Error(String(error)),
       );
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 },
+      return logResponse(
+        NextResponse.json({ error: "Internal server error" }, { status: 500 }),
       );
     }
   };
-}
-
-async function readResponseBodyForDebug(response: NextResponse) {
-  try {
-    const text = await response.clone().text();
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
-  } catch {
-    return "Unable to read response body";
-  }
 }
 
 /**

@@ -52,6 +52,11 @@ BETTER_AUTH_URL="http://localhost:3000"
 AXIOM_TOKEN="..."
 AXIOM_DATASET="insurflow-dev"
 
+# Grafana Cloud (Metrics / Traces) - optional locally
+GRAFANA_OTLP_ENDPOINT="https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
+GRAFANA_OTLP_HEADERS="Authorization=Basic <base64 instance:token>"
+GRAFANA_INSTANCE_ID="..."
+
 # Sentry (Error Tracking) - optional locally
 SENTRY_DSN="..."
 NEXT_PUBLIC_SENTRY_DSN="..."
@@ -59,7 +64,10 @@ NEXT_PUBLIC_SENTRY_DSN="..."
 # PostHog (Product Analytics) - optional locally
 NEXT_PUBLIC_POSTHOG_KEY="..."
 NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
+NEXT_PUBLIC_POSTHOG_UI_HOST="https://us.posthog.com"
 ```
+
+Privacy rule: never send application answers, health disclosures, date of birth, income, coverage amounts, or freeform prompts to analytics vendors. Keep analytics events to coarse status, route, feature, count, and other sanitized metadata.
 
 Variables in `.env.example` for Stripe/UploadThing are reserved for future features and are not required for current MVP development.
 
@@ -95,6 +103,7 @@ bun run build
 All observability services are **optional for local development**:
 
 - **Axiom**: Logs will print to console in JSON format
+- **Grafana Cloud**: Metrics and traces remain local no-ops until OTLP env vars are configured
 - **Sentry**: Errors will be logged to console
 - **PostHog**: Events won't be tracked
 
@@ -111,11 +120,15 @@ DATABASE_URL
 BETTER_AUTH_SECRET
 AXIOM_TOKEN
 AXIOM_DATASET
+GRAFANA_OTLP_ENDPOINT
+GRAFANA_OTLP_HEADERS
+GRAFANA_INSTANCE_ID
 SENTRY_DSN
 NEXT_PUBLIC_SENTRY_DSN
 SENTRY_AUTH_TOKEN
 NEXT_PUBLIC_POSTHOG_KEY
 NEXT_PUBLIC_POSTHOG_HOST
+NEXT_PUBLIC_POSTHOG_UI_HOST
 ```
 
 ### Vercel Deployment (via Terraform)

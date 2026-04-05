@@ -4,6 +4,7 @@ const calculateInsuranceNeedsRoundedWithTraceMock = vi.fn();
 const computeEstimateConfidenceMock = vi.fn();
 const resolveExistingCoverageMock = vi.fn();
 const getDbMock = vi.fn();
+const captureServerAnalyticsEventMock = vi.fn();
 
 vi.mock("@/lib/api/route-helpers", () => ({
   withApiHandler: (
@@ -95,6 +96,11 @@ vi.mock("@/lib/financial/confidence-scoring", () => ({
 
 vi.mock("@/lib/policy-utils", () => ({
   resolveExistingCoverage: resolveExistingCoverageMock,
+}));
+
+vi.mock("@/server/observability/posthog", () => ({
+  captureServerAnalyticsEvent: (...args: unknown[]) =>
+    captureServerAnalyticsEventMock(...args),
 }));
 
 describe("POST /api/clients/[id]/calculate", () => {
@@ -213,5 +219,16 @@ describe("POST /api/clients/[id]/calculate", () => {
       ]),
     );
     expect(body.totalInsuranceNeeds).toBe(848000);
+    expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        distinctId: "test-user-id",
+        event: "calculation_run",
+        properties: expect.objectContaining({
+          feature: "insurance-needs",
+          outcome: "completed",
+          route: "/api/clients/[id]/calculate",
+        }),
+      }),
+    );
   });
 });
