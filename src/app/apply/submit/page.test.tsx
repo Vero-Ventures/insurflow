@@ -9,7 +9,7 @@ import {
 } from "./__tests__/consent-test-helpers";
 
 const redirectMock = vi.fn((path: string) => {
-  // Simulate Next.js redirect() which always throws — prevents execution from
+  // Simulate Next.js redirect() which always throws - prevents execution from
   // continuing past a redirect call, matching production behaviour.
   throw new Error(`redirect:${path}`);
 });
@@ -20,6 +20,12 @@ const submitToProviderMock = vi.fn().mockResolvedValue({
   alreadySubmitted: false,
 });
 const captureServerAnalyticsEventMock = vi.fn();
+
+const applySubmitAnalyticsMock = vi.fn(() => null);
+const applySubmitAnalyticsComponent = () => {
+  applySubmitAnalyticsMock();
+  return null;
+};
 
 // Drizzle update chain mock
 const returningMock = vi
@@ -53,7 +59,15 @@ vi.mock("@/server/db/schemas", () => ({
   client: MOCK_CLIENT_SCHEMA,
 }));
 
-// Mock provider submission — best-effort, not tested here
+vi.mock("@/app/apply/submit/apply-submit-analytics", () => ({
+  ApplySubmitAnalytics: applySubmitAnalyticsComponent,
+}));
+
+vi.mock("@/lib/api/d2c-resume-link-helpers", () => ({
+  invalidateClientResumeLinks: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock provider submission - best-effort, not tested here
 vi.mock("@/lib/submission/submit-application", () => ({
   submitToProvider: (...args: unknown[]) => submitToProviderMock(...args),
 }));
@@ -81,6 +95,28 @@ async function loadActionsWithSession(userId = TEST_USER_ID) {
   return import("@/app/apply/submit/actions");
 }
 
+function containsElementType(node: unknown, type: unknown): boolean {
+  if (!node || typeof node !== "object") {
+    return false;
+  }
+
+  const element = node as {
+    type?: unknown;
+    props?: { children?: unknown };
+  };
+
+  if (element.type === type) {
+    return true;
+  }
+
+  const children = element.props?.children;
+  if (Array.isArray(children)) {
+    return children.some((child) => containsElementType(child, type));
+  }
+
+  return containsElementType(children, type);
+}
+
 describe("ApplySubmitPage", () => {
   beforeEach(() => {
     redirectMock.mockClear();
@@ -93,6 +129,7 @@ describe("ApplySubmitPage", () => {
     findFirstMock.mockClear();
     submitToProviderMock.mockClear();
     captureServerAnalyticsEventMock.mockReset();
+    applySubmitAnalyticsMock.mockClear();
     returningMock.mockResolvedValue([
       { id: "c1", firstName: "Test", lastName: "User" },
     ]);
@@ -119,6 +156,17 @@ describe("ApplySubmitPage", () => {
 
     expect(page).toBeTruthy();
     expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("does not emit a second client-side submission event on confirmation page render", async () => {
+    getSessionMock.mockResolvedValue({ user: { id: TEST_USER_ID } });
+
+    const mod = await import("@/app/apply/submit/page");
+    const page = await mod.default();
+
+    expect(containsElementType(page, applySubmitAnalyticsComponent)).toBe(
+      false,
+    );
   });
 
   describe("submitApplicationAction", () => {
@@ -206,7 +254,7 @@ describe("ApplySubmitPage", () => {
       expect(setCall).toHaveProperty("consentTransmitToCarrierAt");
       expect(setCall).toHaveProperty("healthInfoAuthorizationAt");
       expect(setCall).toHaveProperty("esignIntentAcknowledgedAt");
-      // Must be SQL expressions — not raw Date objects
+      // Must be SQL expressions - not raw Date objects
       expect(setCall.consentTransmitToCarrierAt).not.toBeInstanceOf(Date);
       expect(setCall.healthInfoAuthorizationAt).not.toBeInstanceOf(Date);
       expect(setCall.esignIntentAcknowledgedAt).not.toBeInstanceOf(Date);

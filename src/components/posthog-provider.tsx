@@ -7,6 +7,7 @@ import { authClient } from "@/server/better-auth/client";
 import {
   identifyUser,
   initPostHog,
+  resetUser,
   trackEvent,
   trackPageView,
 } from "@/lib/posthog";
@@ -18,6 +19,10 @@ function PostHogSessionTracker() {
   useEffect(() => {
     const currentUserId = session?.user?.id ?? null;
     const prevUserId = prevUserIdRef.current;
+
+    if (prevUserId && currentUserId !== prevUserId) {
+      resetUser();
+    }
 
     if (currentUserId && currentUserId !== prevUserId) {
       identifyUser(currentUserId, {
