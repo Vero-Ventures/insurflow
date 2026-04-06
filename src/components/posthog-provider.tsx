@@ -1,9 +1,47 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { initPostHog, trackPageView } from "@/lib/posthog";
+import { authClient } from "@/server/better-auth/client";
+import {
+  identifyUser,
+  initPostHog,
+  trackEvent,
+  trackPageView,
+} from "@/lib/posthog";
+
+function PostHogSessionTracker() {
+  const { data: session } = authClient.useSession();
+  const prevUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const currentUserId = session?.user?.id ?? null;
+    const prevUserId = prevUserIdRef.current;
+
+    if (currentUserId && currentUserId !== prevUserId) {
+      identifyUser(currentUserId, {
+        feature: "auth",
+        source: "session",
+      });
+
+      if (prevUserId === null) {
+        trackEvent({
+          name: "auth_signed_in",
+          properties: {
+            feature: "auth",
+            outcome: "succeeded",
+            source: "session",
+          },
+        });
+      }
+    }
+
+    prevUserIdRef.current = currentUserId;
+  }, [session?.user?.id]);
+
+  return null;
+}
 
 function PostHogPageTracker() {
   const pathname = usePathname();
@@ -32,6 +70,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Suspense fallback={null}>
+        <PostHogSessionTracker />
         <PostHogPageTracker />
       </Suspense>
       {children}

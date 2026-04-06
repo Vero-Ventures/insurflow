@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Client } from "@/types/client";
+import { captureAnalyticsEvent } from "@/lib/analytics/capture";
 
 export interface FinancialInputsData {
   clientIncome: string;
@@ -118,6 +119,11 @@ export function useFinancialInputs(client: Client) {
       }
 
       const data = await response.json();
+      captureAnalyticsEvent("client_updated", {
+        feature: "financial-inputs",
+        outcome: "completed",
+        source: "financial-inputs-form",
+      });
       await onUpdate(data.client);
       setIsEditing(false);
       toast.success("Financial inputs saved successfully");
