@@ -12,9 +12,9 @@ export function isPostHogConfigured(): boolean {
   return Boolean(env.NEXT_PUBLIC_POSTHOG_KEY && env.NEXT_PUBLIC_POSTHOG_HOST);
 }
 
-export function initPostHog(): void {
+export function initPostHog(): boolean {
   if (initialized || typeof window === "undefined" || !isPostHogConfigured()) {
-    return;
+    return initialized;
   }
 
   posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY!, {
@@ -32,10 +32,16 @@ export function initPostHog(): void {
   });
 
   initialized = true;
+  return true;
 }
 
 export function trackEvent(event: AnalyticsEvent): void {
-  if (typeof window === "undefined" || !isPostHogConfigured()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const didInitialize = initPostHog();
+  if (!didInitialize) {
     return;
   }
 
@@ -57,7 +63,12 @@ export function identifyUser(
   userId: string,
   properties?: AnalyticsProperties,
 ): void {
-  if (typeof window === "undefined" || !isPostHogConfigured()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const didInitialize = initPostHog();
+  if (!didInitialize) {
     return;
   }
 
@@ -65,7 +76,12 @@ export function identifyUser(
 }
 
 export function resetUser(): void {
-  if (typeof window === "undefined" || !isPostHogConfigured()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const didInitialize = initPostHog();
+  if (!didInitialize) {
     return;
   }
 

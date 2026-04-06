@@ -102,24 +102,35 @@ export function withApiHandler(config: ApiHandlerConfig, handler: ApiHandler) {
       userAgent: requestContext.userAgent,
     });
 
-    const logResponse = async (response: NextResponse) => {
+    const logResponse = (response: NextResponse) => {
       const duration = performance.now() - requestStartedAt;
-      const responseSummary = summarizeResponse(response);
 
       response.headers.set("x-request-id", requestContext.requestId);
 
-      await logger.info("API response returned", {
-        ...responseSummary,
-        duration,
-        statusCode: response.status,
-      });
+      void (async () => {
+        try {
+          const responseSummary = summarizeResponse(response);
 
-      recordHttpRequestMetric({
-        duration,
-        method: config.method,
-        route: config.endpoint,
-        statusCode: response.status,
-      });
+          await logger.info("API response returned", {
+            ...responseSummary,
+            duration,
+            statusCode: response.status,
+          });
+        } catch (error) {
+          console.error("[withApiHandler] Failed to log API response", error);
+        }
+
+        try {
+          recordHttpRequestMetric({
+            duration,
+            method: config.method,
+            route: config.endpoint,
+            statusCode: response.status,
+          });
+        } catch (error) {
+          console.error("[withApiHandler] Failed to record API metric", error);
+        }
+      })();
 
       return response;
     };

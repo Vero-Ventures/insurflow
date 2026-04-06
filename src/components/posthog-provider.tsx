@@ -51,6 +51,7 @@ function PostHogSessionTracker() {
 function PostHogPageTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
 
   useEffect(() => {
     if (!pathname) {
@@ -60,14 +61,16 @@ function PostHogPageTracker() {
     trackPageView({
       feature: "pageview",
       route: sanitizeAnalyticsRoute(pathname),
-      source: searchParams.toString() ? "navigation+query" : "navigation",
+      source: queryString ? "navigation+query" : "navigation",
     });
-  }, [pathname, searchParams]);
+  }, [pathname, queryString]);
 
   return null;
 }
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+export function PostHogProvider({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   useEffect(() => {
     initPostHog();
   }, []);
@@ -95,6 +98,7 @@ function sanitizeAnalyticsRoute(pathname: string): string {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           segment,
         ) ||
+        /^\d+$/.test(segment) ||
         /^[A-Za-z0-9_-]{20,}$/.test(segment)
       ) {
         return "[param]";

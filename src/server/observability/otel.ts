@@ -1,6 +1,8 @@
 import { env } from "@/env";
 
 let started = false;
+let shuttingDown = false;
+let shutdownHandlersRegistered = false;
 
 export async function registerObservability(): Promise<void> {
   if (started || !env.GRAFANA_OTLP_ENDPOINT || !env.GRAFANA_OTLP_HEADERS) {
@@ -28,18 +30,53 @@ export async function registerObservability(): Promise<void> {
     }),
     metricReader: new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter({
-        url: env.GRAFANA_OTLP_ENDPOINT,
+        url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT, "metrics"),
         headers: parseHeaders(env.GRAFANA_OTLP_HEADERS),
       }),
     }),
     traceExporter: new OTLPTraceExporter({
-      url: env.GRAFANA_OTLP_ENDPOINT,
+      url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT, "traces"),
       headers: parseHeaders(env.GRAFANA_OTLP_HEADERS),
     }),
   });
 
   await sdk.start();
   started = true;
+
+  if (!shutdownHandlersRegistered) {
+    shutdownHandlersRegistered = true;
+
+    const shutdown = () => {
+      if (!started || shuttingDown) {
+        return;
+      }
+
+      shuttingDown = true;
+      void sdk
+        .shutdown()
+        .catch(() => undefined)
+        .finally(() => {
+          started = false;
+          shuttingDown = false;
+        });
+    };
+
+    process.once("SIGINT", shutdown);
+    process.once("SIGTERM", shutdown);
+  }
+}
+
+function buildOtlpSignalUrl(
+  baseUrl: string,
+  signal: "metrics" | "traces",
+): string {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  const withoutSignalSuffix = normalizedBaseUrl.replace(
+    /\/v1\/(logs|metrics|traces)$/,
+    "",
+  );
+
+  return `${withoutSignalSuffix}/v1/${signal}`;
 }
 
 function parseHeaders(rawHeaders: string): Record<string, string> {

@@ -15,12 +15,12 @@ export function captureServerAnalyticsEvent({
   distinctId,
   event,
   properties,
-}: ServerAnalyticsEvent): void {
+}: ServerAnalyticsEvent): Promise<void> {
   if (!env.NEXT_PUBLIC_POSTHOG_KEY || !env.NEXT_PUBLIC_POSTHOG_HOST) {
-    return;
+    return Promise.resolve();
   }
 
-  void fetch(`${env.NEXT_PUBLIC_POSTHOG_HOST}/capture/`, {
+  return fetch(`${env.NEXT_PUBLIC_POSTHOG_HOST}/capture/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,7 +31,9 @@ export function captureServerAnalyticsEvent({
       event,
       properties: sanitizeProperties(properties),
     }),
-  }).catch(() => undefined);
+  })
+    .then(() => undefined)
+    .catch(() => undefined);
 }
 
 function sanitizeProperties(

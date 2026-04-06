@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Record the observability architecture and rollout constraints
+## Task 1: Record the observability architecture and rollout constraints
 
 **Files:**
 
@@ -42,7 +42,7 @@ git add README.md TEAM_SETUP.md docs/plans/2026-04-04-managed-observability-stac
 git commit -m "docs: record managed observability architecture"
 ```
 
-### Task 2: Restore environment schema and deployment wiring for observability vendors
+## Task 2: Restore environment schema and deployment wiring for observability vendors
 
 **Files:**
 
@@ -86,7 +86,7 @@ git add src/env.js .env.example infra/main.tf infra/variables.tf infra/terraform
 git commit -m "build: wire observability vendor environment variables"
 ```
 
-### Task 3: Harden shared API logging for endpoint reliability monitoring
+## Task 3: Harden shared API logging for endpoint reliability monitoring
 
 **Files:**
 
@@ -135,7 +135,7 @@ git add src/lib/api/route-helpers.ts src/server/axiom/index.ts src/server/observ
 git commit -m "feat: standardize endpoint observability logs"
 ```
 
-### Task 4: Instrument API routes that bypass shared logging
+## Task 4: Instrument API routes that bypass shared logging
 
 **Files:**
 
@@ -165,7 +165,7 @@ git add src/app/api/auth/[...all]/route.ts src/app/api/carriers/webhook/route.ts
 git commit -m "feat: cover nonstandard routes with endpoint telemetry"
 ```
 
-### Task 5: Restore PostHog client analytics with privacy guardrails
+## Task 5: Restore PostHog client analytics with privacy guardrails
 
 **Files:**
 
@@ -227,7 +227,7 @@ git add package.json bun.lock src/components/posthog-provider.tsx src/lib/postho
 git commit -m "feat: restore privacy-safe posthog analytics"
 ```
 
-### Task 6: Add product-usage events for key user journeys
+## Task 6: Add product-usage events for key user journeys
 
 **Files:**
 
@@ -274,7 +274,7 @@ git add src/components/clients/create/clients-create-client.tsx src/app/clients/
 git commit -m "feat: track key product journeys"
 ```
 
-### Task 7: Add managed metrics and traces for API reliability
+## Task 7: Add managed metrics and traces for API reliability
 
 **Files:**
 
@@ -331,7 +331,7 @@ git add package.json bun.lock src/instrumentation.ts src/instrumentation-client.
 git commit -m "feat: add managed reliability metrics and traces"
 ```
 
-### Task 8: Document dashboards, alert thresholds, and operator runbooks
+## Task 8: Document dashboards, alert thresholds, and operator runbooks
 
 **Files:**
 
@@ -384,7 +384,7 @@ git add docs/observability.md TEAM_SETUP.md
 git commit -m "docs: add observability dashboards and alerts runbook"
 ```
 
-### Task 9: Run task-scoped verification and a full build check
+## Task 9: Run task-scoped verification and a full build check
 
 **Files:**
 

@@ -13,9 +13,15 @@ export function summarizeResponse(response: Response): ResponseSummary {
   const contentDisposition =
     response.headers.get("content-disposition") ?? undefined;
   const contentLengthHeader = response.headers.get("content-length");
-  const contentLength = contentLengthHeader
+  const parsedContentLength = contentLengthHeader
     ? Number.parseInt(contentLengthHeader, 10)
     : undefined;
+  const contentLength =
+    parsedContentLength !== undefined &&
+    Number.isFinite(parsedContentLength) &&
+    !Number.isNaN(parsedContentLength)
+      ? parsedContentLength
+      : undefined;
   const isJson = Boolean(contentType?.includes("application/json"));
   const isStreamingText = Boolean(
     contentType?.includes("application/x-ndjson") ||
@@ -29,6 +35,17 @@ export function summarizeResponse(response: Response): ResponseSummary {
     !contentType.includes("xml"),
   );
   const isStream = isDownload || isBinary || isStreamingText;
+  let responseKind: ResponseSummary["responseKind"] = "text";
+
+  if (!contentType) {
+    responseKind = "empty";
+  } else if (isJson) {
+    responseKind = "json";
+  } else if (isStreamingText) {
+    responseKind = "text";
+  } else if (isBinary) {
+    responseKind = "binary";
+  }
 
   return {
     contentDisposition,
@@ -37,14 +54,6 @@ export function summarizeResponse(response: Response): ResponseSummary {
     isDownload,
     isJson,
     isStream,
-    responseKind: !contentType
-      ? "empty"
-      : isJson
-        ? "json"
-        : isStreamingText
-          ? "text"
-          : isBinary
-            ? "binary"
-            : "text",
+    responseKind,
   };
 }

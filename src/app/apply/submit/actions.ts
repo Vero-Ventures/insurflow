@@ -126,7 +126,7 @@ export async function submitApplicationAction(formData: FormData) {
     true,
   );
 
-  captureServerAnalyticsEvent({
+  await captureServerAnalyticsEvent({
     distinctId: session.user.id,
     event: "d2c_application_submitted",
     properties: {

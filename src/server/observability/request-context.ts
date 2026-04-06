@@ -9,7 +9,14 @@ export interface RequestObservabilityContext {
 }
 
 export function getOrCreateRequestId(headers: Pick<Headers, "get">): string {
-  return headers.get("x-request-id") ?? crypto.randomUUID();
+  const requestId = headers.get("x-request-id");
+
+  if (requestId === null) {
+    return crypto.randomUUID();
+  }
+
+  const trimmedRequestId = requestId.trim();
+  return trimmedRequestId || crypto.randomUUID();
 }
 
 export function getRequestObservabilityContext(

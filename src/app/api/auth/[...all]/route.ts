@@ -15,55 +15,58 @@ import { createManualRouteLogger } from "@/server/observability/route-logger";
  * @see https://opennext.js.org/cloudflare/howtos/db
  */
 export const GET = async (request: Request) => {
-  const routeLogger = createManualRouteLogger(
-    request,
-    "/api/auth/[...all]",
-    "GET",
+  return handleAuthRequest(request, "GET", async (handler) =>
+    handler.GET(request),
   );
-  await routeLogger.logger.info("API request received", {
-    requestMethod: routeLogger.context.requestMethod,
-    requestUrl: routeLogger.context.requestUrl,
-  });
-
-  const auth = createAuth();
-  const handler = toNextJsHandler(auth.handler);
-
-  try {
-    return await routeLogger.complete(await handler.GET(request));
-  } catch (error) {
-    await routeLogger.logger.error(
-      "Error in GET /api/auth/[...all]",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return routeLogger.complete(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 }),
-    );
-  }
 };
 
 export const POST = async (request: Request) => {
+  return handleAuthRequest(request, "POST", async (handler) =>
+    handler.POST(request),
+  );
+};
+
+async function handleAuthRequest(
+  request: Request,
+  method: "GET" | "POST",
+  runHandler: (
+    handler: ReturnType<typeof toNextJsHandler>,
+  ) => Promise<Response>,
+) {
   const routeLogger = createManualRouteLogger(
     request,
     "/api/auth/[...all]",
-    "POST",
+    method,
   );
-  await routeLogger.logger.info("API request received", {
-    requestMethod: routeLogger.context.requestMethod,
-    requestUrl: routeLogger.context.requestUrl,
-  });
-
-  const auth = createAuth();
-  const handler = toNextJsHandler(auth.handler);
 
   try {
-    return await routeLogger.complete(await handler.POST(request));
+    await routeLogger.logger.info("API request received", {
+      requestMethod: routeLogger.context.requestMethod,
+      requestUrl: routeLogger.context.requestUrl,
+    });
+
+    const auth = createAuth();
+    const handler = toNextJsHandler(auth.handler);
+
+    return routeLogger.complete(await runHandler(handler));
   } catch (error) {
-    await routeLogger.logger.error(
-      "Error in POST /api/auth/[...all]",
-      error instanceof Error ? error : new Error(String(error)),
+    try {
+      await routeLogger.logger.error(
+        `Error in ${method} /api/auth/[...all]`,
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    } catch (loggingError) {
+      console.error(
+        "[auth route] Failed to log auth route error",
+        loggingError,
+      );
+    }
+
+    const fallbackResponse = NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
     );
-    return routeLogger.complete(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 }),
-    );
+    fallbackResponse.headers.set("x-request-id", routeLogger.context.requestId);
+    return fallbackResponse;
   }
-};
+}

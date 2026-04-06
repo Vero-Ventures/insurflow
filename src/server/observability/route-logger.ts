@@ -5,7 +5,7 @@ import { getRequestObservabilityContext } from "./request-context";
 import { summarizeResponse } from "./route-summary";
 
 export interface ManualRouteLogger {
-  complete<T extends Response>(response: T): Promise<T>;
+  complete<T extends Response>(response: T): T;
   context: ReturnType<typeof getRequestObservabilityContext>;
   logger: Logger;
 }
@@ -28,23 +28,39 @@ export function createManualRouteLogger(
   });
 
   return {
-    async complete<T extends Response>(response: T) {
+    complete<T extends Response>(response: T) {
       const duration = performance.now() - startedAt;
 
       response.headers.set("x-request-id", context.requestId);
 
-      await logger.info("API response returned", {
-        ...summarizeResponse(response),
-        duration,
-        statusCode: response.status,
-      });
+      void (async () => {
+        try {
+          await logger.info("API response returned", {
+            ...summarizeResponse(response),
+            duration,
+            statusCode: response.status,
+          });
+        } catch (error) {
+          console.error(
+            "[createManualRouteLogger] Failed to log response",
+            error,
+          );
+        }
 
-      recordHttpRequestMetric({
-        duration,
-        method,
-        route: routePattern,
-        statusCode: response.status,
-      });
+        try {
+          recordHttpRequestMetric({
+            duration,
+            method,
+            route: routePattern,
+            statusCode: response.status,
+          });
+        } catch (error) {
+          console.error(
+            "[createManualRouteLogger] Failed to record response metric",
+            error,
+          );
+        }
+      })();
 
       return response;
     },
