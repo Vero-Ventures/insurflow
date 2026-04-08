@@ -1,12 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, it, vi } from "vitest";
 
 import {
-  assetSchemaMock,
-  clientSchemaMock,
+  createBasicClientSchemasModule,
+  createBasicDrizzleModule,
+  createGetDbModule,
   createWithApiHandlerMock,
-  createSqlMock,
-  debtSchemaMock,
-  expectCapturedAnalyticsEvent,
+  expectTrackedGetResponse,
   TEST_CLIENT_ID,
   TEST_USER_ID,
 } from "@/app/api/clients/__tests__/helpers/route-test-mocks";
@@ -23,22 +22,11 @@ vi.mock("@/lib/api/route-helpers", () => ({
   }),
 }));
 
-vi.mock("@/server/db", () => ({
-  getDb: getDbMock,
-}));
+vi.mock("@/server/db", () => createGetDbModule(getDbMock));
 
-vi.mock("@/server/db/schemas", () => ({
-  asset: assetSchemaMock,
-  client: clientSchemaMock,
-  debt: debtSchemaMock,
-}));
+vi.mock("@/server/db/schemas", () => createBasicClientSchemasModule());
 
-vi.mock("drizzle-orm", () => ({
-  and: vi.fn(() => "and"),
-  eq: vi.fn(() => "eq"),
-  isNull: vi.fn(() => "isNull"),
-  sql: createSqlMock(),
-}));
+vi.mock("drizzle-orm", () => createBasicDrizzleModule());
 
 vi.mock("@react-pdf/renderer", () => ({
   pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
@@ -107,16 +95,10 @@ describe("GET /api/clients/[id]/report-pdf", () => {
   it("captures a report generation analytics event", async () => {
     const { GET } = await import("./route");
 
-    const response = await GET(new Request("http://localhost/api/test"), {
-      params: Promise.resolve({ id: "client-123" }),
-    });
-
-    expect(response.status).toBe(200);
-    expectCapturedAnalyticsEvent(captureServerAnalyticsEventMock, {
-      distinctId: "user-123",
-      event: "report_pdf_generated",
+    await expectTrackedGetResponse({
+      analyticsMock: captureServerAnalyticsEventMock,
       feature: "client-report-pdf",
-      outcome: "completed",
+      getHandler: GET,
       route: "/api/clients/[id]/report-pdf",
     });
   });

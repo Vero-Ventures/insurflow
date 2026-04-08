@@ -76,6 +76,27 @@ export function createSqlMock(options?: { withAlias?: boolean }) {
   );
 }
 
+export function createGetDbModule(getDbMock: ReturnType<typeof vi.fn>) {
+  return { getDb: getDbMock };
+}
+
+export function createBasicClientSchemasModule() {
+  return {
+    asset: assetSchemaMock,
+    client: clientSchemaMock,
+    debt: debtSchemaMock,
+  };
+}
+
+export function createBasicDrizzleModule(options?: { withAlias?: boolean }) {
+  return {
+    and: vi.fn(() => "and"),
+    eq: vi.fn(() => "eq"),
+    isNull: vi.fn(() => "isNull"),
+    sql: createSqlMock(options),
+  };
+}
+
 export function expectCapturedAnalyticsEvent(
   analyticsMock: ReturnType<typeof vi.fn>,
   expected: {
@@ -97,4 +118,35 @@ export function expectCapturedAnalyticsEvent(
       }),
     }),
   );
+}
+
+export async function expectTrackedGetResponse(input: {
+  getHandler: (
+    request: Request,
+    context: { params: Promise<{ id: string }> },
+  ) => Promise<Response>;
+  analyticsMock: ReturnType<typeof vi.fn>;
+  feature: string;
+  route: string;
+  event?: string;
+  id?: string;
+  distinctId?: string;
+}) {
+  const response = await input.getHandler(
+    new Request("http://localhost/api/test"),
+    {
+      params: Promise.resolve({ id: input.id ?? TEST_CLIENT_ID }),
+    },
+  );
+
+  expect(response.status).toBe(200);
+  expectCapturedAnalyticsEvent(input.analyticsMock, {
+    distinctId: input.distinctId ?? TEST_USER_ID,
+    event: input.event ?? "report_pdf_generated",
+    feature: input.feature,
+    outcome: "completed",
+    route: input.route,
+  });
+
+  return response;
 }
