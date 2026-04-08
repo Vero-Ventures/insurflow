@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  assetSchemaMock,
+  clientSchemaMock,
+  createSqlMock,
+  createWithApiHandlerMock,
+  debtSchemaMock,
+  TEST_CLIENT_ID,
+  TEST_USER_ID,
+} from "@/app/api/clients/__tests__/helpers/route-test-mocks";
+
 const captureServerAnalyticsEventMock = vi.fn();
 const getDbMock = vi.fn();
 const isGeminiConfiguredMock = vi.fn();
@@ -9,51 +19,22 @@ const streamTextMock = vi.fn();
 vi.mock("@/lib/api/route-helpers", () => ({
   handleValidationError: vi.fn(),
   parseJsonBody: (...args: unknown[]) => parseJsonBodyMock(...args),
-  withApiHandler: (
-    _config: unknown,
-    handler: (
-      request: Request,
-      context: {
-        clientId: string;
-        logger: {
-          error: (...args: unknown[]) => Promise<void>;
-          info: (...args: unknown[]) => Promise<void>;
-          warn: (...args: unknown[]) => Promise<void>;
-        };
-        session: { user: { id: string } };
-      },
-    ) => Promise<Response | { data: unknown; status?: number }>,
-  ) => {
-    return async (request: Request) => {
-      const result = await handler(request, {
-        clientId: "client-123",
-        logger: {
-          error: vi.fn().mockResolvedValue(undefined),
-          info: vi.fn().mockResolvedValue(undefined),
-          warn: vi.fn().mockResolvedValue(undefined),
-        },
-        session: { user: { id: "user-123" } },
-      });
-
-      if (result instanceof Response) {
-        return result;
-      }
-
-      return Response.json(result.data, { status: result.status ?? 200 });
-    };
-  },
+  withApiHandler: createWithApiHandlerMock({
+    clientId: TEST_CLIENT_ID,
+    logger: {
+      error: vi.fn().mockResolvedValue(undefined),
+      info: vi.fn().mockResolvedValue(undefined),
+      warn: vi.fn().mockResolvedValue(undefined),
+    },
+    session: { user: { id: TEST_USER_ID } },
+  }),
 }));
 
 vi.mock("@/server/db", () => ({ getDb: getDbMock }));
 
 vi.mock("@/server/db/schemas", () => ({
-  asset: {
-    currentValue: "currentValue",
-    isLiquid: "isLiquid",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
-  client: { id: "id", userId: "userId", deletedAt: "deletedAt" },
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
   clientChatMessage: {
     clientId: "clientId",
     userId: "userId",
@@ -62,11 +43,7 @@ vi.mock("@/server/db/schemas", () => ({
     totalTokens: "totalTokens",
     id: "id",
   },
-  debt: {
-    currentBalance: "currentBalance",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
+  debt: debtSchemaMock,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -76,9 +53,7 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(() => "eq"),
   gte: vi.fn(() => "gte"),
   isNull: vi.fn(() => "isNull"),
-  sql: Object.assign((strings: TemplateStringsArray) => strings.join(""), {
-    raw: vi.fn(),
-  }),
+  sql: createSqlMock(),
 }));
 
 vi.mock("@/server/ai", () => ({

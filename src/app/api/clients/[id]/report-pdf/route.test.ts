@@ -1,34 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  assetSchemaMock,
+  clientSchemaMock,
+  createSqlMock,
+  createWithApiHandlerMock,
+  debtSchemaMock,
+  TEST_CLIENT_ID,
+  TEST_USER_ID,
+} from "@/app/api/clients/__tests__/helpers/route-test-mocks";
+
 const calculateInsuranceNeedsRoundedMock = vi.fn();
 const captureServerAnalyticsEventMock = vi.fn();
 const getDbMock = vi.fn();
 const pdfToBufferMock = vi.fn();
 
 vi.mock("@/lib/api/route-helpers", () => ({
-  withApiHandler: (
-    _config: unknown,
-    handler: (
-      request: Request,
-      context: {
-        clientId: string;
-        session: { user: { id: string } };
-      },
-    ) => Promise<Response | { data: unknown; status?: number }>,
-  ) => {
-    return async (request: Request) => {
-      const result = await handler(request, {
-        clientId: "client-123",
-        session: { user: { id: "user-123" } },
-      });
-
-      if (result instanceof Response) {
-        return result;
-      }
-
-      return Response.json(result.data, { status: result.status ?? 200 });
-    };
-  },
+  withApiHandler: createWithApiHandlerMock({
+    clientId: TEST_CLIENT_ID,
+    session: { user: { id: TEST_USER_ID } },
+  }),
 }));
 
 vi.mock("@/server/db", () => ({
@@ -36,27 +27,16 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("@/server/db/schemas", () => ({
-  asset: {
-    currentValue: "currentValue",
-    isLiquid: "isLiquid",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
-  client: { id: "id", userId: "userId", deletedAt: "deletedAt" },
-  debt: {
-    currentBalance: "currentBalance",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
+  debt: debtSchemaMock,
 }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn(() => "and"),
   eq: vi.fn(() => "eq"),
   isNull: vi.fn(() => "isNull"),
-  sql: Object.assign((strings: TemplateStringsArray) => strings.join(""), {
-    raw: vi.fn(),
-  }),
+  sql: createSqlMock(),
 }));
 
 vi.mock("@react-pdf/renderer", () => ({

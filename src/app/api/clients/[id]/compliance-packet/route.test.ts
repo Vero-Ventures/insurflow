@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  assetSchemaMock,
+  clientSchemaMock,
+  createSqlMock,
+  createWithApiHandlerMock,
+  debtSchemaMock,
+  policySchemaMock,
+  TEST_CLIENT_ID,
+  TEST_USER_ID,
+} from "@/app/api/clients/__tests__/helpers/route-test-mocks";
+
 const calculateInsuranceNeedsRoundedWithTraceMock = vi.fn();
 const captureServerAnalyticsEventMock = vi.fn();
 const computeEstimateConfidenceMock = vi.fn();
@@ -8,72 +19,30 @@ const pdfToBufferMock = vi.fn();
 const resolveExistingCoverageMock = vi.fn();
 
 vi.mock("@/lib/api/route-helpers", () => ({
-  withApiHandler: (
-    _config: unknown,
-    handler: (
-      request: Request,
-      context: {
-        clientId: string;
-        logger: {
-          info: (...args: unknown[]) => Promise<void>;
-          warn: (...args: unknown[]) => Promise<void>;
-        };
-        session: { user: { id: string } };
-      },
-    ) => Promise<Response | { data: unknown; status?: number }>,
-  ) => {
-    return async (request: Request) => {
-      const result = await handler(request, {
-        clientId: "client-123",
-        logger: {
-          info: vi.fn().mockResolvedValue(undefined),
-          warn: vi.fn().mockResolvedValue(undefined),
-        },
-        session: { user: { id: "user-123" } },
-      });
-
-      if (result instanceof Response) {
-        return result;
-      }
-
-      return Response.json(result.data, { status: result.status ?? 200 });
-    };
-  },
+  withApiHandler: createWithApiHandlerMock({
+    clientId: TEST_CLIENT_ID,
+    logger: {
+      info: vi.fn().mockResolvedValue(undefined),
+      warn: vi.fn().mockResolvedValue(undefined),
+    },
+    session: { user: { id: TEST_USER_ID } },
+  }),
 }));
 
 vi.mock("@/server/db", () => ({ getDb: getDbMock }));
 
 vi.mock("@/server/db/schemas", () => ({
-  asset: {
-    currentValue: "currentValue",
-    isLiquid: "isLiquid",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
-  client: { id: "id", userId: "userId", deletedAt: "deletedAt" },
-  debt: {
-    currentBalance: "currentBalance",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
-  policy: {
-    status: "status",
-    faceAmount: "faceAmount",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
+  debt: debtSchemaMock,
+  policy: policySchemaMock,
 }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn(() => "and"),
   eq: vi.fn(() => "eq"),
   isNull: vi.fn(() => "isNull"),
-  sql: Object.assign(
-    (strings: TemplateStringsArray) => ({ as: () => strings.join("") }),
-    {
-      raw: vi.fn(),
-    },
-  ),
+  sql: createSqlMock({ withAlias: true }),
 }));
 
 vi.mock("@react-pdf/renderer", () => ({

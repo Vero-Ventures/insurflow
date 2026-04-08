@@ -1,5 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  assetSchemaMock,
+  clientSchemaMock,
+  createAsyncLoggerMock,
+  createSqlMock,
+  createWithApiHandlerMock,
+  debtSchemaMock,
+  TEST_USER_ID,
+  TEST_UUID_CLIENT_ID,
+  TEST_UUID_JOB_ID,
+} from "@/app/api/clients/__tests__/helpers/route-test-mocks";
+
 const enqueueLetterGenerationJobMock = vi.fn();
 const calculateInsuranceNeedsRoundedMock = vi.fn();
 const buildReasonsWhyPromptMock = vi.fn();
@@ -9,43 +21,11 @@ const isGeminiConfiguredMock = vi.fn();
 const captureServerAnalyticsEventMock = vi.fn();
 
 vi.mock("@/lib/api/route-helpers", () => ({
-  withApiHandler: (
-    _config: unknown,
-    handler: (
-      request: Request,
-      context: {
-        logger: {
-          addContext: (ctx: Record<string, unknown>) => void;
-          info: (...args: unknown[]) => Promise<void>;
-          warn: (...args: unknown[]) => Promise<void>;
-          error: (...args: unknown[]) => Promise<void>;
-        };
-        clientId: string;
-        session: { user: { id: string } };
-      },
-    ) => Promise<Response | { data: unknown; status?: number }>,
-  ) => {
-    return async (request: Request) => {
-      const logger = {
-        addContext: vi.fn(),
-        info: vi.fn().mockResolvedValue(undefined),
-        warn: vi.fn().mockResolvedValue(undefined),
-        error: vi.fn().mockResolvedValue(undefined),
-      };
-
-      const result = await handler(request, {
-        logger,
-        clientId: "550e8400-e29b-41d4-a716-446655440001",
-        session: { user: { id: "user-123" } },
-      });
-
-      if (result instanceof Response) {
-        return result;
-      }
-
-      return Response.json(result.data, { status: result.status ?? 200 });
-    };
-  },
+  withApiHandler: createWithApiHandlerMock({
+    logger: createAsyncLoggerMock(),
+    clientId: TEST_UUID_CLIENT_ID,
+    session: { user: { id: TEST_USER_ID } },
+  }),
 }));
 
 vi.mock("@/server/db", () => ({
@@ -53,27 +33,16 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("@/server/db/schemas", () => ({
-  asset: {
-    currentValue: "currentValue",
-    isLiquid: "isLiquid",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
-  client: { id: "id", userId: "userId", deletedAt: "deletedAt" },
-  debt: {
-    currentBalance: "currentBalance",
-    clientId: "clientId",
-    deletedAt: "deletedAt",
-  },
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
+  debt: debtSchemaMock,
 }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn(() => "and"),
   eq: vi.fn(() => "eq"),
   isNull: vi.fn(() => "isNull"),
-  sql: Object.assign((strings: TemplateStringsArray) => strings.join(""), {
-    raw: vi.fn(),
-  }),
+  sql: createSqlMock(),
 }));
 
 vi.mock("@/lib/api/letter-generation-helpers", () => ({
@@ -179,10 +148,9 @@ describe("POST /api/clients/[id]/generate-letter", () => {
       maxOutputTokens: 2048,
     });
     expect(body).toEqual({
-      jobId: "550e8400-e29b-41d4-a716-446655440099",
+      jobId: TEST_UUID_JOB_ID,
       status: "queued",
-      pollUrl:
-        "/api/clients/550e8400-e29b-41d4-a716-446655440001/letter-jobs/550e8400-e29b-41d4-a716-446655440099",
+      pollUrl: `/api/clients/${TEST_UUID_CLIENT_ID}/letter-jobs/${TEST_UUID_JOB_ID}`,
     });
     expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
