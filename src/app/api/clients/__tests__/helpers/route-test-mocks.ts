@@ -5,16 +5,6 @@ export const TEST_USER_ID = "user-123";
 export const TEST_UUID_CLIENT_ID = "550e8400-e29b-41d4-a716-446655440001";
 export const TEST_UUID_JOB_ID = "550e8400-e29b-41d4-a716-446655440099";
 
-const basicDbMockState: {
-  getDbMock: ReturnType<typeof vi.fn> | null;
-  includePolicy: boolean;
-  sqlWithAlias: boolean;
-} = {
-  getDbMock: null,
-  includePolicy: false,
-  sqlWithAlias: false,
-};
-
 export const assetSchemaMock = {
   currentValue: "currentValue",
   isLiquid: "isLiquid",
@@ -84,36 +74,6 @@ export function createSqlMock(options?: { withAlias?: boolean }) {
       raw: vi.fn(),
     },
   );
-}
-
-export function registerBasicClientDbMocks(
-  getDbMock: ReturnType<typeof vi.fn>,
-  options?: {
-    includePolicy?: boolean;
-    sqlWithAlias?: boolean;
-  },
-) {
-  basicDbMockState.getDbMock = getDbMock;
-  basicDbMockState.includePolicy = options?.includePolicy ?? false;
-  basicDbMockState.sqlWithAlias = options?.sqlWithAlias ?? false;
-
-  vi.mock("@/server/db", () => ({
-    getDb: basicDbMockState.getDbMock,
-  }));
-
-  vi.mock("@/server/db/schemas", () => ({
-    asset: assetSchemaMock,
-    client: clientSchemaMock,
-    debt: debtSchemaMock,
-    ...(basicDbMockState.includePolicy ? { policy: policySchemaMock } : {}),
-  }));
-
-  vi.mock("drizzle-orm", () => ({
-    and: vi.fn(() => "and"),
-    eq: vi.fn(() => "eq"),
-    isNull: vi.fn(() => "isNull"),
-    sql: createSqlMock({ withAlias: basicDbMockState.sqlWithAlias }),
-  }));
 }
 
 export function expectCapturedAnalyticsEvent(

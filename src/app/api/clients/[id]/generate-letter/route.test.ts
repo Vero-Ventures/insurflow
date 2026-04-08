@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  assetSchemaMock,
+  clientSchemaMock,
   createAsyncLoggerMock,
+  createSqlMock,
   createWithApiHandlerMock,
-  registerBasicClientDbMocks,
+  debtSchemaMock,
   TEST_USER_ID,
   TEST_UUID_CLIENT_ID,
   TEST_UUID_JOB_ID,
@@ -25,7 +28,22 @@ vi.mock("@/lib/api/route-helpers", () => ({
   }),
 }));
 
-registerBasicClientDbMocks(getDbMock);
+vi.mock("@/server/db", () => ({
+  getDb: getDbMock,
+}));
+
+vi.mock("@/server/db/schemas", () => ({
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
+  debt: debtSchemaMock,
+}));
+
+vi.mock("drizzle-orm", () => ({
+  and: vi.fn(() => "and"),
+  eq: vi.fn(() => "eq"),
+  isNull: vi.fn(() => "isNull"),
+  sql: createSqlMock(),
+}));
 
 vi.mock("@/lib/api/letter-generation-helpers", () => ({
   enqueueLetterGenerationJob: (...args: unknown[]) =>

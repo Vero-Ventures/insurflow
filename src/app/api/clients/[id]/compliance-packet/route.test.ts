@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  assetSchemaMock,
+  clientSchemaMock,
+  createSqlMock,
   createWithApiHandlerMock,
+  debtSchemaMock,
   expectCapturedAnalyticsEvent,
-  registerBasicClientDbMocks,
+  policySchemaMock,
   TEST_CLIENT_ID,
   TEST_USER_ID,
 } from "@/app/api/clients/__tests__/helpers/route-test-mocks";
@@ -26,10 +30,21 @@ vi.mock("@/lib/api/route-helpers", () => ({
   }),
 }));
 
-registerBasicClientDbMocks(getDbMock, {
-  includePolicy: true,
-  sqlWithAlias: true,
-});
+vi.mock("@/server/db", () => ({ getDb: getDbMock }));
+
+vi.mock("@/server/db/schemas", () => ({
+  asset: assetSchemaMock,
+  client: clientSchemaMock,
+  debt: debtSchemaMock,
+  policy: policySchemaMock,
+}));
+
+vi.mock("drizzle-orm", () => ({
+  and: vi.fn(() => "and"),
+  eq: vi.fn(() => "eq"),
+  isNull: vi.fn(() => "isNull"),
+  sql: createSqlMock({ withAlias: true }),
+}));
 
 vi.mock("@react-pdf/renderer", () => ({
   pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
