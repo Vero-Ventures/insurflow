@@ -66,17 +66,24 @@ export async function registerObservability(): Promise<void> {
   }
 }
 
-function buildOtlpSignalUrl(
+export function buildOtlpSignalUrl(
   baseUrl: string,
   signal: "metrics" | "traces",
 ): string {
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
-  const withoutSignalSuffix = normalizedBaseUrl.replace(
-    /\/v1\/(logs|metrics|traces)$/,
-    "",
-  );
+  let normalizedBaseUrl = baseUrl;
 
-  return `${withoutSignalSuffix}/v1/${signal}`;
+  while (normalizedBaseUrl.endsWith("/")) {
+    normalizedBaseUrl = normalizedBaseUrl.slice(0, -1);
+  }
+
+  for (const suffix of ["/v1/logs", "/v1/metrics", "/v1/traces"] as const) {
+    if (normalizedBaseUrl.endsWith(suffix)) {
+      normalizedBaseUrl = normalizedBaseUrl.slice(0, -suffix.length);
+      break;
+    }
+  }
+
+  return `${normalizedBaseUrl}/v1/${signal}`;
 }
 
 function parseHeaders(rawHeaders: string): Record<string, string> {
