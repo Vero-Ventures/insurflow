@@ -1,12 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  assetSchemaMock,
-  clientSchemaMock,
-  createSqlMock,
   createWithApiHandlerMock,
-  debtSchemaMock,
-  policySchemaMock,
+  expectCapturedAnalyticsEvent,
+  registerBasicClientDbMocks,
   TEST_CLIENT_ID,
   TEST_USER_ID,
 } from "@/app/api/clients/__tests__/helpers/route-test-mocks";
@@ -29,21 +26,10 @@ vi.mock("@/lib/api/route-helpers", () => ({
   }),
 }));
 
-vi.mock("@/server/db", () => ({ getDb: getDbMock }));
-
-vi.mock("@/server/db/schemas", () => ({
-  asset: assetSchemaMock,
-  client: clientSchemaMock,
-  debt: debtSchemaMock,
-  policy: policySchemaMock,
-}));
-
-vi.mock("drizzle-orm", () => ({
-  and: vi.fn(() => "and"),
-  eq: vi.fn(() => "eq"),
-  isNull: vi.fn(() => "isNull"),
-  sql: createSqlMock({ withAlias: true }),
-}));
+registerBasicClientDbMocks(getDbMock, {
+  includePolicy: true,
+  sqlWithAlias: true,
+});
 
 vi.mock("@react-pdf/renderer", () => ({
   pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
@@ -154,16 +140,12 @@ describe("GET /api/clients/[id]/compliance-packet", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        distinctId: "user-123",
-        event: "report_pdf_generated",
-        properties: expect.objectContaining({
-          feature: "compliance-packet",
-          outcome: "completed",
-          route: "/api/clients/[id]/compliance-packet",
-        }),
-      }),
-    );
+    expectCapturedAnalyticsEvent(captureServerAnalyticsEventMock, {
+      distinctId: "user-123",
+      event: "report_pdf_generated",
+      feature: "compliance-packet",
+      outcome: "completed",
+      route: "/api/clients/[id]/compliance-packet",
+    });
   });
 });

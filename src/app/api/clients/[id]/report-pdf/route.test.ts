@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  assetSchemaMock,
-  clientSchemaMock,
-  createSqlMock,
   createWithApiHandlerMock,
-  debtSchemaMock,
+  expectCapturedAnalyticsEvent,
+  registerBasicClientDbMocks,
   TEST_CLIENT_ID,
   TEST_USER_ID,
 } from "@/app/api/clients/__tests__/helpers/route-test-mocks";
@@ -22,22 +20,7 @@ vi.mock("@/lib/api/route-helpers", () => ({
   }),
 }));
 
-vi.mock("@/server/db", () => ({
-  getDb: getDbMock,
-}));
-
-vi.mock("@/server/db/schemas", () => ({
-  asset: assetSchemaMock,
-  client: clientSchemaMock,
-  debt: debtSchemaMock,
-}));
-
-vi.mock("drizzle-orm", () => ({
-  and: vi.fn(() => "and"),
-  eq: vi.fn(() => "eq"),
-  isNull: vi.fn(() => "isNull"),
-  sql: createSqlMock(),
-}));
+registerBasicClientDbMocks(getDbMock);
 
 vi.mock("@react-pdf/renderer", () => ({
   pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
@@ -111,16 +94,12 @@ describe("GET /api/clients/[id]/report-pdf", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(captureServerAnalyticsEventMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        distinctId: "user-123",
-        event: "report_pdf_generated",
-        properties: expect.objectContaining({
-          feature: "client-report-pdf",
-          outcome: "completed",
-          route: "/api/clients/[id]/report-pdf",
-        }),
-      }),
-    );
+    expectCapturedAnalyticsEvent(captureServerAnalyticsEventMock, {
+      distinctId: "user-123",
+      event: "report_pdf_generated",
+      feature: "client-report-pdf",
+      outcome: "completed",
+      route: "/api/clients/[id]/report-pdf",
+    });
   });
 });
