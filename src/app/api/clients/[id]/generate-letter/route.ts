@@ -17,6 +17,8 @@ import {
   GeminiApiError,
   GEMINI_MODEL,
 } from "@/server/ai";
+import { recordAiLetterJob } from "@/server/observability/business-metrics";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 
 const LETTER_GENERATION_TEMPERATURE = "0.7";
 const LETTER_GENERATION_MAX_OUTPUT_TOKENS = 2048;
@@ -45,6 +47,17 @@ export const POST = withApiHandler(
     requireClient: true,
   },
   async (_request, { logger, clientId, session }) => {
+    const runTelemetry = (action: () => void | Promise<void>) => {
+      try {
+        const result = action();
+        if (result instanceof Promise) {
+          void result.catch(() => undefined);
+        }
+      } catch {
+        // Telemetry must never break the request lifecycle.
+      }
+    };
+
     const db = getDb();
 
     // Fetch client data
@@ -57,6 +70,7 @@ export const POST = withApiHandler(
     });
 
     if (!clientData) {
+      runTelemetry(() => recordAiLetterJob("rejected"));
       await logger.info("Client not found for letter generation", {
         statusCode: 404,
       });
@@ -92,6 +106,7 @@ export const POST = withApiHandler(
       totalDebts > 0;
 
     if (!hasFinancialData) {
+      runTelemetry(() => recordAiLetterJob("rejected"));
       await logger.warn("Insufficient data for letter generation", {
         statusCode: 422,
       });
@@ -148,8 +163,38 @@ export const POST = withApiHandler(
 
     const workerEnabled = process.env.LETTER_WORKER_ENABLED === "true";
 
+    const trackLetterEvent = (
+      outcome: "completed" | "failed" | "queued" | "rejected",
+    ) => {
+      runTelemetry(() =>
+        captureServerAnalyticsEvent({
+          distinctId: session.user.id,
+          event:
+            outcome === "failed"
+              ? "letter_generation_failed"
+              : outcome === "completed"
+                ? "letter_generation_completed"
+                : "letter_generation_started",
+          properties: {
+            feature: "reasons-why-letter",
+            outcome,
+            route: "/api/clients/[id]/generate-letter",
+            source: workerEnabled ? "worker" : "sync",
+          },
+        }),
+      );
+    };
+
+    const recordLetterMetric = (
+      outcome: "completed" | "failed" | "queued" | "rejected",
+    ) => {
+      runTelemetry(() => recordAiLetterJob(outcome));
+    };
+
     if (!workerEnabled) {
       if (!isGeminiConfigured()) {
+        trackLetterEvent("rejected");
+        recordLetterMetric("rejected");
         await logger.warn("Gemini API not configured", { statusCode: 503 });
         return NextResponse.json(
           {
@@ -162,11 +207,15 @@ export const POST = withApiHandler(
       }
 
       try {
+        trackLetterEvent("queued");
+        recordLetterMetric("queued");
         const letter = await generateText({
           prompt,
           temperature: Number(LETTER_GENERATION_TEMPERATURE),
           maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
         });
+        trackLetterEvent("completed");
+        recordLetterMetric("completed");
 
         await logger.info("Letter generated synchronously", {
           statusCode: 200,
@@ -183,6 +232,8 @@ export const POST = withApiHandler(
         };
       } catch (error) {
         if (error instanceof GeminiApiError) {
+          trackLetterEvent("failed");
+          recordLetterMetric("failed");
           await logger.error("Gemini API error", error, {
             statusCode: error.statusCode,
             details: error.details,
@@ -209,6 +260,9 @@ export const POST = withApiHandler(
       temperature: LETTER_GENERATION_TEMPERATURE,
       maxOutputTokens: LETTER_GENERATION_MAX_OUTPUT_TOKENS,
     });
+
+    trackLetterEvent("queued");
+    recordLetterMetric("queued");
 
     await logger.info("Letter generation queued", {
       statusCode: 202,

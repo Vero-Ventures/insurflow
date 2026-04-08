@@ -19,13 +19,14 @@
  */
 
 import { NextResponse } from "next/server";
-import { createLogger } from "@/server/axiom";
 import {
   getCarrierProvider,
   listProviderIds,
 } from "@/lib/providers/carrier-registry";
 import { persistWebhookEvent } from "@/lib/api/webhook-helpers";
 import { createRequestApplicationEventContext } from "@/server/audit/request-context";
+import { recordCarrierWebhookEvent } from "@/server/observability/business-metrics";
+import { createManualRouteLogger } from "@/server/observability/route-logger";
 
 // Node runtime required for crypto operations (HMAC verification)
 export const runtime = "nodejs";
@@ -42,12 +43,19 @@ const MAX_PAYLOAD_SIZE = 1024 * 1024;
  * Accepts carrier webhook events, verifies authenticity, and persists them.
  */
 export async function POST(request: Request): Promise<NextResponse> {
-  const logger = createLogger({
-    endpoint: "/api/carriers/webhook",
-    method: "POST",
-  });
+  const routeLogger = createManualRouteLogger(
+    request,
+    "/api/carriers/webhook",
+    "POST",
+  );
+  const logger = routeLogger.logger;
 
   try {
+    await logger.info("API request received", {
+      requestMethod: routeLogger.context.requestMethod,
+      requestUrl: routeLogger.context.requestUrl,
+    });
+
     // 1. Extract and validate provider ID from query string
     const url = new URL(request.url);
     const userProvidedId = url.searchParams.get("provider");
@@ -66,10 +74,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         providedValue: userProvidedId ? "[redacted]" : "missing",
         validProviders: validProviderIds,
       });
+      recordCarrierWebhookEvent("unknown", "rejected");
       // Return generic error to avoid information disclosure
-      return NextResponse.json(
-        { error: "Invalid or unknown provider" },
-        { status: 400 },
+      return routeLogger.complete(
+        NextResponse.json(
+          { error: "Invalid or unknown provider" },
+          { status: 400 },
+        ),
       );
     }
 
@@ -84,9 +95,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         "Provider registry inconsistency",
         new Error(`Provider '${providerId}' in allowlist but not in registry`),
       );
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 },
+      recordCarrierWebhookEvent(providerId, "failed");
+      return routeLogger.complete(
+        NextResponse.json({ error: "Internal server error" }, { status: 500 }),
       );
     }
 
@@ -101,7 +112,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         size: rawBody.length,
         limit: MAX_PAYLOAD_SIZE,
       });
-      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+      recordCarrierWebhookEvent(providerId, "rejected");
+      return routeLogger.complete(
+        NextResponse.json({ error: "Payload too large" }, { status: 413 }),
+      );
     }
 
     // 4. Verify webhook authenticity and parse payload
@@ -115,9 +129,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         reason: verification.error,
         statusCode: verification.statusCode,
       });
-      return NextResponse.json(
-        { error: verification.error },
-        { status: verification.statusCode },
+      recordCarrierWebhookEvent(providerId, "rejected");
+      return routeLogger.complete(
+        NextResponse.json(
+          { error: verification.error },
+          { status: verification.statusCode },
+        ),
       );
     }
 
@@ -137,9 +154,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       await logger.info("Duplicate event ignored", {
         providerEventId: event.providerEventId,
       });
-      return NextResponse.json(
-        { accepted: true, duplicate: true },
-        { status: 200 },
+      recordCarrierWebhookEvent(providerId, "duplicate");
+      return routeLogger.complete(
+        NextResponse.json({ accepted: true, duplicate: true }, { status: 200 }),
       );
     }
 
@@ -147,7 +164,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       await logger.warn("Event persistence failed", {
         reason: result.error,
       });
-      return NextResponse.json({ error: result.error }, { status: 422 });
+      recordCarrierWebhookEvent(providerId, "failed");
+      return routeLogger.complete(
+        NextResponse.json({ error: result.error }, { status: 422 }),
+      );
     }
 
     await logger.info("Webhook event processed", {
@@ -155,23 +175,26 @@ export async function POST(request: Request): Promise<NextResponse> {
       providerEventId: event.providerEventId,
       applicationStatus: event.status,
     });
+    recordCarrierWebhookEvent(providerId, "accepted");
 
-    return NextResponse.json(
-      {
-        accepted: true,
-        duplicate: false,
-        statusUpdated: result.statusUpdated,
-      },
-      { status: 200 },
+    return routeLogger.complete(
+      NextResponse.json(
+        {
+          accepted: true,
+          duplicate: false,
+          statusUpdated: result.statusUpdated,
+        },
+        { status: 200 },
+      ),
     );
   } catch (error) {
     await logger.error(
       "Webhook processing error",
       error instanceof Error ? error : new Error(String(error)),
     );
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
+    recordCarrierWebhookEvent("unknown", "failed");
+    return routeLogger.complete(
+      NextResponse.json({ error: "Internal server error" }, { status: 500 }),
     );
   }
 }

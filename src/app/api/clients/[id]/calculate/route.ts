@@ -21,6 +21,7 @@ import {
 } from "@/lib/financial/confidence-scoring";
 import { resolveExistingCoverage } from "@/lib/policy-utils";
 import { decimalToNumber } from "@/lib/financial/decimal-to-number";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 
 /**
  * Zod schema for estate buffer configuration
@@ -241,6 +242,18 @@ export const POST = withApiHandler(
       statusCode: 200,
       totalInsuranceNeeds: result.totalInsuranceNeeds,
       grossNeeds: result.grossNeeds,
+    });
+
+    captureServerAnalyticsEvent({
+      distinctId: session.user.id,
+      event: "calculation_run",
+      properties: {
+        feature: "insurance-needs",
+        hasBusiness: false,
+        outcome: "completed",
+        route: "/api/clients/[id]/calculate",
+        source: "api",
+      },
     });
 
     return {

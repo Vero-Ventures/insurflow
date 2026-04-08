@@ -9,12 +9,24 @@ import {
 } from "@/lib/demo-data";
 import { formatCurrency } from "@/lib/client-utils";
 import { decimalToNumber } from "@/lib/financial/decimal-to-number";
+import { createManualRouteLogger } from "@/server/observability/route-logger";
 import { createClientReportPdfDocument } from "@/server/pdf/client-report-pdf";
 import { safeFilename } from "@/server/pdf/utils";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const routeLogger = createManualRouteLogger(
+    request,
+    "/api/demo/report-pdf",
+    "GET",
+  );
+
+  await routeLogger.logger.info("API request received", {
+    requestMethod: routeLogger.context.requestMethod,
+    requestUrl: routeLogger.context.requestUrl,
+  });
+
   try {
     const client = demoClient;
     const clientName = `${client.firstName} ${client.lastName}`;
@@ -100,16 +112,24 @@ export async function GET() {
     const buffer = await pdf(doc).toBuffer();
     const filename = `${safeFilename(clientName)}-insurflow-demo-report.pdf`;
 
-    return new NextResponse(buffer as unknown as BodyInit, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=\"${filename}\"`,
-        "Cache-Control": "private, no-store",
-      },
-    });
+    return routeLogger.complete(
+      new NextResponse(buffer as unknown as BodyInit, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename=\"${filename}\"`,
+          "Cache-Control": "private, no-store",
+        },
+      }),
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to generate demo PDF";
-    return NextResponse.json({ error: message }, { status: 500 });
+    await routeLogger.logger.error(
+      "Error in GET /api/demo/report-pdf",
+      error instanceof Error ? error : new Error(String(error)),
+    );
+    return routeLogger.complete(
+      NextResponse.json({ error: message }, { status: 500 }),
+    );
   }
 }

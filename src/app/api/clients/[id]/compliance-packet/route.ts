@@ -40,6 +40,7 @@ import {
   hasClientValue,
 } from "./route-helpers";
 import { safeFilename } from "@/server/pdf/utils";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 
 /** Keep this route on Node runtime for PDF generation */
 export const runtime = "nodejs";
@@ -260,6 +261,17 @@ export const GET = withApiHandler(
       clientId,
       packetVersion: packet.metadata.packetVersion,
       confidenceScore: confidence.score,
+    });
+
+    captureServerAnalyticsEvent({
+      distinctId: session.user.id,
+      event: "report_pdf_generated",
+      properties: {
+        feature: "compliance-packet",
+        outcome: "completed",
+        route: "/api/clients/[id]/compliance-packet",
+        source: "api",
+      },
     });
 
     return new NextResponse(buffer as unknown as BodyInit, {

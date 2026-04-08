@@ -12,6 +12,7 @@ import { getServerActionApplicationEventContext } from "@/server/audit/request-c
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
+import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 import { getCarrierProvider } from "@/server/providers/get-carrier-provider";
 
 export async function submitApplicationAction(formData: FormData) {
@@ -124,6 +125,17 @@ export async function submitApplicationAction(formData: FormData) {
     auditContext,
     true,
   );
+
+  await captureServerAnalyticsEvent({
+    distinctId: session.user.id,
+    event: "d2c_application_submitted",
+    properties: {
+      feature: "d2c-application",
+      outcome: "completed",
+      route: "/apply/submit",
+      source: "server-action",
+    },
+  });
 
   redirect(AUTHENTICATED_HOME_ROUTE);
 }

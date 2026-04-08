@@ -112,6 +112,62 @@ resource "vercel_project_environment_variable" "axiom_dataset_prod" {
   comment    = "Axiom dataset name"
 }
 
+resource "vercel_project_environment_variable" "grafana_otlp_endpoint_prod" {
+  count      = var.grafana_otlp_endpoint != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_OTLP_ENDPOINT"
+  value      = var.grafana_otlp_endpoint
+  target     = ["production"]
+  comment    = "Grafana Cloud OTLP endpoint"
+}
+
+resource "vercel_project_environment_variable" "grafana_otlp_headers_prod" {
+  count      = var.grafana_otlp_headers != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_OTLP_HEADERS"
+  value      = var.grafana_otlp_headers
+  target     = ["production"]
+  sensitive  = true
+  comment    = "Grafana Cloud OTLP auth headers"
+}
+
+resource "vercel_project_environment_variable" "grafana_instance_id_prod" {
+  count      = var.grafana_instance_id != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_INSTANCE_ID"
+  value      = var.grafana_instance_id
+  target     = ["production"]
+  comment    = "Grafana Cloud instance id"
+}
+
+resource "vercel_project_environment_variable" "posthog_key_prod" {
+  count      = var.posthog_key != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_KEY"
+  value      = var.posthog_key
+  target     = ["production"]
+  sensitive  = true
+  comment    = "PostHog project key"
+}
+
+resource "vercel_project_environment_variable" "posthog_host_prod" {
+  count      = var.posthog_host != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_HOST"
+  value      = var.posthog_host
+  target     = ["production"]
+  comment    = "PostHog API host"
+}
+
+resource "vercel_project_environment_variable" "posthog_ui_host_prod" {
+  count      = var.posthog_ui_host != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_UI_HOST"
+  value      = var.posthog_ui_host
+  target     = ["production"]
+  comment    = "PostHog UI host"
+}
+
 # =============================================================================
 # Environment Variables - Preview
 # =============================================================================
@@ -148,6 +204,62 @@ resource "vercel_project_environment_variable" "axiom_dataset_preview" {
   value      = var.axiom_dataset
   target     = ["preview"]
   comment    = "Axiom dataset name"
+}
+
+resource "vercel_project_environment_variable" "grafana_otlp_endpoint_preview" {
+  count      = var.grafana_otlp_endpoint != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_OTLP_ENDPOINT"
+  value      = var.grafana_otlp_endpoint
+  target     = ["preview"]
+  comment    = "Grafana Cloud OTLP endpoint"
+}
+
+resource "vercel_project_environment_variable" "grafana_otlp_headers_preview" {
+  count      = var.grafana_otlp_headers != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_OTLP_HEADERS"
+  value      = var.grafana_otlp_headers
+  target     = ["preview"]
+  sensitive  = true
+  comment    = "Grafana Cloud OTLP auth headers"
+}
+
+resource "vercel_project_environment_variable" "grafana_instance_id_preview" {
+  count      = var.grafana_instance_id != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "GRAFANA_INSTANCE_ID"
+  value      = var.grafana_instance_id
+  target     = ["preview"]
+  comment    = "Grafana Cloud instance id"
+}
+
+resource "vercel_project_environment_variable" "posthog_key_preview" {
+  count      = var.posthog_key != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_KEY"
+  value      = var.posthog_key
+  target     = ["preview"]
+  sensitive  = true
+  comment    = "PostHog project key"
+}
+
+resource "vercel_project_environment_variable" "posthog_host_preview" {
+  count      = var.posthog_host != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_HOST"
+  value      = var.posthog_host
+  target     = ["preview"]
+  comment    = "PostHog API host"
+}
+
+resource "vercel_project_environment_variable" "posthog_ui_host_preview" {
+  count      = var.posthog_ui_host != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "NEXT_PUBLIC_POSTHOG_UI_HOST"
+  value      = var.posthog_ui_host
+  target     = ["preview"]
+  comment    = "PostHog UI host"
 }
 
 # =============================================================================

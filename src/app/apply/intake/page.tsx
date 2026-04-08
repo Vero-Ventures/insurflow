@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, Clock3, Loader2, MapPin, Calendar } from "lucide-react";
 import { useDraftPersistence } from "@/lib/d2c/use-draft-persistence";
+import { captureAnalyticsEvent } from "@/lib/analytics/capture";
 import { PROVINCE_NAMES, type CanadianProvince } from "@/lib/constants";
 
 const TOTAL_STEPS = 4;
@@ -34,6 +36,15 @@ export default function D2cIntakePage() {
 
   const { intake, updateField, isHydrated, clientId, isSaving } =
     useDraftPersistence({ initialClientId });
+
+  useEffect(() => {
+    captureAnalyticsEvent("d2c_application_started", {
+      feature: "d2c-application",
+      outcome: "started",
+      route: "/apply/intake",
+      source: "page-load",
+    });
+  }, []);
 
   const handleContinue = () => {
     // Pass clientId forward so the fact finding step can reference the draft

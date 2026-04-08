@@ -7,6 +7,12 @@ const refreshMock = vi.fn();
 const pushMock = vi.fn();
 const replaceMock = vi.fn();
 
+const { posthogProviderMock } = vi.hoisted(() => ({
+  posthogProviderMock: vi.fn(
+    ({ children }: { children: React.ReactNode }) => children,
+  ),
+}));
+
 let mockPathname = "/dashboard";
 let capturedOnSessionChange: (() => void) | undefined;
 let capturedCredentials: { forgotPassword?: boolean } | undefined;
@@ -46,6 +52,10 @@ vi.mock("@daveyplate/better-auth-ui", () => ({
 
 vi.mock("@/server/better-auth/client", () => ({
   authClient: {},
+}));
+
+vi.mock("@/components/posthog-provider", () => ({
+  PostHogProvider: posthogProviderMock,
 }));
 
 describe("Providers", () => {
@@ -91,5 +101,15 @@ describe("Providers", () => {
     );
 
     expect(capturedCredentials).toEqual({ forgotPassword: true });
+  });
+
+  it("renders through the PostHog provider wrapper", () => {
+    render(
+      <Providers socialProviderIds={[]}>
+        <div>child</div>
+      </Providers>,
+    );
+
+    expect(posthogProviderMock).toHaveBeenCalledTimes(1);
   });
 });

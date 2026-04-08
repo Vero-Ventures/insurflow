@@ -38,6 +38,13 @@
     "prepare": "node -e \"if (process.env.CI !== 'true') { import('husky').then(m => m.default()) }\""
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.205.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.205.0",
+    "@opentelemetry/resources": "^2.1.0",
+    "@opentelemetry/sdk-metrics": "^2.1.0",
+    "@opentelemetry/sdk-node": "^0.205.0",
+    "@opentelemetry/semantic-conventions": "^1.38.0",
     "@axiomhq/js": "^1.4.0",
     "@daveyplate/better-auth-ui": "^3.3.15",
     "@hugeicons/core-free-icons": "^3.1.1",
@@ -60,6 +67,7 @@
     "next": "^16.1.6",
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.4",
+    "posthog-js": "^1.254.0",
     "postgres": "^3.4.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

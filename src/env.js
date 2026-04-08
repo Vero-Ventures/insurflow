@@ -45,6 +45,9 @@ export const env = createEnv({
     AXIOM_TOKEN: z.string().optional(),
     AXIOM_DATASET: z.string().optional(),
     AXIOM_ORG_ID: z.string().optional(),
+    GRAFANA_OTLP_ENDPOINT: z.string().url().optional(),
+    GRAFANA_OTLP_HEADERS: z.string().optional(),
+    GRAFANA_INSTANCE_ID: z.string().optional(),
 
     // Gemini AI (GenAI Co-Pilot)
     GEMINI_API_KEY: z.string().optional(),
@@ -58,7 +61,9 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // Client-side environment variables can be added here
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+    NEXT_PUBLIC_POSTHOG_UI_HOST: z.string().url().optional(),
   },
 
   /**
@@ -85,6 +90,12 @@ export const env = createEnv({
     AXIOM_TOKEN: process.env.AXIOM_TOKEN,
     AXIOM_DATASET: process.env.AXIOM_DATASET,
     AXIOM_ORG_ID: process.env.AXIOM_ORG_ID,
+    GRAFANA_OTLP_ENDPOINT: process.env.GRAFANA_OTLP_ENDPOINT,
+    GRAFANA_OTLP_HEADERS: process.env.GRAFANA_OTLP_HEADERS,
+    GRAFANA_INSTANCE_ID: process.env.GRAFANA_INSTANCE_ID,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
 
     // Gemini AI
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,

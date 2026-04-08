@@ -85,3 +85,4 @@ coverage/
 .scannerwork/
 # git worktrees
 .worktrees/
+.env.local

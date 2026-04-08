@@ -1,0 +1,105 @@
+import { beforeEach, describe, it, vi } from "vitest";
+
+import {
+  createBasicClientSchemasModule,
+  createBasicDrizzleModule,
+  createGetDbModule,
+  createWithApiHandlerMock,
+  expectTrackedGetResponse,
+  TEST_CLIENT_ID,
+  TEST_USER_ID,
+} from "@/app/api/clients/__tests__/helpers/route-test-mocks";
+
+const calculateInsuranceNeedsRoundedMock = vi.fn();
+const captureServerAnalyticsEventMock = vi.fn();
+const getDbMock = vi.fn();
+const pdfToBufferMock = vi.fn();
+
+vi.mock("@/lib/api/route-helpers", () => ({
+  withApiHandler: createWithApiHandlerMock({
+    clientId: TEST_CLIENT_ID,
+    session: { user: { id: TEST_USER_ID } },
+  }),
+}));
+
+vi.mock("@/server/db", () => createGetDbModule(getDbMock));
+
+vi.mock("@/server/db/schemas", () => createBasicClientSchemasModule());
+
+vi.mock("drizzle-orm", () => createBasicDrizzleModule());
+
+vi.mock("@react-pdf/renderer", () => ({
+  pdf: vi.fn(() => ({ toBuffer: pdfToBufferMock })),
+}));
+
+vi.mock("@/lib/financial/insurance-needs", async () => ({
+  DEFAULT_ESTATE_BUFFER: 15000,
+  calculateInsuranceNeedsRounded: calculateInsuranceNeedsRoundedMock,
+}));
+
+vi.mock("@/server/pdf/client-report-pdf", () => ({
+  createClientReportPdfDocument: vi.fn(() => ({ type: "pdf-doc" })),
+}));
+
+vi.mock("@/server/pdf/utils", () => ({
+  safeFilename: vi.fn(() => "ava-nguyen"),
+}));
+
+vi.mock("@/server/observability/posthog", () => ({
+  captureServerAnalyticsEvent: (...args: unknown[]) =>
+    captureServerAnalyticsEventMock(...args),
+}));
+
+describe("GET /api/clients/[id]/report-pdf", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    let selectCall = 0;
+    const selectResults = [
+      [{ totalAssets: "100000", liquidAssets: "25000" }],
+      [{ totalDebts: "20000" }],
+    ];
+
+    getDbMock.mockReturnValue({
+      query: {
+        client: {
+          findFirst: vi.fn().mockResolvedValue({
+            firstName: "Ava",
+            lastName: "Nguyen",
+            dateOfBirth: "1990-01-01",
+            state: "CA",
+            smoker: false,
+            healthRating: "standard",
+            clientIncome: "120000",
+            spouseIncome: "0",
+            hasSpouse: false,
+            incomeReplacementPercent: "70",
+            replacementDurationYears: 10,
+            existingLifeInsuranceCoverage: "100000",
+          }),
+        },
+      },
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn().mockResolvedValue(selectResults[selectCall++]),
+        })),
+      })),
+    });
+
+    calculateInsuranceNeedsRoundedMock.mockReturnValue({
+      totalInsuranceNeeds: 500000,
+    });
+    pdfToBufferMock.mockResolvedValue(Buffer.from("pdf"));
+  });
+
+  it("captures a report generation analytics event", async () => {
+    const { GET } = await import("./route");
+
+    await expectTrackedGetResponse({
+      analyticsMock: captureServerAnalyticsEventMock,
+      feature: "client-report-pdf",
+      getHandler: GET,
+      route: "/api/clients/[id]/report-pdf",
+    });
+  });
+});

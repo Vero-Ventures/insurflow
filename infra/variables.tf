@@ -86,6 +86,44 @@ variable "axiom_dataset" {
   default     = "insurflow"
 }
 
+variable "grafana_otlp_endpoint" {
+  description = "Grafana Cloud OTLP endpoint for metrics and traces"
+  type        = string
+  default     = ""
+}
+
+variable "grafana_otlp_headers" {
+  description = "Grafana Cloud OTLP headers (for example Authorization=Basic ...)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "grafana_instance_id" {
+  description = "Grafana Cloud instance identifier for dashboard deep links"
+  type        = string
+  default     = ""
+}
+
+variable "posthog_key" {
+  description = "PostHog project API key for product analytics"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "posthog_host" {
+  description = "PostHog API host"
+  type        = string
+  default     = "https://app.posthog.com"
+}
+
+variable "posthog_ui_host" {
+  description = "PostHog UI host for deep links"
+  type        = string
+  default     = "https://us.posthog.com"
+}
+
 # =============================================================================
 # AI/LLM Configuration (Optional)
 # =============================================================================
