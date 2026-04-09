@@ -176,4 +176,5 @@ export function BeneficiaryList({
   );
 }
 
+// TODO: Remove this alias once all imports are updated to use BeneficiaryList.
 export const BeneficiariesList = BeneficiaryList;

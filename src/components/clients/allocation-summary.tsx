@@ -160,7 +160,7 @@ export function AllocationSummary({
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-xl border bg-linear-to-br from-slate-50/50 to-slate-100/30 p-5 dark:from-slate-950/20 dark:to-slate-900/10">
             <p className="text-muted-foreground mb-1 text-sm">Total Assets</p>
             <p className="text-2xl font-bold">{gapAnalysis.totalAssets}</p>
@@ -240,6 +240,40 @@ export function AllocationSummary({
               {gapAnalysis.assetsWithGaps}
             </p>
           </div>
+
+          <div
+            className={`rounded-xl border p-5 ${
+              hasOverAllocated
+                ? "bg-linear-to-br from-orange-50/50 to-orange-100/30 dark:from-orange-950/20 dark:to-orange-900/10"
+                : "bg-linear-to-br from-slate-50/50 to-slate-100/30 dark:from-slate-950/20 dark:to-slate-900/10"
+            }`}
+          >
+            <div className="mb-1 flex items-center gap-2">
+              <p
+                className={`text-sm ${
+                  hasOverAllocated
+                    ? "text-orange-700 dark:text-orange-300"
+                    : "text-muted-foreground"
+                }`}
+              >
+                Over-allocated
+              </p>
+              {hasOverAllocated && (
+                <Badge variant="outline" className="text-xs">
+                  Over 100%
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`text-2xl font-bold ${
+                hasOverAllocated
+                  ? "text-orange-900 dark:text-orange-100"
+                  : "text-foreground"
+              }`}
+            >
+              {gapAnalysis.overAllocatedAssets}
+            </p>
+          </div>
         </div>
 
         {gapAnalysis.assetAnalysis.length > 0 && (
@@ -298,11 +332,15 @@ export function AllocationSummary({
                               : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                           }`}
                         >
-                          {alloc.beneficiaryName}: {alloc.actualPercent}%
+                          {alloc.beneficiaryName}: Actual{" "}
+                          {alloc.actualPercent.toFixed(0)}%
+                          <span className="text-muted-foreground">
+                            (Desired {alloc.desiredPercent.toFixed(0)}%)
+                          </span>
                           {alloc.gapPercent !== 0 && (
                             <span className="text-amber-600 dark:text-amber-400">
                               ({alloc.gapPercent > 0 ? "+" : ""}
-                              {alloc.gapPercent}%)
+                              {alloc.gapPercent.toFixed(0)}%)
                             </span>
                           )}
                         </span>
