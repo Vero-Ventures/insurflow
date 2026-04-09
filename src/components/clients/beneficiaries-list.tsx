@@ -136,7 +136,7 @@ const columns: ColumnDef<Beneficiary>[] = [
   },
 ];
 
-interface BeneficiariesListProps {
+interface BeneficiaryListProps {
   clientId: string;
   items: Beneficiary[];
   isLoading: boolean;
@@ -144,13 +144,13 @@ interface BeneficiariesListProps {
   onItemDeleted: () => void;
 }
 
-export function BeneficiariesList({
+export function BeneficiaryList({
   clientId,
   items,
   isLoading,
   onEdit,
   onItemDeleted,
-}: BeneficiariesListProps) {
+}: BeneficiaryListProps) {
   const handleDelete = async (id: string) => {
     const response = await fetch(
       `/api/clients/${clientId}/beneficiaries/${id}`,
@@ -175,3 +175,6 @@ export function BeneficiariesList({
     />
   );
 }
+
+// TODO: Remove this alias once all imports are updated to use BeneficiaryList.
+export const BeneficiariesList = BeneficiaryList;
