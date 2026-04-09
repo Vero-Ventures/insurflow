@@ -33,6 +33,8 @@ export function AdvancedIncomeResultsSummary({
 }: AdvancedIncomeResultsProps) {
   if (!result) return null;
 
+  const displayMode = result.resolvedInputs.mode ?? mode;
+
   return (
     <div className="space-y-6">
       {calculatedAt && (
@@ -147,12 +149,14 @@ export function AdvancedIncomeResultsSummary({
       <div className="border-border/60 text-muted-foreground space-y-1 border-t pt-4 text-xs">
         <div className="mb-2 flex items-center gap-2">
           <p className="font-medium">Parameters Used:</p>
-          {mode && (
+          {displayMode && (
             <Badge
-              variant={mode === "expense-based" ? "secondary" : "outline"}
+              variant={
+                displayMode === "expense-based" ? "secondary" : "outline"
+              }
               className="text-xs"
             >
-              {mode === "expense-based" ? (
+              {displayMode === "expense-based" ? (
                 <>
                   <Receipt className="mr-1 h-3 w-3" />
                   Expense-Based
@@ -168,7 +172,7 @@ export function AdvancedIncomeResultsSummary({
         </div>
         <ul className="mt-1.5 grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
           {/* Show mode-specific inputs */}
-          {result.resolvedInputs.mode === "expense-based" ? (
+          {displayMode === "expense-based" ? (
             <>
               <li>
                 Annual Expenses:{" "}
