@@ -122,13 +122,20 @@ export function AllocationSummary({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="text-muted-foreground h-4 w-4 cursor-help" />
+                      <button
+                        type="button"
+                        aria-label="Gap analysis help"
+                        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex h-5 w-5 cursor-help items-center justify-center rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                      >
+                        <HelpCircle className="h-4 w-4" aria-hidden="true" />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>
-                        Gap analysis compares desired beneficiary allocations
-                        (what the client wants) vs actual designations (what is
-                        currently on file with each asset).
+                        Gap analysis help: compares desired beneficiary
+                        allocations (what the client wants) vs actual
+                        designations (what is currently on file with each
+                        asset).
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -141,8 +148,14 @@ export function AllocationSummary({
               </CardDescription>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onRefresh}
+            aria-label="Refresh gap analysis"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </CardHeader>
