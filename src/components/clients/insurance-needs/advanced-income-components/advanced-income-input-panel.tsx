@@ -42,6 +42,8 @@ export function AdvancedIncomeInputPanel({
   retirementAge,
   currentAge,
 }: AdvancedIncomeInputPanelProps) {
+  const clampRatePercent = (value: number) => Math.min(50, Math.max(0, value));
+
   const [scenario, setScenario] = useState<DurationScenarioType>("custom");
   const [customYears, setCustomYears] = useState(
     DEFAULT_REPLACEMENT_DURATION_YEARS,
@@ -60,10 +62,13 @@ export function AdvancedIncomeInputPanel({
   );
 
   const handleCalculate = () => {
+    const validatedInflationRate = clampRatePercent(inflationRate);
+    const validatedDiscountRate = clampRatePercent(discountRate);
+
     const params: AdvancedIncomeReplacementParams = {
       durationScenario: scenario,
-      inflationRate: inflationRate / 100,
-      discountRate: discountRate / 100,
+      inflationRate: validatedInflationRate / 100,
+      discountRate: validatedDiscountRate / 100,
     };
     if (scenario === "custom") {
       params.customDurationYears = customYears;
@@ -212,9 +217,12 @@ export function AdvancedIncomeInputPanel({
                 max={50}
                 step={0.1}
                 value={inflationRate}
-                onChange={(e) =>
-                  setInflationRate(parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  const parsed = parseFloat(e.target.value);
+                  setInflationRate(
+                    clampRatePercent(Number.isFinite(parsed) ? parsed : 0),
+                  );
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -226,9 +234,12 @@ export function AdvancedIncomeInputPanel({
                 max={50}
                 step={0.1}
                 value={discountRate}
-                onChange={(e) =>
-                  setDiscountRate(parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  const parsed = parseFloat(e.target.value);
+                  setDiscountRate(
+                    clampRatePercent(Number.isFinite(parsed) ? parsed : 0),
+                  );
+                }}
               />
             </div>
           </div>

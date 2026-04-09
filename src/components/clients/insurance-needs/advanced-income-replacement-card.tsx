@@ -106,7 +106,9 @@ export function AdvancedIncomeReplacementCard({
         {!result && !isLoading && !error && (
           <div className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
             <PiggyBank className="h-4 w-4" />
-            Select a scenario and click Calculate to see results.
+            {isReadOnly
+              ? "Viewing only - no actions available."
+              : "Select a scenario and click Calculate to see results."}
           </div>
         )}
       </CardContent>
