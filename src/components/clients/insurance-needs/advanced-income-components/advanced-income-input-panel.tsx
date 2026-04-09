@@ -41,7 +41,7 @@ export function AdvancedIncomeInputPanel({
   youngestChildAge,
   retirementAge,
   currentAge,
-}: AdvancedIncomeInputPanelProps) {
+}: Readonly<AdvancedIncomeInputPanelProps>) {
   const clampRatePercent = (value: number) => Math.min(50, Math.max(0, value));
 
   const [scenario, setScenario] = useState<DurationScenarioType>("custom");
@@ -111,7 +111,7 @@ export function AdvancedIncomeInputPanel({
               value={annualExpenses}
               onChange={(e) =>
                 setAnnualExpenses(
-                  Math.max(0, parseInt(e.target.value, 10) || 0),
+                  Math.max(0, Number.parseInt(e.target.value, 10) || 0),
                 )
               }
             />
@@ -129,7 +129,10 @@ export function AdvancedIncomeInputPanel({
               value={expenseReductionPercent}
               onChange={(e) =>
                 setExpenseReductionPercent(
-                  Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)),
+                  Math.max(
+                    0,
+                    Math.min(100, Number.parseFloat(e.target.value) || 0),
+                  ),
                 )
               }
             />
@@ -182,7 +185,10 @@ export function AdvancedIncomeInputPanel({
               value={customYears}
               onChange={(e) =>
                 setCustomYears(
-                  Math.max(1, Math.min(80, parseInt(e.target.value, 10) || 1)),
+                  Math.max(
+                    1,
+                    Math.min(80, Number.parseInt(e.target.value, 10) || 1),
+                  ),
                 )
               }
             />
@@ -218,7 +224,7 @@ export function AdvancedIncomeInputPanel({
                 step={0.1}
                 value={inflationRate}
                 onChange={(e) => {
-                  const parsed = parseFloat(e.target.value);
+                  const parsed = Number.parseFloat(e.target.value);
                   setInflationRate(
                     clampRatePercent(Number.isFinite(parsed) ? parsed : 0),
                   );
@@ -235,7 +241,7 @@ export function AdvancedIncomeInputPanel({
                 step={0.1}
                 value={discountRate}
                 onChange={(e) => {
-                  const parsed = parseFloat(e.target.value);
+                  const parsed = Number.parseFloat(e.target.value);
                   setDiscountRate(
                     clampRatePercent(Number.isFinite(parsed) ? parsed : 0),
                   );

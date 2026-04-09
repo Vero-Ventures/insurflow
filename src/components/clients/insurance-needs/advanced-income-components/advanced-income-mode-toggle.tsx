@@ -19,7 +19,7 @@ interface AdvancedIncomeModeToggleProps {
 export function AdvancedIncomeModeToggle({
   mode,
   onChange,
-}: AdvancedIncomeModeToggleProps) {
+}: Readonly<AdvancedIncomeModeToggleProps>) {
   return (
     <div className="space-y-2">
       <Label htmlFor="calculation-mode">Calculation Method</Label>

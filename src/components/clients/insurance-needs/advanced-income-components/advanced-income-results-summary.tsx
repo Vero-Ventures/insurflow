@@ -30,7 +30,7 @@ export function AdvancedIncomeResultsSummary({
   calculatedAt,
   mode,
   calculationMetadata,
-}: AdvancedIncomeResultsProps) {
+}: Readonly<AdvancedIncomeResultsProps>) {
   if (!result) return null;
 
   const displayMode = result.resolvedInputs.mode ?? mode;
@@ -244,8 +244,8 @@ export function AdvancedIncomeResultsSummary({
             <ul className="text-muted-foreground list-inside list-disc space-y-0.5">
               {calculationMetadata.assumptions
                 .slice(0, 4)
-                .map((assumption: string, i: number) => (
-                  <li key={i}>{assumption}</li>
+                .map((assumption: string) => (
+                  <li key={assumption}>{assumption}</li>
                 ))}
             </ul>
           </div>
