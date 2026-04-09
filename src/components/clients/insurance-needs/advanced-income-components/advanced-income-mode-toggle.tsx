@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Receipt, DollarSign } from "lucide-react";
-import type { CalculationModeType } from "./advanced-income-form";
+import type { CalculationModeType } from "./advanced-income-types";
 
 interface AdvancedIncomeModeToggleProps {
   mode: CalculationModeType;

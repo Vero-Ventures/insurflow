@@ -19,14 +19,10 @@ import {
 } from "@/lib/constants";
 import type { AdvancedIncomeReplacementParams } from "@/lib/hooks/use-advanced-income-replacement";
 import { AdvancedIncomeModeToggle } from "./advanced-income-mode-toggle";
-
-export type DurationScenarioType =
-  | "custom"
-  | "childTurns18"
-  | "retirement"
-  | "lifetime";
-
-export type CalculationModeType = "income-multiplier" | "expense-based";
+import type {
+  DurationScenarioType,
+  CalculationModeType,
+} from "./advanced-income-types";
 
 interface AdvancedIncomeInputPanelProps {
   isLoading: boolean;
