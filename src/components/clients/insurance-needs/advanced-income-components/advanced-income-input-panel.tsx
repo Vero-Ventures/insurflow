@@ -16,6 +16,7 @@ import {
   DEFAULT_DISCOUNT_RATE,
   DEFAULT_INFLATION_RATE,
   DEFAULT_EXPENSE_REDUCTION_PERCENT,
+  DEFAULT_REPLACEMENT_DURATION_YEARS,
 } from "@/lib/constants";
 import type { AdvancedIncomeReplacementParams } from "@/lib/hooks/use-advanced-income-replacement";
 import { AdvancedIncomeModeToggle } from "./advanced-income-mode-toggle";
@@ -42,7 +43,9 @@ export function AdvancedIncomeInputPanel({
   currentAge,
 }: AdvancedIncomeInputPanelProps) {
   const [scenario, setScenario] = useState<DurationScenarioType>("custom");
-  const [customYears, setCustomYears] = useState(10);
+  const [customYears, setCustomYears] = useState(
+    DEFAULT_REPLACEMENT_DURATION_YEARS,
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [inflationRate, setInflationRate] = useState(
     DEFAULT_INFLATION_RATE * 100,
@@ -102,7 +105,9 @@ export function AdvancedIncomeInputPanel({
               min={0}
               value={annualExpenses}
               onChange={(e) =>
-                setAnnualExpenses(Math.max(0, parseInt(e.target.value) || 0))
+                setAnnualExpenses(
+                  Math.max(0, parseInt(e.target.value, 10) || 0),
+                )
               }
             />
             <p className="text-muted-foreground text-xs">
@@ -172,7 +177,7 @@ export function AdvancedIncomeInputPanel({
               value={customYears}
               onChange={(e) =>
                 setCustomYears(
-                  Math.max(1, Math.min(80, parseInt(e.target.value) || 1)),
+                  Math.max(1, Math.min(80, parseInt(e.target.value, 10) || 1)),
                 )
               }
             />

@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { DEFAULT_INCOME_REPLACEMENT_PERCENT } from "@/lib/constants";
 import {
   Landmark,
   ShieldCheck,
@@ -194,7 +195,8 @@ export function AdvancedIncomeResultsSummary({
               <li>
                 Replacement Ratio:{" "}
                 {(
-                  (result.resolvedInputs.replacementRatio ?? 0.7) * 100
+                  (result.resolvedInputs.replacementRatio ??
+                    DEFAULT_INCOME_REPLACEMENT_PERCENT / 100) * 100
                 ).toFixed(0)}
                 %
               </li>
