@@ -17,6 +17,14 @@ export function SettlingRequirementsJurisdictionBreakdown({
     finalIncomeTax,
     inputsUsed,
   } = result;
+  const federalEstateTaxDescription =
+    federalEstateTax > 0
+      ? "Federal estate tax due"
+      : "Federal estate tax not due";
+  const stateEstateTaxDescription =
+    stateEstateTax > 0
+      ? `${inputsUsed.stateName} estate/inheritance tax due`
+      : `${inputsUsed.stateName} estate/inheritance tax not due`;
 
   return (
     <div>
@@ -46,11 +54,7 @@ export function SettlingRequirementsJurisdictionBreakdown({
           iconClass="text-chart-3"
           label="Federal Estate Tax"
           value={federalEstateTax}
-          description={
-            federalEstateTax === 0
-              ? "Below $13.61M exemption"
-              : "40% on amount over exemption"
-          }
+          description={federalEstateTaxDescription}
         />
         <SettlingRequirementsMetricBox
           icon={Building2}
@@ -58,11 +62,7 @@ export function SettlingRequirementsJurisdictionBreakdown({
           iconClass="text-chart-4"
           label="State Estate Tax"
           value={stateEstateTax}
-          description={
-            stateEstateTax === 0
-              ? "No state estate/inheritance tax"
-              : `${inputsUsed.stateName} estate/inheritance tax`
-          }
+          description={stateEstateTaxDescription}
         />
       </div>
     </div>

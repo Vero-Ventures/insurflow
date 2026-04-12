@@ -75,7 +75,25 @@ export const POST = withApiHandler(
     method: "POST",
   },
   async (request, { logger, session }) => {
-    await ensureD2cClientAccountType(session.user.id);
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
 
     // Body is optional — an empty POST creates a draft with defaults.
     // Detect empty body by content-length or reading text once, then
@@ -155,7 +173,25 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session }) => {
-    await ensureD2cClientAccountType(session.user.id);
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
 
     const result = await findLatestDraft(session.user.id);
 

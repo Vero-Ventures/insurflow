@@ -3,6 +3,11 @@ import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
 
+export interface D2cAccountNormalizationResult {
+  ok: boolean;
+  error?: unknown;
+}
+
 /**
  * Canonicalize D2C users to client account type.
  *
@@ -11,7 +16,7 @@ import { userProfile } from "@/server/db/schemas";
  */
 export async function ensureD2cClientAccountType(
   userId: string,
-): Promise<void> {
+): Promise<D2cAccountNormalizationResult> {
   const db = getDb() as {
     update?: typeof getDb extends (...args: never[]) => infer T
       ? T extends { update: infer U }
@@ -22,7 +27,7 @@ export async function ensureD2cClientAccountType(
 
   // Some unit tests mock DB with query-only shape; skip normalization there.
   if (typeof db.update !== "function") {
-    return;
+    return { ok: true };
   }
 
   try {
@@ -35,7 +40,8 @@ export async function ensureD2cClientAccountType(
           ne(userProfile.accountType, "client"),
         ),
       );
-  } catch {
-    // Best-effort normalization: do not block draft/review flows.
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
   }
 }

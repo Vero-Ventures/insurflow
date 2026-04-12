@@ -86,7 +86,26 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session, params }) => {
-    await ensureD2cClientAccountType(session.user.id);
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        clientId: params.clientId,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
 
     const clientId = params.clientId;
 
@@ -137,7 +156,26 @@ export const PATCH = withApiHandler(
     method: "PATCH",
   },
   async (request, { logger, session, params }) => {
-    await ensureD2cClientAccountType(session.user.id);
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        clientId: params.clientId,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
 
     const clientId = params.clientId;
 
