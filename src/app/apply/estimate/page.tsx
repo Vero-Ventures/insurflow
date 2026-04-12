@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { authClient } from "@/server/better-auth/client";
 import { formatCurrency } from "@/lib/client-utils";
 import {
   DEFAULT_D2C_INTAKE,
@@ -102,7 +101,6 @@ function useIntakeData(clientId: string | null) {
 
 interface DraftPersistenceInput {
   nextClientId: string | null;
-  shouldTryPersistDraft: boolean;
   intakeForDraft: D2cIntake;
 }
 
@@ -113,10 +111,9 @@ interface DraftPersistenceResult {
 
 async function createDraftForReviewIfNeeded({
   nextClientId: initialClientId,
-  shouldTryPersistDraft,
   intakeForDraft,
 }: Readonly<DraftPersistenceInput>): Promise<DraftPersistenceResult> {
-  if (initialClientId || !shouldTryPersistDraft) {
+  if (initialClientId) {
     return { nextClientId: initialClientId, createdDraftNow: false };
   }
 
@@ -155,13 +152,15 @@ async function createDraftForReviewIfNeeded({
 
 async function syncDraftForReviewIfNeeded({
   nextClientId,
-  shouldTryPersistDraft,
   intakeForDraft,
   createdDraftNow,
 }: Readonly<
-  DraftPersistenceInput & { createdDraftNow: boolean }
+  Omit<DraftPersistenceInput, "nextClientId"> & {
+    nextClientId: string | null;
+    createdDraftNow: boolean;
+  }
 >): Promise<void> {
-  if (!nextClientId || !shouldTryPersistDraft || createdDraftNow) {
+  if (!nextClientId || createdDraftNow) {
     return;
   }
 
@@ -198,8 +197,6 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
   const [isContinuing, setIsContinuing] = useState(false);
-  const { data: session, isPending: isSessionPending } =
-    authClient.useSession();
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -316,19 +313,14 @@ export default function ApplyEstimatePage() {
     if (isContinuing) return;
     setIsContinuing(true);
     try {
-      const shouldTryPersistDraft =
-        resolvedClientId !== null || Boolean(session?.user) || isSessionPending;
-
       const { nextClientId, createdDraftNow } =
         await createDraftForReviewIfNeeded({
           nextClientId: resolvedClientId,
-          shouldTryPersistDraft,
           intakeForDraft,
         });
 
       await syncDraftForReviewIfNeeded({
         nextClientId,
-        shouldTryPersistDraft,
         createdDraftNow,
         intakeForDraft,
       });

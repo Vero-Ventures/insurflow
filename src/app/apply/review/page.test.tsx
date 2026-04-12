@@ -5,6 +5,7 @@ const redirectMock = vi.fn((path: string) => {
 });
 const getSessionMock = vi.fn();
 const findClientMock = vi.fn();
+const createDraftMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -24,6 +25,10 @@ vi.mock("@/server/db", () => ({
   }),
 }));
 
+vi.mock("@/lib/api/d2c-draft-helpers", () => ({
+  createDraft: (...args: unknown[]) => createDraftMock(...args),
+}));
+
 vi.mock("./review-form", () => ({
   default: ({ clientId }: { clientId: string | null }) => ({
     type: "review-form",
@@ -37,6 +42,11 @@ describe("ApplyReviewPage", () => {
     getSessionMock.mockResolvedValue({ user: { id: "u1" } });
     findClientMock.mockResolvedValue({
       id: "11111111-1111-4111-8111-111111111111",
+    });
+    createDraftMock.mockResolvedValue({
+      success: true,
+      draft: { id: "22222222-2222-4222-8222-222222222222" },
+      existed: false,
     });
   });
 
@@ -62,6 +72,19 @@ describe("ApplyReviewPage", () => {
     expect(findClientMock).not.toHaveBeenCalled();
     expect(page).toMatchObject({
       props: { clientId: null },
+    });
+  });
+
+  it("auto-creates a draft when authenticated user has none", async () => {
+    findClientMock.mockResolvedValue(null);
+    const { default: ApplyReviewPage } = await import("./page");
+
+    const page = await ApplyReviewPage({ searchParams: Promise.resolve({}) });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(createDraftMock).toHaveBeenCalledWith("u1");
+    expect(page).toMatchObject({
+      props: { clientId: "22222222-2222-4222-8222-222222222222" },
     });
   });
 });

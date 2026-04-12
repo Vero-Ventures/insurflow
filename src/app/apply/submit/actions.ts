@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
@@ -14,6 +15,15 @@ import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
 import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 import { getCarrierProvider } from "@/server/providers/get-carrier-provider";
+
+function tryRevalidatePath(path: string): void {
+  try {
+    revalidatePath(path);
+  } catch {
+    // In unit-test/runtime contexts without static generation store,
+    // revalidatePath can throw. This should not block submission flow.
+  }
+}
 
 export async function submitApplicationAction(formData: FormData) {
   const session = await getSession();
@@ -136,6 +146,11 @@ export async function submitApplicationAction(formData: FormData) {
       source: "server-action",
     },
   });
+
+  // Ensure dashboard and status screens show fresh post-submission state
+  // (including AI chat client context) on immediate navigation.
+  tryRevalidatePath(AUTHENTICATED_HOME_ROUTE);
+  tryRevalidatePath("/apply/status");
 
   redirect(AUTHENTICATED_HOME_ROUTE);
 }

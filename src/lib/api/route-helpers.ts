@@ -340,12 +340,20 @@ export async function requireClientAccount(
     columns: { accountType: true },
   });
 
-  if (profile?.accountType === "client") {
+  // D2C is client-facing by default; block explicit advisor accounts,
+  // but allow users whose profile/accountType has not been initialized yet.
+  if (!profile || !profile.accountType || profile.accountType === "client") {
+    if (!profile || !profile.accountType) {
+      await logger.info("Profile missing account type; allowing D2C access", {
+        accountType: profile?.accountType ?? null,
+      });
+    }
     return null;
   }
 
   await logger.warn("Forbidden: client account required", {
     statusCode: 403,
+    accountType: profile.accountType,
   });
 
   return NextResponse.json(
