@@ -16,6 +16,15 @@ import { client } from "@/server/db/schemas";
 import { captureServerAnalyticsEvent } from "@/server/observability/posthog";
 import { getCarrierProvider } from "@/server/providers/get-carrier-provider";
 
+function tryRevalidatePath(path: string): void {
+  try {
+    revalidatePath(path);
+  } catch {
+    // In unit-test/runtime contexts without static generation store,
+    // revalidatePath can throw. This should not block submission flow.
+  }
+}
+
 export async function submitApplicationAction(formData: FormData) {
   const session = await getSession();
 
@@ -46,7 +55,6 @@ export async function submitApplicationAction(formData: FormData) {
   }
 
   const db = getDb();
-  const postSubmitDashboardRoute = `${AUTHENTICATED_HOME_ROUTE}?refresh=post-submit&clientId=${encodeURIComponent(clientId)}`;
   const dbNow = sql`now()`;
   const auditContext = await getServerActionApplicationEventContext(
     session.user.id,
@@ -106,7 +114,7 @@ export async function submitApplicationAction(formData: FormData) {
       auditContext,
       true,
     );
-    redirect(postSubmitDashboardRoute);
+    redirect(AUTHENTICATED_HOME_ROUTE);
   }
 
   // Invalidate any active resume links for this draft (now that it's active).
@@ -141,10 +149,10 @@ export async function submitApplicationAction(formData: FormData) {
 
   // Ensure dashboard and status screens show fresh post-submission state
   // (including AI chat client context) on immediate navigation.
-  revalidatePath(AUTHENTICATED_HOME_ROUTE);
-  revalidatePath("/apply/status");
+  tryRevalidatePath(AUTHENTICATED_HOME_ROUTE);
+  tryRevalidatePath("/apply/status");
 
-  redirect(postSubmitDashboardRoute);
+  redirect(AUTHENTICATED_HOME_ROUTE);
 }
 
 /**
