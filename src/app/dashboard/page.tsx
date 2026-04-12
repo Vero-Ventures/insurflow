@@ -84,6 +84,13 @@ export function withDraftClientId(
   return href;
 }
 
+export function resolveAiChatClientId(
+  draftClientId: string | null,
+  submittedClientId: string | null,
+): string | null {
+  return draftClientId ?? submittedClientId;
+}
+
 export default async function DashboardPage() {
   const session = await getSession();
   const userId = getSessionUserId(session);
@@ -118,6 +125,13 @@ export default async function DashboardPage() {
   const submittedApp = submittedResult.found
     ? submittedResult.application
     : null;
+  const submittedClientId = submittedResult.found
+    ? submittedResult.clientId
+    : null;
+  const aiChatClientId = resolveAiChatClientId(
+    ensuredDraftClient?.id ?? null,
+    submittedClientId,
+  );
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
@@ -207,11 +221,8 @@ export default async function DashboardPage() {
           <p className="text-primary text-xs font-semibold tracking-wide uppercase">
             AI Assistant
           </p>
-          {ensuredDraftClient ? (
-            <ClientChatPanel
-              clientId={ensuredDraftClient.id}
-              surface="client"
-            />
+          {aiChatClientId ? (
+            <ClientChatPanel clientId={aiChatClientId} surface="client" />
           ) : (
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardContent className="pt-6">
