@@ -15,6 +15,7 @@ import {
   parseJsonBody,
   handleValidationError,
 } from "@/lib/api/route-helpers";
+import { ensureD2cClientAccountType } from "@/lib/api/d2c-account-helpers";
 import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
 import type { D2cIntake } from "@/lib/d2c/intake-types";
@@ -74,6 +75,26 @@ export const POST = withApiHandler(
     method: "POST",
   },
   async (request, { logger, session }) => {
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
+
     // Body is optional — an empty POST creates a draft with defaults.
     // Detect empty body by content-length or reading text once, then
     // parse JSON only when there is content.  This avoids swallowing
@@ -152,6 +173,26 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session }) => {
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      await logger.warn("D2C account normalization failed", {
+        userId: session.user.id,
+        error:
+          normalizationResult.error instanceof Error
+            ? {
+                name: normalizationResult.error.name,
+                message: normalizationResult.error.message,
+                stack: normalizationResult.error.stack,
+              }
+            : {
+                name: "UnknownError",
+                message: String(normalizationResult.error),
+              },
+      });
+    }
+
     const result = await findLatestDraft(session.user.id);
 
     if (!result.found) {

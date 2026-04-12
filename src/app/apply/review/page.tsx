@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { UUID_REGEX } from "@/lib/validation/client";
 import { createDraft } from "@/lib/api/d2c-draft-helpers";
+import { ensureD2cClientAccountType } from "@/lib/api/d2c-account-helpers";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -30,15 +31,30 @@ export default async function ApplyReviewPage({
   }
 
   const { clientId } = await searchParams;
+  if (clientId && !UUID_REGEX.test(clientId)) {
+    redirect("/apply/intake");
+  }
 
-  const db = getDb();
-  const row = clientId
-    ? await (async () => {
-        if (!UUID_REGEX.test(clientId)) {
-          redirect("/apply/intake");
-        }
+  let resolvedClientId: string | null = null;
 
-        return db.query.client.findFirst({
+  try {
+    const normalizationResult = await ensureD2cClientAccountType(
+      session.user.id,
+    );
+    if (!normalizationResult.ok) {
+      console.warn("[apply/review] D2C account normalization failed", {
+        userId: session.user.id,
+        clientId: clientId ?? null,
+        error:
+          normalizationResult.error instanceof Error
+            ? normalizationResult.error.message
+            : String(normalizationResult.error),
+      });
+    }
+
+    const db = getDb();
+    const row = clientId
+      ? await db.query.client.findFirst({
           columns: { id: true },
           where: and(
             eq(client.id, clientId),
@@ -46,30 +62,34 @@ export default async function ApplyReviewPage({
             eq(client.status, "draft"),
             isNull(client.deletedAt),
           ),
+        })
+      : await db.query.client.findFirst({
+          columns: { id: true },
+          where: and(
+            eq(client.userId, session.user.id),
+            eq(client.status, "draft"),
+            isNull(client.deletedAt),
+          ),
+          orderBy: (clientTable, { desc }) => [desc(clientTable.updatedAt)],
         });
-      })()
-    : await db.query.client.findFirst({
-        columns: { id: true },
-        where: and(
-          eq(client.userId, session.user.id),
-          eq(client.status, "draft"),
-          isNull(client.deletedAt),
-        ),
-        orderBy: (clientTable, { desc }) => [desc(clientTable.updatedAt)],
-      });
 
-  if (!row) {
-    // Safety net: if step-3 persistence failed transiently, provision a draft
-    // here so authenticated users can still proceed to review.
-    if (!clientId) {
+    if (row) {
+      resolvedClientId = row.id;
+    } else if (!clientId) {
+      // Safety net: if step-3 persistence failed transiently, provision a draft
+      // here so authenticated users can still proceed to review.
       const created = await createDraft(session.user.id);
       if (created.success) {
-        return <ReviewForm clientId={created.draft.id} />;
+        resolvedClientId = created.draft.id;
       }
     }
+  } catch (error) {
+    console.error("[apply/review] Failed to resolve review draft", error);
+  }
 
+  if (!resolvedClientId) {
     redirect("/apply/intake");
   }
 
-  return <ReviewForm clientId={row.id} />;
+  return <ReviewForm clientId={resolvedClientId} />;
 }
