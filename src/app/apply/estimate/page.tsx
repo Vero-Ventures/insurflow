@@ -117,6 +117,9 @@ function getEstimateErrorMessage(error: unknown): string {
   return "Network error — please try again";
 }
 
+const DRAFT_SAVE_ERROR_MESSAGE =
+  "We couldn't save your draft yet. Please try again.";
+
 async function createDraftForReviewIfNeeded({
   nextClientId: initialClientId,
   shouldTryPersistDraft,
@@ -206,6 +209,7 @@ export default function ApplyEstimatePage() {
     useState<EstimateRunOutputs | null>(null);
   const [isEstimating, setIsEstimating] = useState(false);
   const [estimateError, setEstimateError] = useState<string | null>(null);
+  const [continueError, setContinueError] = useState<string | null>(null);
   const [isContinuing, setIsContinuing] = useState(false);
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
@@ -412,6 +416,7 @@ export default function ApplyEstimatePage() {
   const handleContinueToReview = async () => {
     if (isContinuing) return;
     setIsContinuing(true);
+    setContinueError(null);
 
     try {
       const shouldTryPersistDraft =
@@ -430,6 +435,11 @@ export default function ApplyEstimatePage() {
         createdDraftNow,
         intakeForDraft,
       });
+
+      if (shouldTryPersistDraft && !nextClientId) {
+        setContinueError(DRAFT_SAVE_ERROR_MESSAGE);
+        return;
+      }
 
       let nextEstimateRunId = estimateRunId;
 
@@ -452,7 +462,7 @@ export default function ApplyEstimatePage() {
   const recommendedCoverage = displayOutputs.recommendedCoverage;
   const premiumLow = displayOutputs.premiumRange.lowMonthlyPremiumCad;
   const premiumHigh = displayOutputs.premiumRange.highMonthlyPremiumCad;
-  const showPersistedError = shouldPersistEstimate && estimateError;
+  const showPersistedWarning = shouldPersistEstimate && estimateError;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
@@ -470,12 +480,20 @@ export default function ApplyEstimatePage() {
           </p>
         </section>
 
-        {showPersistedError ? (
+        {continueError ? (
           <Card className="border-red-300/40 bg-red-50/40 p-4 text-sm leading-relaxed text-red-900">
-            Something went wrong generating your estimate: {estimateError}.
-            Please go back and try again.
+            We couldn&apos;t save your draft yet. Please try again.
           </Card>
-        ) : shouldPersistEstimate && isEstimating ? (
+        ) : null}
+
+        {showPersistedWarning ? (
+          <Card className="border-amber-300/40 bg-amber-50/40 p-4 text-sm leading-relaxed text-amber-950">
+            We couldn&apos;t save this estimate yet: {estimateError}. We&apos;ll keep
+            showing your local preview while you continue.
+          </Card>
+        ) : null}
+
+        {shouldPersistEstimate && isEstimating ? (
           <section className="grid gap-4 md:grid-cols-2">
             <Card className="border-border/60 bg-card/80 animate-pulse p-6">
               <p className="text-muted-foreground text-sm">
@@ -538,10 +556,7 @@ export default function ApplyEstimatePage() {
         <div className="flex justify-end">
           <Button
             className="bg-emerald hover:bg-emerald/90"
-            disabled={
-              isContinuing ||
-              (shouldPersistEstimate && (isEstimating || !!estimateError))
-            }
+            disabled={isContinuing || (shouldPersistEstimate && isEstimating)}
             onClick={() => void handleContinueToReview()}
           >
             Continue to review

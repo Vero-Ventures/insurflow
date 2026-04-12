@@ -408,7 +408,7 @@ describe("ApplyEstimatePage", () => {
     ).toBeTruthy();
   });
 
-  it("shows error state when estimate API fails", async () => {
+  it("falls back to local preview and still allows continue when estimate API fails", async () => {
     const testClientId = "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     getMock.mockReturnValue(testClientId);
     useSessionMock.mockReturnValue({
@@ -435,7 +435,15 @@ describe("ApplyEstimatePage", () => {
     const continueButton = screen.getByRole("button", {
       name: /continue to review/i,
     });
-    expect((continueButton as HTMLButtonElement).disabled).toBe(true);
+    expect((continueButton as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        `/apply/review?clientId=${testClientId}`,
+      );
+    });
   });
 
   it("shows error state on network failure", async () => {
@@ -498,6 +506,42 @@ describe("ApplyEstimatePage", () => {
         "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb&estimateRunId=cccc1111-dddd-4ddd-8ddd-eeeeeeeeeeee",
       );
     });
+  });
+
+  it("stays on the estimate page when draft creation fails for an authenticated user", async () => {
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      isPending: false,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      const method = init?.method ?? "GET";
+
+      if (url === "/api/d2c/draft" && method === "POST") {
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({ error: "Draft save failed" }),
+        } as Response;
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) } as Response;
+    });
+
+    render(<ApplyEstimatePage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /continue to review/i }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/we couldn't save your draft yet/i),
+      ).toBeTruthy();
+    });
+
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("redirects to intake without stale clientId when draft load fails", async () => {

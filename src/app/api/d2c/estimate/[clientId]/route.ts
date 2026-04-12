@@ -12,6 +12,7 @@
 
 import { NextResponse } from "next/server";
 import { withApiHandler, requireClientAccount } from "@/lib/api/route-helpers";
+import { verifyClientOwnership } from "@/lib/api/client-helpers";
 import {
   findLatestEstimateRun,
   findEstimateRunsByClient,
@@ -54,6 +55,12 @@ export const GET = withApiHandler(
     }
 
     logger.addContext({ clientId });
+
+    const ownedClient = await verifyClientOwnership(clientId, session.user.id);
+    if (!ownedClient) {
+      await logger.info("Client not found", { statusCode: 404, clientId });
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
 
     // Check if full history was requested
     const url = new URL(request.url);

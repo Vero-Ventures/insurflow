@@ -24,8 +24,9 @@
  */
 
 import { isDeepStrictEqual } from "node:util";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
+import { client } from "@/server/db/schemas";
 import {
   assumptionVersion,
   estimateRun,
@@ -93,8 +94,31 @@ export interface RunEstimateSuccess {
 /** Failed result of an estimate run */
 export interface RunEstimateError {
   success: false;
-  errorCode: "ASSUMPTION_SEED_FAILED" | "INSERT_FAILED";
+  errorCode:
+    | "ASSUMPTION_SEED_FAILED"
+    | "INSERT_FAILED"
+    | "CLIENT_NOT_FOUND"
+    | "CLIENT_NOT_DRAFT";
   message: string;
+}
+
+function getExecuteRows(
+  result: unknown,
+): Array<{ status?: string | null }> {
+  if (Array.isArray(result)) {
+    return result as Array<{ status?: string | null }>;
+  }
+
+  if (
+    result &&
+    typeof result === "object" &&
+    "rows" in result &&
+    Array.isArray((result as { rows?: unknown[] }).rows)
+  ) {
+    return (result as { rows: Array<{ status?: string | null }> }).rows;
+  }
+
+  return [];
 }
 
 function isUniqueViolation(error: unknown): boolean {
@@ -308,106 +332,138 @@ export async function runEstimate(
   };
 
   const db = getDb();
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const lastRun = await db.query.estimateRun.findFirst({
-      where: and(
-        eq(estimateRun.clientId, input.clientId),
-        eq(estimateRun.userId, input.userId),
-      ),
-      orderBy: [desc(estimateRun.createdAt)],
-    });
 
-    if (lastRun) {
-      const canReuseLastRun =
-        lastRun.source === input.source &&
-        lastRun.assumptionVersionId === versionInfo.id &&
-        lastRun.engineId === ESTIMATE_ENGINE_ID &&
-        lastRun.engineVersion === ESTIMATE_ENGINE_VERSION &&
-        lastRun.providerKey === "mock" &&
-        isDeepStrictEqual(lastRun.inputs, inputs) &&
-        isDeepStrictEqual(lastRun.outputs, outputs);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (db as any).transaction(async (tx: any) => {
+    const lockedClientRows = getExecuteRows(
+      await tx.execute(sql`
+        SELECT status
+        FROM ${client}
+        WHERE id = ${input.clientId}
+          AND user_id = ${input.userId}
+          AND deleted_at IS NULL
+        FOR UPDATE
+      `),
+    );
+    const lockedStatus = lockedClientRows[0]?.status;
 
-      if (canReuseLastRun) {
-        return {
-          success: true,
-          reusedExisting: true,
-          estimateRun: {
-            id: lastRun.id,
-            runNumber: lastRun.runNumber,
-            inputs: lastRun.inputs,
-            outputs: lastRun.outputs,
-            assumptionVersionId: lastRun.assumptionVersionId,
-            assumptionVersionLabel: versionInfo.versionLabel,
-            engineId: lastRun.engineId,
-            engineVersion: lastRun.engineVersion,
-            providerKey: lastRun.providerKey,
-            createdAt: lastRun.createdAt,
-          },
-        };
-      }
+    if (!lockedStatus) {
+      return {
+        success: false,
+        errorCode: "CLIENT_NOT_FOUND",
+        message: "Client draft not found",
+      } satisfies RunEstimateError;
     }
 
-    const runNumber = lastRun ? lastRun.runNumber + 1 : 1;
+    if (lockedStatus !== "draft") {
+      return {
+        success: false,
+        errorCode: "CLIENT_NOT_DRAFT",
+        message: "Client is no longer in draft status",
+      } satisfies RunEstimateError;
+    }
 
-    try {
-      const [inserted] = await db
-        .insert(estimateRun)
-        .values({
-          clientId: input.clientId,
-          userId: input.userId,
-          source: input.source,
-          assumptionVersionId: versionInfo.id,
-          engineId: ESTIMATE_ENGINE_ID,
-          engineVersion: ESTIMATE_ENGINE_VERSION,
-          providerKey: "mock",
-          inputs,
-          outputs,
-          runNumber,
-        })
-        .returning();
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const lastRun = await tx.query.estimateRun.findFirst({
+        where: and(
+          eq(estimateRun.clientId, input.clientId),
+          eq(estimateRun.userId, input.userId),
+        ),
+        orderBy: [desc(estimateRun.createdAt)],
+      });
 
-      if (!inserted) {
+      if (lastRun) {
+        const canReuseLastRun =
+          lastRun.source === input.source &&
+          lastRun.assumptionVersionId === versionInfo.id &&
+          lastRun.engineId === ESTIMATE_ENGINE_ID &&
+          lastRun.engineVersion === ESTIMATE_ENGINE_VERSION &&
+          lastRun.providerKey === "mock" &&
+          isDeepStrictEqual(lastRun.inputs, inputs) &&
+          isDeepStrictEqual(lastRun.outputs, outputs);
+
+        if (canReuseLastRun) {
+          return {
+            success: true,
+            reusedExisting: true,
+            estimateRun: {
+              id: lastRun.id,
+              runNumber: lastRun.runNumber,
+              inputs: lastRun.inputs,
+              outputs: lastRun.outputs,
+              assumptionVersionId: lastRun.assumptionVersionId,
+              assumptionVersionLabel: versionInfo.versionLabel,
+              engineId: lastRun.engineId,
+              engineVersion: lastRun.engineVersion,
+              providerKey: lastRun.providerKey,
+              createdAt: lastRun.createdAt,
+            },
+          } satisfies RunEstimateSuccess;
+        }
+      }
+
+      const runNumber = lastRun ? lastRun.runNumber + 1 : 1;
+
+      try {
+        const [inserted] = await tx
+          .insert(estimateRun)
+          .values({
+            clientId: input.clientId,
+            userId: input.userId,
+            source: input.source,
+            assumptionVersionId: versionInfo.id,
+            engineId: ESTIMATE_ENGINE_ID,
+            engineVersion: ESTIMATE_ENGINE_VERSION,
+            providerKey: "mock",
+            inputs,
+            outputs,
+            runNumber,
+          })
+          .returning();
+
+        if (!inserted) {
+          return {
+            success: false,
+            errorCode: "INSERT_FAILED",
+            message: "Failed to persist estimate run",
+          } satisfies RunEstimateError;
+        }
+
+        return {
+          success: true,
+          reusedExisting: false,
+          estimateRun: {
+            id: inserted.id,
+            runNumber: inserted.runNumber,
+            inputs,
+            outputs,
+            assumptionVersionId: versionInfo.id,
+            assumptionVersionLabel: versionInfo.versionLabel,
+            engineId: ESTIMATE_ENGINE_ID,
+            engineVersion: ESTIMATE_ENGINE_VERSION,
+            providerKey: "mock",
+            createdAt: inserted.createdAt,
+          },
+        } satisfies RunEstimateSuccess;
+      } catch (error) {
+        if (attempt === 0 && isUniqueViolation(error)) {
+          continue;
+        }
+
         return {
           success: false,
           errorCode: "INSERT_FAILED",
           message: "Failed to persist estimate run",
-        };
+        } satisfies RunEstimateError;
       }
-
-      return {
-        success: true,
-        reusedExisting: false,
-        estimateRun: {
-          id: inserted.id,
-          runNumber: inserted.runNumber,
-          inputs,
-          outputs,
-          assumptionVersionId: versionInfo.id,
-          assumptionVersionLabel: versionInfo.versionLabel,
-          engineId: ESTIMATE_ENGINE_ID,
-          engineVersion: ESTIMATE_ENGINE_VERSION,
-          providerKey: "mock",
-          createdAt: inserted.createdAt,
-        },
-      };
-    } catch (error) {
-      if (attempt === 0 && isUniqueViolation(error)) {
-        continue;
-      }
-
-      return {
-        success: false,
-        errorCode: "INSERT_FAILED",
-        message: "Failed to persist estimate run",
-      };
     }
-  }
 
-  return {
-    success: false,
-    errorCode: "INSERT_FAILED",
-    message: "Failed to persist estimate run",
-  };
+    return {
+      success: false,
+      errorCode: "INSERT_FAILED",
+      message: "Failed to persist estimate run",
+    } satisfies RunEstimateError;
+  });
 }
 
 // ============================================================================

@@ -25,7 +25,30 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Wait for Neon branch deletion
-        run: sleep 15
+        env:
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 12); do
+            BRANCHES_JSON=$(curl -sS -H "Authorization: Bearer $NEON_API_KEY" \
+              "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches")
+
+            EXISTING=$(echo "$BRANCHES_JSON" | jq -r --arg name "$PREVIEW_DB_BRANCH" \
+              '.branches[] | select(.name == $name) | .id' | head -n 1)
+
+            if [ -z "$EXISTING" ] || [ "$EXISTING" = "null" ]; then
+              echo "Preview branch deletion confirmed: $PREVIEW_DB_BRANCH"
+              exit 0
+            fi
+
+            echo "Preview branch still deleting ($attempt/12): $PREVIEW_DB_BRANCH"
+            sleep 5
+          done
+
+          echo "Timed out waiting for Neon branch deletion: $PREVIEW_DB_BRANCH"
+          exit 1
 
       - name: Create Neon Branch
         id: neon-branch

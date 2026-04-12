@@ -95,13 +95,20 @@ export const POST = withApiHandler(
     });
 
     if (!result.success) {
+      const status =
+        result.errorCode === "CLIENT_NOT_FOUND"
+          ? 404
+          : result.errorCode === "CLIENT_NOT_DRAFT"
+            ? 409
+            : 500;
+
       await logger.error(
         "Estimate run failed",
         new Error(`${result.errorCode}: ${result.message}`),
       );
       return NextResponse.json(
         { error: result.message, errorCode: result.errorCode },
-        { status: 500 },
+        { status },
       );
     }
 

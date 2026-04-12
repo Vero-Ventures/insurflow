@@ -13,12 +13,16 @@ const {
   mockInsert,
   mockValues,
   mockReturning,
+  mockTransaction,
+  mockExecute,
 } = vi.hoisted(() => {
   const assumptionVersionFindFirst = vi.fn();
   const estimateRunFindFirst = vi.fn();
   const insert = vi.fn();
   const values = vi.fn();
   const returning = vi.fn();
+  const transaction = vi.fn();
+  const execute = vi.fn();
 
   insert.mockReturnValue({ values });
   values.mockReturnValue({ returning });
@@ -29,6 +33,8 @@ const {
     mockInsert: insert,
     mockValues: values,
     mockReturning: returning,
+    mockTransaction: transaction,
+    mockExecute: execute,
   };
 });
 
@@ -39,6 +45,8 @@ vi.mock("@/server/db", () => ({
       estimateRun: { findFirst: mockEstimateRunFindFirst },
     },
     insert: mockInsert,
+    transaction: mockTransaction,
+    execute: mockExecute,
   })),
 }));
 
@@ -199,6 +207,18 @@ describe("runEstimate", () => {
       id: TEST_ASSUMPTION_VERSION_ID,
       versionLabel: CURRENT_ASSUMPTION_VERSION.versionLabel,
     });
+    mockExecute.mockResolvedValue([{ status: "draft" }]);
+    mockTransaction.mockImplementation(async (callback: unknown) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (callback as any)({
+        query: {
+          estimateRun: { findFirst: mockEstimateRunFindFirst },
+          assumptionVersion: { findFirst: mockAssumptionVersionFindFirst },
+        },
+        insert: mockInsert,
+        execute: mockExecute,
+      }),
+    );
   });
 
   it("reuses the latest persisted estimate when draft inputs are unchanged", async () => {
@@ -313,5 +333,33 @@ describe("runEstimate", () => {
     expect(mockAssumptionVersionFindFirst).toHaveBeenCalledTimes(2);
     expect(mockInsert).toHaveBeenCalledTimes(1);
     expect(mockEstimateRunFindFirst).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns CLIENT_NOT_FOUND when the client lock query finds no owned draft", async () => {
+    const input = createEstimateInput();
+    mockExecute.mockResolvedValue([]);
+
+    const result = await runEstimate(input);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errorCode).toBe("CLIENT_NOT_FOUND");
+    }
+    expect(mockEstimateRunFindFirst).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it("returns CLIENT_NOT_DRAFT when the locked client status changed", async () => {
+    const input = createEstimateInput();
+    mockExecute.mockResolvedValue([{ status: "submitted" }]);
+
+    const result = await runEstimate(input);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errorCode).toBe("CLIENT_NOT_DRAFT");
+    }
+    expect(mockEstimateRunFindFirst).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 });
