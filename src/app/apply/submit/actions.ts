@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { AUTHENTICATED_HOME_ROUTE } from "@/lib/app-routes";
@@ -136,6 +137,11 @@ export async function submitApplicationAction(formData: FormData) {
       source: "server-action",
     },
   });
+
+  // Ensure dashboard and status screens show fresh post-submission state
+  // (including AI chat client context) on immediate navigation.
+  revalidatePath(AUTHENTICATED_HOME_ROUTE);
+  revalidatePath("/apply/status");
 
   redirect(AUTHENTICATED_HOME_ROUTE);
 }
