@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { UUID_REGEX } from "@/lib/validation/client";
+import { createDraft } from "@/lib/api/d2c-draft-helpers";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
 import { client } from "@/server/db/schemas";
@@ -58,6 +59,15 @@ export default async function ApplyReviewPage({
       });
 
   if (!row) {
+    // Safety net: if step-3 persistence failed transiently, provision a draft
+    // here so authenticated users can still proceed to review.
+    if (!clientId) {
+      const created = await createDraft(session.user.id);
+      if (created.success) {
+        return <ReviewForm clientId={created.draft.id} />;
+      }
+    }
+
     redirect("/apply/intake");
   }
 
