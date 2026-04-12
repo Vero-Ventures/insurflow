@@ -9,32 +9,13 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import {
-  RefreshCw,
-  AlertCircle,
-  Shield,
-  Wallet,
-  Home,
-  TrendingUp,
-  PiggyBank,
-} from "lucide-react";
-import { formatCurrency, formatDateTime } from "@/lib/client-utils";
-import { cn } from "@/lib/utils";
+import { RefreshCw, AlertCircle, Shield } from "lucide-react";
 import type { InsuranceNeedsResult } from "@/lib/hooks/use-insurance-needs";
-import type {
-  ConfidenceLabel,
-  ConfidenceResult,
-} from "@/lib/financial/confidence-scoring";
-import {
-  MethodologySection,
-  RateTableDisplay,
-} from "@/components/transparency";
-import { CalculationTraceViewer } from "@/components/clients/insurance-needs/calculation-trace-viewer";
-import { INSURANCE_NEEDS_METHODOLOGY } from "@/lib/transparency/methodology-data";
-import { getStateRateTable } from "@/lib/transparency/rate-tables";
+import type { ConfidenceResult } from "@/lib/financial/confidence-scoring";
 
-const MAX_CONFIDENCE_REASONS_TO_DISPLAY = 6;
+import { InsuranceNeedsInputPanel } from "./insurance-needs-input-panel";
+import { InsuranceNeedsResults } from "./insurance-needs-results";
+import { InsuranceNeedsTrace } from "./insurance-needs-trace";
 
 interface InsuranceNeedsCardProps {
   result: InsuranceNeedsResult | null;
@@ -48,27 +29,6 @@ interface InsuranceNeedsCardProps {
   isReadOnly?: boolean;
   /** Client state code (e.g., CA) used for state-specific rate table display */
   clientStateCode?: string;
-}
-
-function getConfidenceStyles(label: ConfidenceLabel) {
-  switch (label) {
-    case "High":
-      return {
-        container: "border-emerald/30 bg-emerald/5",
-        badge: "border-emerald/30 bg-emerald/10 text-emerald",
-      };
-    case "Medium":
-      return {
-        container: "border-amber/30 bg-amber/5",
-        badge: "border-amber/30 bg-amber/10 text-amber-700",
-      };
-    case "Low":
-    default:
-      return {
-        container: "border-destructive/30 bg-destructive/5",
-        badge: "border-destructive/30 bg-destructive/10 text-destructive",
-      };
-  }
 }
 
 export function InsuranceNeedsCard({
@@ -163,19 +123,6 @@ export function InsuranceNeedsCard({
     );
   }
 
-  const {
-    incomeReplacementNeeds,
-    debtPayoffNeeds,
-    estateBufferNeeds,
-    grossNeeds,
-    existingCoverage,
-    liquidAssets,
-    totalInsuranceNeeds,
-    totalInsuranceNeedsBand,
-    policyCount,
-    coverageSource,
-  } = result;
-
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between pb-4">
@@ -203,294 +150,18 @@ export function InsuranceNeedsCard({
         )}
       </CardHeader>
       <CardContent className="space-y-6">
-        {calculatedAt && (
-          <p className="text-muted-foreground text-sm">
-            Calculated: {formatDateTime(calculatedAt)}
-          </p>
-        )}
+        <InsuranceNeedsInputPanel
+          result={result}
+          calculatedAt={calculatedAt}
+          confidence={confidence}
+        />
 
-        {/* Gross Needs Breakdown */}
-        <div>
-          <h4 className="text-foreground mb-3 text-sm font-semibold">
-            Gross Insurance Needs
-          </h4>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-1/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Wallet className="text-chart-1 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Income Replacement
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(incomeReplacementNeeds)}
-              </p>
-              {result.inputsUsed.incomeReplacementPercent > 0 && (
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {result.inputsUsed.incomeReplacementPercent}% of income for{" "}
-                  {result.inputsUsed.replacementDurationYears} years
-                </p>
-              )}
-            </div>
+        <InsuranceNeedsResults result={result} />
 
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-3/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Home className="text-chart-3 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Debt Payoff
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(debtPayoffNeeds)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Total outstanding debts
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-chart-5/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <TrendingUp className="text-chart-5 h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Estate Buffer
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(estateBufferNeeds)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {result.inputsUsed.estateBufferType === "fixed"
-                  ? "Fixed amount"
-                  : `${result.inputsUsed.estateBufferValue}% of assets`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Deductions */}
-        <div>
-          <h4 className="text-foreground mb-3 text-sm font-semibold">
-            Existing Resources
-          </h4>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-insurance/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <Shield className="text-insurance h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Existing Life Insurance
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(existingCoverage)}
-              </p>
-              {coverageSource === "policies" && policyCount !== undefined && (
-                <p className="text-muted-foreground mt-1 text-xs">
-                  From {policyCount} active{" "}
-                  {policyCount === 1 ? "policy" : "policies"}
-                </p>
-              )}
-              {coverageSource === "legacy" && (
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Manual entry (no policies tracked)
-                </p>
-              )}
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="bg-asset/10 flex h-7 w-7 items-center justify-center rounded-lg">
-                  <PiggyBank className="text-asset h-3.5 w-3.5" />
-                </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Liquid Assets
-                </p>
-              </div>
-              <p className="font-currency text-lg font-semibold">
-                {formatCurrency(liquidAssets)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Cash and readily accessible funds
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Needs - Emphasized */}
-        <div
-          className={cn(
-            "rounded-xl border p-6",
-            totalInsuranceNeeds > 0
-              ? "border-primary/20 bg-primary/5"
-              : "border-asset/20 bg-asset/5",
-          )}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p
-                className={cn(
-                  "text-sm font-semibold",
-                  totalInsuranceNeeds > 0 ? "text-primary" : "text-asset",
-                )}
-              >
-                Total Insurance Needs
-              </p>
-              <p
-                className={cn(
-                  "font-currency text-3xl font-bold",
-                  totalInsuranceNeeds > 0 ? "text-primary" : "text-asset",
-                )}
-              >
-                {formatCurrency(totalInsuranceNeeds)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-muted-foreground text-sm font-medium">
-                Gross Needs
-              </p>
-              <p className="font-currency text-xl font-semibold">
-                {formatCurrency(grossNeeds)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                − {formatCurrency(existingCoverage + liquidAssets)} deductions
-              </p>
-            </div>
-          </div>
-          {totalInsuranceNeeds === 0 && (
-            <p className="text-asset mt-3 text-sm font-medium">
-              Existing resources are sufficient - no additional coverage needed
-            </p>
-          )}
-          {totalInsuranceNeedsBand && totalInsuranceNeeds > 0 && (
-            <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-4 text-sm">
-              <span className="font-medium">Recommendation range:</span>
-              <span>
-                Low {formatCurrency(totalInsuranceNeedsBand.low)}
-                <span className="mx-1.5">·</span>
-                Target {formatCurrency(totalInsuranceNeedsBand.target)}
-                <span className="mx-1.5">·</span>
-                High {formatCurrency(totalInsuranceNeedsBand.high)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Confidence */}
-        {confidence && (
-          <div
-            className={cn(
-              "rounded-xl border p-4",
-              getConfidenceStyles(confidence.label).container,
-            )}
-          >
-            <h4 className="text-foreground mb-2 text-sm font-semibold">
-              Confidence in this estimate
-            </h4>
-
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "font-medium",
-                  getConfidenceStyles(confidence.label).badge,
-                )}
-              >
-                {confidence.label}
-              </Badge>
-
-              <span className="text-muted-foreground text-sm">
-                Score: {confidence.score}/100
-              </span>
-            </div>
-
-            <p className="text-muted-foreground mb-3 text-xs">
-              Confidence reflects how complete your data is and whether we used
-              default assumptions. Higher scores mean the estimate is based more
-              on your actual inputs.
-            </p>
-
-            {confidence.label !== "High" && (
-              <div className="text-muted-foreground mb-2 text-xs">
-                Confidence is reduced due to missing inputs or default
-                assumptions:
-              </div>
-            )}
-
-            {confidence.reasons.length > 0 && confidence.label !== "High" && (
-              <ul className="text-muted-foreground list-inside list-disc space-y-0.5 text-xs">
-                {confidence.reasons
-                  .slice(0, MAX_CONFIDENCE_REASONS_TO_DISPLAY)
-                  .map((reason, i) => (
-                    <li key={i}>{reason}</li>
-                  ))}
-              </ul>
-            )}
-
-            {confidence.label === "High" && (
-              <p className="text-muted-foreground text-xs">
-                Your key inputs are complete and the estimate uses minimal
-                defaults.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Data Summary */}
-        {(result.inputsUsed.clientIncome > 0 ||
-          result.inputsUsed.spouseIncome > 0) && (
-          <div className="border-border/60 text-muted-foreground border-t pt-4 text-xs">
-            <p className="font-medium">Calculation Summary:</p>
-            <ul className="mt-1.5 space-y-0.5">
-              <li>
-                Client Income: {formatCurrency(result.inputsUsed.clientIncome)}
-                {result.inputsUsed.includeSpouseIncome &&
-                  result.inputsUsed.spouseIncome > 0 && (
-                    <>
-                      {" "}
-                      + Spouse: {formatCurrency(result.inputsUsed.spouseIncome)}
-                    </>
-                  )}
-              </li>
-            </ul>
-          </div>
-        )}
-
-        {/* Calculation Transparency */}
-        <div className="mt-6 space-y-4 border-t pt-6">
-          {result.trace && <CalculationTraceViewer trace={result.trace} />}
-
-          <MethodologySection
-            methodology={INSURANCE_NEEDS_METHODOLOGY}
-            stepValues={{
-              1: {
-                value: formatCurrency(incomeReplacementNeeds),
-              },
-              2: {
-                value: formatCurrency(debtPayoffNeeds),
-              },
-              3: {
-                value: formatCurrency(estateBufferNeeds),
-              },
-              4: {
-                value: formatCurrency(grossNeeds),
-              },
-              5: {
-                value: formatCurrency(totalInsuranceNeeds),
-              },
-            }}
-          />
-
-          {clientStateCode && (
-            <RateTableDisplay rateTable={getStateRateTable(clientStateCode)} />
-          )}
-        </div>
+        <InsuranceNeedsTrace
+          result={result}
+          clientStateCode={clientStateCode}
+        />
       </CardContent>
     </Card>
   );
