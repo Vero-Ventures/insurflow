@@ -73,6 +73,16 @@ export function useClientChat(
   });
 
   const isMountedRef = useRef(true);
+  const messagesRef = useRef<ClientChatMessage[]>([]);
+  const suggestedQuestionsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    suggestedQuestionsRef.current = suggestedQuestions;
+  }, [suggestedQuestions]);
 
   useEffect(() => {
     return () => {
@@ -80,59 +90,101 @@ export function useClientChat(
     };
   }, []);
 
-  const refetchHistory = useCallback(async () => {
-    if (!clientId) return;
-
-    setIsLoadingHistory(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/clients/${clientId}/chat`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        let message = "Failed to load chat history";
-        try {
-          const data = (await response.json()) as {
-            message?: string;
-            error?: string;
-          };
-          message = data.message ?? data.error ?? message;
-        } catch {
-          // Ignore parse errors and keep generic message.
+  const refetchHistory = useCallback(
+    async (suppressToast = false) => {
+      if (!clientId) {
+        if (isMountedRef.current) {
+          setIsLoadingHistory(false);
         }
-        throw new Error(message);
+        return;
       }
 
-      const data = (await response.json()) as ChatHistoryResponse;
-      if (!isMountedRef.current) return;
+      setIsLoadingHistory(true);
+      setError(null);
 
-      setMessages(data.messages ?? []);
-      setSuggestedQuestions(data.suggestedQuestions ?? []);
-      setUsage(
-        data.usage ?? {
-          totalAssistantMessages: 0,
-          totalEstimatedTokens: 0,
-        },
-      );
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load chat history";
-      if (!isMountedRef.current) return;
-      setError(message);
-      toast.error(message);
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoadingHistory(false);
+      try {
+        const response = await fetch(`/api/clients/${clientId}/chat`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          let message = "Failed to load chat history";
+          try {
+            const data = (await response.json()) as {
+              message?: string;
+              error?: string;
+            };
+            message = data.message ?? data.error ?? message;
+          } catch {
+            // Ignore parse errors and keep generic message.
+          }
+          throw new Error(message);
+        }
+
+        const data = (await response.json()) as ChatHistoryResponse;
+        if (!isMountedRef.current) return;
+
+        setMessages(data.messages ?? []);
+        setSuggestedQuestions(data.suggestedQuestions ?? []);
+        setUsage(
+          data.usage ?? {
+            totalAssistantMessages: 0,
+            totalEstimatedTokens: 0,
+          },
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load chat history";
+        if (!isMountedRef.current) return;
+        setError(message);
+        if (!suppressToast) {
+          toast.error(message);
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoadingHistory(false);
+        }
       }
-    }
-  }, [clientId]);
+    },
+    [clientId],
+  );
 
   useEffect(() => {
-    refetchHistory();
-  }, [refetchHistory]);
+    let cancelled = false;
+
+    const loadWithRetry = async () => {
+      // Short retry sequence handles post-submit transitions where
+      // chat context can lag a moment behind navigation.
+      const retryDelaysMs = [0, 900, 1800];
+
+      for (const [index, delay] of retryDelaysMs.entries()) {
+        if (cancelled) return;
+
+        if (delay > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          if (cancelled) return;
+        }
+
+        await refetchHistory(index > 0);
+        if (cancelled) return;
+
+        const hasLoadedContext =
+          messagesRef.current.length > 0 ||
+          suggestedQuestionsRef.current.length > 0;
+
+        if (hasLoadedContext) {
+          break;
+        }
+      }
+    };
+
+    void loadWithRetry();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId, refetchHistory]);
 
   const sendMessage = useCallback(
     async (content: string) => {

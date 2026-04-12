@@ -16,6 +16,7 @@ import {
 import { getSessionUserId } from "@/lib/auth/session-utils";
 import { findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { findSubmittedApplication } from "@/lib/api/d2c-application-helpers";
+import { UUID_REGEX } from "@/lib/validation/client";
 import { APPLY_STATUS_ROUTE } from "@/lib/app-routes";
 import { clientFieldsToD2cIntake } from "@/lib/d2c/client-adapter";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import { getDb } from "@/server/db";
 import { userProfile } from "@/server/db/schemas";
 import { eq } from "drizzle-orm";
 import { DraftResumeLink } from "./draft-resume-link";
+import { PostSubmitRefresh } from "./post-submit-refresh";
 
 type JourneyCardProps = {
   title: string;
@@ -87,11 +89,16 @@ export function withDraftClientId(
 export function resolveAiChatClientId(
   draftClientId: string | null,
   submittedClientId: string | null,
+  recentClientId: string | null,
 ): string | null {
-  return draftClientId ?? submittedClientId;
+  return draftClientId ?? submittedClientId ?? recentClientId;
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ clientId?: string }>;
+} = {}) {
   const session = await getSession();
   const userId = getSessionUserId(session);
 
@@ -111,6 +118,12 @@ export default async function DashboardPage() {
 
   const accountType = normalizeAccountType(profile.accountType) ?? "client";
   const dashboardExperience = getDashboardExperience(accountType);
+  const { clientId: queryClientId } = (await (searchParams ??
+    Promise.resolve({ clientId: undefined }))) as { clientId?: string };
+  const recentClientIdFromQuery =
+    typeof queryClientId === "string" && UUID_REGEX.test(queryClientId)
+      ? queryClientId
+      : null;
 
   // Check for draft application
   const draftResult = await findLatestDraft(userId);
@@ -131,10 +144,12 @@ export default async function DashboardPage() {
   const aiChatClientId = resolveAiChatClientId(
     ensuredDraftClient?.id ?? null,
     submittedClientId,
+    recentClientIdFromQuery,
   );
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] px-4 py-8 sm:py-10">
+      <PostSubmitRefresh />
       <div className="mx-auto w-full max-w-6xl space-y-8">
         <section className="space-y-3">
           <p className="text-primary text-sm font-semibold tracking-wide uppercase">

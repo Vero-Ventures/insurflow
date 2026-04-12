@@ -46,6 +46,7 @@ export async function submitApplicationAction(formData: FormData) {
   }
 
   const db = getDb();
+  const postSubmitDashboardRoute = `${AUTHENTICATED_HOME_ROUTE}?refresh=post-submit&clientId=${encodeURIComponent(clientId)}`;
   const dbNow = sql`now()`;
   const auditContext = await getServerActionApplicationEventContext(
     session.user.id,
@@ -105,7 +106,7 @@ export async function submitApplicationAction(formData: FormData) {
       auditContext,
       true,
     );
-    redirect(AUTHENTICATED_HOME_ROUTE);
+    redirect(postSubmitDashboardRoute);
   }
 
   // Invalidate any active resume links for this draft (now that it's active).
@@ -143,7 +144,7 @@ export async function submitApplicationAction(formData: FormData) {
   revalidatePath(AUTHENTICATED_HOME_ROUTE);
   revalidatePath("/apply/status");
 
-  redirect(AUTHENTICATED_HOME_ROUTE);
+  redirect(postSubmitDashboardRoute);
 }
 
 /**

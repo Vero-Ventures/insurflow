@@ -39,17 +39,32 @@ describe("DashboardPage", () => {
       resolveAiChatClientId(
         "draft-1111-1111-4111-8111-111111111111",
         "submitted-2222-2222-4222-8222-222222222222",
+        "recent-3333-3333-4333-8333-333333333333",
       ),
     ).toBe("draft-1111-1111-4111-8111-111111111111");
   });
 
   it("falls back to submitted clientId for AI chat", () => {
     expect(
-      resolveAiChatClientId(null, "submitted-2222-2222-4222-8222-222222222222"),
+      resolveAiChatClientId(
+        null,
+        "submitted-2222-2222-4222-8222-222222222222",
+        "recent-3333-3333-4333-8333-333333333333",
+      ),
     ).toBe("submitted-2222-2222-4222-8222-222222222222");
   });
 
+  it("falls back to recent query clientId for AI chat", () => {
+    expect(
+      resolveAiChatClientId(
+        null,
+        null,
+        "recent-3333-3333-4333-8333-333333333333",
+      ),
+    ).toBe("recent-3333-3333-4333-8333-333333333333");
+  });
+
   it("returns null for AI chat when no client context exists", () => {
-    expect(resolveAiChatClientId(null, null)).toBeNull();
+    expect(resolveAiChatClientId(null, null, null)).toBeNull();
   });
 });
