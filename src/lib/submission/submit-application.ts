@@ -45,6 +45,7 @@ import { application, type Application } from "@/server/db/schemas";
 export interface SubmitApplicationInput {
   clientId: string;
   userId: string;
+  estimateRunId?: string;
   /** Request-scoped audit context for correlation and attribution. */
   auditContext?: ApplicationEventContext;
   /** Whether this request captured fresh consumer consent for submission. */
@@ -103,6 +104,7 @@ export async function submitToProvider(
   const {
     clientId,
     userId,
+    estimateRunId,
     applicant,
     auditContext,
     recordConsentCapture = false,
@@ -125,7 +127,7 @@ export async function submitToProvider(
     app = result.application;
 
     if (recordConsentCapture && !result.existed) {
-      await recordInitialConsentEvents(db, app.id, auditContext);
+      await recordInitialConsentEvents(db, app.id, auditContext, estimateRunId);
     }
   } catch (error) {
     console.error(
@@ -212,7 +214,7 @@ export async function submitToProvider(
 
   app = claimed;
 
-  await recordSubmissionAttemptEvent(db, app.id, auditContext);
+  await recordSubmissionAttemptEvent(db, app.id, auditContext, estimateRunId);
 
   // -----------------------------------------------------------------------
   // Step 3: Call carrier provider with retry for transient failures
@@ -235,6 +237,7 @@ export async function submitToProvider(
       provider.providerId,
       auditContext,
       restoredToDraft,
+      estimateRunId,
     );
 
     const errorCode: SubmissionErrorCode = providerResult.exhausted
@@ -303,6 +306,7 @@ export async function submitToProvider(
       providerResult.value.submissionId,
       providerSubmittedAt,
       auditContext,
+      estimateRunId,
     );
 
     return { ok: true, application: updated, alreadySubmitted: false };
@@ -397,6 +401,7 @@ async function recordFailureEvent(
   providerName: string,
   auditContext: ApplicationEventContext | undefined,
   restoredToDraft: boolean,
+  estimateRunId?: string,
 ): Promise<void> {
   await recordApplicationLifecycleEvent({
     db,
@@ -408,6 +413,7 @@ async function recordFailureEvent(
     metadata: {
       previousStatus: "received",
       providerKey: providerName,
+      estimateRunId,
       attempts: failure.attempts,
       exhausted: failure.exhausted,
       restoredToDraft,
@@ -456,6 +462,7 @@ async function recordSuccessEvent(
   providerApplicationId: string,
   occurredAt: Date,
   auditContext?: ApplicationEventContext,
+  estimateRunId?: string,
 ): Promise<void> {
   await recordApplicationLifecycleEvent({
     db,
@@ -469,6 +476,7 @@ async function recordSuccessEvent(
       previousStatus: "received",
       providerKey: providerName,
       providerApplicationId,
+      estimateRunId,
     },
   });
 }
@@ -496,6 +504,7 @@ async function recordInitialConsentEvents(
   db: Database,
   applicationId: string,
   auditContext?: ApplicationEventContext,
+  estimateRunId?: string,
 ): Promise<void> {
   await recordApplicationLifecycleEvent({
     db,
@@ -506,6 +515,7 @@ async function recordInitialConsentEvents(
     context: auditContext,
     metadata: {
       changeType: "consent_capture",
+      estimateRunId,
     },
   });
 
@@ -517,6 +527,7 @@ async function recordInitialConsentEvents(
     event: "consent_captured",
     context: auditContext,
     metadata: {
+      estimateRunId,
       consentTypes: [
         "consentTransmit",
         "healthInfoAuth",
@@ -531,6 +542,7 @@ async function recordSubmissionAttemptEvent(
   db: Database,
   applicationId: string,
   auditContext?: ApplicationEventContext,
+  estimateRunId?: string,
 ): Promise<void> {
   await recordApplicationLifecycleEvent({
     db,
@@ -541,6 +553,7 @@ async function recordSubmissionAttemptEvent(
     context: auditContext,
     metadata: {
       previousStatus: "draft",
+      estimateRunId,
     },
   });
 }

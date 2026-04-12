@@ -11,7 +11,7 @@ import { sanitizeErrorForAudit } from "@/lib/submission/error-sanitizer";
 import { getServerActionApplicationEventContext } from "@/server/audit/request-context";
 import { getSession } from "@/server/better-auth/server";
 import { getDb } from "@/server/db";
-import { client } from "@/server/db/schemas";
+import { client, estimateRun } from "@/server/db/schemas";
 import { getCarrierProvider } from "@/server/providers/get-carrier-provider";
 
 export async function submitApplicationAction(formData: FormData) {
@@ -43,11 +43,36 @@ export async function submitApplicationAction(formData: FormData) {
     redirect("/apply/review");
   }
 
+  const rawEstimateRunId = formData.get("estimateRunId");
+  const estimateRunId =
+    typeof rawEstimateRunId === "string" && rawEstimateRunId.length > 0
+      ? rawEstimateRunId
+      : null;
+
+  if (estimateRunId && !UUID_REGEX.test(estimateRunId)) {
+    redirect("/apply/review");
+  }
+
   const db = getDb();
   const dbNow = sql`now()`;
   const auditContext = await getServerActionApplicationEventContext(
     session.user.id,
   );
+
+  if (estimateRunId) {
+    const linkedEstimateRun = await db.query.estimateRun.findFirst({
+      where: and(
+        eq(estimateRun.id, estimateRunId),
+        eq(estimateRun.clientId, clientId),
+        eq(estimateRun.userId, session.user.id),
+      ),
+      columns: { id: true },
+    });
+
+    if (!linkedEstimateRun) {
+      redirect("/apply/review");
+    }
+  }
 
   // Persist consent timestamps using COALESCE so each field is only written
   // once — if the column already has a value it is preserved unchanged.
@@ -99,6 +124,7 @@ export async function submitApplicationAction(formData: FormData) {
       session.user.id,
       existingActive.firstName,
       existingActive.lastName,
+      estimateRunId,
       db,
       auditContext,
       true,
@@ -120,6 +146,7 @@ export async function submitApplicationAction(formData: FormData) {
     session.user.id,
     clientRecord.firstName,
     clientRecord.lastName,
+    estimateRunId,
     db,
     auditContext,
     true,
@@ -141,6 +168,7 @@ async function submitToProviderSafely(
   userId: string,
   firstName: string,
   lastName: string,
+  estimateRunId: string | null,
   db: ReturnType<typeof getDb>,
   auditContext: Awaited<
     ReturnType<typeof getServerActionApplicationEventContext>
@@ -153,6 +181,7 @@ async function submitToProviderSafely(
       {
         clientId,
         userId,
+        estimateRunId: estimateRunId ?? undefined,
         applicant: { firstName, lastName },
         auditContext,
         recordConsentCapture,

@@ -4,6 +4,7 @@ import {
   callIgnoringRedirect,
   createValidConsentForm,
   MOCK_CLIENT_SCHEMA,
+  TEST_CLIENT_ID,
   TEST_REQUEST_ID,
   TEST_USER_ID,
 } from "./__tests__/consent-test-helpers";
@@ -30,7 +31,11 @@ const updateMock = vi.fn(() => ({ set: setMock }));
 
 // Mock query chain for idempotent repeat-click check
 const findFirstMock = vi.fn().mockResolvedValue(null);
-const queryMock = { client: { findFirst: findFirstMock } };
+const estimateRunFindFirstMock = vi.fn().mockResolvedValue(null);
+const queryMock = {
+  client: { findFirst: findFirstMock },
+  estimateRun: { findFirst: estimateRunFindFirstMock },
+};
 
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => redirectMock(path),
@@ -50,6 +55,12 @@ vi.mock("@/server/db", () => ({
 
 vi.mock("@/server/db/schemas", () => ({
   client: MOCK_CLIENT_SCHEMA,
+  estimateRun: {
+    id: "id",
+    clientId: "clientId",
+    userId: "userId",
+    deletedAt: "deletedAt",
+  },
 }));
 
 // Mock provider submission — best-effort, not tested here
@@ -85,11 +96,13 @@ describe("ApplySubmitPage", () => {
     whereMock.mockClear();
     returningMock.mockClear();
     findFirstMock.mockClear();
+    estimateRunFindFirstMock.mockClear();
     submitToProviderMock.mockClear();
     returningMock.mockResolvedValue([
       { id: "c1", firstName: "Test", lastName: "User" },
     ]);
     findFirstMock.mockResolvedValue(null);
+    estimateRunFindFirstMock.mockResolvedValue(null);
     headersMock.mockResolvedValue(
       new Headers({ "x-request-id": TEST_REQUEST_ID }),
     );
@@ -178,6 +191,34 @@ describe("ApplySubmitPage", () => {
       await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
 
       expect(redirectMock).toHaveBeenCalledWith("/apply/review");
+    });
+
+    it("redirects to review when estimateRunId is not a valid UUID", async () => {
+      const mod = await loadActionsWithSession();
+
+      const formData = createValidConsentForm({ estimateRunId: "not-a-uuid" });
+      await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
+
+      expect(redirectMock).toHaveBeenCalledWith("/apply/review");
+      expect(submitToProviderMock).not.toHaveBeenCalled();
+    });
+
+    it("passes a validated estimateRunId through to submission", async () => {
+      const mod = await loadActionsWithSession();
+      const estimateRunId = "00000000-0000-4000-8000-000000000099";
+      estimateRunFindFirstMock.mockResolvedValue({
+        id: estimateRunId,
+        clientId: TEST_CLIENT_ID,
+      });
+
+      const formData = createValidConsentForm({ estimateRunId });
+      await callIgnoringRedirect(() => mod.submitApplicationAction(formData));
+
+      expect(submitToProviderMock).toHaveBeenCalledWith(
+        expect.objectContaining({ estimateRunId }),
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     it("persists consent timestamps and redirects to dashboard when all consents present", async () => {

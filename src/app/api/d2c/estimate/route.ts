@@ -26,8 +26,6 @@ const estimateRequestSchema = z.object({
   clientId: z.string().uuid(),
   /** Client's annual income in CAD */
   annualIncome: z.number().positive(),
-  /** Age at time of estimate */
-  age: z.number().int().min(18).max(120),
   /** Canadian province code */
   province: z.string().min(2).max(2),
   /** Tobacco use flag */
@@ -43,7 +41,6 @@ const estimateRequestSchema = z.object({
  *
  * Request body:
  * - annualIncome: number (required, positive)
- * - age: number (required, 18-120)
  * - province: string (required, 2-char CA province code)
  * - tobaccoUse: boolean (required)
  * - termYears: number (required, 5-40)
@@ -73,6 +70,7 @@ export const POST = withApiHandler(
     const { clientId, ...estimateInputs } = validationResult.data;
 
     // If clientId is provided, verify ownership
+    let draftDateOfBirth: string | null = null;
     if (clientId) {
       const draftResult = await findDraftById(clientId, session.user.id);
       if (!draftResult.found) {
@@ -85,12 +83,15 @@ export const POST = withApiHandler(
           { status: 404 },
         );
       }
+
+      draftDateOfBirth = draftResult.draft.dateOfBirth;
     }
 
     const result = await runEstimate({
       userId: session.user.id,
       clientId,
       source: "d2c",
+      dateOfBirth: draftDateOfBirth ?? "",
       ...estimateInputs,
     });
 

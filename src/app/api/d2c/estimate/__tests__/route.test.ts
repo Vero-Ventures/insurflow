@@ -61,7 +61,13 @@ describe("POST /api/d2c/estimate", () => {
     vi.clearAllMocks();
     mockGetSession.mockResolvedValue(createMockSession(TEST_UUIDS.validUserId));
     mockProfileFindFirst.mockResolvedValue({ accountType: "client" });
-    mockFindDraftById.mockResolvedValue({ found: true, draft: { id: TEST_UUIDS.validClientId } });
+    mockFindDraftById.mockResolvedValue({
+      found: true,
+      draft: {
+        id: TEST_UUIDS.validClientId,
+        dateOfBirth: "1990-05-15",
+      },
+    });
   });
 
   async function postEstimate(overrides: Record<string, unknown> = {}) {
@@ -113,6 +119,41 @@ describe("POST /api/d2c/estimate", () => {
     await expect(response.json()).resolves.toMatchObject({
       errorCode: "CLIENT_NOT_DRAFT",
     });
+  });
+
+  it("passes the draft DOB to the estimate service instead of trusting request age", async () => {
+    mockFindDraftById.mockResolvedValue({
+      found: true,
+      draft: {
+        id: TEST_UUIDS.validClientId,
+        dateOfBirth: "1990-05-15",
+      },
+    });
+    mockRunEstimate.mockResolvedValue({
+      success: true,
+      reusedExisting: false,
+      estimateRun: {
+        id: "run-1",
+        runNumber: 1,
+        inputs: {},
+        outputs: {},
+        assumptionVersionId: "assumption-1",
+        assumptionVersionLabel: "v1",
+        engineId: "engine",
+        engineVersion: "1.0.0",
+        providerKey: "mock",
+        createdAt: new Date("2026-04-12T00:00:00Z"),
+      },
+    });
+
+    const response = await postEstimate({ age: 99 });
+
+    expect(response.status).toBe(201);
+    expect(mockRunEstimate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dateOfBirth: "1990-05-15",
+      }),
+    );
   });
 });
 

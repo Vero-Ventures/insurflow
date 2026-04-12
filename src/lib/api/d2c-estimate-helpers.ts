@@ -45,6 +45,7 @@ import {
   ESTIMATE_ENGINE_ID,
   ESTIMATE_ENGINE_VERSION,
 } from "@/lib/d2c/estimate-assumptions";
+import { getAgeFromDateOfBirth } from "@/lib/financial/life-expectancy-profile";
 
 // ============================================================================
 // Types
@@ -60,8 +61,8 @@ export interface RunEstimateInput {
   source: EstimateSource;
   /** Client's annual income in CAD */
   annualIncome: number;
-  /** Age at time of estimate */
-  age: number;
+  /** Date of birth used to derive age server-side */
+  dateOfBirth: string;
   /** Canadian province code */
   province: string;
   /** Tobacco use flag */
@@ -264,6 +265,7 @@ export async function runEstimate(
   }
 
   const params: AssumptionParameters = CURRENT_ASSUMPTION_VERSION.parameters;
+  const age = getAgeFromDateOfBirth(input.dateOfBirth);
 
   // 2. Build estate buffer config with proper type narrowing
   const estateBufferConfig =
@@ -293,7 +295,7 @@ export async function runEstimate(
 
   // 5. Get premium range estimate from provider (sync mock, async interface)
   const premiumRange = getMockPremiumRangeMonthly({
-    age: input.age,
+    age,
     tobaccoUse: input.tobaccoUse,
     province: input.province,
     termYears: input.termYears,
@@ -303,7 +305,7 @@ export async function runEstimate(
   // 6. Assemble snapshots
   const inputs: EstimateRunInputs = {
     annualIncome: input.annualIncome,
-    age: input.age,
+    age,
     province: input.province,
     tobaccoUse: input.tobaccoUse,
     termYears: input.termYears,

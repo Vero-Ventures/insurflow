@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
-import { authClient } from "@/server/better-auth/client";
+import { authClient } from "@/lib/auth/client";
 import { formatCurrency } from "@/lib/client-utils";
 import {
   DEFAULT_D2C_INTAKE,
@@ -28,7 +28,7 @@ import {
   toSmokingStatus,
 } from "@/lib/financial/mortality-tables";
 import { getMockPremiumRangeMonthly } from "@/lib/providers/mock-term-life-provider";
-import type { EstimateRunOutputs } from "@/server/db/schemas/estimate-runs-schema";
+import type { EstimateRunOutputs } from "@/lib/d2c/estimate-types";
 
 function useIntakeData(clientId: string | null) {
   const [intake, setIntake] = useState(DEFAULT_D2C_INTAKE);
@@ -339,7 +339,6 @@ export default function ApplyEstimatePage() {
         body: JSON.stringify({
           clientId: nextClientId,
           annualIncome: intake.annualIncome,
-          age,
           province: intake.province,
           tobaccoUse: intake.tobaccoUse,
           termYears: intake.termYears,
@@ -359,7 +358,6 @@ export default function ApplyEstimatePage() {
       return json.estimateRun;
     },
     [
-      age,
       intake.annualIncome,
       intake.coverageAmount,
       intake.province,

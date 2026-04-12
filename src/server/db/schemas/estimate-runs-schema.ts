@@ -19,8 +19,7 @@
  * - Both tables use `timestampsCreatedOnly()` — rows are immutable event records.
  * - `estimateRun.inputs` and `estimateRun.outputs` are JSONB snapshots so the
  *   full calculation context is preserved even if the engine evolves later.
- * - `estimateRun.clientId` is nullable to support unauthenticated (session-only)
- *   estimates that are persisted once the user creates an account.
+ * - Persisted estimate runs currently require an owned client draft and user.
  * - `estimateRun.assumptionVersionId` references the assumption set used,
  *   enabling exact reproduction of any historical estimate.
  * - Monetary values in JSONB are numbers (not decimal strings) because they
@@ -40,6 +39,11 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import type {
+  AssumptionParameters,
+  EstimateRunInputs,
+  EstimateRunOutputs,
+} from "@/lib/d2c/estimate-types";
 
 import { user } from "./auth-schema";
 import { client } from "./clients-schema";
@@ -54,74 +58,6 @@ import { primaryId, timestampsCreatedOnly } from "./schema-helpers";
  * Assumption parameters stored as a versioned snapshot.
  * These are the "magic numbers" that drive the insurance needs calculation.
  */
-export interface AssumptionParameters {
-  /** Percentage of income to replace (e.g., 70 for 70%) */
-  incomeReplacementPercent: number;
-  /** Number of years to replace income */
-  replacementDurationYears: number;
-  /** Estate buffer configuration */
-  estateBuffer: {
-    type: "fixed" | "percentage";
-    /** Dollar amount (fixed) or percentage value */
-    value: number;
-  };
-  /** Existing life insurance coverage assumed ($0 for D2C v1) */
-  existingCoverageDefault: number;
-  /** Total debts assumed ($0 for D2C v1) */
-  totalDebtsDefault: number;
-  /** Liquid assets assumed ($0 for D2C v1) */
-  liquidAssetsDefault: number;
-}
-
-/**
- * Input snapshot captured at estimate run time.
- * Preserves the exact values fed to the engine for reproducibility.
- */
-export interface EstimateRunInputs {
-  /** Client's annual income in CAD */
-  annualIncome: number;
-  /** Age at time of estimate */
-  age: number;
-  /** Canadian province code */
-  province: string;
-  /** Tobacco use flag */
-  tobaccoUse: boolean;
-  /** Term length in years */
-  termYears: number;
-  /** Coverage amount passed to premium estimator (may be user-overridden) */
-  coverageAmount: number;
-  /** Whether spouse income was included */
-  includeSpouseIncome: boolean;
-  /** Spouse income if included */
-  spouseIncome: number;
-}
-
-/**
- * Output snapshot captured at estimate run time.
- * Contains the full insurance needs breakdown and premium range.
- */
-export interface EstimateRunOutputs {
-  /** Insurance needs breakdown */
-  insuranceNeeds: {
-    incomeReplacementNeeds: number;
-    debtPayoffNeeds: number;
-    estateBufferNeeds: number;
-    grossNeeds: number;
-    existingCoverage: number;
-    liquidAssets: number;
-    totalInsuranceNeeds: number;
-  };
-  /** Recommended coverage amount (engine-derived or user-overridden) */
-  recommendedCoverage: number;
-  /** Premium range estimate from carrier provider */
-  premiumRange: {
-    lowMonthlyPremiumCad: number;
-    highMonthlyPremiumCad: number;
-    currency: "CAD";
-    nonBinding: true;
-  };
-}
-
 // ============================================================================
 // ASSUMPTION VERSION TABLE
 // ============================================================================
@@ -197,18 +133,15 @@ export const estimateRun = pgTable(
     // Ownership
     // -------------------------------------------------------------------------
 
-    /**
-     * Client record this estimate belongs to.
-     * Nullable for unauthenticated session-only estimates that get linked later.
-     */
-    clientId: uuid("client_id").references(() => client.id, {
-      onDelete: "cascade",
-    }),
+    /** Client record this estimate belongs to. */
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id),
 
     /** User who triggered this estimate */
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id),
 
     // -------------------------------------------------------------------------
     // Context
@@ -311,3 +244,9 @@ export type EstimateRunInsert = typeof estimateRun.$inferInsert;
 
 /** Estimate source type literal */
 export type EstimateSource = (typeof estimateSourceEnum.enumValues)[number];
+
+export type {
+  AssumptionParameters,
+  EstimateRunInputs,
+  EstimateRunOutputs,
+};

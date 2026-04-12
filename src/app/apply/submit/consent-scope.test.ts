@@ -69,6 +69,11 @@ vi.mock("@/server/db", () => ({
 
 vi.mock("@/server/db/schemas", () => ({
   client: MOCK_CLIENT_SCHEMA,
+  estimateRun: {
+    id: "id",
+    clientId: "clientId",
+    userId: "userId",
+  },
 }));
 
 // Mock provider submission — best-effort, not tested here

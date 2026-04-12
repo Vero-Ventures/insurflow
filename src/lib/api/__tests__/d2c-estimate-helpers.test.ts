@@ -52,6 +52,7 @@ vi.mock("@/server/db", () => ({
 
 import { calculateInsuranceNeedsRounded } from "@/lib/financial/insurance-needs";
 import { getMockPremiumRangeMonthly } from "@/lib/providers/mock-term-life-provider";
+import { getAgeFromDateOfBirth } from "@/lib/financial/life-expectancy-profile";
 import {
   CURRENT_ASSUMPTION_VERSION,
   ESTIMATE_ENGINE_ID,
@@ -81,7 +82,7 @@ function createEstimateInput(
     clientId: TEST_CLIENT_ID,
     source: "d2c",
     annualIncome: 142_500,
-    age: 36,
+    dateOfBirth: "1990-05-15",
     province: "ON",
     tobaccoUse: false,
     termYears: 20,
@@ -97,6 +98,7 @@ function createEstimateInput(
  * @returns Matching input and output snapshots for the given payload.
  */
 function buildSnapshots(input: RunEstimateInput) {
+  const age = getAgeFromDateOfBirth(input.dateOfBirth);
   const params = CURRENT_ASSUMPTION_VERSION.parameters;
   const estateBuffer =
     params.estateBuffer.type === "fixed"
@@ -125,7 +127,7 @@ function buildSnapshots(input: RunEstimateInput) {
       : needs.totalInsuranceNeeds;
 
   const premiumRange = getMockPremiumRangeMonthly({
-    age: input.age,
+    age,
     tobaccoUse: input.tobaccoUse,
     province: input.province,
     termYears: input.termYears,
@@ -135,7 +137,7 @@ function buildSnapshots(input: RunEstimateInput) {
   return {
     inputs: {
       annualIncome: input.annualIncome,
-      age: input.age,
+      age,
       province: input.province,
       tobaccoUse: input.tobaccoUse,
       termYears: input.termYears,
