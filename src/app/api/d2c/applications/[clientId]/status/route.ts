@@ -4,7 +4,7 @@
  * GET /api/d2c/applications/[clientId]/status - Retrieve application status and timeline
  *
  * Security:
- * - Requires authentication (client account, not advisor-only)
+ * - Requires authentication (any account type)
  * - Client must be owned by the authenticated user
  * - Application must exist and not be soft-deleted
  *
@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { withApiHandler, requireClientAccount } from "@/lib/api/route-helpers";
+import { withApiHandler } from "@/lib/api/route-helpers";
 import { findApplicationStatus } from "@/lib/api/d2c-application-helpers";
 import { validateUUID } from "@/lib/api/client-helpers";
 
@@ -44,9 +44,6 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session, params }) => {
-    const clientGuard = await requireClientAccount(logger, session);
-    if (clientGuard) return clientGuard;
-
     const clientId = params.clientId ?? "";
     const clientIdError = validateUUID(clientId, "client ID");
     if (clientIdError) {

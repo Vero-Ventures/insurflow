@@ -111,14 +111,36 @@ describe("POST /api/d2c/draft", () => {
     expect(response.status).toBe(401);
   }, 15000);
 
-  it("returns 403 for non-client accounts", async () => {
+  it("allows advisor accounts", async () => {
     mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+    const mockDraft = createMockDraftRecord();
+    mockCreateDraft.mockResolvedValue({
+      success: true,
+      draft: mockDraft,
+      existed: false,
+    });
 
     const response = await postDraft();
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(201);
     const body = await response.json();
-    expect(body.error).toContain("Client account required");
+    expect(body.draft).toBeDefined();
+  });
+
+  it("allows draft creation when profile is missing", async () => {
+    mockProfileFindFirst.mockResolvedValue(null);
+    const mockDraft = createMockDraftRecord();
+    mockCreateDraft.mockResolvedValue({
+      success: true,
+      draft: mockDraft,
+      existed: false,
+    });
+
+    const response = await postDraft();
+
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.draft).toBeDefined();
   });
 
   it("returns 201 when creating a new draft", async () => {
@@ -270,14 +292,34 @@ describe("GET /api/d2c/draft", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 for non-client accounts", async () => {
+  it("allows advisor accounts", async () => {
     mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+    const mockDraft = createMockDraftRecord();
+    mockFindLatestDraft.mockResolvedValue({
+      found: true,
+      draft: mockDraft,
+    });
 
     const response = await getDraft();
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.error).toContain("Client account required");
+    expect(body.draft).toBeDefined();
+  });
+
+  it("allows draft lookup when profile is missing", async () => {
+    mockProfileFindFirst.mockResolvedValue(null);
+    const mockDraft = createMockDraftRecord();
+    mockFindLatestDraft.mockResolvedValue({
+      found: true,
+      draft: mockDraft,
+    });
+
+    const response = await getDraft();
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.draft?.id).toBe(TEST_UUIDS.validClientId);
   });
 
   it("returns 200 with draft when one exists", async () => {
@@ -339,16 +381,38 @@ describe("PATCH /api/d2c/draft/[clientId]", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 for non-client accounts", async () => {
+  it("allows advisor accounts", async () => {
     mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+    const updatedDraft = createMockDraftRecord({ smoker: true });
+    mockUpdateDraft.mockResolvedValue({
+      success: true,
+      draft: updatedDraft,
+    });
 
     const response = await patchDraft(TEST_UUIDS.validClientId, {
       intake: { annualIncome: 50000 },
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.error).toContain("Client account required");
+    expect(body.draft).toBeDefined();
+  });
+
+  it("allows draft updates when profile is missing", async () => {
+    mockProfileFindFirst.mockResolvedValue(null);
+    const updatedDraft = createMockDraftRecord({ smoker: true });
+    mockUpdateDraft.mockResolvedValue({
+      success: true,
+      draft: updatedDraft,
+    });
+
+    const response = await patchDraft(TEST_UUIDS.validClientId, {
+      intake: { tobaccoUse: true },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.draft).toBeDefined();
   });
 
   it("returns 400 for invalid client ID format", async () => {

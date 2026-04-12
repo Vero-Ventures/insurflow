@@ -5,7 +5,7 @@
  * PATCH /api/d2c/draft/[clientId] - Update a draft with partial intake data
  *
  * Security:
- * - Requires authentication (any account type, not advisor-only)
+ * - Requires authentication (any account type)
  * - Client must be owned by the authenticated user
  * - Client must be in "draft" status
  */
@@ -15,7 +15,6 @@ import {
   withApiHandler,
   parseJsonBody,
   handleValidationError,
-  requireClientAccount,
 } from "@/lib/api/route-helpers";
 import { findDraftById, updateDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
@@ -86,9 +85,6 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session, params }) => {
-    const clientGuard = await requireClientAccount(logger, session);
-    if (clientGuard) return clientGuard;
-
     const clientId = params.clientId;
 
     if (!clientId || !UUID_REGEX.test(clientId)) {
@@ -138,9 +134,6 @@ export const PATCH = withApiHandler(
     method: "PATCH",
   },
   async (request, { logger, session, params }) => {
-    const clientGuard = await requireClientAccount(logger, session);
-    if (clientGuard) return clientGuard;
-
     const clientId = params.clientId;
 
     // Validate clientId format

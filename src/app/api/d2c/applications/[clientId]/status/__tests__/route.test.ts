@@ -125,14 +125,15 @@ describe("GET /api/d2c/applications/[clientId]/status", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 for non-client accounts", async () => {
+  it("allows advisor accounts", async () => {
     mockProfileFindFirst.mockResolvedValue({ accountType: "advisor" });
+    mockFindApplicationStatus.mockResolvedValue(createMockApplicationResult());
 
     const response = await getStatus(TEST_UUIDS.validClientId);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.error).toContain("Client account required");
+    expect(body.application).toBeDefined();
   });
 
   // --------------------------------------------------------------------------
