@@ -198,16 +198,10 @@ describe("ApplyEstimatePage", () => {
     ).toBeTruthy();
   });
 
-  it("waits for auth resolution before dropping clientId on review navigation", async () => {
+  it("blocks review navigation while auth session is pending", async () => {
     useSessionMock.mockReturnValue({ data: null, isPending: true });
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      status: 201,
-      json: async () => ({
-        draft: { id: "bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
-      }),
-    } as Response);
+    const fetchMock = vi.spyOn(globalThis, "fetch");
 
     render(<ApplyEstimatePage />);
 
@@ -215,13 +209,12 @@ describe("ApplyEstimatePage", () => {
       name: /continue to review/i,
     });
 
+    expect((continueButton as HTMLButtonElement).disabled).toBe(true);
+
     fireEvent.click(continueButton);
 
-    await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith(
-        "/apply/review?clientId=bbbb0000-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      );
-    });
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("syncs the estimate coverage before navigating to review when a draft exists", async () => {
