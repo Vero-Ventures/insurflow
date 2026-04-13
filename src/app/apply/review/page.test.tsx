@@ -87,4 +87,25 @@ describe("ApplyReviewPage", () => {
       props: { clientId: "22222222-2222-4222-8222-222222222222" },
     });
   });
+
+  it("falls back to latest owned draft when requested clientId is not found", async () => {
+    findClientMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: "33333333-3333-4333-8333-333333333333",
+    });
+
+    const { default: ApplyReviewPage } = await import("./page");
+
+    const page = await ApplyReviewPage({
+      searchParams: Promise.resolve({
+        clientId: "aaaa0000-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      }),
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(findClientMock).toHaveBeenCalledTimes(2);
+    expect(createDraftMock).not.toHaveBeenCalled();
+    expect(page).toMatchObject({
+      props: { clientId: "33333333-3333-4333-8333-333333333333" },
+    });
+  });
 });
