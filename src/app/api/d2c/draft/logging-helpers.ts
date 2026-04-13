@@ -28,6 +28,7 @@ function formatUnknownError(error: unknown) {
   if (typeof error === "object" && error !== null) {
     return {
       name: "UnknownObjectError",
+      message: "Non-Error object thrown",
       details: error,
     };
   }
