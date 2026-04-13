@@ -141,6 +141,16 @@ function extractDraftFromPayload(payload: unknown): DraftClientRecord | null {
   return obj.data?.draft ?? obj.draft ?? null;
 }
 
+function extractDraftExistedFromPayload(payload: unknown): boolean | undefined {
+  if (typeof payload !== "object" || payload === null) {
+    return undefined;
+  }
+
+  const obj = payload as DraftEnvelope;
+  const existed = obj.data?.existed ?? obj.existed;
+  return typeof existed === "boolean" ? existed : undefined;
+}
+
 async function findLatestDraftId(): Promise<string | null> {
   try {
     const response = await fetch("/api/d2c/draft", { method: "GET" });
@@ -174,12 +184,9 @@ async function createDraftForReviewIfNeeded({
     });
 
     if (response.ok) {
-      const payload = (await response.json()) as DraftEnvelope;
+      const payload = await response.json();
       const createdId = extractDraftIdFromPayload(payload);
-      const existed =
-        payload.data?.existed !== undefined
-          ? payload.data.existed
-          : payload.existed;
+      const existed = extractDraftExistedFromPayload(payload);
       if (typeof createdId === "string" && createdId.length > 0) {
         nextClientId = createdId;
         createdDraftNow =

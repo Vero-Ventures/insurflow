@@ -287,27 +287,11 @@ export async function createDraft(
       if (existing) {
         result = { existed: true, draft: existing };
       } else {
-        const [inserted] = await db.insert(client).values(values).returning();
-
-        if (!inserted) {
-          console.error("[createDraft] Fallback insert failed", { userId });
-          result = { error: "INSERT_FAILED" };
-        } else {
-          const draft = await db.query.client.findFirst({
-            where: eq(client.id, inserted.id),
-            columns: DRAFT_SELECT_COLUMNS,
-          });
-
-          if (!draft) {
-            console.error("[createDraft] Fallback re-fetch failed", {
-              userId,
-              insertedId: inserted.id,
-            });
-            result = { error: "RETRIEVE_FAILED" };
-          } else {
-            result = { existed: false, draft };
-          }
-        }
+        console.error(
+          "[createDraft] Fallback could not find existing draft; refusing unsafe insert",
+          { userId },
+        );
+        result = { error: "INSERT_FAILED" };
       }
     } catch (fallbackError) {
       console.error("[createDraft] Fallback path threw", {

@@ -25,6 +25,13 @@ function formatUnknownError(error: unknown) {
     };
   }
 
+  if (typeof error === "object" && error !== null) {
+    return {
+      name: "UnknownObjectError",
+      details: error,
+    };
+  }
+
   return {
     name: "UnknownError",
     message: String(error),
