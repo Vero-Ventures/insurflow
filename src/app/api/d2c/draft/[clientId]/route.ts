@@ -21,6 +21,11 @@ import { findDraftById, updateDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
 import { UUID_REGEX } from "@/lib/validation/client";
 import { z } from "zod";
+import {
+  DRAFT_RESPONSE_ENVELOPE,
+  logD2cNormalizationFailure,
+  logDraftStart,
+} from "../logging-helpers";
 
 /**
  * Zod schema mirroring D2cIntake with all fields optional for PATCH.
@@ -86,7 +91,8 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session, params }) => {
-    await logger.info("Draft-by-id GET start", {
+    await logDraftStart(logger, {
+      message: "Draft-by-id GET start",
       userId: session.user.id,
       requestedClientId: params.clientId,
     });
@@ -95,20 +101,10 @@ export const GET = withApiHandler(
       session.user.id,
     );
     if (!normalizationResult.ok) {
-      await logger.warn("D2C account normalization failed", {
+      await logD2cNormalizationFailure(logger, {
         userId: session.user.id,
         clientId: params.clientId,
-        error:
-          normalizationResult.error instanceof Error
-            ? {
-                name: normalizationResult.error.name,
-                message: normalizationResult.error.message,
-                stack: normalizationResult.error.stack,
-              }
-            : {
-                name: "UnknownError",
-                message: String(normalizationResult.error),
-              },
+        error: normalizationResult.error,
       });
     }
 
@@ -137,7 +133,7 @@ export const GET = withApiHandler(
     await logger.info("Draft retrieved successfully", {
       statusCode: 200,
       clientId: result.draft.id,
-      responseEnvelope: "data.draft",
+      ...DRAFT_RESPONSE_ENVELOPE,
     });
 
     return { data: { draft: result.draft } };
@@ -162,7 +158,8 @@ export const PATCH = withApiHandler(
     method: "PATCH",
   },
   async (request, { logger, session, params }) => {
-    await logger.info("Draft-by-id PATCH start", {
+    await logDraftStart(logger, {
+      message: "Draft-by-id PATCH start",
       userId: session.user.id,
       requestedClientId: params.clientId,
     });
@@ -171,20 +168,10 @@ export const PATCH = withApiHandler(
       session.user.id,
     );
     if (!normalizationResult.ok) {
-      await logger.warn("D2C account normalization failed", {
+      await logD2cNormalizationFailure(logger, {
         userId: session.user.id,
         clientId: params.clientId,
-        error:
-          normalizationResult.error instanceof Error
-            ? {
-                name: normalizationResult.error.name,
-                message: normalizationResult.error.message,
-                stack: normalizationResult.error.stack,
-              }
-            : {
-                name: "UnknownError",
-                message: String(normalizationResult.error),
-              },
+        error: normalizationResult.error,
       });
     }
 

@@ -20,6 +20,11 @@ import { createDraft, findLatestDraft } from "@/lib/api/d2c-draft-helpers";
 import { d2cIntakeToClientFields } from "@/lib/d2c/client-adapter";
 import type { D2cIntake } from "@/lib/d2c/intake-types";
 import { z } from "zod";
+import {
+  DRAFT_RESPONSE_ENVELOPE,
+  logD2cNormalizationFailure,
+  logDraftStart,
+} from "./logging-helpers";
 
 const optionalIntakeSchema = z.object({
   dateOfBirth: z.string().optional(),
@@ -75,7 +80,8 @@ export const POST = withApiHandler(
     method: "POST",
   },
   async (request, { logger, session }) => {
-    await logger.info("Draft POST start", {
+    await logDraftStart(logger, {
+      message: "Draft POST start",
       userId: session.user.id,
     });
 
@@ -83,19 +89,9 @@ export const POST = withApiHandler(
       session.user.id,
     );
     if (!normalizationResult.ok) {
-      await logger.warn("D2C account normalization failed", {
+      await logD2cNormalizationFailure(logger, {
         userId: session.user.id,
-        error:
-          normalizationResult.error instanceof Error
-            ? {
-                name: normalizationResult.error.name,
-                message: normalizationResult.error.message,
-                stack: normalizationResult.error.stack,
-              }
-            : {
-                name: "UnknownError",
-                message: String(normalizationResult.error),
-              },
+        error: normalizationResult.error,
       });
     }
 
@@ -177,7 +173,8 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session }) => {
-    await logger.info("Draft GET start", {
+    await logDraftStart(logger, {
+      message: "Draft GET start",
       userId: session.user.id,
     });
 
@@ -185,19 +182,9 @@ export const GET = withApiHandler(
       session.user.id,
     );
     if (!normalizationResult.ok) {
-      await logger.warn("D2C account normalization failed", {
+      await logD2cNormalizationFailure(logger, {
         userId: session.user.id,
-        error:
-          normalizationResult.error instanceof Error
-            ? {
-                name: normalizationResult.error.name,
-                message: normalizationResult.error.message,
-                stack: normalizationResult.error.stack,
-              }
-            : {
-                name: "UnknownError",
-                message: String(normalizationResult.error),
-              },
+        error: normalizationResult.error,
       });
     }
 
@@ -214,7 +201,7 @@ export const GET = withApiHandler(
     await logger.info("Draft retrieved successfully", {
       statusCode: 200,
       clientId: result.draft.id,
-      responseEnvelope: "data.draft",
+      ...DRAFT_RESPONSE_ENVELOPE,
     });
 
     return { data: { draft: result.draft } };

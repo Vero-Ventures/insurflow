@@ -108,15 +108,21 @@ interface DraftPersistenceResult {
   createdDraftNow: boolean;
 }
 
+type DraftEnvelope = {
+  data?: {
+    draft?: { id?: string };
+    existed?: boolean;
+  };
+  draft?: { id?: string };
+  existed?: boolean;
+};
+
 function extractDraftIdFromPayload(payload: unknown): string | null {
   if (typeof payload !== "object" || payload === null) {
     return null;
   }
 
-  const obj = payload as {
-    data?: { draft?: { id?: unknown } };
-    draft?: { id?: unknown };
-  };
+  const obj = payload as DraftEnvelope;
 
   const foundId = obj.data?.draft?.id ?? obj.draft?.id ?? null;
   return typeof foundId === "string" && foundId.length > 0 ? foundId : null;
@@ -168,10 +174,7 @@ async function createDraftForReviewIfNeeded({
     });
 
     if (response.ok) {
-      const payload = (await response.json()) as {
-        data?: { existed?: boolean };
-        existed?: boolean;
-      };
+      const payload = (await response.json()) as DraftEnvelope;
       const createdId = extractDraftIdFromPayload(payload);
       const existed =
         payload.data?.existed !== undefined
