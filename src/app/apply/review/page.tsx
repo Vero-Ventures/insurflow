@@ -26,12 +26,27 @@ export default async function ApplyReviewPage({
   searchParams: Promise<{ clientId?: string }>;
 }) {
   const session = await getSession();
+  console.info("[apply/review] request start", {
+    sessionUserId: session?.user?.id ?? null,
+  });
   if (!session?.user) {
+    console.info("[apply/review] rendering signed-out review form");
     return <ReviewForm clientId={null} />;
   }
 
   const { clientId } = await searchParams;
+  console.info("[apply/review] incoming search params", {
+    clientId: clientId ?? null,
+    sessionUserId: session.user.id,
+  });
   if (clientId && !UUID_REGEX.test(clientId)) {
+    console.warn(
+      "[apply/review] redirecting to intake: invalid clientId format",
+      {
+        clientId,
+        sessionUserId: session.user.id,
+      },
+    );
     redirect("/apply/intake");
   }
 
@@ -76,6 +91,11 @@ export default async function ApplyReviewPage({
           ),
         })
       : await findLatestOwnedDraft();
+    console.info("[apply/review] requested/latest draft lookup", {
+      requestedClientId: clientId ?? null,
+      rowId: row?.id ?? null,
+      lookupMode: clientId ? "requested-id" : "latest-owned",
+    });
 
     // In production, immediately navigating after draft creation/update can
     // briefly race with fresh reads. If the requested draft cannot be loaded,
@@ -87,14 +107,28 @@ export default async function ApplyReviewPage({
         requestedClientId: clientId,
       });
       row = await findLatestOwnedDraft();
+      console.info("[apply/review] latest owned draft retry result", {
+        requestedClientId: clientId,
+        latestOwnedDraftId: row?.id ?? null,
+      });
     }
 
     if (row) {
       resolvedClientId = row.id;
+      console.info("[apply/review] using resolved draft", {
+        resolvedClientId,
+        source: clientId ? "requested-or-latest-retry" : "latest-owned",
+      });
     } else {
       // Safety net: if step-3 persistence failed transiently, provision a draft
       // here so authenticated users can still proceed to review.
       const created = await createDraft(session.user.id);
+      console.info("[apply/review] auto-create draft result", {
+        requestedClientId: clientId ?? null,
+        success: created.success,
+        createdDraftId: created.success ? created.draft.id : null,
+        errorCode: created.success ? null : created.errorCode,
+      });
       if (created.success) {
         resolvedClientId = created.draft.id;
       } else {
@@ -109,8 +143,16 @@ export default async function ApplyReviewPage({
   }
 
   if (!resolvedClientId) {
+    console.warn("[apply/review] redirecting to intake: no resolved draft id", {
+      sessionUserId: session.user.id,
+      incomingClientId: clientId ?? null,
+    });
     redirect("/apply/intake");
   }
 
+  console.info("[apply/review] rendering review form", {
+    resolvedClientId,
+    sessionUserId: session.user.id,
+  });
   return <ReviewForm clientId={resolvedClientId} />;
 }

@@ -75,6 +75,10 @@ export const POST = withApiHandler(
     method: "POST",
   },
   async (request, { logger, session }) => {
+    await logger.info("Draft POST start", {
+      userId: session.user.id,
+    });
+
     const normalizationResult = await ensureD2cClientAccountType(
       session.user.id,
     );
@@ -173,6 +177,10 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session }) => {
+    await logger.info("Draft GET start", {
+      userId: session.user.id,
+    });
+
     const normalizationResult = await ensureD2cClientAccountType(
       session.user.id,
     );
@@ -206,6 +214,7 @@ export const GET = withApiHandler(
     await logger.info("Draft retrieved successfully", {
       statusCode: 200,
       clientId: result.draft.id,
+      responseEnvelope: "data.draft",
     });
 
     return { data: { draft: result.draft } };

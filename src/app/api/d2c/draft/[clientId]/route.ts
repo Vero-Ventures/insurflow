@@ -86,6 +86,11 @@ export const GET = withApiHandler(
     method: "GET",
   },
   async (_request, { logger, session, params }) => {
+    await logger.info("Draft-by-id GET start", {
+      userId: session.user.id,
+      requestedClientId: params.clientId,
+    });
+
     const normalizationResult = await ensureD2cClientAccountType(
       session.user.id,
     );
@@ -132,6 +137,7 @@ export const GET = withApiHandler(
     await logger.info("Draft retrieved successfully", {
       statusCode: 200,
       clientId: result.draft.id,
+      responseEnvelope: "data.draft",
     });
 
     return { data: { draft: result.draft } };
@@ -156,6 +162,11 @@ export const PATCH = withApiHandler(
     method: "PATCH",
   },
   async (request, { logger, session, params }) => {
+    await logger.info("Draft-by-id PATCH start", {
+      userId: session.user.id,
+      requestedClientId: params.clientId,
+    });
+
     const normalizationResult = await ensureD2cClientAccountType(
       session.user.id,
     );
