@@ -53,7 +53,19 @@ export default async function ApplyReviewPage({
     }
 
     const db = getDb();
-    const row = clientId
+
+    const findLatestOwnedDraft = () =>
+      db.query.client.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(client.userId, session.user.id),
+          eq(client.status, "draft"),
+          isNull(client.deletedAt),
+        ),
+        orderBy: (clientTable, { desc }) => [desc(clientTable.updatedAt)],
+      });
+
+    let row = clientId
       ? await db.query.client.findFirst({
           columns: { id: true },
           where: and(
@@ -63,24 +75,33 @@ export default async function ApplyReviewPage({
             isNull(client.deletedAt),
           ),
         })
-      : await db.query.client.findFirst({
-          columns: { id: true },
-          where: and(
-            eq(client.userId, session.user.id),
-            eq(client.status, "draft"),
-            isNull(client.deletedAt),
-          ),
-          orderBy: (clientTable, { desc }) => [desc(clientTable.updatedAt)],
-        });
+      : await findLatestOwnedDraft();
+
+    // In production, immediately navigating after draft creation/update can
+    // briefly race with fresh reads. If the requested draft cannot be loaded,
+    // retry by resolving the latest owned draft instead of hard-resetting to
+    // intake.
+    if (!row && clientId) {
+      console.warn("[apply/review] Requested draft unavailable, retrying", {
+        userId: session.user.id,
+        requestedClientId: clientId,
+      });
+      row = await findLatestOwnedDraft();
+    }
 
     if (row) {
       resolvedClientId = row.id;
-    } else if (!clientId) {
+    } else {
       // Safety net: if step-3 persistence failed transiently, provision a draft
       // here so authenticated users can still proceed to review.
       const created = await createDraft(session.user.id);
       if (created.success) {
         resolvedClientId = created.draft.id;
+      } else {
+        console.warn("[apply/review] Failed to auto-provision review draft", {
+          userId: session.user.id,
+          requestedClientId: clientId ?? null,
+        });
       }
     }
   } catch (error) {

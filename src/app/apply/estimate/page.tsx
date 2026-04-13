@@ -27,6 +27,7 @@ import {
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
+import { authClient } from "@/server/better-auth/client";
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -107,6 +108,23 @@ interface DraftPersistenceInput {
 interface DraftPersistenceResult {
   nextClientId: string | null;
   createdDraftNow: boolean;
+}
+
+async function findLatestDraftId(): Promise<string | null> {
+  try {
+    const response = await fetch("/api/d2c/draft", { method: "GET" });
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as {
+      draft?: { id?: string };
+    };
+    const foundId = payload.draft?.id;
+    return typeof foundId === "string" && foundId.length > 0 ? foundId : null;
+  } catch {
+    return null;
+  }
 }
 
 async function createDraftForReviewIfNeeded({
@@ -197,6 +215,9 @@ export default function ApplyEstimatePage() {
   const [premiumLow, setPremiumLow] = useState<number>(0);
   const [premiumHigh, setPremiumHigh] = useState<number>(0);
   const [isContinuing, setIsContinuing] = useState(false);
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
+  const isAuthenticated = !!session?.user;
 
   const { intake, isReady, resolvedClientId } = useIntakeData(clientId);
   const age = getAgeFromDateOfBirth(intake.dateOfBirth);
@@ -310,14 +331,29 @@ export default function ApplyEstimatePage() {
   }
 
   const handleContinueToReview = async () => {
-    if (isContinuing) return;
+    if (isContinuing || isSessionPending) return;
     setIsContinuing(true);
     try {
-      const { nextClientId, createdDraftNow } =
+      const { nextClientId: createdOrExistingClientId, createdDraftNow } =
         await createDraftForReviewIfNeeded({
           nextClientId: resolvedClientId,
           intakeForDraft,
         });
+
+      // For authenticated users, review should always be entered with a draft ID.
+      // Production can surface transient auth/persistence timing where the POST
+      // above does not return an ID on the first attempt.
+      let nextClientId = createdOrExistingClientId;
+      if (isAuthenticated && !nextClientId) {
+        nextClientId = await findLatestDraftId();
+        if (!nextClientId) {
+          console.warn("[apply/estimate] blocked continue without draft", {
+            hadResolvedClientId: !!resolvedClientId,
+            isAuthenticated,
+          });
+          return;
+        }
+      }
 
       await syncDraftForReviewIfNeeded({
         nextClientId,
@@ -394,7 +430,7 @@ export default function ApplyEstimatePage() {
           <Button
             className="bg-emerald hover:bg-emerald/90"
             onClick={() => void handleContinueToReview()}
-            disabled={isContinuing}
+            disabled={isContinuing || isSessionPending}
           >
             Continue to review
           </Button>
