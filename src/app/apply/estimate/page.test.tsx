@@ -25,7 +25,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: getMock }),
 }));
 
-vi.mock("@/server/better-auth/client", () => ({
+vi.mock("@/lib/auth/auth-client", () => ({
   authClient: {
     useSession: () => useSessionMock(),
   },

@@ -27,7 +27,7 @@ import {
 import { mockTermLifeProvider } from "@/lib/providers/mock-term-life-provider";
 import { ProductRecommendationsCard } from "@/components/financial/product-recommendations-card";
 import type { InsuranceGoal } from "@/lib/financial/product-recommendation";
-import { authClient } from "@/server/better-auth/client";
+import { authClient } from "@/lib/auth/auth-client";
 
 /**
  * Loads intake data, preferring DB draft when clientId is available
@@ -347,11 +347,13 @@ export default function ApplyEstimatePage() {
       if (isAuthenticated && !nextClientId) {
         nextClientId = await findLatestDraftId();
         if (!nextClientId) {
-          console.warn("[apply/estimate] blocked continue without draft", {
-            hadResolvedClientId: !!resolvedClientId,
-            isAuthenticated,
-          });
-          return;
+          console.warn(
+            "[apply/estimate] continuing to review without draft id",
+            {
+              hadResolvedClientId: !!resolvedClientId,
+              isAuthenticated,
+            },
+          );
         }
       }
 
