@@ -219,44 +219,107 @@ export async function createDraft(
     ...toDbFields(stripUndefined(initialFields ?? {})),
   } as ClientInsert;
 
-  // Serialize draft creation per user to prevent duplicate drafts.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (db as any).transaction(async (tx: any) => {
-    await tx.execute(
-      sql`SELECT id FROM ${user} WHERE id = ${userId} FOR UPDATE`,
-    );
+  let result:
+    | { existed: boolean; draft: unknown }
+    | { error: "INSERT_FAILED" | "RETRIEVE_FAILED" };
 
-    const existing = await tx.query.client.findFirst({
-      where: and(
-        eq(client.userId, userId),
-        eq(client.status, "draft"),
-        isNull(client.deletedAt),
-      ),
-      columns: DRAFT_SELECT_COLUMNS,
-      orderBy: [desc(client.updatedAt), desc(client.createdAt)],
+  try {
+    // Serialize draft creation per user to prevent duplicate drafts.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    result = await (db as any).transaction(async (tx: any) => {
+      await tx.execute(
+        sql`SELECT id FROM ${user} WHERE id = ${userId} FOR UPDATE`,
+      );
+
+      const existing = await tx.query.client.findFirst({
+        where: and(
+          eq(client.userId, userId),
+          eq(client.status, "draft"),
+          isNull(client.deletedAt),
+        ),
+        columns: DRAFT_SELECT_COLUMNS,
+        orderBy: [desc(client.updatedAt), desc(client.createdAt)],
+      });
+
+      if (existing) {
+        return { existed: true, draft: existing };
+      }
+
+      const [inserted] = await tx.insert(client).values(values).returning();
+
+      if (!inserted) {
+        return { error: "INSERT_FAILED" as const };
+      }
+
+      const draft = await tx.query.client.findFirst({
+        where: eq(client.id, inserted.id),
+        columns: DRAFT_SELECT_COLUMNS,
+      });
+
+      if (!draft) {
+        return { error: "RETRIEVE_FAILED" as const };
+      }
+
+      return { existed: false, draft };
+    });
+  } catch (error) {
+    console.warn("[createDraft] Transaction path failed; using fallback", {
+      userId,
+      error:
+        error instanceof Error
+          ? { name: error.name, message: error.message }
+          : String(error),
     });
 
-    if (existing) {
-      return { existed: true, draft: existing };
+    try {
+      console.info("[createDraft] Fallback path engaged", { userId });
+
+      const existing = await db.query.client.findFirst({
+        where: and(
+          eq(client.userId, userId),
+          eq(client.status, "draft"),
+          isNull(client.deletedAt),
+        ),
+        columns: DRAFT_SELECT_COLUMNS,
+        orderBy: [desc(client.updatedAt), desc(client.createdAt)],
+      });
+
+      if (existing) {
+        result = { existed: true, draft: existing };
+      } else {
+        const [inserted] = await db.insert(client).values(values).returning();
+
+        if (!inserted) {
+          console.error("[createDraft] Fallback insert failed", { userId });
+          result = { error: "INSERT_FAILED" };
+        } else {
+          const draft = await db.query.client.findFirst({
+            where: eq(client.id, inserted.id),
+            columns: DRAFT_SELECT_COLUMNS,
+          });
+
+          if (!draft) {
+            console.error("[createDraft] Fallback re-fetch failed", {
+              userId,
+              insertedId: inserted.id,
+            });
+            result = { error: "RETRIEVE_FAILED" };
+          } else {
+            result = { existed: false, draft };
+          }
+        }
+      }
+    } catch (fallbackError) {
+      console.error("[createDraft] Fallback path threw", {
+        userId,
+        error:
+          fallbackError instanceof Error
+            ? { name: fallbackError.name, message: fallbackError.message }
+            : String(fallbackError),
+      });
+      result = { error: "INSERT_FAILED" };
     }
-
-    const [inserted] = await tx.insert(client).values(values).returning();
-
-    if (!inserted) {
-      return { error: "INSERT_FAILED" as const };
-    }
-
-    const draft = await tx.query.client.findFirst({
-      where: eq(client.id, inserted.id),
-      columns: DRAFT_SELECT_COLUMNS,
-    });
-
-    if (!draft) {
-      return { error: "RETRIEVE_FAILED" as const };
-    }
-
-    return { existed: false, draft };
-  });
+  }
 
   if (!result || "error" in result) {
     return {
