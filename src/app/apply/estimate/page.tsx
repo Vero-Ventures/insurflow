@@ -55,10 +55,8 @@ function useIntakeData(clientId: string | null) {
             `/api/d2c/draft/${encodeURIComponent(clientId)}`,
           );
           if (res.ok) {
-            const json = (await res.json()) as {
-              draft?: DraftClientRecord;
-            };
-            const draft = json.draft;
+            const json = await res.json();
+            const draft = extractDraftFromPayload(json);
             if (draft && !cancelled) {
               const loaded = clientFieldsToD2cIntake(draft);
               setIntake(loaded);
@@ -110,6 +108,49 @@ interface DraftPersistenceResult {
   createdDraftNow: boolean;
 }
 
+type DraftEnvelope = {
+  data?: {
+    draft?: { id?: string };
+    existed?: boolean;
+  };
+  draft?: { id?: string };
+  existed?: boolean;
+};
+
+function extractDraftIdFromPayload(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null) {
+    return null;
+  }
+
+  const obj = payload as DraftEnvelope;
+
+  const foundId = obj.data?.draft?.id ?? obj.draft?.id ?? null;
+  return typeof foundId === "string" && foundId.length > 0 ? foundId : null;
+}
+
+function extractDraftFromPayload(payload: unknown): DraftClientRecord | null {
+  if (typeof payload !== "object" || payload === null) {
+    return null;
+  }
+
+  const obj = payload as {
+    data?: { draft?: DraftClientRecord };
+    draft?: DraftClientRecord;
+  };
+
+  return obj.data?.draft ?? obj.draft ?? null;
+}
+
+function extractDraftExistedFromPayload(payload: unknown): boolean | undefined {
+  if (typeof payload !== "object" || payload === null) {
+    return undefined;
+  }
+
+  const obj = payload as DraftEnvelope;
+  const existed = obj.data?.existed ?? obj.existed;
+  return typeof existed === "boolean" ? existed : undefined;
+}
+
 async function findLatestDraftId(): Promise<string | null> {
   try {
     const response = await fetch("/api/d2c/draft", { method: "GET" });
@@ -117,12 +158,8 @@ async function findLatestDraftId(): Promise<string | null> {
       return null;
     }
 
-    const payload = (await response.json()) as {
-      data?: { draft?: { id?: string } };
-      draft?: { id?: string };
-    };
-    const foundId = payload.data?.draft?.id ?? payload.draft?.id ?? null;
-    return typeof foundId === "string" && foundId.length > 0 ? foundId : null;
+    const payload = await response.json();
+    return extractDraftIdFromPayload(payload);
   } catch {
     return null;
   }
@@ -147,16 +184,14 @@ async function createDraftForReviewIfNeeded({
     });
 
     if (response.ok) {
-      const payload = (await response.json()) as {
-        draft?: { id?: string };
-        existed?: boolean;
-      };
-      const createdId = payload.draft?.id;
+      const payload = await response.json();
+      const createdId = extractDraftIdFromPayload(payload);
+      const existed = extractDraftExistedFromPayload(payload);
       if (typeof createdId === "string" && createdId.length > 0) {
         nextClientId = createdId;
         createdDraftNow =
-          payload.existed === false ||
-          (payload.existed === undefined && response.status === 201);
+          existed === false ||
+          (existed === undefined && response.status === 201);
       }
     } else if (response.status !== 401 && response.status !== 403) {
       console.error("Failed to create draft before review:", response);
@@ -335,6 +370,12 @@ export default function ApplyEstimatePage() {
     if (isContinuing || isSessionPending) return;
     setIsContinuing(true);
     try {
+      console.info("[apply/estimate] Continue clicked", {
+        initialClientId: clientId,
+        resolvedClientId,
+        isAuthenticated,
+      });
+
       const { nextClientId: createdOrExistingClientId, createdDraftNow } =
         await createDraftForReviewIfNeeded({
           nextClientId: resolvedClientId,
@@ -347,6 +388,9 @@ export default function ApplyEstimatePage() {
       let nextClientId = createdOrExistingClientId;
       if (isAuthenticated && !nextClientId) {
         nextClientId = await findLatestDraftId();
+        console.info("[apply/estimate] latest-draft recovery result", {
+          recoveredClientId: nextClientId,
+        });
         if (!nextClientId) {
           console.warn(
             "[apply/estimate] continuing to review without draft id",
@@ -364,7 +408,13 @@ export default function ApplyEstimatePage() {
         intakeForDraft,
       });
 
-      router.push(getReviewUrl(nextClientId));
+      const reviewUrl = getReviewUrl(nextClientId);
+      console.info("[apply/estimate] router.push review", {
+        reviewUrl,
+        nextClientId,
+        createdDraftNow,
+      });
+      router.push(reviewUrl);
     } finally {
       setIsContinuing(false);
     }
