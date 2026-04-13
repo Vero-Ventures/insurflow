@@ -29,12 +29,14 @@ const mockTransaction = vi.fn();
 const mockExecute = vi.fn();
 
 const mockValues = vi.fn().mockReturnThis();
+const mockOnConflictDoNothing = vi.fn().mockReturnThis();
 const mockSet = vi.fn().mockReturnThis();
 const mockWhere = vi.fn().mockReturnThis();
 const mockReturning = vi.fn().mockResolvedValue([]);
 
 mockInsert.mockReturnValue({ values: mockValues });
-mockValues.mockReturnValue({ returning: mockReturning });
+mockValues.mockReturnValue({ onConflictDoNothing: mockOnConflictDoNothing });
+mockOnConflictDoNothing.mockReturnValue({ returning: mockReturning });
 mockUpdate.mockReturnValue({ set: mockSet });
 mockSet.mockReturnValue({ where: mockWhere });
 mockWhere.mockReturnValue({ returning: mockReturning });
@@ -83,6 +85,7 @@ function createMockDraft(overrides: Record<string, unknown> = {}) {
 describe("findLatestDraft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockClientFindFirst.mockReset();
   });
 
   it("returns found: false when no draft exists", async () => {
@@ -125,20 +128,21 @@ describe("findLatestDraft", () => {
 describe("createDraft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockTransaction.mockImplementation(async (callback: unknown) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (callback as any)({
-        query: {
-          client: { findFirst: mockClientFindFirst },
-        },
-        insert: mockInsert,
-        execute: mockExecute,
-      }),
-    );
+    mockClientFindFirst.mockReset();
+    mockInsert.mockReset();
+    mockValues.mockReset();
+    mockOnConflictDoNothing.mockReset();
+    mockReturning.mockReset();
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockReturnValue({
+      onConflictDoNothing: mockOnConflictDoNothing,
+    });
+    mockOnConflictDoNothing.mockReturnValue({ returning: mockReturning });
   });
 
   it("returns existing draft if one already exists (idempotent)", async () => {
     const existingDraft = createMockDraft();
+    mockReturning.mockResolvedValueOnce([]);
     mockClientFindFirst.mockResolvedValue(existingDraft);
 
     const result = await createDraft(TEST_UUIDS.validUserId);
@@ -148,19 +152,13 @@ describe("createDraft", () => {
       expect(result.existed).toBe(true);
       expect(result.draft.id).toBe(TEST_UUIDS.validClientId);
     }
-    // Should NOT call insert
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockInsert).toHaveBeenCalled();
   });
 
   it("creates a new draft when none exists", async () => {
     const newDraft = createMockDraft();
-    // First findFirst call returns null (no existing draft)
-    // After insert, second findFirst returns the created draft
-    mockClientFindFirst
-      .mockResolvedValueOnce(null) // findLatestDraft check
-      .mockResolvedValueOnce(newDraft); // re-fetch after insert
-
     mockReturning.mockResolvedValueOnce([{ id: TEST_UUIDS.validClientId }]);
+    mockClientFindFirst.mockResolvedValueOnce(newDraft);
 
     const result = await createDraft(TEST_UUIDS.validUserId);
 
@@ -174,11 +172,8 @@ describe("createDraft", () => {
 
   it("applies initial fields when creating", async () => {
     const newDraft = createMockDraft({ sex: "F", smoker: true });
-    mockClientFindFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(newDraft);
-
     mockReturning.mockResolvedValueOnce([{ id: TEST_UUIDS.validClientId }]);
+    mockClientFindFirst.mockResolvedValueOnce(newDraft);
 
     const result = await createDraft(TEST_UUIDS.validUserId, {
       sex: "F",
@@ -190,8 +185,8 @@ describe("createDraft", () => {
   });
 
   it("returns INSERT_FAILED when insert returns no rows", async () => {
+    mockReturning.mockResolvedValueOnce([]);
     mockClientFindFirst.mockResolvedValueOnce(null);
-    mockReturning.mockResolvedValueOnce([]); // empty result from insert
 
     const result = await createDraft(TEST_UUIDS.validUserId);
 
@@ -202,11 +197,8 @@ describe("createDraft", () => {
   });
 
   it("returns INSERT_FAILED when re-fetch fails after insert", async () => {
-    mockClientFindFirst
-      .mockResolvedValueOnce(null) // findLatestDraft
-      .mockResolvedValueOnce(null); // re-fetch returns null (shouldn't happen)
-
     mockReturning.mockResolvedValueOnce([{ id: TEST_UUIDS.validClientId }]);
+    mockClientFindFirst.mockResolvedValueOnce(null); // re-fetch returns null
 
     const result = await createDraft(TEST_UUIDS.validUserId);
 
@@ -225,6 +217,11 @@ describe("createDraft", () => {
 describe("updateDraft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockClientFindFirst.mockReset();
+    mockUpdate.mockReset();
+    mockSet.mockReset();
+    mockWhere.mockReset();
+    mockReturning.mockReset();
     // Reset chain
     mockUpdate.mockReturnValue({ set: mockSet });
     mockSet.mockReturnValue({ where: mockWhere });

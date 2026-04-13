@@ -17,7 +17,9 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 import { user } from "./auth-schema";
 import {
@@ -174,6 +176,10 @@ export const client = pgTable(
     index("client_deleted_at_idx").on(t.deletedAt),
     // Composite index for the most common query pattern: user's non-deleted clients
     index("client_user_id_deleted_at_idx").on(t.userId, t.deletedAt),
+    // Enforce at most one active draft per user at the DB layer.
+    uniqueIndex("client_one_active_draft_per_user_idx")
+      .on(t.userId)
+      .where(sql`${t.status} = 'draft' AND ${t.deletedAt} IS NULL`),
   ],
 );
 

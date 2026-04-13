@@ -29,6 +29,13 @@
       "when": 1775197504455,
       "tag": "0017_opposite_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1776509100000,
+      "tag": "0018_judicious_darkstar",
+      "breakpoints": true
     }
   ]
 }
