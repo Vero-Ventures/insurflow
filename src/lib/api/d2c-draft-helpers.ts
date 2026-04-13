@@ -198,18 +198,16 @@ const DRAFT_DEFAULTS = {
   status: "draft" as const,
 };
 
-function d2cDraftPredicateByUser(userId: string) {
+function activeDraftPredicateByUser(userId: string) {
   return and(
     eq(client.userId, userId),
     eq(client.status, "draft"),
     isNull(client.deletedAt),
-    eq(client.firstName, ""),
-    eq(client.lastName, ""),
   );
 }
 
-function d2cDraftPredicateById(clientId: string, userId: string) {
-  return and(eq(client.id, clientId), d2cDraftPredicateByUser(userId));
+function activeDraftPredicateById(clientId: string, userId: string) {
+  return and(eq(client.id, clientId), activeDraftPredicateByUser(userId));
 }
 
 /**
@@ -246,7 +244,7 @@ export async function createDraft(
 
     if (inserted) {
       const draft = await db.query.client.findFirst({
-        where: d2cDraftPredicateById(inserted.id, userId),
+        where: activeDraftPredicateById(inserted.id, userId),
         columns: DRAFT_SELECT_COLUMNS,
       });
 
@@ -267,7 +265,7 @@ export async function createDraft(
         },
       );
       const existing = await db.query.client.findFirst({
-        where: d2cDraftPredicateByUser(userId),
+        where: activeDraftPredicateByUser(userId),
         columns: DRAFT_SELECT_COLUMNS,
         orderBy: [desc(client.updatedAt), desc(client.createdAt)],
       });
