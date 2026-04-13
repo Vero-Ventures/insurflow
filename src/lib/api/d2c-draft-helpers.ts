@@ -12,9 +12,9 @@
  * - Update is partial: only provided fields are overwritten.
  */
 
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { client, user } from "@/server/db/schemas";
+import { client } from "@/server/db/schemas";
 import type { ClientDraftFields } from "@/lib/d2c/client-adapter";
 
 /** Drizzle insert type for the client table. */
@@ -198,6 +198,18 @@ const DRAFT_DEFAULTS = {
   status: "draft" as const,
 };
 
+function activeDraftPredicateByUser(userId: string) {
+  return and(
+    eq(client.userId, userId),
+    eq(client.status, "draft"),
+    isNull(client.deletedAt),
+  );
+}
+
+function activeDraftPredicateById(clientId: string, userId: string) {
+  return and(eq(client.id, clientId), activeDraftPredicateByUser(userId));
+}
+
 /**
  * Creates a new draft client or returns the existing one.
  *
@@ -224,62 +236,36 @@ export async function createDraft(
     | { error: "INSERT_FAILED" | "RETRIEVE_FAILED" };
 
   try {
-    // Serialize draft creation per user to prevent duplicate drafts.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result = await (db as any).transaction(async (tx: any) => {
-      await tx.execute(
-        sql`SELECT id FROM ${user} WHERE id = ${userId} FOR UPDATE`,
-      );
+    const [inserted] = await db
+      .insert(client)
+      .values(values)
+      .onConflictDoNothing()
+      .returning();
 
-      const existing = await tx.query.client.findFirst({
-        where: and(
-          eq(client.userId, userId),
-          eq(client.status, "draft"),
-          isNull(client.deletedAt),
-        ),
-        columns: DRAFT_SELECT_COLUMNS,
-        orderBy: [desc(client.updatedAt), desc(client.createdAt)],
-      });
-
-      if (existing) {
-        return { existed: true, draft: existing };
-      }
-
-      const [inserted] = await tx.insert(client).values(values).returning();
-
-      if (!inserted) {
-        return { error: "INSERT_FAILED" as const };
-      }
-
-      const draft = await tx.query.client.findFirst({
-        where: eq(client.id, inserted.id),
+    if (inserted) {
+      const draft = await db.query.client.findFirst({
+        where: activeDraftPredicateById(inserted.id, userId),
         columns: DRAFT_SELECT_COLUMNS,
       });
 
       if (!draft) {
-        return { error: "RETRIEVE_FAILED" as const };
+        console.error("[createDraft] Insert succeeded but re-fetch failed", {
+          userId,
+          insertedId: inserted.id,
+        });
+        result = { error: "RETRIEVE_FAILED" };
+      } else {
+        result = { existed: false, draft };
       }
-
-      return { existed: false, draft };
-    });
-  } catch (error) {
-    console.warn("[createDraft] Transaction path failed; using fallback", {
-      userId,
-      error:
-        error instanceof Error
-          ? { name: error.name, message: error.message }
-          : String(error),
-    });
-
-    try {
-      console.info("[createDraft] Fallback path engaged", { userId });
-
+    } else {
+      console.info(
+        "[createDraft] Insert conflicted; returning existing draft",
+        {
+          userId,
+        },
+      );
       const existing = await db.query.client.findFirst({
-        where: and(
-          eq(client.userId, userId),
-          eq(client.status, "draft"),
-          isNull(client.deletedAt),
-        ),
+        where: activeDraftPredicateByUser(userId),
         columns: DRAFT_SELECT_COLUMNS,
         orderBy: [desc(client.updatedAt), desc(client.createdAt)],
       });
@@ -287,22 +273,21 @@ export async function createDraft(
       if (existing) {
         result = { existed: true, draft: existing };
       } else {
-        console.error(
-          "[createDraft] Fallback could not find existing draft; refusing unsafe insert",
-          { userId },
-        );
+        console.error("[createDraft] Conflict without retrievable draft", {
+          userId,
+        });
         result = { error: "INSERT_FAILED" };
       }
-    } catch (fallbackError) {
-      console.error("[createDraft] Fallback path threw", {
-        userId,
-        error:
-          fallbackError instanceof Error
-            ? { name: fallbackError.name, message: fallbackError.message }
-            : String(fallbackError),
-      });
-      result = { error: "INSERT_FAILED" };
     }
+  } catch (error) {
+    console.error("[createDraft] Upsert path failed", {
+      userId,
+      error:
+        error instanceof Error
+          ? { name: error.name, message: error.message }
+          : String(error),
+    });
+    result = { error: "INSERT_FAILED" };
   }
 
   if (!result || "error" in result) {
