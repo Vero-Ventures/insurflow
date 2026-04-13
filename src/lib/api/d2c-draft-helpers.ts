@@ -198,6 +198,20 @@ const DRAFT_DEFAULTS = {
   status: "draft" as const,
 };
 
+function d2cDraftPredicateByUser(userId: string) {
+  return and(
+    eq(client.userId, userId),
+    eq(client.status, "draft"),
+    isNull(client.deletedAt),
+    eq(client.firstName, ""),
+    eq(client.lastName, ""),
+  );
+}
+
+function d2cDraftPredicateById(clientId: string, userId: string) {
+  return and(eq(client.id, clientId), d2cDraftPredicateByUser(userId));
+}
+
 /**
  * Creates a new draft client or returns the existing one.
  *
@@ -232,7 +246,7 @@ export async function createDraft(
 
     if (inserted) {
       const draft = await db.query.client.findFirst({
-        where: eq(client.id, inserted.id),
+        where: d2cDraftPredicateById(inserted.id, userId),
         columns: DRAFT_SELECT_COLUMNS,
       });
 
@@ -253,11 +267,7 @@ export async function createDraft(
         },
       );
       const existing = await db.query.client.findFirst({
-        where: and(
-          eq(client.userId, userId),
-          eq(client.status, "draft"),
-          isNull(client.deletedAt),
-        ),
+        where: d2cDraftPredicateByUser(userId),
         columns: DRAFT_SELECT_COLUMNS,
         orderBy: [desc(client.updatedAt), desc(client.createdAt)],
       });

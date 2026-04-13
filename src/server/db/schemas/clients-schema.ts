@@ -179,7 +179,9 @@ export const client = pgTable(
     // Enforce at most one active draft per user at the DB layer.
     uniqueIndex("client_one_active_draft_per_user_idx")
       .on(t.userId)
-      .where(sql`${t.status} = 'draft' AND ${t.deletedAt} IS NULL`),
+      .where(
+        sql`${t.status} = 'draft' AND ${t.deletedAt} IS NULL AND ${t.firstName} = '' AND ${t.lastName} = ''`,
+      ),
   ],
 );
 
