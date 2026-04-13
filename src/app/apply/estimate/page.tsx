@@ -118,9 +118,10 @@ async function findLatestDraftId(): Promise<string | null> {
     }
 
     const payload = (await response.json()) as {
+      data?: { draft?: { id?: string } };
       draft?: { id?: string };
     };
-    const foundId = payload.draft?.id;
+    const foundId = payload.data?.draft?.id ?? payload.draft?.id ?? null;
     return typeof foundId === "string" && foundId.length > 0 ? foundId : null;
   } catch {
     return null;
