@@ -1,46 +1,82 @@
 import { env } from "@/env";
+import type { IMetricReader } from "@opentelemetry/sdk-metrics";
+
+import { getPrometheusExporter } from "./prometheus";
 
 let started = false;
 let shuttingDown = false;
 let shutdownHandlersRegistered = false;
 
 export async function registerObservability(): Promise<void> {
-  if (started || !env.GRAFANA_OTLP_ENDPOINT || !env.GRAFANA_OTLP_HEADERS) {
+  const hasGrafanaOtlp =
+    Boolean(env.GRAFANA_OTLP_ENDPOINT) && Boolean(env.GRAFANA_OTLP_HEADERS);
+  const hasPrometheusScrape = Boolean(env.PROMETHEUS_METRICS_TOKEN);
+
+  if (started || (!hasGrafanaOtlp && !hasPrometheusScrape)) {
     return;
   }
 
   const [
     { NodeSDK },
     { resourceFromAttributes },
+    { BatchLogRecordProcessor },
     { PeriodicExportingMetricReader },
+    { OTLPLogExporter },
     { OTLPMetricExporter },
     { OTLPTraceExporter },
   ] = await Promise.all([
     import("@opentelemetry/sdk-node"),
     import("@opentelemetry/resources"),
+    import("@opentelemetry/sdk-logs"),
     import("@opentelemetry/sdk-metrics"),
+    import("@opentelemetry/exporter-logs-otlp-http"),
     import("@opentelemetry/exporter-metrics-otlp-http"),
     import("@opentelemetry/exporter-trace-otlp-http"),
   ]);
 
-  const sdk = new NodeSDK({
+  const metricReaders: IMetricReader[] = [];
+
+  if (hasGrafanaOtlp) {
+    metricReaders.push(
+      new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter({
+          url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT!, "metrics"),
+          headers: parseHeaders(env.GRAFANA_OTLP_HEADERS!),
+        }),
+      }),
+    );
+  }
+
+  if (hasPrometheusScrape) {
+    metricReaders.push(getPrometheusExporter());
+  }
+
+  const sdkOptions: ConstructorParameters<typeof NodeSDK>[0] = {
     resource: resourceFromAttributes({
       "deployment.environment.name": env.NODE_ENV,
       "service.name": "insurflow",
     }),
-    metricReader: new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({
-        url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT, "metrics"),
-        headers: parseHeaders(env.GRAFANA_OTLP_HEADERS),
-      }),
-    }),
-    traceExporter: new OTLPTraceExporter({
-      url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT, "traces"),
-      headers: parseHeaders(env.GRAFANA_OTLP_HEADERS),
-    }),
-  });
+    metricReaders,
+  };
 
-  await sdk.start();
+  if (hasGrafanaOtlp) {
+    sdkOptions.logRecordProcessors = [
+      new BatchLogRecordProcessor(
+        new OTLPLogExporter({
+          url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT!, "logs"),
+          headers: parseHeaders(env.GRAFANA_OTLP_HEADERS!),
+        }),
+      ),
+    ];
+    sdkOptions.traceExporter = new OTLPTraceExporter({
+      url: buildOtlpSignalUrl(env.GRAFANA_OTLP_ENDPOINT!, "traces"),
+      headers: parseHeaders(env.GRAFANA_OTLP_HEADERS!),
+    });
+  }
+
+  const sdk = new NodeSDK(sdkOptions);
+
+  sdk.start();
   started = true;
 
   if (!shutdownHandlersRegistered) {
@@ -68,7 +104,7 @@ export async function registerObservability(): Promise<void> {
 
 export function buildOtlpSignalUrl(
   baseUrl: string,
-  signal: "metrics" | "traces",
+  signal: "logs" | "metrics" | "traces",
 ): string {
   let normalizedBaseUrl = baseUrl;
 

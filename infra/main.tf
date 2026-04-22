@@ -140,6 +140,16 @@ resource "vercel_project_environment_variable" "grafana_instance_id_prod" {
   comment    = "Grafana Cloud instance id"
 }
 
+resource "vercel_project_environment_variable" "prometheus_metrics_token_prod" {
+  count      = var.prometheus_metrics_token != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "PROMETHEUS_METRICS_TOKEN"
+  value      = var.prometheus_metrics_token
+  target     = ["production"]
+  sensitive  = true
+  comment    = "Bearer token for Prometheus scrape endpoint"
+}
+
 resource "vercel_project_environment_variable" "posthog_key_prod" {
   count      = var.posthog_key != "" ? 1 : 0
   project_id = vercel_project.insurflow.id
@@ -232,6 +242,16 @@ resource "vercel_project_environment_variable" "grafana_instance_id_preview" {
   value      = var.grafana_instance_id
   target     = ["preview"]
   comment    = "Grafana Cloud instance id"
+}
+
+resource "vercel_project_environment_variable" "prometheus_metrics_token_preview" {
+  count      = var.prometheus_metrics_token != "" ? 1 : 0
+  project_id = vercel_project.insurflow.id
+  key        = "PROMETHEUS_METRICS_TOKEN"
+  value      = var.prometheus_metrics_token
+  target     = ["preview"]
+  sensitive  = true
+  comment    = "Bearer token for Prometheus scrape endpoint"
 }
 
 resource "vercel_project_environment_variable" "posthog_key_preview" {

@@ -37,10 +37,11 @@ production_branch = "main"
 # axiom_token   = ""
 # axiom_dataset = "insurflow"
 
-# Grafana Cloud (Metrics / Traces)
+# Grafana Cloud (Logs / Metrics / Traces)
 # grafana_otlp_endpoint = "https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
 # grafana_otlp_headers  = "Authorization=Basic <base64 instance:token>"
 # grafana_instance_id   = ""
+# prometheus_metrics_token = "replace-with-long-random-token"
 
 # PostHog (Product Analytics)
 # posthog_key     = ""

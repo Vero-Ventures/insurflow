@@ -52,10 +52,13 @@ BETTER_AUTH_URL="http://localhost:3000"
 AXIOM_TOKEN="..."
 AXIOM_DATASET="insurflow-dev"
 
-# Grafana Cloud (Metrics / Traces) - optional locally
+# Grafana Cloud (Logs / Metrics / Traces) - optional locally
 GRAFANA_OTLP_ENDPOINT="https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
 GRAFANA_OTLP_HEADERS="Authorization=Basic <base64 instance:token>"
 GRAFANA_INSTANCE_ID="..."
+
+# Prometheus scrape auth - required for the protected scrape endpoint
+PROMETHEUS_METRICS_TOKEN="replace-with-long-random-token"
 
 # Sentry (Error Tracking) - optional locally
 SENTRY_DSN="..."
@@ -68,6 +71,8 @@ NEXT_PUBLIC_POSTHOG_UI_HOST="https://us.posthog.com"
 ```
 
 Privacy rule: never send application answers, health disclosures, date of birth, income, coverage amounts, or freeform prompts to analytics vendors. Keep analytics events to coarse status, route, feature, count, and other sanitized metadata.
+
+`/api/metrics` returns Prometheus text for the current worker only. On Vercel/serverless it is useful for compatibility checks and targeted scraping, not fleet-wide truth. Send `Authorization: Bearer <PROMETHEUS_METRICS_TOKEN>` and keep the token configured anywhere the endpoint is enabled.
 
 Variables in `.env.example` for Stripe/UploadThing are reserved for future features and are not required for current MVP development.
 

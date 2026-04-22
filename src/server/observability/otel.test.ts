@@ -10,6 +10,9 @@ describe("buildOtlpSignalUrl", () => {
     expect(
       buildOtlpSignalUrl("https://grafana.example.com/otlp", "traces"),
     ).toBe("https://grafana.example.com/otlp/v1/traces");
+    expect(buildOtlpSignalUrl("https://grafana.example.com/otlp", "logs")).toBe(
+      "https://grafana.example.com/otlp/v1/logs",
+    );
   });
 
   it("replaces an existing signal suffix before appending the requested one", () => {
@@ -25,5 +28,8 @@ describe("buildOtlpSignalUrl", () => {
         "traces",
       ),
     ).toBe("https://grafana.example.com/otlp/v1/traces");
+    expect(
+      buildOtlpSignalUrl("https://grafana.example.com/otlp/v1/logs", "metrics"),
+    ).toBe("https://grafana.example.com/otlp/v1/metrics");
   });
 });

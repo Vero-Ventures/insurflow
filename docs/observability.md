@@ -2,9 +2,10 @@
 
 ## Stack
 
-- `Axiom` for structured server logs
+- `Axiom` for the existing structured server log sink and console fallback path
 - `PostHog` for product analytics and funnels
-- `Grafana Cloud` for managed metrics, traces, dashboards, and alerts
+- `Grafana Cloud` for OTLP logs, metrics, traces, dashboards, and alerts
+- `Prometheus` compatibility via `GET /api/metrics` on the current Node worker
 
 ## Privacy Rules
 
@@ -15,7 +16,8 @@
 ## Key Signals
 
 - `Axiom`: request logs with `requestId`, route pattern, status, duration, user agent, and safe response summary
-- `Grafana Cloud`: request counters, latency histograms, 5xx counters, webhook counters, AI workflow counters
+- `Grafana Cloud`: OTLP logs plus request counters, latency histograms, 5xx counters, webhook counters, and AI workflow counters
+- `Prometheus`: scrape-compatible text view of the current worker's registered OpenTelemetry metrics
 - `PostHog`: page views, client creation, D2C submission confirmation, and future funnel events
 
 ## First Dashboards
@@ -36,5 +38,12 @@
 
 1. Load the app with `NEXT_PUBLIC_POSTHOG_*` configured and confirm page views arrive in PostHog.
 2. Hit representative API routes and confirm Axiom logs include `requestId`, `routePattern`, `statusCode`, and `duration`.
-3. Confirm Grafana Cloud receives `http.server.requests_total` and `http.server.request.duration`.
-4. Trigger a webhook or AI failure path and confirm logs plus metrics line up.
+3. Confirm Grafana Cloud receives OTLP logs, `http.server.requests_total`, and `http.server.request.duration`.
+4. Hit `/api/metrics` with `Authorization: Bearer <PROMETHEUS_METRICS_TOKEN>` and confirm Prometheus text output includes the same low-cardinality HTTP metrics.
+5. Trigger a webhook or AI failure path and confirm logs plus metrics line up.
+
+## Prometheus Caveats
+
+- `GET /api/metrics` is worker-local on serverless platforms. Treat it as a compatibility endpoint, not fleet-wide truth.
+- Prefer Grafana OTLP push data for production dashboards and alerts.
+- Keep `PROMETHEUS_METRICS_TOKEN` set anywhere the scrape route is enabled so the endpoint stays protected.

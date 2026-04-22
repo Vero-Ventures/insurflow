@@ -78,9 +78,10 @@ It also still contains some legacy advisor-first surfaces that should now be tre
 
 ## Observability
 
-- `Axiom` handles structured server logs for API, webhook, auth, and AI flows.
+- `Axiom` handles the existing structured server log sink and console fallback path.
 - `PostHog` handles product analytics and funnel visibility.
-- `Grafana Cloud` receives managed metrics and traces for API reliability dashboards and alerting.
+- `Grafana Cloud` receives OTLP logs, metrics, and traces for API reliability dashboards and alerting.
+- `/api/metrics` exposes Prometheus text format for the current Node worker and requires `PROMETHEUS_METRICS_TOKEN` bearer auth.
 
 Observability must stay privacy-safe: do not send insurance application answers, health disclosures, DOB, income, coverage amounts, or freeform prompts to analytics vendors.
 
