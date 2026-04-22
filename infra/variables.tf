@@ -105,6 +105,13 @@ variable "grafana_instance_id" {
   default     = ""
 }
 
+variable "prometheus_metrics_token" {
+  description = "Bearer token required to scrape /api/metrics"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "posthog_key" {
   description = "PostHog project API key for product analytics"
   type        = string

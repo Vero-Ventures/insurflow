@@ -1,6 +1,8 @@
 import { Axiom } from "@axiomhq/js";
 import { env } from "@/env";
 
+import { emitStructuredLog } from "@/server/observability/logs";
+
 /**
  * Axiom client for structured logging
  * Only initialized if AXIOM_TOKEN is configured
@@ -93,6 +95,8 @@ export class Logger {
       ...this.context,
       ...additionalContext,
     };
+
+    emitStructuredLog(event);
 
     // Console fallback if Axiom is not configured
     if (!axiom) {

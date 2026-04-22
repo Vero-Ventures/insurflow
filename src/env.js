@@ -48,6 +48,7 @@ export const env = createEnv({
     GRAFANA_OTLP_ENDPOINT: z.string().url().optional(),
     GRAFANA_OTLP_HEADERS: z.string().optional(),
     GRAFANA_INSTANCE_ID: z.string().optional(),
+    PROMETHEUS_METRICS_TOKEN: z.string().optional(),
 
     // Gemini AI (GenAI Co-Pilot)
     GEMINI_API_KEY: z.string().optional(),
@@ -93,6 +94,7 @@ export const env = createEnv({
     GRAFANA_OTLP_ENDPOINT: process.env.GRAFANA_OTLP_ENDPOINT,
     GRAFANA_OTLP_HEADERS: process.env.GRAFANA_OTLP_HEADERS,
     GRAFANA_INSTANCE_ID: process.env.GRAFANA_INSTANCE_ID,
+    PROMETHEUS_METRICS_TOKEN: process.env.PROMETHEUS_METRICS_TOKEN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
